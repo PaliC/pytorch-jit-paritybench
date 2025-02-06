@@ -17,7 +17,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -62,7 +64,7 @@ import random
 
 class BasicUnit(nn.Module):
 
-    def __init__(self, channels: int, dropout: float):
+    def __init__(self, channels: 'int', dropout: 'float'):
         super(BasicUnit, self).__init__()
         self.block = nn.Sequential(OrderedDict([('0_normalization', nn.BatchNorm2d(channels)), ('1_activation', nn.ReLU(inplace=True)), ('2_convolution', nn.Conv2d(channels, channels, (3, 3), stride=1, padding=1, bias=False)), ('3_normalization', nn.BatchNorm2d(channels)), ('4_activation', nn.ReLU(inplace=True)), ('5_dropout', nn.Dropout(dropout, inplace=True)), ('6_convolution', nn.Conv2d(channels, channels, (3, 3), stride=1, padding=1, bias=False))]))
 
@@ -72,7 +74,7 @@ class BasicUnit(nn.Module):
 
 class DownsampleUnit(nn.Module):
 
-    def __init__(self, in_channels: int, out_channels: int, stride: int, dropout: float):
+    def __init__(self, in_channels: 'int', out_channels: 'int', stride: 'int', dropout: 'float'):
         super(DownsampleUnit, self).__init__()
         self.norm_act = nn.Sequential(OrderedDict([('0_normalization', nn.BatchNorm2d(in_channels)), ('1_activation', nn.ReLU(inplace=True))]))
         self.block = nn.Sequential(OrderedDict([('0_convolution', nn.Conv2d(in_channels, out_channels, (3, 3), stride=stride, padding=1, bias=False)), ('1_normalization', nn.BatchNorm2d(out_channels)), ('2_activation', nn.ReLU(inplace=True)), ('3_dropout', nn.Dropout(dropout, inplace=True)), ('4_convolution', nn.Conv2d(out_channels, out_channels, (3, 3), stride=1, padding=1, bias=False))]))
@@ -85,7 +87,7 @@ class DownsampleUnit(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, in_channels: int, out_channels: int, stride: int, depth: int, dropout: float):
+    def __init__(self, in_channels: 'int', out_channels: 'int', stride: 'int', depth: 'int', dropout: 'float'):
         super(Block, self).__init__()
         self.block = nn.Sequential(DownsampleUnit(in_channels, out_channels, stride, dropout), *(BasicUnit(out_channels, dropout) for _ in range(depth)))
 
@@ -95,7 +97,7 @@ class Block(nn.Module):
 
 class WideResNet(nn.Module):
 
-    def __init__(self, depth: int, width_factor: int, dropout: float, in_channels: int, labels: int):
+    def __init__(self, depth: 'int', width_factor: 'int', dropout: 'float', in_channels: 'int', labels: 'int'):
         super(WideResNet, self).__init__()
         self.filters = [16, 1 * 16 * width_factor, 2 * 16 * width_factor, 4 * 16 * width_factor]
         self.block_depth = (depth - 4) // (3 * 2)

@@ -78,7 +78,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -2311,19 +2313,19 @@ class SqueezeTransform(Transform):
 class IdentityTransform(Transform):
     """Transform that leaves input unchanged."""
 
-    def forward(self, inputs: Tensor, context=Optional[Tensor]):
+    def forward(self, inputs: 'Tensor', context=Optional[Tensor]):
         batch_size = inputs.size(0)
         logabsdet = inputs.new_zeros(batch_size)
         return inputs, logabsdet
 
-    def inverse(self, inputs: Tensor, context=Optional[Tensor]):
+    def inverse(self, inputs: 'Tensor', context=Optional[Tensor]):
         return self(inputs, context)
 
 
 class PointwiseAffineTransform(Transform):
     """Forward transform X = X * scale + shift."""
 
-    def __init__(self, shift: Union[Tensor, float]=0.0, scale: Union[Tensor, float]=1.0):
+    def __init__(self, shift: 'Union[Tensor, float]'=0.0, scale: 'Union[Tensor, float]'=1.0):
         super().__init__()
         shift, scale = map(torch.as_tensor, (shift, scale))
         if (scale == 0.0).any():
@@ -2335,20 +2337,20 @@ class PointwiseAffineTransform(Transform):
     def _log_abs_scale(self) ->Tensor:
         return torch.log(torch.abs(self._scale))
 
-    def _batch_logabsdet(self, batch_shape: Iterable[int]) ->Tensor:
+    def _batch_logabsdet(self, batch_shape: 'Iterable[int]') ->Tensor:
         """Return log abs det with input batch shape."""
         if self._log_abs_scale.numel() > 1:
             return self._log_abs_scale.expand(batch_shape).sum()
         else:
             return self._log_abs_scale * torch.Size(batch_shape).numel()
 
-    def forward(self, inputs: Tensor, context=Optional[Tensor]) ->Tuple[Tensor]:
+    def forward(self, inputs: 'Tensor', context=Optional[Tensor]) ->Tuple[Tensor]:
         batch_size, *batch_shape = inputs.size()
         outputs = inputs * self._scale + self._shift
         logabsdet = self._batch_logabsdet(batch_shape).expand(batch_size)
         return outputs, logabsdet
 
-    def inverse(self, inputs: Tensor, context=Optional[Tensor]) ->Tuple[Tensor]:
+    def inverse(self, inputs: 'Tensor', context=Optional[Tensor]) ->Tuple[Tensor]:
         batch_size, *batch_shape = inputs.size()
         outputs = (inputs - self._shift) / self._scale
         logabsdet = -self._batch_logabsdet(batch_shape).expand(batch_size)
@@ -2357,7 +2359,7 @@ class PointwiseAffineTransform(Transform):
 
 class AffineTransform(PointwiseAffineTransform):
 
-    def __init__(self, shift: Union[Tensor, float]=0.0, scale: Union[Tensor, float]=1.0):
+    def __init__(self, shift: 'Union[Tensor, float]'=0.0, scale: 'Union[Tensor, float]'=1.0):
         warnings.warn('Use PointwiseAffineTransform', DeprecationWarning)
         if shift is None:
             shift = 0.0

@@ -118,7 +118,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -1189,20 +1191,20 @@ class BasicBlock(nn.Module):
         return torch.add(x if self.equalInOut else self.convShortcut(x), out)
 
 
-def conv1x1(in_planes: int, out_planes: int, stride: int=1) ->nn.Conv2d:
+def conv1x1(in_planes: 'int', out_planes: 'int', stride: 'int'=1) ->nn.Conv2d:
     """1x1 convolution"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
-def conv3x3(in_planes: int, out_planes: int, stride: int=1, groups: int=1, dilation: int=1) ->nn.Conv2d:
+def conv3x3(in_planes: 'int', out_planes: 'int', stride: 'int'=1, groups: 'int'=1, dilation: 'int'=1) ->nn.Conv2d:
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
 class Bottleneck(nn.Module):
-    expansion: int = 4
+    expansion: 'int' = 4
 
-    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample: Optional[nn.Module]=None, groups: int=1, base_width: int=64, dilation: int=1, norm_layer: Optional[Callable[..., nn.Module]]=None) ->None:
+    def __init__(self, inplanes: 'int', planes: 'int', stride: 'int'=1, downsample: 'Optional[nn.Module]'=None, groups: 'int'=1, base_width: 'int'=64, dilation: 'int'=1, norm_layer: 'Optional[Callable[..., nn.Module]]'=None) ->None:
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -1217,7 +1219,7 @@ class Bottleneck(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x: Tensor) ->Tensor:
+    def forward(self, x: 'Tensor') ->Tensor:
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -1234,134 +1236,9 @@ class Bottleneck(nn.Module):
         return out
 
 
-class Attention(nn.Module):
-    """Attention from `"Dynamic Domain Generalization" <https://github.com/MetaVisionLab/DDG>`_.
-    """
-
-    def __init__(self, in_channels: int, out_features: int, squeeze=None, bias: bool=True):
-        super(Attention, self).__init__()
-        self.squeeze = squeeze if squeeze else in_channels // 16
-        assert self.squeeze > 0
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc1 = nn.Linear(in_channels, self.squeeze, bias=bias)
-        self.fc2 = nn.Linear(self.squeeze, out_features, bias=bias)
-        self.sf = nn.Softmax(dim=-1)
-
-    def forward(self, x):
-        x = self.avg_pool(x).view(x.shape[:-2])
-        x = self.fc1(x)
-        x = F.relu(x, inplace=True)
-        x = self.fc2(x)
-        return self.sf(x)
-
-
-class Conv2dDynamic(nn.Module):
-    """Conv2dDynamic from `"Dynamic Domain Generalization" <https://github.com/MetaVisionLab/DDG>`_.
-    """
-
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, bias: bool=True, squeeze: int=None, attention_in_channels: int=None) ->None:
-        super(Conv2dDynamic, self).__init__()
-        if kernel_size // 2 != padding:
-            raise ValueError('`padding` must be equal to `kernel_size // 2`.')
-        if kernel_size % 2 == 0:
-            raise ValueError('Kernel_size must be odd now because the templates we used are odd (kernel_size=1).')
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
-        self.kernel_templates = nn.ModuleDict()
-        self.kernel_templates['conv_nn'] = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=min(in_channels, out_channels), bias=bias)
-        self.kernel_templates['conv_11'] = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=bias)
-        self.kernel_templates['conv_n1'] = nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_size, 1), stride=stride, padding=(padding, 0), bias=bias)
-        self.kernel_templates['conv_1n'] = nn.Conv2d(in_channels, out_channels, kernel_size=(1, kernel_size), stride=stride, padding=(0, padding), bias=bias)
-        self.attention = Attention(attention_in_channels if attention_in_channels else in_channels, 4, squeeze, bias=bias)
-
-    def forward(self, x, attention_x=None):
-        attention_x = x if attention_x is None else attention_x
-        y = self.attention(attention_x)
-        out = self.conv(x)
-        for i, template in enumerate(self.kernel_templates):
-            out += self.kernel_templates[template](x) * y[:, i].view(-1, 1, 1, 1)
-        return out
-
-
-def conv3x3_dynamic(in_planes: int, out_planes: int, stride: int=1, attention_in_channels: int=None) ->Conv2dDynamic:
-    """3x3 convolution with padding"""
-    return Conv2dDynamic(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False, attention_in_channels=attention_in_channels)
-
-
-class BasicBlockDynamic(nn.Module):
-    expansion: int = 1
-
-    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample: Optional[nn.Module]=None, groups: int=1, base_width: int=64, dilation: int=1, norm_layer: Optional[Callable[..., nn.Module]]=None) ->None:
-        super(BasicBlockDynamic, self).__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        if groups != 1 or base_width != 64:
-            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
-        if dilation > 1:
-            raise NotImplementedError('Dilation > 1 not supported in BasicBlock')
-        self.conv1 = conv3x3_dynamic(inplanes, planes, stride, attention_in_channels=inplanes)
-        self.bn1 = norm_layer(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3_dynamic(planes, planes, attention_in_channels=inplanes)
-        self.bn2 = norm_layer(planes)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x: Tensor) ->Tensor:
-        identity = x
-        out = self.conv1(x, attention_x=x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = self.conv2(out, attention_x=x)
-        out = self.bn2(out)
-        if self.downsample is not None:
-            identity = self.downsample(x)
-        out += identity
-        out = self.relu(out)
-        return out
-
-
-class BottleneckDynamic(nn.Module):
-    expansion: int = 4
-
-    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample: Optional[nn.Module]=None, groups: int=1, base_width: int=64, dilation: int=1, norm_layer: Optional[Callable[..., nn.Module]]=None) ->None:
-        super(BottleneckDynamic, self).__init__()
-        if groups != 1:
-            raise ValueError('BottleneckDynamic only supports groups=1')
-        if dilation > 1:
-            raise NotImplementedError('Dilation > 1 not supported in BottleneckDynamic')
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        width = int(planes * (base_width / 64.0)) * groups
-        self.conv1 = conv1x1(inplanes, width)
-        self.bn1 = norm_layer(width)
-        self.conv2 = conv3x3_dynamic(width, width, stride, attention_in_channels=inplanes)
-        self.bn2 = norm_layer(width)
-        self.conv3 = conv1x1(width, planes * self.expansion)
-        self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x: Tensor) ->Tensor:
-        identity = x
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = self.conv2(out, attention_x=x)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv3(out)
-        out = self.bn3(out)
-        if self.downsample is not None:
-            identity = self.downsample(x)
-        out += identity
-        out = self.relu(out)
-        return out
-
-
 class ResNet(Backbone):
 
-    def __init__(self, block: Type[Union[BasicBlock, Bottleneck, BasicBlockDynamic, BottleneckDynamic]], layers: List[int], has_fc: bool=True, num_classes: int=1000, zero_init_residual: bool=False, groups: int=1, width_per_group: int=64, replace_stride_with_dilation: Optional[List[bool]]=None, norm_layer: Optional[Callable[..., nn.Module]]=None, ms_class=None, ms_layers=None, ms_p=0.5, ms_a=0.1) ->None:
+    def __init__(self, block: 'Type[Union[BasicBlock, Bottleneck, BasicBlockDynamic, BottleneckDynamic]]', layers: 'List[int]', has_fc: 'bool'=True, num_classes: 'int'=1000, zero_init_residual: 'bool'=False, groups: 'int'=1, width_per_group: 'int'=64, replace_stride_with_dilation: 'Optional[List[bool]]'=None, norm_layer: 'Optional[Callable[..., nn.Module]]'=None, ms_class=None, ms_layers=None, ms_p=0.5, ms_a=0.1) ->None:
         super(ResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -1409,7 +1286,7 @@ class ResNet(Backbone):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int, stride: int=1, dilate: bool=False) ->nn.Sequential:
+    def _make_layer(self, block: 'Type[Union[BasicBlock, Bottleneck]]', planes: 'int', blocks: 'int', stride: 'int'=1, dilate: 'bool'=False) ->nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -1425,7 +1302,7 @@ class ResNet(Backbone):
             layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width, dilation=self.dilation, norm_layer=norm_layer))
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x: Tensor) ->Tensor:
+    def _forward_impl(self, x: 'Tensor') ->Tensor:
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -1446,8 +1323,133 @@ class ResNet(Backbone):
             x = self.fc(x)
         return x
 
-    def forward(self, x: Tensor) ->Tensor:
+    def forward(self, x: 'Tensor') ->Tensor:
         return self._forward_impl(x)
+
+
+class Attention(nn.Module):
+    """Attention from `"Dynamic Domain Generalization" <https://github.com/MetaVisionLab/DDG>`_.
+    """
+
+    def __init__(self, in_channels: 'int', out_features: 'int', squeeze=None, bias: 'bool'=True):
+        super(Attention, self).__init__()
+        self.squeeze = squeeze if squeeze else in_channels // 16
+        assert self.squeeze > 0
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Linear(in_channels, self.squeeze, bias=bias)
+        self.fc2 = nn.Linear(self.squeeze, out_features, bias=bias)
+        self.sf = nn.Softmax(dim=-1)
+
+    def forward(self, x):
+        x = self.avg_pool(x).view(x.shape[:-2])
+        x = self.fc1(x)
+        x = F.relu(x, inplace=True)
+        x = self.fc2(x)
+        return self.sf(x)
+
+
+class Conv2dDynamic(nn.Module):
+    """Conv2dDynamic from `"Dynamic Domain Generalization" <https://github.com/MetaVisionLab/DDG>`_.
+    """
+
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: 'int', stride: 'int', padding: 'int', bias: 'bool'=True, squeeze: 'int'=None, attention_in_channels: 'int'=None) ->None:
+        super(Conv2dDynamic, self).__init__()
+        if kernel_size // 2 != padding:
+            raise ValueError('`padding` must be equal to `kernel_size // 2`.')
+        if kernel_size % 2 == 0:
+            raise ValueError('Kernel_size must be odd now because the templates we used are odd (kernel_size=1).')
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
+        self.kernel_templates = nn.ModuleDict()
+        self.kernel_templates['conv_nn'] = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=min(in_channels, out_channels), bias=bias)
+        self.kernel_templates['conv_11'] = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=bias)
+        self.kernel_templates['conv_n1'] = nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_size, 1), stride=stride, padding=(padding, 0), bias=bias)
+        self.kernel_templates['conv_1n'] = nn.Conv2d(in_channels, out_channels, kernel_size=(1, kernel_size), stride=stride, padding=(0, padding), bias=bias)
+        self.attention = Attention(attention_in_channels if attention_in_channels else in_channels, 4, squeeze, bias=bias)
+
+    def forward(self, x, attention_x=None):
+        attention_x = x if attention_x is None else attention_x
+        y = self.attention(attention_x)
+        out = self.conv(x)
+        for i, template in enumerate(self.kernel_templates):
+            out += self.kernel_templates[template](x) * y[:, i].view(-1, 1, 1, 1)
+        return out
+
+
+def conv3x3_dynamic(in_planes: 'int', out_planes: 'int', stride: 'int'=1, attention_in_channels: 'int'=None) ->Conv2dDynamic:
+    """3x3 convolution with padding"""
+    return Conv2dDynamic(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False, attention_in_channels=attention_in_channels)
+
+
+class BasicBlockDynamic(nn.Module):
+    expansion: 'int' = 1
+
+    def __init__(self, inplanes: 'int', planes: 'int', stride: 'int'=1, downsample: 'Optional[nn.Module]'=None, groups: 'int'=1, base_width: 'int'=64, dilation: 'int'=1, norm_layer: 'Optional[Callable[..., nn.Module]]'=None) ->None:
+        super(BasicBlockDynamic, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        if groups != 1 or base_width != 64:
+            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
+        if dilation > 1:
+            raise NotImplementedError('Dilation > 1 not supported in BasicBlock')
+        self.conv1 = conv3x3_dynamic(inplanes, planes, stride, attention_in_channels=inplanes)
+        self.bn1 = norm_layer(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3_dynamic(planes, planes, attention_in_channels=inplanes)
+        self.bn2 = norm_layer(planes)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x: 'Tensor') ->Tensor:
+        identity = x
+        out = self.conv1(x, attention_x=x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out, attention_x=x)
+        out = self.bn2(out)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
+        out = self.relu(out)
+        return out
+
+
+class BottleneckDynamic(nn.Module):
+    expansion: 'int' = 4
+
+    def __init__(self, inplanes: 'int', planes: 'int', stride: 'int'=1, downsample: 'Optional[nn.Module]'=None, groups: 'int'=1, base_width: 'int'=64, dilation: 'int'=1, norm_layer: 'Optional[Callable[..., nn.Module]]'=None) ->None:
+        super(BottleneckDynamic, self).__init__()
+        if groups != 1:
+            raise ValueError('BottleneckDynamic only supports groups=1')
+        if dilation > 1:
+            raise NotImplementedError('Dilation > 1 not supported in BottleneckDynamic')
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        width = int(planes * (base_width / 64.0)) * groups
+        self.conv1 = conv1x1(inplanes, width)
+        self.bn1 = norm_layer(width)
+        self.conv2 = conv3x3_dynamic(width, width, stride, attention_in_channels=inplanes)
+        self.bn2 = norm_layer(width)
+        self.conv3 = conv1x1(width, planes * self.expansion)
+        self.bn3 = norm_layer(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x: 'Tensor') ->Tensor:
+        identity = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out, attention_x=x)
+        out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv3(out)
+        out = self.bn3(out)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
+        out = self.relu(out)
+        return out
 
 
 class VGG(Backbone):

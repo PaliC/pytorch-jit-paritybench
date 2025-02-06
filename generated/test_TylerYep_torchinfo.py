@@ -25,7 +25,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -56,16 +58,19 @@ import math
 from typing import Any
 
 
+from typing import Sequence
+
+
 from typing import cast
+
+
+import numpy as np
 
 
 from torch.nn import functional as F
 
 
 from torch.nn.utils.rnn import pack_padded_sequence
-
-
-import torch.nn as nn
 
 
 import torch.nn.functional as F
@@ -81,9 +86,6 @@ from typing import Dict
 
 
 from typing import Iterable
-
-
-from typing import Sequence
 
 
 from typing import Union
@@ -157,7 +159,7 @@ class IdentityModel(nn.Module):
         super().__init__()
         self.identity = nn.Identity()
 
-    def forward(self, x: Any) ->Any:
+    def forward(self, x: 'Any') ->Any:
         return self.identity(x)
 
 
@@ -239,7 +241,7 @@ class LinearModel(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(nn.Linear(128, 128), nn.ReLU(), nn.Linear(128, 128), nn.ReLU(), nn.Linear(128, 1))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.layers(x)
         return x
 
@@ -249,12 +251,12 @@ class UninitializedParameterModel(nn.Module):
 
     def __init__(self) ->None:
         super().__init__()
-        self.param: nn.Parameter | nn.UninitializedParameter = nn.UninitializedParameter()
+        self.param: 'nn.Parameter | nn.UninitializedParameter' = nn.UninitializedParameter()
 
     def init_param(self) ->None:
         self.param = nn.Parameter(torch.zeros(128))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         self.init_param()
         return x
 
@@ -270,7 +272,7 @@ class SingleInputNet(nn.Module):
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
         x = x.view(-1, 320)
@@ -289,7 +291,7 @@ class MultipleInputNetDifferentDtypes(nn.Module):
         self.fc2a = nn.Linear(300, 50)
         self.fc2b = nn.Linear(50, 10)
 
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) ->torch.Tensor:
+    def forward(self, x1: 'torch.Tensor', x2: 'torch.Tensor') ->torch.Tensor:
         x1 = F.relu(self.fc1a(x1))
         x1 = self.fc1b(x1)
         x2 = x2.type(torch.float)
@@ -307,7 +309,7 @@ class ScalarNet(nn.Module):
         self.conv1 = nn.Conv2d(64, 64, 3, 1, 1)
         self.conv2 = nn.Conv2d(64, 32, 3, 1, 1)
 
-    def forward(self, x: torch.Tensor, scalar: float) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', scalar: 'float') ->torch.Tensor:
         out = x
         if scalar == 5:
             out = self.conv1(out)
@@ -319,14 +321,14 @@ class ScalarNet(nn.Module):
 class LSTMNet(nn.Module):
     """Batch-first LSTM model."""
 
-    def __init__(self, vocab_size: int=20, embed_dim: int=300, hidden_dim: int=512, num_layers: int=2) ->None:
+    def __init__(self, vocab_size: 'int'=20, embed_dim: 'int'=300, hidden_dim: 'int'=512, num_layers: 'int'=2) ->None:
         super().__init__()
         self.hidden_dim = hidden_dim
         self.embedding = nn.Embedding(vocab_size, embed_dim)
         self.encoder = nn.LSTM(embed_dim, hidden_dim, num_layers=num_layers)
         self.decoder = nn.Linear(hidden_dim, vocab_size)
 
-    def forward(self, x: torch.Tensor) ->tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: 'torch.Tensor') ->tuple[torch.Tensor, torch.Tensor]:
         embed = self.embedding(x)
         out, hidden = self.encoder(embed)
         out = self.decoder(out)
@@ -341,7 +343,7 @@ class RecursiveNet(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(64, 64, 3, 1, 1)
 
-    def forward(self, x: torch.Tensor, args1: Any=None, args2: Any=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', args1: 'Any'=None, args2: 'Any'=None) ->torch.Tensor:
         del args1, args2
         out = x
         for _ in range(3):
@@ -353,12 +355,12 @@ class RecursiveNet(nn.Module):
 class CustomParameter(nn.Module):
     """Model that defines a custom parameter."""
 
-    def __init__(self, input_size: int, attention_size: int) ->None:
+    def __init__(self, input_size: 'int', attention_size: 'int') ->None:
         super().__init__()
         self.weight = nn.Parameter(torch.ones((attention_size, input_size)), True)
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         del x
         return self.weight
 
@@ -370,7 +372,7 @@ class ParameterListModel(nn.Module):
         super().__init__()
         self.weights = torch.nn.ParameterList([torch.nn.Parameter(weight) for weight in torch.Tensor(100, 300).split([100, 200], dim=1)])
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         _ = self.weights
         return x
 
@@ -389,7 +391,7 @@ class SiameseNets(nn.Module):
         self.fc2 = nn.Linear(4096, 1)
         self.dropout = nn.Dropout(0.5)
 
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) ->torch.Tensor:
+    def forward(self, x1: 'torch.Tensor', x2: 'torch.Tensor') ->torch.Tensor:
         x1 = self.pooling(F.relu(self.conv1(x1)))
         x1 = self.pooling(F.relu(self.conv2(x1)))
         x1 = self.pooling(F.relu(self.conv3(x1)))
@@ -420,7 +422,7 @@ class FunctionalNet(nn.Module):
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, 10)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.conv1(x)
         x = F.relu(x)
         x = F.max_pool2d(x, 2, 2)
@@ -446,7 +448,7 @@ class ReturnDictLayer(nn.Module):
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
-    def forward(self, x: torch.Tensor) ->dict[str, torch.Tensor]:
+    def forward(self, x: 'torch.Tensor') ->dict[str, torch.Tensor]:
         activation_dict = {}
         x = self.conv1(x)
         activation_dict['conv1'] = x
@@ -471,9 +473,9 @@ class ReturnDict(nn.Module):
         super().__init__()
         self.return_dict = ReturnDictLayer()
 
-    def forward(self, x: torch.Tensor, y: Any) ->dict[str, torch.Tensor]:
+    def forward(self, x: 'torch.Tensor', y: 'Any') ->dict[str, torch.Tensor]:
         del y
-        activation_dict: dict[str, torch.Tensor] = self.return_dict(x)
+        activation_dict: 'dict[str, torch.Tensor]' = self.return_dict(x)
         return activation_dict
 
 
@@ -484,7 +486,7 @@ class DictParameter(nn.Module):
         super().__init__()
         self.constant = 5
 
-    def forward(self, x: dict[int, torch.Tensor], scale_factor: int) ->torch.Tensor:
+    def forward(self, x: 'dict[int, torch.Tensor]', scale_factor: 'int') ->torch.Tensor:
         return scale_factor * (x[256] + x[512][0]) * self.constant
 
 
@@ -496,18 +498,54 @@ class ModuleDictModel(nn.Module):
         self.choices = nn.ModuleDict({'conv': nn.Conv2d(10, 10, 3), 'pool': nn.MaxPool2d(3)})
         self.activations = nn.ModuleDict({'lrelu': nn.LeakyReLU(), 'prelu': nn.PReLU()})
 
-    def forward(self, x: torch.Tensor, layer_type: str, activation_type: str) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', layer_type: 'str', activation_type: 'str') ->torch.Tensor:
         x = self.choices[layer_type](x)
         x = self.activations[activation_type](x)
         return x
+
+
+class ObjectWithTensors:
+    """A class with a 'tensors'-attribute."""
+
+    def __init__(self, tensors: 'torch.Tensor | Sequence[Any]') ->None:
+        self.tensors = tensors
+
+
+class HighlyNestedDictModel(nn.Module):
+    """Model that returns a highly nested dict."""
+
+    def __init__(self) ->None:
+        super().__init__()
+        self.lin1 = nn.Linear(10, 10)
+        self.lin2 = nn.Linear(10, 10)
+
+    def forward(self, x: 'torch.Tensor') ->dict[str, tuple[dict[str, list[ObjectWithTensors]]]]:
+        x = self.lin1(x)
+        x = self.lin2(x)
+        x = F.softmax(x, dim=0)
+        return {'foo': ({'bar': [ObjectWithTensors(x)]},)}
 
 
 class NamedTuple(nn.Module):
     """Model that takes in a NamedTuple as input."""
     Point = namedtuple('Point', ['x', 'y'])
 
-    def forward(self, x: Any, y: Any, z: Any) ->Any:
+    def forward(self, x: 'Any', y: 'Any', z: 'Any') ->Any:
         return self.Point(x, y).x + torch.ones(z.x)
+
+
+class NumpyModel(nn.Module):
+    """Model that takes a np.ndarray."""
+
+    def __init__(self) ->None:
+        super().__init__()
+        self.lin = nn.Linear(3, 3)
+
+    def forward(self, inp: 'np.ndarray[Any, Any]') ->Any:
+        assert isinstance(inp, np.ndarray)
+        x = torch.from_numpy(inp)
+        x = self.lin(x)
+        return x.cpu().detach().numpy()
 
 
 class LayerWithRidiculouslyLongNameAndDoesntDoAnything(nn.Module):
@@ -517,14 +555,14 @@ class LayerWithRidiculouslyLongNameAndDoesntDoAnything(nn.Module):
         super().__init__()
         self.identity = nn.Identity()
 
-    def forward(self, x: Any) ->Any:
+    def forward(self, x: 'Any') ->Any:
         return self.identity(x)
 
 
 class EdgeCaseModel(nn.Module):
     """Model that throws an exception when used."""
 
-    def __init__(self, throw_error: bool=False, return_str: bool=False, return_class: bool=False) ->None:
+    def __init__(self, throw_error: 'bool'=False, return_str: 'bool'=False, return_class: 'bool'=False) ->None:
         super().__init__()
         self.throw_error = throw_error
         self.return_str = return_str
@@ -532,7 +570,7 @@ class EdgeCaseModel(nn.Module):
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.model = LayerWithRidiculouslyLongNameAndDoesntDoAnything()
 
-    def forward(self, x: torch.Tensor) ->Any:
+    def forward(self, x: 'torch.Tensor') ->Any:
         x = self.conv1(x)
         x = self.model('string output' if self.return_str else x)
         if self.throw_error:
@@ -545,7 +583,7 @@ class EdgeCaseModel(nn.Module):
 class PackPaddedLSTM(nn.Module):
     """LSTM model with pack_padded layers."""
 
-    def __init__(self, vocab_size: int=60, embedding_size: int=128, output_size: int=18, hidden_size: int=32):
+    def __init__(self, vocab_size: 'int'=60, embedding_size: 'int'=128, output_size: 'int'=18, hidden_size: 'int'=32):
         super().__init__()
         self.hidden_size = hidden_size
         self.embedding = nn.Embedding(vocab_size, embedding_size)
@@ -553,7 +591,7 @@ class PackPaddedLSTM(nn.Module):
         self.hidden2out = nn.Linear(self.hidden_size, output_size)
         self.dropout_layer = nn.Dropout(p=0.2)
 
-    def forward(self, batch: torch.Tensor, lengths: torch.Tensor) ->torch.Tensor:
+    def forward(self, batch: 'torch.Tensor', lengths: 'torch.Tensor') ->torch.Tensor:
         hidden1 = torch.ones(1, batch.size(-1), self.hidden_size, device=batch.device)
         hidden2 = torch.ones(1, batch.size(-1), self.hidden_size, device=batch.device)
         embeds = self.embedding(batch)
@@ -573,7 +611,7 @@ class ContainerChildModule(nn.Module):
         self._sequential = nn.Sequential(nn.Linear(5, 5), nn.Linear(5, 5))
         self._between = nn.Linear(5, 5)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         out = self._sequential(x)
         out = self._between(out)
         for layer in self._sequential:
@@ -595,7 +633,7 @@ class ContainerModule(nn.Module):
         self._layers.append(nn.Linear(5, 5))
         self._layers.append(None)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         out = x
         for layer in self._layers:
             if layer is not None:
@@ -625,7 +663,7 @@ class AutoEncoder(nn.Module):
         self.unpool = nn.MaxUnpool2d(2, 2)
         self.decode = nn.Sequential(nn.Conv2d(16, 3, 3, padding=1), nn.ReLU())
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.encoder(x)
         unpooled_shape = x.size()
         x, indices = self.pool(x)
@@ -645,7 +683,7 @@ class PartialJITModel(nn.Module):
         self.fc1 = torch.jit.script(nn.Linear(320, 50))
         self.fc2 = torch.jit.script(nn.Linear(50, 10))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
         x = x.view(-1, 320)
@@ -662,7 +700,7 @@ class MixedTrainableParameters(nn.Module):
         self.w = nn.Parameter(torch.empty(10), requires_grad=True)
         self.b = nn.Parameter(torch.empty(10), requires_grad=False)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return self.w * x + self.b
 
 
@@ -681,7 +719,7 @@ class MixedTrainable(nn.Module):
         self.non_trainable.bias.requires_grad = False
         self.dropout = nn.Dropout()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.fully_trainable(x)
         x = self.partially_trainable(x)
         x = self.non_trainable(x)
@@ -700,7 +738,7 @@ class ReuseLinear(nn.Module):
             model += [linear, nn.ReLU(True)]
         self.model = nn.Sequential(*model)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return cast(torch.Tensor, self.model(x))
 
 
@@ -715,7 +753,7 @@ class ReuseLinearExtended(nn.Module):
             model += [self.linear, nn.ReLU(True)]
         self.model = nn.Sequential(*model)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return cast(torch.Tensor, self.model(x))
 
 
@@ -731,18 +769,18 @@ class ReuseReLU(nn.Module):
             model += [nn.Conv2d(mult, mult * 2, kernel_size=1, stride=2, padding=1), nn.BatchNorm2d(mult * 2), activation]
         self.model = nn.Sequential(*model)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return cast(torch.Tensor, self.model(x))
 
 
 class PrunedLayerNameModel(nn.Module):
     """Model that defines parameters with _orig and _mask as suffixes."""
 
-    def __init__(self, input_size: int, attention_size: int) ->None:
+    def __init__(self, input_size: 'int', attention_size: 'int') ->None:
         super().__init__()
         self.weight_orig = nn.Parameter(torch.ones((attention_size, input_size)), True)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         del x
         return self.weight_orig
 
@@ -750,28 +788,46 @@ class PrunedLayerNameModel(nn.Module):
 class FakePrunedLayerModel(nn.Module):
     """Model that defines parameters with _orig and _mask as suffixes."""
 
-    def __init__(self, input_size: int, attention_size: int) ->None:
+    def __init__(self, input_size: 'int', attention_size: 'int') ->None:
         super().__init__()
         self.weight_orig = nn.Parameter(torch.ones((attention_size, input_size)), True)
         self.weight_mask = nn.Parameter(torch.zeros((attention_size, input_size)), True)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         del x
         return self.weight_orig
 
 
 class RegisterParameter(nn.Sequential):
     """A model with one parameter."""
-    weights: list[torch.Tensor]
+    weights: 'list[torch.Tensor]'
 
     def __init__(self, *blocks: nn.Module) ->None:
         super().__init__(*blocks)
         self.register_parameter('weights', nn.Parameter(torch.zeros(len(blocks))))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         for k, block in enumerate(self):
             x += self.weights[k] * block(x)
         return x
+
+
+class ParameterFCNet(nn.Module):
+    """FCNet using Parameters."""
+
+    def __init__(self, input_dim: 'int'=128, hidden_dim: 'int'=64, output_dim: 'int | None'=None) ->None:
+        super().__init__()
+        self.output_dim = output_dim
+        self.a = nn.Parameter(torch.randn(input_dim, hidden_dim))
+        self.b = nn.Parameter(torch.randn(hidden_dim))
+        if output_dim is not None:
+            self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        h = torch.mm(x, self.a) + self.b
+        if self.output_dim is None:
+            return h
+        return cast(torch.Tensor, self.fc2(h))
 
 
 class InsideModel(nn.Module):
@@ -786,7 +842,7 @@ class InsideModel(nn.Module):
             self.l_1 = nn.Linear(1, 1)
             self.param_1 = nn.Parameter(torch.ones(1))
 
-        def forward(self, x: torch.Tensor) ->torch.Tensor:
+        def forward(self, x: 'torch.Tensor') ->torch.Tensor:
             return cast(torch.Tensor, self.l_1(x) * self.param_1)
 
     def __init__(self) ->None:
@@ -795,7 +851,7 @@ class InsideModel(nn.Module):
         self.param_0 = nn.Parameter(torch.ones(2))
         self.inside = InsideModel.Inside()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return cast(torch.Tensor, self.inside(self.l_0(x)) * self.param_0)
 
 
@@ -819,7 +875,7 @@ class RecursiveWithMissingLayers(nn.Module):
         self.out_conv7 = nn.Conv2d(8, 1, 1, padding='same')
         self.out_bn7 = nn.BatchNorm2d(1)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.out_conv0(x)
         x = torch.relu(self.out_bn0(x))
         for i in range(1, 4):
@@ -836,11 +892,11 @@ class RecursiveWithMissingLayers(nn.Module):
 class CNNModuleList(nn.Module):
     """ModuleList with ConvLayers."""
 
-    def __init__(self, conv_layer_cls: type[nn.Module]) ->None:
+    def __init__(self, conv_layer_cls: 'type[nn.Module]') ->None:
         super().__init__()
         self.ml = nn.ModuleList([conv_layer_cls() for i in range(5)])
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         for layer in self.ml:
             x = layer(x)
         return x
@@ -855,7 +911,7 @@ class ConvLayerA(nn.Module):
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool1d(1)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         out = self.conv(x)
         out = self.relu(out)
         out = self.pool(out)
@@ -871,7 +927,7 @@ class ConvLayerB(nn.Module):
         self.conv = nn.Conv1d(1, 1, 1)
         self.pool = nn.MaxPool1d(1)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         out = self.conv(x)
         out = self.relu(out)
         out = self.pool(out)
@@ -881,7 +937,7 @@ class ConvLayerB(nn.Module):
 class SimpleRNN(nn.Module):
     """Simple RNN"""
 
-    def __init__(self, repeat_outside_loop: bool=False) ->None:
+    def __init__(self, repeat_outside_loop: 'bool'=False) ->None:
         super().__init__()
         self.hid_dim = 2
         self.input_dim = 3
@@ -891,7 +947,7 @@ class SimpleRNN(nn.Module):
         self.activation = nn.Tanh()
         self.projection = nn.Linear(self.hid_dim, self.input_dim)
 
-    def forward(self, token_embedding: torch.Tensor) ->torch.Tensor:
+    def forward(self, token_embedding: 'torch.Tensor') ->torch.Tensor:
         b_size = token_embedding.size()[0]
         hx = torch.randn(b_size, self.hid_dim, device=token_embedding.device)
         cx = torch.randn(b_size, self.hid_dim, device=token_embedding.device)
@@ -902,6 +958,27 @@ class SimpleRNN(nn.Module):
             hx = self.projection(hx)
             hx = self.activation(hx)
         return hx
+
+
+class MultiDeviceModel(nn.Module):
+    """
+    A model living on several devices.
+
+    Follows the ToyModel from the Tutorial on parallelism:
+    https://pytorch.org/tutorials/intermediate/model_parallel_tutorial.html
+    """
+
+    def __init__(self, device1: 'torch.device | str', device2: 'torch.device | str') ->None:
+        super().__init__()
+        self.device1 = device1
+        self.device2 = device2
+        self.net1 = torch.nn.Linear(10, 10)
+        self.relu = torch.nn.ReLU()
+        self.net2 = torch.nn.Linear(10, 5)
+
+    def forward(self, x: 'torch.Tensor') ->Any:
+        x = self.relu(self.net1(x))
+        return self.net2(x)
 
 
 class DoubleConvBlock(nn.Module):

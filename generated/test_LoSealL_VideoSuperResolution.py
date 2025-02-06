@@ -152,7 +152,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -2428,7 +2430,7 @@ class Conv2dLSTMCell(nn.Module):
 
 def _pull_conv_args(**kwargs):
 
-    def _get_and_pop(d: dict, key, default=None):
+    def _get_and_pop(d: 'dict', key, default=None):
         if key in d:
             return d.pop(key)
         return d.get(key, default)
@@ -2561,7 +2563,7 @@ class PatchGAN(nn.Module):
         return self.body(x)
 
 
-def gaussian_kernel(kernel_size: (int, tuple, list), width: float):
+def gaussian_kernel(kernel_size: '(int, tuple, list)', width: 'float'):
     """generate a gaussian kernel
 
   Args:
@@ -2578,7 +2580,7 @@ def gaussian_kernel(kernel_size: (int, tuple, list), width: float):
     return kernel / (kernel.sum() + 1e-08)
 
 
-def gaussian_noise(inputs: torch.Tensor, stddev=None, sigma_max=0.06, channel_wise=1):
+def gaussian_noise(inputs: 'torch.Tensor', stddev=None, sigma_max=0.06, channel_wise=1):
     """Add channel wise gaussian noise."""
     if stddev is None:
         stddev = torch.rand(channel_wise) * sigma_max
@@ -2591,7 +2593,7 @@ def gaussian_noise(inputs: torch.Tensor, stddev=None, sigma_max=0.06, channel_wi
     return noise_map
 
 
-def imfilter(image: torch.Tensor, kernel: torch.Tensor, padding=None):
+def imfilter(image: 'torch.Tensor', kernel: 'torch.Tensor', padding=None):
     with torch.no_grad():
         if image.dim() == 3:
             image = image.unsqueeze(0)
@@ -2622,7 +2624,7 @@ def imfilter(image: torch.Tensor, kernel: torch.Tensor, padding=None):
         return torch.cat(ret)
 
 
-def poisson_noise(inputs: torch.Tensor, stddev=None, sigma_max=0.16, channel_wise=1):
+def poisson_noise(inputs: 'torch.Tensor', stddev=None, sigma_max=0.16, channel_wise=1):
     """Add poisson noise to inputs."""
     if stddev is None:
         stddev = torch.rand(channel_wise) * sigma_max
@@ -2697,7 +2699,7 @@ class Distorter(nn.Module):
         return img, torch.stack(factors)
 
 
-def gan_bce_loss(x, as_real: bool):
+def gan_bce_loss(x, as_real: 'bool'):
     """vanilla GAN binary cross entropy loss"""
     if as_real:
         return F.binary_cross_entropy_with_logits(x, torch.ones_like(x))
@@ -2705,7 +2707,7 @@ def gan_bce_loss(x, as_real: bool):
         return F.binary_cross_entropy_with_logits(x, torch.zeros_like(x))
 
 
-def ragan_bce_loss(x, y, x_real_than_y: bool=True):
+def ragan_bce_loss(x, y, x_real_than_y: 'bool'=True):
     """relativistic average GAN loss"""
     if x_real_than_y:
         return F.binary_cross_entropy_with_logits(x - y.mean(), torch.ones_like(x)) + F.binary_cross_entropy_with_logits(y - x.mean(), torch.zeros_like(y))
@@ -2713,7 +2715,7 @@ def ragan_bce_loss(x, y, x_real_than_y: bool=True):
         return F.binary_cross_entropy_with_logits(y - x.mean(), torch.ones_like(x)) + F.binary_cross_entropy_with_logits(x - y.mean(), torch.zeros_like(y))
 
 
-def rgan_bce_loss(x, y, x_real_than_y: bool=True):
+def rgan_bce_loss(x, y, x_real_than_y: 'bool'=True):
     """relativistic GAN loss"""
     if x_real_than_y:
         return F.binary_cross_entropy_with_logits(x - y, torch.ones_like(x))
@@ -2795,7 +2797,7 @@ class VggFeatureLoss(nn.Module):
         return exits
 
 
-def transpose(x: torch.Tensor, dims):
+def transpose(x: 'torch.Tensor', dims):
     """transpose like numpy and tensorflow"""
     _dims = list(dims)
     for i in range(len(_dims)):
@@ -2806,7 +2808,7 @@ def transpose(x: torch.Tensor, dims):
     return x
 
 
-def irtranspose(x: torch.Tensor, dims):
+def irtranspose(x: 'torch.Tensor', dims):
     """back transpose.
     `x = irtranspose(transpose(x, d), d)`
   """
@@ -3412,7 +3414,7 @@ TESTCASES = [
      True),
     (CRDB,
      lambda: ([], {'channels': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 3, 4, 4])], {}),
+     lambda: ([torch.rand([4, 4, 64, 64]), torch.rand([4, 3, 64, 64])], {}),
      False),
     (CharbonnierLoss,
      lambda: ([], {}),
@@ -3569,11 +3571,11 @@ TESTCASES = [
     (_UpsampleLinear,
      lambda: ([], {'scale': 1.0}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
+     True),
     (_UpsampleNearest,
      lambda: ([], {'scale': 1.0}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
+     True),
     (make_dense,
      lambda: ([], {'channels_in': 4, 'channels_out': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),

@@ -40,7 +40,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -350,8 +352,8 @@ class TextCLFOutput(ModelOutput):
         logits: Tensor, [batch_size, num_labels], 模型最后的输出结果，用于计算损失，非概率值
         seqEmb: Tensor, [batch_size, hidden_size], 最终用于分类的句子级表示
     """
-    logits: torch.Tensor = None
-    seqEmb: torch.Tensor = None
+    logits: 'torch.Tensor' = None
+    seqEmb: 'torch.Tensor' = None
 
 
 class BertCLF(nn.Module):
@@ -385,7 +387,7 @@ class DecoderOutput(ModelOutput):
     Args:
         last_hidden_state: Tensor, [batch_size, seq_len, hidden_size], 解码器的预测结果
     """
-    last_hidden_state: torch.Tensor = None
+    last_hidden_state: 'torch.Tensor' = None
 
 
 class TransformerDecoder(nn.Module):
@@ -515,105 +517,9 @@ class Dict2Obj:
         return target
 
 
-def type_transfor(data, target_type, in_type=None):
-    """transform data into specific type(list, numpy and tensor)
-
-    :param data: list, np.ndarray, torch.tensor
-    :param target_type: list, np.ndarray, torch.tensor
-    :param in_type: data[0] type
-    :return: new data with target type
-    """
-    if in_type and isinstance(data, target_type) and isinstance(data[0], in_type):
-        return data
-    if not in_type and isinstance(data, target_type):
-        return data
-    elif isinstance(data, list):
-        if target_type is np.ndarray:
-            return np.array(data)
-        else:
-            return torch.tensor(data, dtype=target_type)
-    elif isinstance(data, np.ndarray):
-        if target_type is list:
-            return data.tolist()
-        else:
-            return torch.from_numpy(data)
-    elif target_type is list:
-        return data.tolist()
-    else:
-        return data.numpy()
-
-
-class MetricBase:
-
-    def __init__(self, name: str, fun: Optional[Callable], data_type, in_type=None, **kwargs):
-        """
-        封装基础的评估函数
-
-        :param name: 自定义评估函数名
-        :param fun: 函数
-        :param data_type: 函数接受的数据类型
-        :param in_type: data[0]的数据类型
-        :param kwargs: 函数的其它参数，非golds和preds
-        """
-        self.name = name
-        self.metric = fun
-        self.data_type = data_type
-        self.in_type = in_type
-        self.kwargs = kwargs
-
-    def score(self, golds, preds):
-        golds = type_transfor(golds, self.data_type, self.in_type)
-        preds = type_transfor(preds, self.data_type, self.in_type)
-        return self.metric(golds, preds, **self.kwargs)
-
-    def score_end(self, scores):
-        return scores
-
-
-class Metrics:
-
-    def __init__(self, metrics: Dict[str, MetricBase], target_metric: str):
-        """
-        指定模型在训练与测试过程中用来评估性能的指标
-
-        :param metrics: 通过字典的形式添加评估指标，例如{'F1': f1_metric}, f1_metric:MetricBase
-        :param target_metric: 用于早停以及保存最佳模型，必须为metrics中的一个，例如'F1'
-        """
-        self._metrics = metrics
-        self.target = target_metric
-        if self.target and self.target not in metrics.keys():
-            raise ValueError('target_metric must be one of metrics or None')
-        self.metric_values = {}
-
-    def print_values(self):
-        if not self.metric_values:
-            None
-        else:
-            for name, value in self.metric_values.items():
-                None
-
-    def scores(self, golds, preds) ->Dict[str, float]:
-        for metric_name in self._metrics.keys():
-            scores = self._metrics[metric_name].score_end(self._metrics[metric_name].score(golds, preds))
-            self.metric_values[metric_name] = scores
-        return self.metric_values
-
-    def target_score(self, golds, preds):
-        self.metric_values[self.target] = self._metrics[self.target].score(golds, preds)
-        return self.metric_values[self.target]
-
-    def return_target_score(self):
-        if self.target in self.metric_values.keys():
-            if self.target == 'rouge-1' or self.target == 'rouge-2':
-                return self.metric_values[self.target]['r']
-            if self.target == 'rouge-l':
-                return self.metric_values[self.target]['f']
-            return self.metric_values[self.target]
-
-
 class StandardModel(torch.nn.Module):
 
-    def __init__(self, configs, metrics: Metrics, **kwargs):
+    def __init__(self, configs, metrics: 'Metrics', **kwargs):
         super(StandardModel, self).__init__()
         self.configs = configs
         self.aux_configs = Dict2Obj()
@@ -810,10 +716,22 @@ class LightningOutput(ModelOutput):
         preds: list, [batch_size, xxx], 模型的输出值，用于和golds计算指标，具体形式根据不同的任务决定
         golds: list, [batch_size, xxx], 数据的真实标签，用于和preds计算指标
     """
-    loss: torch.Tensor = None
-    preds: list = []
-    golds: list = []
-    target_score: float = 0.0
+    loss: 'torch.Tensor' = None
+    preds: 'list' = []
+    golds: 'list' = []
+    target_score: 'float' = 0.0
+
+
+def select_kwargs(kwargs: 'dict', keys: 'Union[list, tuple, FunctionType]'):
+    """过滤传参，挑选指定参数，便于输入到特定函数，避免报错
+
+    :param kwargs: 参数字典
+    :param keys: 函数或指定参数
+    :return: 过滤后的参数字典
+    """
+    if isinstance(keys, FunctionType):
+        return {key: value for key, value in kwargs.items() if key in keys.__code__.co_varnames}
+    return {key: value for key, value in kwargs.items() if key in keys}
 
 
 class Reader:
@@ -942,11 +860,97 @@ class Reader:
         return target_data
 
 
+class Writer:
+
+    def create_parentDir(self, path: 'str', exist_ok=True):
+        """递归创建path的父目录，例如path=L1/L2/L3/tmp.txt，则创建L1/L2/L3三级目录
+
+        :param path: 文件地址
+        :param exist_ok: True
+        :return:
+        """
+        head, tail = os.path.split(path)
+        if head and not os.path.exists(head):
+            None
+            os.makedirs(head, exist_ok=exist_ok)
+
+    def write_txt(self, data: 'Union[List, Tuple]', saved_path):
+        """将数据逐行写入到文件
+
+        :param data: 列表或元组
+        :param saved_path: 保存路径
+        :return:
+        """
+        self.create_parentDir(saved_path)
+        with open(saved_path, 'w', encoding='utf-8') as f:
+            for example in data:
+                f.write(str(example) + '\n')
+        None
+
+    def write_json(self, data, saved_path):
+        """将数据作为json保存"""
+        self.create_parentDir(saved_path)
+        with open(saved_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=1)
+        None
+
+    def write_jsonl(self, data: 'Union[List, Tuple]', saved_path):
+        """将数据中的每一个元素作为json保存
+
+        :param data: 列表或元组
+        :param saved_path: 保存路径
+        :return:
+        """
+        self.create_parentDir(saved_path)
+        with open(saved_path, 'w', encoding='utf-8') as f:
+            for example in data:
+                f.write(json.dumps(example, ensure_ascii=False) + '\n')
+        None
+
+    def write_excel(self, data: 'List[List]', names: 'list', saved_path, sheet_name='default', mode='w', index=True):
+        """保存数据到指定页面，当mode='w'时，其它页面会被删除，只保留当前页面，当mode='a'时，同名页面会被重命名写入。
+        如果要写入多个页面，第一个页面指定mode为'w'，其它页面指定mode为'a'即可
+
+        >>> writer = Writer()
+        >>> writer.write_excel(
+        >>>     data=[[1, 2], [3, 4]],
+        >>>     names=['a', 'b'],
+        >>>     saved_path='tmp.xlsx',
+        >>>     sheet_name='s1',
+        >>>     mode='w'
+        >>> )
+        >>> # 追加页面s2
+        >>> writer.write_excel(
+        >>>     data=[[5, 6], [7, 8]],
+        >>>     names=['a', 'b'],
+        >>>     saved_path='tmp.xlsx',
+        >>>     sheet_name='s2',
+        >>>     mode='a'
+        >>> )
+
+        :param data: List[List]，每一个元素都是页面中的一行内容
+        :param names: 列名列表，每一列都需要指定列名
+        :param saved_path: 保存路径
+        :param sheet_name: 页名
+        :param mode: 'w'表示覆盖写入，'a'表示追加页面
+        :param index: 是否添加行号
+        :return:
+        """
+        self.create_parentDir(saved_path)
+        assert len(data[0]) == len(names)
+        pd_writer = pd.ExcelWriter(saved_path, mode=mode, engine='openpyxl')
+        df = pd.DataFrame(data, columns=names)
+        df.to_excel(pd_writer, sheet_name=sheet_name, index=index, encoding='utf-8')
+        pd_writer.save()
+        pd_writer.close()
+        None
+
+
 class PosEmbedding(nn.Module):
     """绝对位置编码
     """
 
-    def __init__(self, emb_size: int, max_len: int=512):
+    def __init__(self, emb_size: 'int', max_len: 'int'=512):
         super(PosEmbedding).__init__()
         assert emb_size % 2 == 0, 'emb_size must be even'
         position = torch.arange(max_len).unsqueeze(1)
@@ -955,7 +959,7 @@ class PosEmbedding(nn.Module):
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
-    def forward(self, seq_len: int):
+    def forward(self, seq_len: 'int'):
         """
 
         :param seq_len: 每个batch中的序列长度
@@ -992,7 +996,7 @@ class EncoderOutput(ModelOutput):
     Args:
         seqEmb: Tensor, [batch_size, seq_len, hidden_size]
     """
-    seqEmb: torch.Tensor = None
+    seqEmb: 'torch.Tensor' = None
 
 
 class TransformerEncoder(nn.Module):

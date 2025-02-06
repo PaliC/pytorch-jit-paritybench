@@ -1,0 +1,95 @@
+; ModuleID = 'LLVMDialectModule'
+source_filename = "LLVMDialectModule"
+target datalayout = "e-i64:64-i128:128-v16:16-v32:32-n16:32:64"
+
+define void @triton_poi_fused_mul_1(ptr addrspace(1) %0, ptr addrspace(1) %1, ptr addrspace(1) %2, ptr addrspace(1) %3, i32 %4) local_unnamed_addr !dbg !7 {
+  %6 = tail call i32 asm "mov.u32 $0, %ctaid.x;", "=r"() #1, !dbg !10
+  %7 = shl i32 %6, 6, !dbg !11
+  %8 = tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg !12
+  %9 = shl i32 %8, 1, !dbg !12
+  %10 = and i32 %9, 14, !dbg !12
+  %11 = and i32 %9, 62, !dbg !12
+  %12 = or disjoint i32 %7, %11, !dbg !13
+  %13 = or disjoint i32 %10, %7, !dbg !13
+  %14 = or disjoint i32 %13, 1, !dbg !13
+  %15 = icmp slt i32 %12, 64, !dbg !14
+  %16 = srem i32 %12, 16, !dbg !15
+  %17 = srem i32 %14, 16, !dbg !15
+  %18 = sext i32 %12 to i64, !dbg !16
+  %19 = getelementptr float, ptr addrspace(1) %0, i64 %18, !dbg !16
+  %20 = tail call { i32, i32 } asm sideeffect "mov.u32 $0, 0x0;\0A\09mov.u32 $1, 0x0;\0A\09@$3 ld.global.v2.b32 { $0, $1 }, [ $2 + 0 ];", "=r,=r,l,b"(ptr addrspace(1) %19, i1 %15) #1, !dbg !17
+  %21 = extractvalue { i32, i32 } %20, 0, !dbg !17
+  %22 = extractvalue { i32, i32 } %20, 1, !dbg !17
+  %23 = bitcast i32 %21 to float, !dbg !17
+  %24 = bitcast i32 %22 to float, !dbg !17
+  %.lhs.trunc = trunc nsw i32 %16 to i8, !dbg !18
+  %25 = srem i8 %.lhs.trunc, 4, !dbg !18
+  %.lhs.trunc1 = trunc nsw i32 %17 to i8, !dbg !18
+  %26 = srem i8 %.lhs.trunc1, 4, !dbg !18
+  %27 = sext i8 %25 to i64, !dbg !19
+  %28 = getelementptr float, ptr addrspace(1) %1, i64 %27, !dbg !19
+  %29 = sext i8 %26 to i64, !dbg !19
+  %30 = getelementptr float, ptr addrspace(1) %1, i64 %29, !dbg !19
+  %31 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %28, i1 %15, i32 0, i1 %15) #1, !dbg !20
+  %32 = bitcast i32 %31 to float, !dbg !20
+  %33 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %30, i1 %15, i32 0, i1 %15) #1, !dbg !20
+  %34 = bitcast i32 %33 to float, !dbg !20
+  %35 = getelementptr float, ptr addrspace(1) %2, i64 %27, !dbg !21
+  %36 = getelementptr i8, ptr addrspace(1) %35, i64 -16, !dbg !21
+  %37 = getelementptr float, ptr addrspace(1) %2, i64 %29, !dbg !21
+  %38 = getelementptr i8, ptr addrspace(1) %37, i64 -16, !dbg !21
+  %39 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %36, i1 false, i32 0, i1 false) #1, !dbg !22
+  %40 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %38, i1 false, i32 0, i1 false) #1, !dbg !22
+  %41 = getelementptr float, ptr addrspace(1) %3, i64 %27, !dbg !23
+  %42 = getelementptr i8, ptr addrspace(1) %41, i64 -32, !dbg !23
+  %43 = getelementptr float, ptr addrspace(1) %3, i64 %29, !dbg !23
+  %44 = getelementptr i8, ptr addrspace(1) %43, i64 -32, !dbg !23
+  %45 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %42, i1 false, i32 0, i1 false) #1, !dbg !24
+  %46 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %44, i1 false, i32 0, i1 false) #1, !dbg !24
+  %47 = fadd float %23, %32, !dbg !25
+  %48 = fadd float %24, %34, !dbg !25
+  %49 = bitcast float %47 to i32, !dbg !26
+  %50 = bitcast float %48 to i32, !dbg !26
+  tail call void asm sideeffect "@$3 st.global.v2.b32 [ $2 + 0 ], { $0, $1 };", "r,r,l,b"(i32 %49, i32 %50, ptr addrspace(1) %19, i1 %15) #1, !dbg !26
+  ret void, !dbg !27
+}
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0
+
+attributes #0 = { mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { nounwind }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+!nvvm.annotations = !{!4, !5}
+!llvm.ident = !{!6}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = !{i32 4, !"nvvm-reflect-ftz", i32 1}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "triton", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
+!3 = !DIFile(filename: "cgeya6prefnzzztab4asqullevmuzs33dlc76fkwx62jld7ac3mv.py", directory: "inductor_cache/ge")
+!4 = !{ptr @triton_poi_fused_mul_1, !"kernel", i32 1}
+!5 = !{ptr @triton_poi_fused_mul_1, !"reqntidx", i32 32}
+!6 = !{!"clang version 3.8.0 (tags/RELEASE_380/final)"}
+!7 = distinct !DISubprogram(name: "triton_poi_fused_mul_1", linkageName: "triton_poi_fused_mul_1", scope: !3, file: !3, line: 19, type: !8, scopeLine: 19, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !2)
+!8 = !DISubroutineType(cc: DW_CC_normal, types: !9)
+!9 = !{}
+!10 = !DILocation(line: 21, column: 28, scope: !7)
+!11 = !DILocation(line: 21, column: 33, scope: !7)
+!12 = !DILocation(line: 22, column: 36, scope: !7)
+!13 = !DILocation(line: 22, column: 23, scope: !7)
+!14 = !DILocation(line: 23, column: 21, scope: !7)
+!15 = !DILocation(line: 25, column: 19, scope: !7)
+!16 = !DILocation(line: 26, column: 34, scope: !7)
+!17 = !DILocation(line: 26, column: 39, scope: !7)
+!18 = !DILocation(line: 32, column: 36, scope: !7)
+!19 = !DILocation(line: 32, column: 31, scope: !7)
+!20 = !DILocation(line: 32, column: 41, scope: !7)
+!21 = !DILocation(line: 37, column: 31, scope: !7)
+!22 = !DILocation(line: 37, column: 51, scope: !7)
+!23 = !DILocation(line: 41, column: 31, scope: !7)
+!24 = !DILocation(line: 41, column: 51, scope: !7)
+!25 = !DILocation(line: 44, column: 19, scope: !7)
+!26 = !DILocation(line: 47, column: 40, scope: !7)
+!27 = !DILocation(line: 47, column: 4, scope: !7)

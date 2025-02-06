@@ -332,7 +332,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -558,9 +560,6 @@ from typing import Mapping
 from typing import Sized
 
 
-from torch._six import string_classes
-
-
 from torch.utils.data._utils.collate import default_collate
 
 
@@ -651,341 +650,15 @@ from sklearn.preprocessing import StandardScaler
 ALL_NET_OUTPUT = Union[torch.Tensor, List[torch.Tensor], torch.distributions.Distribution]
 
 
-BaseDatasetPropertiesType = Union[int, float, str, List, bool, Tuple]
-
-
-HyperparameterValueType = Union[int, str, float]
-
-
-class HyperparameterSearchSpace(NamedTuple):
-    """
-    A class that holds the search space for an individual hyperparameter.
-    Attributes:
-        hyperparameter (str):
-            name of the hyperparameter
-        value_range (Sequence[HyperparameterValueType]):
-            range of the hyperparameter, can be defined as min and
-            max values for Numerical hyperparameter or a list of
-            choices for a Categorical hyperparameter
-        default_value (HyperparameterValueType):
-            default value of the hyperparameter
-        log (bool):
-            whether to sample hyperparameter on a log scale
-    """
-    hyperparameter: str
-    value_range: Sequence[HyperparameterValueType]
-    default_value: HyperparameterValueType
-    log: bool = False
-
-    def __str__(self) ->str:
-        """
-        String representation for the Search Space
-        """
-        return 'Hyperparameter: %s | Range: %s | Default: %s | log: %s' % (self.hyperparameter, self.value_range, self.default_value, self.log)
-
-
-VERY_SMALL_VALUE = 1e-12
-
-
-class TargetScaler(BaseEstimator):
-    """
-    To accelerate training, this scaler is only applied under trainer (after the data is loaded by dataloader)
-    """
-
-    def __init__(self, mode: str):
-        self.mode = mode
-
-    def fit(self, X: Dict, y: Any=None) ->'TargetScaler':
-        return self
-
-    def transform(self, past_targets: torch.Tensor, past_observed_values: torch.BoolTensor, future_targets: Optional[torch.Tensor]=None) ->Tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
-        if past_observed_values is None or torch.all(past_observed_values):
-            if self.mode == 'standard':
-                loc = torch.mean(past_targets, dim=1, keepdim=True)
-                scale = torch.std(past_targets, dim=1, keepdim=True)
-                offset_targets = past_targets - loc
-                scale = torch.where(torch.logical_or(scale == 0.0, scale == torch.nan), offset_targets[:, [-1]], scale)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = (future_targets - loc) / scale
-                return (past_targets - loc) / scale, future_targets, loc, scale
-            elif self.mode == 'min_max':
-                min_ = torch.min(past_targets, dim=1, keepdim=True)[0]
-                max_ = torch.max(past_targets, dim=1, keepdim=True)[0]
-                diff_ = max_ - min_
-                loc = min_
-                scale = torch.where(diff_ == 0, past_targets[:, [-1]], diff_)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = (future_targets - loc) / scale
-                return (past_targets - loc) / scale, future_targets, loc, scale
-            elif self.mode == 'max_abs':
-                max_abs_ = torch.max(torch.abs(past_targets), dim=1, keepdim=True)[0]
-                max_abs_[max_abs_ < VERY_SMALL_VALUE] = 1.0
-                scale = max_abs_
-                if future_targets is not None:
-                    future_targets = future_targets / scale
-                return past_targets / scale, future_targets, None, scale
-            elif self.mode == 'mean_abs':
-                mean_abs = torch.mean(torch.abs(past_targets), dim=1, keepdim=True)
-                scale = torch.where(mean_abs == 0.0, past_targets[:, [-1]], mean_abs)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = future_targets / scale
-                return past_targets / scale, future_targets, None, scale
-            elif self.mode == 'none':
-                return past_targets, future_targets, None, None
-            else:
-                raise ValueError(f'Unknown mode {self.mode} for Forecasting scaler')
-        else:
-            valid_past_targets = past_observed_values * past_targets
-            valid_past_obs = torch.sum(past_observed_values, dim=1, keepdim=True)
-            if self.mode == 'standard':
-                dfredom = 1
-                loc = torch.sum(valid_past_targets, dim=1, keepdim=True) / valid_past_obs
-                scale = torch.sum(torch.square(valid_past_targets - loc * past_observed_values), dim=1, keepdim=True)
-                scale /= valid_past_obs - dfredom
-                scale = torch.sqrt(scale)
-                offset_targets = past_targets - loc
-                scale = torch.where(torch.logical_or(scale == 0.0, scale == torch.nan), offset_targets[:, [-1]], scale)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = (future_targets - loc) / scale
-                scaled_past_targets = torch.where(past_observed_values, offset_targets / scale, past_targets)
-                return scaled_past_targets, future_targets, loc, scale
-            elif self.mode == 'min_max':
-                obs_mask = ~past_observed_values
-                min_masked_past_targets = past_targets.masked_fill(obs_mask, value=torch.inf)
-                max_masked_past_targets = past_targets.masked_fill(obs_mask, value=-torch.inf)
-                min_ = torch.min(min_masked_past_targets, dim=1, keepdim=True)[0]
-                max_ = torch.max(max_masked_past_targets, dim=1, keepdim=True)[0]
-                diff_ = max_ - min_
-                loc = min_
-                scale = torch.where(diff_ == 0, past_targets[:, [-1]], diff_)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = (future_targets - loc) / scale
-                scaled_past_targets = torch.where(past_observed_values, (past_targets - loc) / scale, past_targets)
-                return scaled_past_targets, future_targets, loc, scale
-            elif self.mode == 'max_abs':
-                max_abs_ = torch.max(torch.abs(valid_past_targets), dim=1, keepdim=True)[0]
-                max_abs_[max_abs_ < VERY_SMALL_VALUE] = 1.0
-                scale = max_abs_
-                if future_targets is not None:
-                    future_targets = future_targets / scale
-                scaled_past_targets = torch.where(past_observed_values, past_targets / scale, past_targets)
-                return scaled_past_targets, future_targets, None, scale
-            elif self.mode == 'mean_abs':
-                mean_abs = torch.sum(torch.abs(valid_past_targets), dim=1, keepdim=True) / valid_past_obs
-                scale = torch.where(mean_abs == 0.0, valid_past_targets[:, [-1]], mean_abs)
-                scale[scale < VERY_SMALL_VALUE] = 1.0
-                if future_targets is not None:
-                    future_targets = future_targets / scale
-                scaled_past_targets = torch.where(past_observed_values, past_targets / scale, past_targets)
-                return scaled_past_targets, future_targets, None, scale
-            elif self.mode == 'none':
-                return past_targets, future_targets, None, None
-            else:
-                raise ValueError(f'Unknown mode {self.mode} for Forecasting scaler')
-
-
-class FitRequirement(NamedTuple):
-    """
-    A class that holds inputs required to fit a pipeline. Also indicates whether
-    requirements have to be user specified or are generated by the pipeline itself.
-
-    Attributes:
-        name (str): The name of the variable expected in the input dictionary
-        supported_types (Iterable[Type]): An iterable of all types that are supported
-        user_defined (bool): If false, this requirement does not have to be given to the pipeline
-        dataset_property (bool): If True, this requirement is automatically inferred
-            by the Dataset class
-    """
-    name: str
-    supported_types: Iterable[Type]
-    user_defined: bool
-    dataset_property: bool
-
-    def __str__(self) ->str:
-        """
-        String representation for the requirements
-        """
-        return 'Name: %s | Supported types: %s | User defined: %s | Dataset property: %s' % (self.name, self.supported_types, self.user_defined, self.dataset_property)
-
-
-class HyperparameterSearchSpaceUpdate:
-    """
-    Allows specifying update to the search space of a
-    particular hyperparameter.
-
-    Args:
-        node_name (str):
-            The name of the node in the pipeline
-        hyperparameter (str):
-            The name of the hyperparameter
-        value_range (Sequence[HyperparameterValueType]):
-            In case of categorical hyperparameter, defines the new categorical choices.
-            In case of numerical hyperparameter, defines the new range
-            in the form of (LOWER, UPPER)
-        default_value (HyperparameterValueType):
-            New default value for the hyperparameter
-        log (bool) (default=False):
-            In case of numerical hyperparameters, whether to sample on a log scale
-    """
-
-    def __init__(self, node_name: str, hyperparameter: str, value_range: Sequence[HyperparameterValueType], default_value: HyperparameterValueType, log: bool=False) ->None:
-        self.node_name = node_name
-        self.hyperparameter = hyperparameter
-        if len(value_range) == 0:
-            raise ValueError('The new value range needs at least one value')
-        self.value_range = value_range
-        self.log = log
-        self.default_value = default_value
-
-    def apply(self, pipeline: List[Tuple[str, BaseEstimator]]) ->None:
-        """
-        Applies the update to the appropriate hyperparameter of the pipeline
-        Args:
-            pipeline (List[Tuple[str, BaseEstimator]]):
-                The named steps of the current autopytorch pipeline
-
-        Returns:
-            None
-        """
-        [node[1]._apply_search_space_update(self) for node in pipeline if node[0] == self.node_name]
-
-    def __str__(self) ->str:
-        return '{}, {}, {}, {}, {}'.format(self.node_name, self.hyperparameter, str(self.value_range), self.default_value if isinstance(self.default_value, str) else self.default_value, ' log' if self.log else '')
-
-    def get_search_space(self, remove_prefix: Optional[str]=None) ->HyperparameterSearchSpace:
-        """
-        Get Update as a HyperparameterSearchSpace object.
-
-        Args:
-            remove_prefix (Optional[str]):
-                if specified, remove given prefix from hyperparameter name
-
-        Returns:
-            HyperparameterSearchSpace
-        """
-        hyperparameter_name = self.hyperparameter
-        if remove_prefix is not None:
-            if remove_prefix in self.hyperparameter:
-                hyperparameter_name = hyperparameter_name.replace(f'{remove_prefix}:', '')
-        return HyperparameterSearchSpace(hyperparameter=hyperparameter_name, value_range=self.value_range, default_value=self.default_value, log=self.log)
-
-
-class DecoderProperties(NamedTuple):
-    """
-    Decoder properties
-
-    Args:
-        has_hidden_states (bool):
-            if the decoder has hidden states. A decoder with hidden states might have additional output and requires
-            additional inputs
-        has_local_layer (bool):
-            if the decoder has local layer, in which case the output is also a 3D sequential feature
-        recurrent (bool):
-            if the decoder is recurrent. This determines if decoders can be auto-regressive
-        lagged_input (bool):
-            if the decoder accepts past targets as additional features
-        multi_blocks (bool):
-            If the decoder is stacked by multiple blocks (only for N-BEATS)
-    """
-    has_hidden_states: bool = False
-    has_local_layer: bool = True
-    recurrent: bool = False
-    lagged_input: bool = False
-    multi_blocks: bool = False
-
-
-class DecoderBlockInfo(NamedTuple):
-    """
-    Decoder block infos
-
-    Args:
-        decoder (nn.Module):
-            decoder network
-        decoder_properties (EncoderProperties):
-            decoder properties
-        decoder_output_shape (Tuple[int, ...]):
-            output shape that the decoder ought to output
-
-        decoder_input_shape (Tuple[int, ...]):
-            requried input shape of the decoder
-
-    """
-    decoder: nn.Module
-    decoder_properties: DecoderProperties
-    decoder_output_shape: Tuple[int, ...]
-    decoder_input_shape: Tuple[int, ...]
-
-
-class EncoderProperties(NamedTuple):
-    """
-    Encoder properties
-
-    Args:
-        has_hidden_states (bool):
-            if the encoder has hidden states. An encoder with hidden states might have additional output
-        bijective_seq_output (bool):
-            if the encoder's output sequence has the same length as its input sequence's length
-        fixed_input_seq_length (bool):
-            if the encoder requries a fixed length of input (for instance, MLP)
-        lagged_input (bool):
-            if the encoder accepts past targets as additional features
-        is_casual (bool):
-            If the output of the encoder only depends on the past targets
-    """
-    has_hidden_states: bool = False
-    bijective_seq_output: bool = True
-    fixed_input_seq_length: bool = False
-    lagged_input: bool = False
-    is_casual: bool = True
-
-
-class EncoderBlockInfo(NamedTuple):
-    """
-    Encoder block infos
-
-    Args:
-        encoder (nn.Module):
-            encoder network
-        encoder_properties (EncoderProperties):
-            encoder properties
-        encoder_input_shape (Tuple[int, ...]):
-            requried input shape of the encoder
-        encoder_output_shape (Tuple[int, ...]):
-            output shape that the encoder ought to output
-        n_hidden_states (int):
-            number of hidden states
-    """
-    encoder: nn.Module
-    encoder_properties: EncoderProperties
-    encoder_input_shape: Tuple[int, ...]
-    encoder_output_shape: Tuple[int, ...]
-    n_hidden_states: int
-
-
-class NetworkStructure(NamedTuple):
-    num_blocks: int = 1
-    variable_selection: bool = False
-    share_single_variable_networks: bool = False
-    use_temporal_fusion: bool = False
-    skip_connection: bool = False
-    skip_connection_type: str = 'add'
-    grn_dropout_rate: float = 0.0
-
-
 class AddLayer(nn.Module):
 
-    def __init__(self, input_size: int, skip_size: int):
+    def __init__(self, input_size: 'int', skip_size: 'int'):
         super().__init__()
         if input_size == skip_size:
             self.fc = nn.Linear(skip_size, input_size)
         self.norm = nn.LayerNorm(input_size)
 
-    def forward(self, input: torch.Tensor, skip: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', skip: 'torch.Tensor') ->torch.Tensor:
         if hasattr(self, 'fc'):
             return self.norm(input + self.fc(skip))
         else:
@@ -999,7 +672,7 @@ class StackedDecoder(nn.Module):
     output features that will be further fed to the network decoder.
     """
 
-    def __init__(self, network_structure: NetworkStructure, encoder: nn.ModuleDict, encoder_info: Dict[str, EncoderBlockInfo], decoder_info: Dict[str, DecoderBlockInfo]):
+    def __init__(self, network_structure: 'NetworkStructure', encoder: 'nn.ModuleDict', encoder_info: 'Dict[str, EncoderBlockInfo]', decoder_info: 'Dict[str, DecoderBlockInfo]'):
         super().__init__()
         self.num_blocks = network_structure.num_blocks
         self.first_block = -1
@@ -1030,7 +703,7 @@ class StackedDecoder(nn.Module):
         self.cached_intermediate_state = [torch.empty(0) for _ in range(self.num_blocks + 1 - self.first_block)]
         self.decoder = decoder
 
-    def forward(self, x_future: Optional[torch.Tensor], encoder_output: List[torch.Tensor], pos_idx: Optional[Tuple[int]]=None, cache_intermediate_state: bool=False, incremental_update: bool=False) ->torch.Tensor:
+    def forward(self, x_future: 'Optional[torch.Tensor]', encoder_output: 'List[torch.Tensor]', pos_idx: 'Optional[Tuple[int]]'=None, cache_intermediate_state: 'bool'=False, incremental_update: 'bool'=False) ->torch.Tensor:
         """
         A forward pass through the decoder
 
@@ -1089,7 +762,7 @@ class StackedEncoder(nn.Module):
     transformer is applied, the last encoder also needs to output the full encoded feature sequence
     """
 
-    def __init__(self, network_structure: NetworkStructure, has_temporal_fusion: bool, encoder_info: Dict[str, EncoderBlockInfo], decoder_info: Dict[str, DecoderBlockInfo]):
+    def __init__(self, network_structure: 'NetworkStructure', has_temporal_fusion: 'bool', encoder_info: 'Dict[str, EncoderBlockInfo]', decoder_info: 'Dict[str, DecoderBlockInfo]'):
         super().__init__()
         self.num_blocks = network_structure.num_blocks
         self.skip_connection = network_structure.skip_connection
@@ -1125,7 +798,7 @@ class StackedEncoder(nn.Module):
                 self.encoder_has_hidden_states[i] = False
         self.encoder = encoder
 
-    def forward(self, encoder_input: torch.Tensor, additional_input: List[Optional[torch.Tensor]], output_seq: bool=False, cache_intermediate_state: bool=False, incremental_update: bool=False) ->Tuple[List[torch.Tensor], Optional[torch.Tensor]]:
+    def forward(self, encoder_input: 'torch.Tensor', additional_input: 'List[Optional[torch.Tensor]]', output_seq: 'bool'=False, cache_intermediate_state: 'bool'=False, incremental_update: 'bool'=False) ->Tuple[List[torch.Tensor], Optional[torch.Tensor]]:
         """
         A forward pass through the encoder
 
@@ -1206,103 +879,6 @@ class StackedEncoder(nn.Module):
             return encoder2decoder, None
 
 
-class TemporalFusionLayer(nn.Module):
-    """
-    (Lim et al.
-    Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting,
-    https://arxiv.org/abs/1912.09363)
-    we follow the implementation from pytorch forecasting:
-    https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/temporal_fusion_transformer/__init__.py
-    """
-
-    def __init__(self, window_size: int, network_structure: NetworkStructure, network_encoder: Dict[str, EncoderBlockInfo], n_decoder_output_features: int, d_model: int, n_head: int, dropout: Optional[float]=None):
-        super().__init__()
-        num_blocks = network_structure.num_blocks
-        last_block = f'block_{num_blocks}'
-        n_encoder_output = network_encoder[last_block].encoder_output_shape[-1]
-        self.window_size = window_size
-        if n_decoder_output_features != n_encoder_output:
-            self.decoder_proj_layer = nn.Linear(n_decoder_output_features, n_encoder_output, bias=False)
-        else:
-            self.decoder_proj_layer = None
-        if network_structure.variable_selection:
-            if network_structure.skip_connection:
-                n_encoder_output_first = network_encoder['block_1'].encoder_output_shape[-1]
-                self.static_context_enrichment = GatedResidualNetwork(n_encoder_output_first, n_encoder_output_first, n_encoder_output_first, dropout)
-                self.enrichment = GatedResidualNetwork(input_size=n_encoder_output, hidden_size=n_encoder_output, output_size=d_model, dropout=dropout, context_size=n_encoder_output_first, residual=False)
-                self.enrich_with_static = True
-        if not hasattr(self, 'enrichment'):
-            self.enrichment = GatedResidualNetwork(input_size=n_encoder_output, hidden_size=n_encoder_output, output_size=d_model, dropout=dropout, residual=False)
-            self.enrich_with_static = False
-        self.attention_fusion = InterpretableMultiHeadAttention(d_model=d_model, n_head=n_head, dropout=dropout or 0.0)
-        self.post_attn_gate_norm = GateAddNorm(d_model, dropout=dropout, trainable_add=False)
-        self.pos_wise_ff = GatedResidualNetwork(input_size=d_model, hidden_size=d_model, output_size=d_model, dropout=dropout)
-        self.network_structure = network_structure
-        if network_structure.skip_connection:
-            if network_structure.skip_connection_type == 'add':
-                self.residual_connection = AddLayer(d_model, n_encoder_output)
-            elif network_structure.skip_connection_type == 'gate_add_norm':
-                self.residual_connection = GateAddNorm(d_model, skip_size=n_encoder_output, dropout=None, trainable_add=False)
-        self._device = 'cpu'
-
-    def forward(self, encoder_output: torch.Tensor, decoder_output: torch.Tensor, past_observed_targets: torch.BoolTensor, decoder_length: int, static_embedding: Optional[torch.Tensor]=None) ->torch.Tensor:
-        """
-        Args:
-            encoder_output (torch.Tensor):
-                the output of the last layer of encoder network
-            decoder_output (torch.Tensor):
-                the output of the last layer of decoder network
-            past_observed_targets (torch.BoolTensor):
-                observed values in the past
-            decoder_length (int):
-                length of decoder network
-            static_embedding Optional[torch.Tensor]:
-                embeddings of static features  (if available)
-        """
-        if self.decoder_proj_layer is not None:
-            decoder_output = self.decoder_proj_layer(decoder_output)
-        network_output = torch.cat([encoder_output, decoder_output], dim=1)
-        if self.enrich_with_static and static_embedding is not None:
-            static_context_enrichment = self.static_context_enrichment(static_embedding)
-            attn_input = self.enrichment(network_output, static_context_enrichment[:, None].expand(-1, network_output.shape[1], -1))
-        else:
-            attn_input = self.enrichment(network_output)
-        encoder_out_length = encoder_output.shape[1]
-        past_observed_targets = past_observed_targets[:, -encoder_out_length:]
-        past_observed_targets = past_observed_targets
-        mask = self.get_attention_mask(past_observed_targets=past_observed_targets, decoder_length=decoder_length)
-        if mask.shape[-1] < attn_input.shape[1]:
-            mask = torch.cat([mask.new_full((*mask.shape[:-1], attn_input.shape[1] - mask.shape[-1]), True), mask], dim=-1)
-        attn_output, attn_output_weights = self.attention_fusion(q=attn_input[:, -decoder_length:], k=attn_input, v=attn_input, mask=mask)
-        attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, -decoder_length:])
-        output = self.pos_wise_ff(attn_output)
-        if self.network_structure.skip_connection:
-            return self.residual_connection(output, decoder_output)
-        else:
-            return output
-
-    @property
-    def device(self) ->torch.device:
-        return self._device
-
-    @device.setter
-    def device(self, device: torch.device) ->None:
-        self
-        self._device = device
-
-    def get_attention_mask(self, past_observed_targets: torch.BoolTensor, decoder_length: int) ->torch.Tensor:
-        """
-        https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/
-        temporal_fusion_transformer/__init__.py
-        """
-        attend_step = torch.arange(decoder_length, device=self.device)
-        predict_step = torch.arange(0, decoder_length, device=self.device)[:, None]
-        decoder_mask = attend_step >= predict_step
-        encoder_mask = ~past_observed_targets.squeeze(-1)
-        mask = torch.cat((encoder_mask.unsqueeze(1).expand(-1, decoder_length, -1), decoder_mask.unsqueeze(0).expand(encoder_mask.size(0), -1, -1)), dim=2)
-        return mask
-
-
 class TransformedDistribution_(TransformedDistribution):
     """
     We implement the mean function such that we do not need to enquire base mean every time
@@ -1318,7 +894,7 @@ class TransformedDistribution_(TransformedDistribution):
 
 class VariableSelector(nn.Module):
 
-    def __init__(self, network_structure: NetworkStructure, dataset_properties: Dict[str, Any], network_encoder: Dict[str, EncoderBlockInfo], auto_regressive: bool=False, feature_names: Union[Tuple[str], Tuple[()]]=(), known_future_features: Union[Tuple[str], Tuple[()]]=(), feature_shapes: Dict[str, int]={}, static_features: Union[Tuple[Union[str, int]], Tuple[()]]=(), time_feature_names: Union[Tuple[str], Tuple[()]]=()):
+    def __init__(self, network_structure: 'NetworkStructure', dataset_properties: 'Dict[str, Any]', network_encoder: 'Dict[str, EncoderBlockInfo]', auto_regressive: 'bool'=False, feature_names: 'Union[Tuple[str], Tuple[()]]'=(), known_future_features: 'Union[Tuple[str], Tuple[()]]'=(), feature_shapes: 'Dict[str, int]'={}, static_features: 'Union[Tuple[Union[str, int]], Tuple[()]]'=(), time_feature_names: 'Union[Tuple[str], Tuple[()]]'=()):
         """
         Variable Selector. This models follows the implementation from
         pytorch_forecasting.models.temporal_fusion_transformer.sub_modules.VariableSelectionNetwork
@@ -1389,7 +965,7 @@ class VariableSelector(nn.Module):
         if not feature_names or not known_future_features:
             placeholder_features = 'placeholder_features'
             i = 0
-            self.placeholder_features: List[str] = []
+            self.placeholder_features: 'List[str]' = []
             while placeholder_features in feature_names or placeholder_features in self.placeholder_features:
                 i += 1
                 placeholder_features = f'placeholder_features_{i}'
@@ -1431,19 +1007,19 @@ class VariableSelector(nn.Module):
             n_hidden_states = network_encoder['block_1'].n_hidden_states
         static_context_initial_hidden = [GatedResidualNetwork(input_size=self.hidden_size, hidden_size=self.hidden_size, output_size=self.hidden_size, dropout=network_structure.grn_dropout_rate) for _ in range(n_hidden_states)]
         self.static_context_initial_hidden = nn.ModuleList(static_context_initial_hidden)
-        self.cached_static_contex: Optional[torch.Tensor] = None
-        self.cached_static_embedding: Optional[torch.Tensor] = None
+        self.cached_static_contex: 'Optional[torch.Tensor]' = None
+        self.cached_static_embedding: 'Optional[torch.Tensor]' = None
 
     @property
     def device(self) ->torch.device:
         return self._device
 
     @device.setter
-    def device(self, device: torch.device) ->None:
+    def device(self, device: 'torch.device') ->None:
         self
         self._device = device
 
-    def forward(self, x_past: Optional[Dict[str, torch.Tensor]], x_future: Optional[Dict[str, torch.Tensor]], x_static: Optional[Dict[str, torch.Tensor]], length_past: int=0, length_future: int=0, batch_size: int=0, cache_static_contex: bool=False, use_cached_static_contex: bool=False) ->Tuple[Optional[torch.Tensor], Optional[torch.Tensor], torch.Tensor, Optional[torch.Tensor]]:
+    def forward(self, x_past: 'Optional[Dict[str, torch.Tensor]]', x_future: 'Optional[Dict[str, torch.Tensor]]', x_static: 'Optional[Dict[str, torch.Tensor]]', length_past: 'int'=0, length_future: 'int'=0, batch_size: 'int'=0, cache_static_contex: 'bool'=False, use_cached_static_contex: 'bool'=False) ->Tuple[Optional[torch.Tensor], Optional[torch.Tensor], torch.Tensor, Optional[torch.Tensor]]:
         if x_past is None and x_future is None:
             raise ValueError('Either past input or future inputs need to be given!')
         if length_past == 0 and length_future == 0:
@@ -1461,7 +1037,7 @@ class VariableSelector(nn.Module):
                     model_dtype = next(iter(x_future.values())).dtype
                 static_embedding = torch.zeros((batch_size, self.hidden_size), dtype=model_dtype, device=self.device)
             static_context_variable_selection = self.static_context_variable_selection(static_embedding)[:, None]
-            static_context_initial_hidden: Optional[Tuple[torch.Tensor, ...]] = tuple(init_hidden(static_embedding) for init_hidden in self.static_context_initial_hidden)
+            static_context_initial_hidden: 'Optional[Tuple[torch.Tensor, ...]]' = tuple(init_hidden(static_embedding) for init_hidden in self.static_context_initial_hidden)
             if cache_static_contex:
                 self.cached_static_contex = static_context_variable_selection
                 self.cached_static_embedding = static_embedding
@@ -1483,14 +1059,248 @@ class VariableSelector(nn.Module):
 
 class _NoEmbedding(nn.Module):
 
-    def get_partial_models(self, subset_features: List[int]) ->'_NoEmbedding':
+    def get_partial_models(self, subset_features: 'List[int]') ->'_NoEmbedding':
         return self
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return x
 
 
-def get_lagged_subsequences(sequence: torch.Tensor, subsequences_length: int, lags_seq: Optional[List[int]]=None, mask: Optional[torch.Tensor]=None) ->Tuple[torch.Tensor, Optional[torch.Tensor]]:
+class AbstractForecastingNet(nn.Module):
+    """
+    This is a basic forecasting network. It is only composed of a embedding net, an encoder and a head (including
+    MLP decoder and the final head).
+
+    This structure is active when the decoder is a MLP with auto_regressive set as false
+
+    Attributes:
+        network_structure (NetworkStructure):
+            network structure information
+        network_embedding (nn.Module):
+            network embedding
+        network_encoder (Dict[str, EncoderBlockInfo]):
+            Encoder network, could be selected to return a sequence or a 2D Matrix
+        network_decoder (Dict[str, DecoderBlockInfo]):
+            network decoder
+        temporal_fusion Optional[TemporalFusionLayer]:
+            Temporal Fusion Layer
+        network_head (nn.Module):
+            network head, maps the output of decoder to the final output
+        dataset_properties (Dict):
+            dataset properties
+        auto_regressive (bool):
+            if the model is auto-regressive model
+        output_type (str):
+            the form that the network outputs. It could be regression, distribution or quantile
+        forecast_strategy (str):
+            only valid if output_type is distribution or quantile, how the network transforms
+            its output to predicted values, could be mean or sample
+        num_samples (int):
+            only valid if output_type is not regression and forecast_strategy is sample. This indicates the
+            number of the points to sample when doing prediction
+        aggregation (str):
+            only valid if output_type is not regression and forecast_strategy is sample. The way that the samples
+            are aggregated. We could take their mean or median values.
+    """
+    future_target_required = False
+    dtype = torch.float
+
+    def __init__(self, network_structure: 'NetworkStructure', network_embedding: 'nn.Module', network_encoder: 'Dict[str, EncoderBlockInfo]', network_decoder: 'Dict[str, DecoderBlockInfo]', temporal_fusion: 'Optional[TemporalFusionLayer]', network_head: 'nn.Module', window_size: 'int', target_scaler: 'BaseTargetScaler', dataset_properties: 'Dict', auto_regressive: 'bool', feature_names: 'Union[Tuple[str], Tuple[()]]'=(), known_future_features: 'Union[Tuple[str], Tuple[()]]'=(), feature_shapes: 'Dict[str, int]'={}, static_features: 'Union[Tuple[str], Tuple[()]]'=(), time_feature_names: 'Union[Tuple[str], Tuple[()]]'=(), output_type: 'str'='regression', forecast_strategy: 'Optional[str]'='mean', num_samples: 'int'=50, aggregation: 'str'='mean'):
+        super().__init__()
+        self.network_structure = network_structure
+        self.embedding = network_embedding
+        if len(known_future_features) > 0:
+            known_future_features_idx = [feature_names.index(kff) for kff in known_future_features]
+            self.decoder_embedding = self.embedding.get_partial_models(known_future_features_idx)
+        else:
+            self.decoder_embedding = _NoEmbedding()
+        self.lazy_modules = []
+        if network_structure.variable_selection:
+            self.variable_selector = VariableSelector(network_structure=network_structure, dataset_properties=dataset_properties, network_encoder=network_encoder, auto_regressive=auto_regressive, feature_names=feature_names, known_future_features=known_future_features, feature_shapes=feature_shapes, static_features=static_features, time_feature_names=time_feature_names)
+            self.lazy_modules.append(self.variable_selector)
+        has_temporal_fusion = network_structure.use_temporal_fusion
+        self.encoder = StackedEncoder(network_structure=network_structure, has_temporal_fusion=has_temporal_fusion, encoder_info=network_encoder, decoder_info=network_decoder)
+        self.decoder = StackedDecoder(network_structure=network_structure, encoder=self.encoder.encoder, encoder_info=network_encoder, decoder_info=network_decoder)
+        if has_temporal_fusion:
+            if temporal_fusion is None:
+                raise ValueError('When the network structure uses temporal fusion layer, temporal_fusion must be given!')
+            self.temporal_fusion = temporal_fusion
+            self.lazy_modules.append(self.temporal_fusion)
+        self.has_temporal_fusion = has_temporal_fusion
+        self.head = network_head
+        first_decoder = 'block_0'
+        for i in range(1, network_structure.num_blocks + 1):
+            block_number = f'block_{i}'
+            if block_number in network_decoder:
+                if first_decoder == 'block_0':
+                    first_decoder = block_number
+        if first_decoder == 0:
+            raise ValueError('At least one decoder must be specified!')
+        self.target_scaler = target_scaler
+        self.n_prediction_steps = dataset_properties['n_prediction_steps']
+        self.window_size = window_size
+        self.output_type = output_type
+        self.forecast_strategy = forecast_strategy
+        self.num_samples = num_samples
+        self.aggregation = aggregation
+        self._device = torch.device('cpu')
+        if not network_structure.variable_selection:
+            self.encoder_lagged_input = network_encoder['block_1'].encoder_properties.lagged_input
+            self.decoder_lagged_input = network_decoder[first_decoder].decoder_properties.lagged_input
+        else:
+            self.encoder_lagged_input = False
+            self.decoder_lagged_input = False
+        if self.encoder_lagged_input:
+            self.cached_lag_mask_encoder = None
+            self.encoder_lagged_value = network_encoder['block_1'].encoder.lagged_value
+        if self.decoder_lagged_input:
+            self.cached_lag_mask_decoder = None
+            self.decoder_lagged_value = network_decoder[first_decoder].decoder.lagged_value
+
+    @property
+    def device(self) ->torch.device:
+        return self._device
+
+    @device.setter
+    def device(self, device: 'torch.device') ->None:
+        self
+        self._device = device
+        for model in self.lazy_modules:
+            model.device = device
+
+    def rescale_output(self, outputs: 'ALL_NET_OUTPUT', loc: 'Optional[torch.Tensor]', scale: 'Optional[torch.Tensor]', device: 'torch.device'=torch.device('cpu')) ->ALL_NET_OUTPUT:
+        """
+        rescale the network output to its raw scale
+
+        Args:
+            outputs (ALL_NET_OUTPUT):
+                network head output
+            loc (Optional[torch.Tensor]):
+                scaling location value
+            scale (Optional[torch.Tensor]):
+                scaling scale value
+            device (torch.device):
+                which device the output is stored
+
+        Return:
+            ALL_NET_OUTPUT:
+                rescaleed network output
+        """
+        if isinstance(outputs, List):
+            return [self.rescale_output(output, loc, scale, device) for output in outputs]
+        if loc is not None or scale is not None:
+            if isinstance(outputs, torch.distributions.Distribution):
+                transform = AffineTransform(loc=0.0 if loc is None else loc, scale=1.0 if scale is None else scale)
+                outputs = TransformedDistribution_(outputs, [transform])
+            elif loc is None:
+                outputs = outputs * scale
+            elif scale is None:
+                outputs = outputs + loc
+            else:
+                outputs = outputs * scale + loc
+        return outputs
+
+    def scale_value(self, raw_value: 'torch.Tensor', loc: 'Optional[torch.Tensor]', scale: 'Optional[torch.Tensor]', device: 'torch.device'=torch.device('cpu')) ->torch.Tensor:
+        """
+        scale the outputs
+
+        Args:
+            raw_value (torch.Tensor):
+                network head output
+            loc (Optional[torch.Tensor]):
+                scaling location value
+            scale (Optional[torch.Tensor]):
+                scaling scale value
+            device (torch.device):
+                which device the output is stored
+
+        Return:
+            torch.Tensor:
+                scaled input value
+        """
+        if loc is not None or scale is not None:
+            if loc is None:
+                outputs = raw_value / scale
+            elif scale is None:
+                outputs = raw_value - loc
+            else:
+                outputs = (raw_value - loc) / scale
+            return outputs
+        else:
+            return raw_value
+
+    @abstractmethod
+    def forward(self, past_targets: 'torch.Tensor', future_targets: 'Optional[torch.Tensor]'=None, past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None, decoder_observed_values: 'Optional[torch.Tensor]'=None) ->ALL_NET_OUTPUT:
+        raise NotImplementedError
+
+    @abstractmethod
+    def pred_from_net_output(self, net_output: 'ALL_NET_OUTPUT') ->torch.Tensor:
+        """
+        This function is applied to transform the network head output to torch tensor to create the point prediction
+
+        Args:
+            net_output (ALL_NET_OUTPUT):
+                network head output
+
+        Return:
+            torch.Tensor:
+                point prediction
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(self, past_targets: 'torch.Tensor', past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
+        raise NotImplementedError
+
+    def repeat_intermediate_values(self, intermediate_values: 'List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]', is_hidden_states: 'List[bool]', repeats: 'int') ->List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]:
+        """
+        This function is often applied for auto-regressive model where we sample multiple points to form several
+        trajectories and we need to repeat the intermediate values to ensure that the batch sizes match
+
+        Args:
+             intermediate_values (List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]])
+                a list of intermediate values to be repeated
+             is_hidden_states  (List[bool]):
+                if the intermediate_value is hidden states in RNN-form network, we need to consider the
+                hidden states differently
+            repeats (int):
+                number of repeats
+
+        Return:
+            List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]:
+                repeated values
+        """
+        for i, (is_hx, inter_value) in enumerate(zip(is_hidden_states, intermediate_values)):
+            if isinstance(inter_value, torch.Tensor):
+                repeated_value = inter_value.repeat_interleave(repeats=repeats, dim=1 if is_hx else 0)
+                intermediate_values[i] = repeated_value
+            elif isinstance(inter_value, tuple):
+                dim = 1 if is_hx else 0
+                repeated_value = tuple(hx.repeat_interleave(repeats=repeats, dim=dim) for hx in inter_value)
+                intermediate_values[i] = repeated_value
+        return intermediate_values
+
+    def pad_tensor(self, tensor_to_be_padded: 'torch.Tensor', target_length: 'int') ->torch.Tensor:
+        """
+        pad tensor to meet the required length
+
+        Args:
+             tensor_to_be_padded (torch.Tensor)
+                tensor to be padded
+             target_length  (int):
+                target length
+
+        Return:
+            torch.Tensor:
+                padded tensors
+        """
+        tensor_shape = tensor_to_be_padded.shape
+        padding_size = [tensor_shape[0], target_length - tensor_shape[1], tensor_shape[-1]]
+        tensor_to_be_padded = torch.cat([tensor_to_be_padded.new_zeros(padding_size), tensor_to_be_padded], dim=1)
+        return tensor_to_be_padded
+
+
+def get_lagged_subsequences(sequence: 'torch.Tensor', subsequences_length: 'int', lags_seq: 'Optional[List[int]]'=None, mask: 'Optional[torch.Tensor]'=None) ->Tuple[torch.Tensor, Optional[torch.Tensor]]:
     """
     Returns lagged subsequences of a given sequence, this allows the model to receive the input from the past targets
     outside the sliding windows. This implementation is similar to gluonTS's implementation
@@ -1542,7 +1352,120 @@ def get_lagged_subsequences(sequence: torch.Tensor, subsequences_length: int, la
     return lagged_seq, mask
 
 
-def get_lagged_subsequences_inference(sequence: torch.Tensor, subsequences_length: int, lags_seq: List[int]) ->torch.Tensor:
+class ForecastingNet(AbstractForecastingNet):
+
+    def pre_processing(self, past_targets: 'torch.Tensor', past_observed_targets: 'torch.BoolTensor', past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, length_past: 'int'=0, length_future: 'int'=0, variable_selector_kwargs: 'Dict'={}) ->Tuple[torch.Tensor, ...]:
+        if self.encoder_lagged_input:
+            if self.window_size < past_targets.shape[1]:
+                past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(past_targets[:, -self.window_size:], past_observed_targets[:, -self.window_size:])
+                past_targets[:, :-self.window_size] = torch.where(past_observed_targets[:, :-self.window_size], self.scale_value(past_targets[:, :-self.window_size], loc, scale), past_targets[:, :-self.window_size])
+            else:
+                past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+            truncated_past_targets, self.cached_lag_mask_encoder = get_lagged_subsequences(past_targets, self.window_size, self.encoder_lagged_value, self.cached_lag_mask_encoder)
+        else:
+            if self.window_size < past_targets.shape[1]:
+                past_targets = past_targets[:, -self.window_size:]
+                past_observed_targets = past_observed_targets[:, -self.window_size:]
+            past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+            truncated_past_targets = past_targets
+        if past_features is not None:
+            if self.window_size <= past_features.shape[1]:
+                past_features = past_features[:, -self.window_size:]
+            elif self.encoder_lagged_input:
+                past_features = self.pad_tensor(past_features, self.window_size)
+        if self.network_structure.variable_selection:
+            batch_size = truncated_past_targets.shape[0]
+            feat_dict_static = {}
+            if length_past > 0:
+                if past_features is not None:
+                    past_features = self.embedding(past_features)
+                feat_dict_past = {'past_targets': truncated_past_targets}
+                if past_features is not None:
+                    for feature_name in self.variable_selector.feature_names:
+                        tensor_idx = self.variable_selector.feature_names2tensor_idx[feature_name]
+                        if feature_name not in self.variable_selector.static_features:
+                            feat_dict_past[feature_name] = past_features[:, :, tensor_idx[0]:tensor_idx[1]]
+                        else:
+                            static_feature = past_features[:, 0, tensor_idx[0]:tensor_idx[1]]
+                            feat_dict_static[feature_name] = static_feature
+                if hasattr(self.variable_selector, 'placeholder_features'):
+                    for placehold in self.variable_selector.placeholder_features:
+                        feat_dict_past[placehold] = torch.zeros((batch_size, length_past, 1), dtype=past_targets.dtype, device=self.device)
+            else:
+                feat_dict_past = None
+            if length_future > 0:
+                if future_features is not None:
+                    future_features = self.decoder_embedding(future_features)
+                feat_dict_future = {}
+                if hasattr(self.variable_selector, 'placeholder_features'):
+                    for placehold in self.variable_selector.placeholder_features:
+                        feat_dict_future[placehold] = torch.zeros((batch_size, length_future, 1), dtype=past_targets.dtype, device=self.device)
+                if future_features is not None:
+                    for feature_name in self.variable_selector.known_future_features:
+                        tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
+                        if feature_name not in self.variable_selector.static_features:
+                            feat_dict_future[feature_name] = future_features[:, :, tensor_idx[0]:tensor_idx[1]]
+                        elif length_past == 0:
+                            static_feature = future_features[:, 0, tensor_idx[0]:tensor_idx[1]]
+                            feat_dict_static[feature_name] = static_feature
+            else:
+                feat_dict_future = None
+            x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(x_past=feat_dict_past, x_future=feat_dict_future, x_static=feat_dict_static, batch_size=batch_size, length_past=length_past, length_future=length_future, **variable_selector_kwargs)
+            return x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets
+        else:
+            if past_features is not None:
+                x_past = torch.cat([truncated_past_targets, past_features], dim=-1)
+                x_past = self.embedding(x_past)
+            else:
+                x_past = self.embedding(truncated_past_targets)
+            if future_features is not None and length_future > 0:
+                future_features = self.decoder_embedding(future_features)
+            return x_past, future_features, None, loc, scale, None, past_targets
+
+    def forward(self, past_targets: 'torch.Tensor', future_targets: 'Optional[torch.Tensor]'=None, past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None, decoder_observed_values: 'Optional[torch.Tensor]'=None) ->ALL_NET_OUTPUT:
+        x_past, x_future, x_static, loc, scale, static_context_initial_hidden, _ = self.pre_processing(past_targets=past_targets, past_observed_targets=past_observed_targets, past_features=past_features, future_features=future_features, length_past=min(self.window_size, past_targets.shape[1]), length_future=self.n_prediction_steps)
+        encoder_additional = [static_context_initial_hidden]
+        encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
+        encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
+        decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder, pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
+        if self.has_temporal_fusion:
+            decoder_output = self.temporal_fusion(encoder_output=encoder_output, decoder_output=decoder_output, past_observed_targets=past_observed_targets, decoder_length=self.n_prediction_steps, static_embedding=x_static)
+        output = self.head(decoder_output)
+        return self.rescale_output(output, loc, scale, self.device)
+
+    def pred_from_net_output(self, net_output: 'ALL_NET_OUTPUT') ->torch.Tensor:
+        if self.output_type == 'regression':
+            return net_output
+        elif self.output_type == 'quantile':
+            return net_output[0]
+        elif self.output_type == 'distribution':
+            if self.forecast_strategy == 'mean':
+                if isinstance(net_output, list):
+                    return torch.cat([dist.mean for dist in net_output], dim=-2)
+                else:
+                    return net_output.mean
+            elif self.forecast_strategy == 'sample':
+                if isinstance(net_output, list):
+                    samples = torch.cat([dist.sample((self.num_samples,)) for dist in net_output], dim=-2)
+                else:
+                    samples = net_output.sample((self.num_samples,))
+                if self.aggregation == 'mean':
+                    return torch.mean(samples, dim=0)
+                elif self.aggregation == 'median':
+                    return torch.median(samples, 0)[0]
+                else:
+                    raise NotImplementedError(f'Unknown aggregation: {self.aggregation}')
+            else:
+                raise NotImplementedError(f'Unknown forecast_strategy: {self.forecast_strategy}')
+        else:
+            raise NotImplementedError(f'Unknown output_type: {self.output_type}')
+
+    def predict(self, past_targets: 'torch.Tensor', past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None) ->torch.Tensor:
+        net_output = self(past_targets=past_targets, past_features=past_features, future_features=future_features, past_observed_targets=past_observed_targets)
+        return self.pred_from_net_output(net_output)
+
+
+def get_lagged_subsequences_inference(sequence: 'torch.Tensor', subsequences_length: 'int', lags_seq: 'List[int]') ->torch.Tensor:
     """
     this function works exactly the same as get_lagged_subsequences. However, this implementation is faster when no
     cached value is available, thus it is applied during inference times.
@@ -1583,12 +1506,383 @@ def get_lagged_subsequences_inference(sequence: torch.Tensor, subsequences_lengt
     return lagged_seq
 
 
+class ForecastingSeq2SeqNet(ForecastingNet):
+    future_target_required = True
+    """
+    Forecasting network with Seq2Seq structure, Encoder/ Decoder need to be the same recurrent models while
+
+    This structure is activate when the decoder is recurrent (RNN or transformer).
+    We train the network with teacher forcing, thus
+    future_targets is required for the network. To train the network, past targets and past features are fed to the
+    encoder to obtain the hidden states whereas future targets and future features.
+    When the output type is distribution and forecast_strategy is sampling,
+    this model is equivalent to a deepAR model during inference.
+    """
+
+    def decoder_select_variable(self, future_targets: 'torch.tensor', future_features: 'Optional[torch.Tensor]') ->torch.Tensor:
+        batch_size = future_targets.shape[0]
+        length_future = future_targets.shape[1]
+        future_targets = future_targets
+        if future_features is not None:
+            future_features = self.decoder_embedding(future_features)
+        feat_dict_future = {}
+        if hasattr(self.variable_selector, 'placeholder_features'):
+            for placeholder in self.variable_selector.placeholder_features:
+                feat_dict_future[placeholder] = torch.zeros((batch_size, length_future, 1), dtype=future_targets.dtype, device=self.device)
+        for feature_name in self.variable_selector.known_future_features:
+            tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
+            if feature_name not in self.variable_selector.static_features:
+                feat_dict_future[feature_name] = future_features[:, :, tensor_idx[0]:tensor_idx[1]]
+        feat_dict_future['future_prediction'] = future_targets
+        _, x_future, _, _ = self.variable_selector(x_past=None, x_future=feat_dict_future, x_static=None, length_past=0, length_future=length_future, batch_size=batch_size, use_cached_static_contex=True)
+        return x_future
+
+    def forward(self, past_targets: 'torch.Tensor', future_targets: 'Optional[torch.Tensor]'=None, past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None, decoder_observed_values: 'Optional[torch.Tensor]'=None) ->ALL_NET_OUTPUT:
+        x_past, _, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(past_targets=past_targets, past_observed_targets=past_observed_targets, past_features=past_features, future_features=future_features, length_past=min(self.window_size, past_targets.shape[1]), length_future=0, variable_selector_kwargs={'cache_static_contex': True})
+        encoder_additional = [static_context_initial_hidden]
+        encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
+        if self.training:
+            future_targets = self.scale_value(future_targets, loc, scale)
+            if self.decoder_lagged_input:
+                future_targets = torch.cat([past_targets, future_targets[:, :-1, :]], dim=1)
+                future_targets, self.cached_lag_mask_decoder = get_lagged_subsequences(future_targets, self.n_prediction_steps, self.decoder_lagged_value, self.cached_lag_mask_decoder)
+            else:
+                future_targets = torch.cat([past_targets[:, [-1], :], future_targets[:, :-1, :]], dim=1)
+            if self.network_structure.variable_selection:
+                decoder_input = self.decoder_select_variable(future_targets, future_features)
+            else:
+                decoder_input = future_targets if future_features is None else torch.cat([future_features, future_targets], dim=-1)
+                decoder_input = decoder_input
+                decoder_input = self.decoder_embedding(decoder_input)
+            encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
+            decoder_output = self.decoder(x_future=decoder_input, encoder_output=encoder2decoder, pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
+            if self.has_temporal_fusion:
+                decoder_output = self.temporal_fusion(encoder_output=encoder_output, decoder_output=decoder_output, past_observed_targets=past_observed_targets, decoder_length=self.n_prediction_steps, static_embedding=x_static)
+            net_output = self.head(decoder_output)
+            return self.rescale_output(net_output, loc, scale, self.device)
+        else:
+            encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
+            if self.has_temporal_fusion:
+                decoder_output_all: 'Optional[torch.Tensor]' = None
+            if self.forecast_strategy != 'sample':
+                all_predictions = []
+                predicted_target = past_targets[:, [-1]]
+                past_targets = past_targets[:, :-1]
+                for idx_pred in range(self.n_prediction_steps):
+                    predicted_target = predicted_target.cpu()
+                    if self.decoder_lagged_input:
+                        past_targets = torch.cat([past_targets, predicted_target], dim=1)
+                        ar_future_target = get_lagged_subsequences_inference(past_targets, 1, self.decoder_lagged_value)
+                    else:
+                        ar_future_target = predicted_target[:, [-1]]
+                    if self.network_structure.variable_selection:
+                        decoder_input = self.decoder_select_variable(future_targets=predicted_target[:, -1:], future_features=future_features[:, [idx_pred]] if future_features is not None else None)
+                    else:
+                        decoder_input = ar_future_target if future_features is None else torch.cat([future_features[:, [idx_pred]], ar_future_target], dim=-1)
+                        decoder_input = decoder_input
+                        decoder_input = self.decoder_embedding(decoder_input)
+                    decoder_output = self.decoder(decoder_input, encoder_output=encoder2decoder, pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1), cache_intermediate_state=True, incremental_update=idx_pred > 0)
+                    if self.has_temporal_fusion:
+                        if decoder_output_all is not None:
+                            decoder_output_all = torch.cat([decoder_output_all, decoder_output], dim=1)
+                        else:
+                            decoder_output_all = decoder_output
+                        decoder_output = self.temporal_fusion(encoder_output=encoder_output, decoder_output=decoder_output_all, past_observed_targets=past_observed_targets, decoder_length=idx_pred + 1, static_embedding=x_static)[:, -1:]
+                    net_output = self.head(decoder_output)
+                    predicted_target = torch.cat([predicted_target, self.pred_from_net_output(net_output).cpu()], dim=1)
+                    all_predictions.append(net_output)
+                if self.output_type == 'regression':
+                    all_predictions = torch.cat(all_predictions, dim=1)
+                elif self.output_type == 'quantile':
+                    all_predictions = torch.cat([self.pred_from_net_output(pred) for pred in all_predictions], dim=1)
+                else:
+                    all_predictions = self.pred_from_net_output(all_predictions)
+                return self.rescale_output(all_predictions, loc, scale, self.device)
+            else:
+                batch_size = past_targets.shape[0]
+                encoder2decoder = self.repeat_intermediate_values(encoder2decoder, is_hidden_states=self.encoder.encoder_has_hidden_states, repeats=self.num_samples)
+                if self.has_temporal_fusion:
+                    intermediate_values = self.repeat_intermediate_values([encoder_output, past_observed_targets], is_hidden_states=[False, False], repeats=self.num_samples)
+                    encoder_output = intermediate_values[0]
+                    past_observed_targets = intermediate_values[1]
+                if self.decoder_lagged_input:
+                    max_lag_seq_length = max(self.decoder_lagged_value) + 1
+                else:
+                    max_lag_seq_length = 1 + self.window_size
+                repeated_past_target = past_targets[:, -max_lag_seq_length:].repeat_interleave(repeats=self.num_samples, dim=0).squeeze(1)
+                repeated_predicted_target = repeated_past_target[:, [-1]]
+                repeated_past_target = repeated_past_target[:, :-1]
+                repeated_x_static = x_static.repeat_interleave(repeats=self.num_samples, dim=0) if x_static is not None else None
+                repeated_future_features = future_features.repeat_interleave(repeats=self.num_samples, dim=0) if future_features is not None else None
+                if self.network_structure.variable_selection:
+                    self.variable_selector.cached_static_contex = self.repeat_intermediate_values([self.variable_selector.cached_static_contex], is_hidden_states=[False], repeats=self.num_samples)[0]
+                for idx_pred in range(self.n_prediction_steps):
+                    if self.decoder_lagged_input:
+                        ar_future_target = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
+                        ar_future_target = get_lagged_subsequences_inference(ar_future_target, 1, self.decoder_lagged_value)
+                    else:
+                        ar_future_target = repeated_predicted_target[:, [-1]]
+                    if self.network_structure.variable_selection:
+                        decoder_input = self.decoder_select_variable(future_targets=ar_future_target, future_features=None if repeated_future_features is None else repeated_future_features[:, [idx_pred]])
+                    else:
+                        decoder_input = ar_future_target if repeated_future_features is None else torch.cat([repeated_future_features[:, [idx_pred], :], ar_future_target], dim=-1)
+                        decoder_input = decoder_input
+                        decoder_input = self.decoder_embedding(decoder_input)
+                    decoder_output = self.decoder(decoder_input, encoder_output=encoder2decoder, pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1), cache_intermediate_state=True, incremental_update=idx_pred > 0)
+                    if self.has_temporal_fusion:
+                        if decoder_output_all is not None:
+                            decoder_output_all = torch.cat([decoder_output_all, decoder_output], dim=1)
+                        else:
+                            decoder_output_all = decoder_output
+                        decoder_output = self.temporal_fusion(encoder_output=encoder_output, decoder_output=decoder_output_all, past_observed_targets=past_observed_targets, decoder_length=idx_pred + 1, static_embedding=repeated_x_static)[:, -1:]
+                    net_output = self.head(decoder_output)
+                    samples = net_output.sample().cpu()
+                    repeated_predicted_target = torch.cat([repeated_predicted_target, samples], dim=1)
+                all_predictions = repeated_predicted_target[:, 1:].unflatten(0, (batch_size, self.num_samples))
+                if self.aggregation == 'mean':
+                    return self.rescale_output(torch.mean(all_predictions, dim=1), loc, scale)
+                elif self.aggregation == 'median':
+                    return self.rescale_output(torch.median(all_predictions, dim=1)[0], loc, scale)
+                else:
+                    raise ValueError(f'Unknown aggregation: {self.aggregation}')
+
+    def predict(self, past_targets: 'torch.Tensor', past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None) ->torch.Tensor:
+        net_output = self(past_targets=past_targets, past_features=past_features, future_features=future_features, past_observed_targets=past_observed_targets)
+        if self.output_type == 'regression':
+            return self.pred_from_net_output(net_output)
+        else:
+            return net_output
+
+
+class ForecastingDeepARNet(ForecastingSeq2SeqNet):
+    future_target_required = True
+
+    def __init__(self, **kwargs: Any):
+        """
+        Forecasting network with DeepAR structure.
+
+        This structure is activate when the decoder is not recurrent (MLP) and its hyperparameter "auto_regressive" is
+        set  as True. We train the network to let it do a one-step prediction. This structure is compatible with any
+         sorts of encoder (except MLP).
+        """
+        super(ForecastingDeepARNet, self).__init__(**kwargs)
+        self.encoder_bijective_seq_output = kwargs['network_encoder']['block_1'].encoder_properties.bijective_seq_output
+        self.cached_lag_mask_encoder_test = None
+        self.only_generate_future_dist = False
+
+    def train(self, mode: 'bool'=True) ->nn.Module:
+        self.only_generate_future_dist = False
+        return super().train(mode=mode)
+
+    def encoder_select_variable(self, past_targets: 'torch.tensor', past_features: 'Optional[torch.Tensor]', length_past: 'int', **variable_selector_kwargs: Any) ->Tuple[torch.Tensor, Tuple[torch.Tensor]]:
+        batch_size = past_targets.shape[0]
+        past_targets = past_targets
+        if past_features is not None:
+            past_features = past_features
+            past_features = self.embedding(past_features)
+        feat_dict_past = {'past_targets': past_targets}
+        feat_dict_static = {}
+        if hasattr(self.variable_selector, 'placeholder_features'):
+            for placehold in self.variable_selector.placeholder_features:
+                feat_dict_past[placehold] = torch.zeros((batch_size, length_past, 1), dtype=past_targets.dtype, device=self.device)
+        for feature_name in self.variable_selector.feature_names:
+            tensor_idx = self.variable_selector.feature_names2tensor_idx[feature_name]
+            if feature_name not in self.variable_selector.static_features:
+                feat_dict_past[feature_name] = past_features[:, :, tensor_idx[0]:tensor_idx[1]]
+            else:
+                static_feature = past_features[:, 0, tensor_idx[0]:tensor_idx[1]]
+                feat_dict_static[feature_name] = static_feature
+        x_past, _, _, static_context_initial_hidden = self.variable_selector(x_past=feat_dict_past, x_future=None, x_static=feat_dict_static, length_past=length_past, length_future=0, batch_size=batch_size, **variable_selector_kwargs)
+        return x_past, static_context_initial_hidden
+
+    def forward(self, past_targets: 'torch.Tensor', future_targets: 'Optional[torch.Tensor]'=None, past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None, decoder_observed_values: 'Optional[torch.Tensor]'=None) ->ALL_NET_OUTPUT:
+        encode_length = min(self.window_size, past_targets.shape[1])
+        if past_observed_targets is None:
+            past_observed_targets = torch.ones_like(past_targets, dtype=torch.bool)
+        if self.training:
+            if self.encoder_lagged_input:
+                if self.window_size < past_targets.shape[1]:
+                    past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(past_targets[:, -self.window_size:], past_observed_targets[:, -self.window_size:])
+                    past_targets[:, :-self.window_size] = torch.where(past_observed_targets[:, :-self.window_size], self.scale_value(past_targets[:, :-self.window_size], loc, scale), past_targets[:, :-self.window_size])
+                else:
+                    past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+                future_targets = self.scale_value(future_targets, loc, scale)
+                targets_all = torch.cat([past_targets, future_targets[:, :-1]], dim=1)
+                seq_length = self.window_size + self.n_prediction_steps
+                targets_all, self.cached_lag_mask_encoder = get_lagged_subsequences(targets_all, seq_length - 1, self.encoder_lagged_value, self.cached_lag_mask_encoder)
+                targets_all = targets_all[:, -(encode_length + self.n_prediction_steps - 1):]
+            else:
+                if self.window_size < past_targets.shape[1]:
+                    past_targets = past_targets[:, -self.window_size:]
+                    past_observed_targets = past_observed_targets[:, -self.window_size:]
+                past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+                future_targets = self.scale_value(future_targets, loc, scale)
+                targets_all = torch.cat([past_targets, future_targets[:, :-1]], dim=1)
+            if self.network_structure.variable_selection:
+                if past_features is not None:
+                    assert future_features is not None
+                    past_features = past_features[:, -self.window_size:]
+                    features_all = torch.cat([past_features, future_features[:, :-1]], dim=1)
+                else:
+                    features_all = None
+                length_past = min(self.window_size, past_targets.shape[1]) + self.n_prediction_steps - 1
+                encoder_input, static_context_initial_hidden = self.encoder_select_variable(targets_all, past_features=features_all, length_past=length_past)
+            else:
+                if past_features is not None:
+                    assert future_features is not None
+                    if self.window_size <= past_features.shape[1]:
+                        past_features = past_features[:, -self.window_size:]
+                    features_all = torch.cat([past_features, future_features[:, :-1]], dim=1)
+                    encoder_input = torch.cat([features_all, targets_all], dim=-1)
+                else:
+                    encoder_input = targets_all
+                encoder_input = encoder_input
+                encoder_input = self.embedding(encoder_input)
+                static_context_initial_hidden = None
+            encoder_additional: 'List[Optional[torch.Tensor]]' = [static_context_initial_hidden]
+            encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
+            encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input, additional_input=encoder_additional, output_seq=True)
+            if self.only_generate_future_dist:
+                encoder2decoder = [encoder2decoder[-1][:, -self.n_prediction_steps:]]
+            net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
+            return self.rescale_output(net_output, loc, scale, self.device)
+        else:
+            if self.encoder_lagged_input:
+                if self.window_size < past_targets.shape[1]:
+                    past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(past_targets[:, -self.window_size:], past_observed_targets[:, -self.window_size:])
+                    past_targets[:, :-self.window_size] = torch.where(past_observed_targets[:, :-self.window_size], self.scale_value(past_targets[:, :-self.window_size], loc, scale), past_targets[:, :-self.window_size])
+                else:
+                    past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+                truncated_past_targets, self.cached_lag_mask_encoder_test = get_lagged_subsequences(past_targets, self.window_size, self.encoder_lagged_value, self.cached_lag_mask_encoder_test)
+                truncated_past_targets = truncated_past_targets[:, -encode_length:]
+            else:
+                if self.window_size < past_targets.shape[1]:
+                    past_targets = past_targets[:, -self.window_size:]
+                    past_observed_targets = past_observed_targets[:, -self.window_size]
+                past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+                truncated_past_targets = past_targets
+            if self.network_structure.variable_selection:
+                if past_features is not None:
+                    features_all = past_features[:, -self.window_size:]
+                else:
+                    features_all = None
+                variable_selector_kwargs = dict(cache_static_contex=True, use_cached_static_contex=False)
+                encoder_input, static_context_initial_hidden = self.encoder_select_variable(truncated_past_targets, past_features=features_all, length_past=encode_length, **variable_selector_kwargs)
+            else:
+                if past_features is not None:
+                    assert future_features is not None
+                    features_all = torch.cat([past_features[:, -encode_length:], future_features[:, :-1]], dim=1)
+                else:
+                    features_all = None
+                encoder_input = truncated_past_targets if features_all is None else torch.cat([features_all[:, :encode_length], truncated_past_targets], dim=-1)
+                encoder_input = encoder_input
+                encoder_input = self.embedding(encoder_input)
+                static_context_initial_hidden = None
+            all_samples = []
+            batch_size: 'int' = past_targets.shape[0]
+            encoder_additional: 'List[Optional[torch.Tensor]]' = [static_context_initial_hidden]
+            encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
+            encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input, additional_input=encoder_additional, cache_intermediate_state=True)
+            self.encoder.cached_intermediate_state = self.repeat_intermediate_values(self.encoder.cached_intermediate_state, is_hidden_states=self.encoder.encoder_has_hidden_states, repeats=self.num_samples)
+            if self.network_structure.variable_selection:
+                self.variable_selector.cached_static_contex = self.repeat_intermediate_values([self.variable_selector.cached_static_contex], is_hidden_states=[False], repeats=self.num_samples)[0]
+            if self.encoder_lagged_input:
+                max_lag_seq_length = max(max(self.encoder_lagged_value), encode_length)
+            else:
+                max_lag_seq_length = encode_length
+            net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
+            next_sample = net_output.sample(sample_shape=(self.num_samples,))
+            next_sample = next_sample.transpose(0, 1).reshape((next_sample.shape[0] * next_sample.shape[1], 1, -1)).cpu()
+            all_samples.append(next_sample)
+            if self.n_prediction_steps > 1:
+                repeated_past_target = past_targets[:, -max_lag_seq_length:].repeat_interleave(repeats=self.num_samples, dim=0).squeeze(1)
+                if future_features is not None:
+                    future_features = future_features[:, 1:]
+                else:
+                    future_features = None
+                repeated_future_features = future_features.repeat_interleave(repeats=self.num_samples, dim=0) if future_features is not None else None
+            for k in range(1, self.n_prediction_steps):
+                if self.encoder_lagged_input:
+                    repeated_past_target = torch.cat([repeated_past_target, all_samples[-1]], dim=1)
+                    ar_future_target = get_lagged_subsequences_inference(repeated_past_target, 1, self.encoder_lagged_value)
+                else:
+                    ar_future_target = next_sample
+                if self.network_structure.variable_selection:
+                    length_past = 1
+                    variable_selector_kwargs = dict(use_cached_static_contex=True)
+                    if repeated_future_features is not None:
+                        feature_next = repeated_future_features[:, [k - 1]]
+                    else:
+                        feature_next = None
+                    encoder_input, _ = self.encoder_select_variable(ar_future_target, past_features=feature_next, length_past=1, **variable_selector_kwargs)
+                else:
+                    if repeated_future_features is not None:
+                        encoder_input = torch.cat([repeated_future_features[:, [k - 1]], ar_future_target], dim=-1)
+                    else:
+                        encoder_input = ar_future_target
+                    encoder_input = encoder_input
+                    encoder_input = self.embedding(encoder_input)
+                encoder2decoder, _ = self.encoder(encoder_input=encoder_input, additional_input=[None] * self.network_structure.num_blocks, output_seq=False, cache_intermediate_state=True, incremental_update=True)
+                net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
+                next_sample = net_output.sample().cpu()
+                all_samples.append(next_sample)
+            all_predictions = torch.cat(all_samples, dim=1).unflatten(0, (batch_size, self.num_samples))
+            if not self.output_type == 'distribution' and self.forecast_strategy == 'sample':
+                raise ValueError(f'A DeepAR network must have output type as Distribution and forecast_strategy as sample,but this network has {self.output_type} and {self.forecast_strategy}')
+            if self.aggregation == 'mean':
+                return self.rescale_output(torch.mean(all_predictions, dim=1), loc, scale)
+            elif self.aggregation == 'median':
+                return self.rescale_output(torch.median(all_predictions, dim=1)[0], loc, scale)
+            else:
+                raise ValueError(f'Unknown aggregation: {self.aggregation}')
+
+    def predict(self, past_targets: 'torch.Tensor', past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None) ->torch.Tensor:
+        net_output = self(past_targets=past_targets, past_features=past_features, future_features=future_features, past_observed_targets=past_observed_targets)
+        return net_output
+
+
+class NBEATSNet(ForecastingNet):
+    future_target_required = False
+
+    def forward(self, past_targets: 'torch.Tensor', future_targets: 'Optional[torch.Tensor]'=None, past_features: 'Optional[torch.Tensor]'=None, future_features: 'Optional[torch.Tensor]'=None, past_observed_targets: 'Optional[torch.BoolTensor]'=None, decoder_observed_values: 'Optional[torch.Tensor]'=None) ->Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        if past_observed_targets is None:
+            past_observed_targets = torch.ones_like(past_targets, dtype=torch.bool)
+        if self.window_size <= past_targets.shape[1]:
+            past_targets = past_targets[:, -self.window_size:]
+            past_observed_targets = past_observed_targets[:, -self.window_size:]
+        else:
+            past_targets = self.pad_tensor(past_targets, self.window_size)
+        past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
+        past_targets = past_targets
+        batch_size = past_targets.shape[0]
+        output_shape = past_targets.shape[2:]
+        forcast_shape = [batch_size, self.n_prediction_steps, *output_shape]
+        forecast = torch.zeros(forcast_shape).flatten(1)
+        backcast, _ = self.encoder(past_targets, [None])
+        backcast = backcast[0]
+        for block in self.decoder.decoder['block_1']:
+            backcast_block, forecast_block = block([None], backcast)
+            backcast = backcast - backcast_block
+            forecast = forecast + forecast_block
+        backcast = backcast.reshape(past_targets.shape)
+        forecast = forecast.reshape(forcast_shape)
+        forecast = self.rescale_output(forecast, loc, scale, self.device)
+        if self.training:
+            backcast = self.rescale_output(backcast, loc, scale, self.device)
+            return backcast, forecast
+        else:
+            return forecast
+
+    def pred_from_net_output(self, net_output: 'torch.Tensor') ->torch.Tensor:
+        return net_output
+
+
 _activations = {'relu': torch.nn.ReLU, 'tanh': torch.nn.Tanh, 'sigmoid': torch.nn.Sigmoid}
 
 
 class _DenseLayer(nn.Sequential):
 
-    def __init__(self, num_input_features: int, activation: str, growth_rate: int, bn_size: int, drop_rate: float, bn_args: Dict[str, Any]):
+    def __init__(self, num_input_features: 'int', activation: 'str', growth_rate: 'int', bn_size: 'int', drop_rate: 'float', bn_args: 'Dict[str, Any]'):
         super(_DenseLayer, self).__init__()
         self.add_module('norm1', nn.BatchNorm2d(num_input_features, **bn_args)),
         self.add_module('relu1', _activations[activation]()),
@@ -1598,7 +1892,7 @@ class _DenseLayer(nn.Sequential):
         self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False)),
         self.drop_rate = drop_rate
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         new_features = super(_DenseLayer, self).forward(x)
         if self.drop_rate > 0:
             new_features = F.dropout(new_features, p=self.drop_rate, training=self.training)
@@ -1607,7 +1901,7 @@ class _DenseLayer(nn.Sequential):
 
 class _DenseBlock(nn.Sequential):
 
-    def __init__(self, num_layers: int, num_input_features: int, activation: str, bn_size: int, growth_rate: int, drop_rate: float, bn_args: Dict[str, Any]):
+    def __init__(self, num_layers: 'int', num_input_features: 'int', activation: 'str', bn_size: 'int', growth_rate: 'int', drop_rate: 'float', bn_args: 'Dict[str, Any]'):
         super(_DenseBlock, self).__init__()
         for i in range(num_layers):
             layer = _DenseLayer(num_input_features=num_input_features + i * growth_rate, activation=activation, growth_rate=growth_rate, bn_size=bn_size, drop_rate=drop_rate, bn_args=bn_args)
@@ -1616,7 +1910,7 @@ class _DenseBlock(nn.Sequential):
 
 class _Transition(nn.Sequential):
 
-    def __init__(self, num_input_features: int, activation: str, num_output_features: int, pool_size: int, bn_args: Dict[str, Any]):
+    def __init__(self, num_input_features: 'int', activation: 'str', num_output_features: 'int', pool_size: 'int', bn_args: 'Dict[str, Any]'):
         super(_Transition, self).__init__()
         self.add_module('norm', nn.BatchNorm2d(num_input_features, **bn_args))
         self.add_module('relu', _activations[activation]())
@@ -1637,13 +1931,13 @@ class ShakeDropFunction(Function):
     """
 
     @staticmethod
-    def forward(ctx: Any, x: torch.Tensor, alpha: torch.Tensor, beta: torch.Tensor, bl: torch.Tensor) ->torch.Tensor:
+    def forward(ctx: 'Any', x: 'torch.Tensor', alpha: 'torch.Tensor', beta: 'torch.Tensor', bl: 'torch.Tensor') ->torch.Tensor:
         ctx.save_for_backward(x, alpha, beta, bl)
         y = (bl + alpha - bl * alpha) * x
         return y
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def backward(ctx: 'Any', grad_output: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x, alpha, beta, bl = ctx.saved_tensors
         grad_x = grad_alpha = grad_beta = grad_bl = None
         if ctx.needs_input_grad[0]:
@@ -1654,7 +1948,7 @@ class ShakeDropFunction(Function):
 shake_drop = ShakeDropFunction.apply
 
 
-def shake_drop_get_bl(block_index: int, min_prob_no_shake: float, num_blocks: int, is_training: bool, is_cuda: bool) ->torch.Tensor:
+def shake_drop_get_bl(block_index: 'int', min_prob_no_shake: 'float', num_blocks: 'int', is_training: 'bool', is_cuda: 'bool') ->torch.Tensor:
     """
     The sampling of Bernoulli random variable
     based on Eq. (4) in the paper
@@ -1685,7 +1979,7 @@ def shake_drop_get_bl(block_index: int, min_prob_no_shake: float, num_blocks: in
     return bl
 
 
-def shake_get_alpha_beta(is_training: bool, is_cuda: bool) ->Tuple[torch.Tensor, torch.Tensor]:
+def shake_get_alpha_beta(is_training: 'bool', is_cuda: 'bool') ->Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     Currently, this function supports `shake-shake`.
@@ -1729,13 +2023,13 @@ class ShakeShakeFunction(Function):
     """
 
     @staticmethod
-    def forward(ctx: Any, x1: torch.Tensor, x2: torch.Tensor, alpha: torch.Tensor, beta: torch.Tensor) ->torch.Tensor:
+    def forward(ctx: 'Any', x1: 'torch.Tensor', x2: 'torch.Tensor', alpha: 'torch.Tensor', beta: 'torch.Tensor') ->torch.Tensor:
         ctx.save_for_backward(x1, x2, alpha, beta)
         y = x1 * alpha + x2 * (1 - alpha)
         return y
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def backward(ctx: 'Any', grad_output: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x1, x2, alpha, beta = ctx.saved_tensors
         grad_x1 = grad_x2 = grad_alpha = grad_beta = None
         if ctx.needs_input_grad[0]:
@@ -1753,13 +2047,13 @@ class ResBlock(nn.Module):
     __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
     """
 
-    def __init__(self, config: Dict[str, Any], in_features: int, out_features: int, blocks_per_group: int, block_index: int, dropout: Optional[float], activation: nn.Module):
+    def __init__(self, config: 'Dict[str, Any]', in_features: 'int', out_features: 'int', blocks_per_group: 'int', block_index: 'int', dropout: 'Optional[float]', activation: 'nn.Module'):
         super(ResBlock, self).__init__()
         self.config = config
         self.dropout = dropout
         self.activation = activation
         self.shortcut = None
-        self.start_norm: Optional[Callable] = None
+        self.start_norm: 'Optional[Callable]' = None
         if in_features != out_features:
             self.shortcut = nn.Linear(in_features, out_features)
             self.start_norm = nn.Sequential(nn.BatchNorm1d(in_features), self.activation())
@@ -1769,7 +2063,7 @@ class ResBlock(nn.Module):
         if config['use_shake_shake']:
             self.shake_shake_layers = self._build_block(in_features, out_features)
 
-    def _build_block(self, in_features: int, out_features: int) ->nn.Module:
+    def _build_block(self, in_features: 'int', out_features: 'int') ->nn.Module:
         layers = list()
         if self.start_norm is None:
             layers.append(nn.BatchNorm1d(in_features))
@@ -1782,7 +2076,7 @@ class ResBlock(nn.Module):
         layers.append(nn.Linear(out_features, out_features))
         return nn.Sequential(*layers)
 
-    def forward(self, x: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, x: 'torch.FloatTensor') ->torch.FloatTensor:
         residual = x
         if self.shortcut is not None and self.start_norm is not None:
             x = self.start_norm(x)
@@ -1800,6 +2094,103 @@ class ResBlock(nn.Module):
             x = shake_drop(x, alpha, beta, bl)
         x = x + residual
         return x
+
+
+class TemporalFusionLayer(nn.Module):
+    """
+    (Lim et al.
+    Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting,
+    https://arxiv.org/abs/1912.09363)
+    we follow the implementation from pytorch forecasting:
+    https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/temporal_fusion_transformer/__init__.py
+    """
+
+    def __init__(self, window_size: 'int', network_structure: 'NetworkStructure', network_encoder: 'Dict[str, EncoderBlockInfo]', n_decoder_output_features: 'int', d_model: 'int', n_head: 'int', dropout: 'Optional[float]'=None):
+        super().__init__()
+        num_blocks = network_structure.num_blocks
+        last_block = f'block_{num_blocks}'
+        n_encoder_output = network_encoder[last_block].encoder_output_shape[-1]
+        self.window_size = window_size
+        if n_decoder_output_features != n_encoder_output:
+            self.decoder_proj_layer = nn.Linear(n_decoder_output_features, n_encoder_output, bias=False)
+        else:
+            self.decoder_proj_layer = None
+        if network_structure.variable_selection:
+            if network_structure.skip_connection:
+                n_encoder_output_first = network_encoder['block_1'].encoder_output_shape[-1]
+                self.static_context_enrichment = GatedResidualNetwork(n_encoder_output_first, n_encoder_output_first, n_encoder_output_first, dropout)
+                self.enrichment = GatedResidualNetwork(input_size=n_encoder_output, hidden_size=n_encoder_output, output_size=d_model, dropout=dropout, context_size=n_encoder_output_first, residual=False)
+                self.enrich_with_static = True
+        if not hasattr(self, 'enrichment'):
+            self.enrichment = GatedResidualNetwork(input_size=n_encoder_output, hidden_size=n_encoder_output, output_size=d_model, dropout=dropout, residual=False)
+            self.enrich_with_static = False
+        self.attention_fusion = InterpretableMultiHeadAttention(d_model=d_model, n_head=n_head, dropout=dropout or 0.0)
+        self.post_attn_gate_norm = GateAddNorm(d_model, dropout=dropout, trainable_add=False)
+        self.pos_wise_ff = GatedResidualNetwork(input_size=d_model, hidden_size=d_model, output_size=d_model, dropout=dropout)
+        self.network_structure = network_structure
+        if network_structure.skip_connection:
+            if network_structure.skip_connection_type == 'add':
+                self.residual_connection = AddLayer(d_model, n_encoder_output)
+            elif network_structure.skip_connection_type == 'gate_add_norm':
+                self.residual_connection = GateAddNorm(d_model, skip_size=n_encoder_output, dropout=None, trainable_add=False)
+        self._device = 'cpu'
+
+    def forward(self, encoder_output: 'torch.Tensor', decoder_output: 'torch.Tensor', past_observed_targets: 'torch.BoolTensor', decoder_length: 'int', static_embedding: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
+        """
+        Args:
+            encoder_output (torch.Tensor):
+                the output of the last layer of encoder network
+            decoder_output (torch.Tensor):
+                the output of the last layer of decoder network
+            past_observed_targets (torch.BoolTensor):
+                observed values in the past
+            decoder_length (int):
+                length of decoder network
+            static_embedding Optional[torch.Tensor]:
+                embeddings of static features  (if available)
+        """
+        if self.decoder_proj_layer is not None:
+            decoder_output = self.decoder_proj_layer(decoder_output)
+        network_output = torch.cat([encoder_output, decoder_output], dim=1)
+        if self.enrich_with_static and static_embedding is not None:
+            static_context_enrichment = self.static_context_enrichment(static_embedding)
+            attn_input = self.enrichment(network_output, static_context_enrichment[:, None].expand(-1, network_output.shape[1], -1))
+        else:
+            attn_input = self.enrichment(network_output)
+        encoder_out_length = encoder_output.shape[1]
+        past_observed_targets = past_observed_targets[:, -encoder_out_length:]
+        past_observed_targets = past_observed_targets
+        mask = self.get_attention_mask(past_observed_targets=past_observed_targets, decoder_length=decoder_length)
+        if mask.shape[-1] < attn_input.shape[1]:
+            mask = torch.cat([mask.new_full((*mask.shape[:-1], attn_input.shape[1] - mask.shape[-1]), True), mask], dim=-1)
+        attn_output, attn_output_weights = self.attention_fusion(q=attn_input[:, -decoder_length:], k=attn_input, v=attn_input, mask=mask)
+        attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, -decoder_length:])
+        output = self.pos_wise_ff(attn_output)
+        if self.network_structure.skip_connection:
+            return self.residual_connection(output, decoder_output)
+        else:
+            return output
+
+    @property
+    def device(self) ->torch.device:
+        return self._device
+
+    @device.setter
+    def device(self, device: 'torch.device') ->None:
+        self
+        self._device = device
+
+    def get_attention_mask(self, past_observed_targets: 'torch.BoolTensor', decoder_length: 'int') ->torch.Tensor:
+        """
+        https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/
+        temporal_fusion_transformer/__init__.py
+        """
+        attend_step = torch.arange(decoder_length, device=self.device)
+        predict_step = torch.arange(0, decoder_length, device=self.device)[:, None]
+        decoder_mask = attend_step >= predict_step
+        encoder_mask = ~past_observed_targets.squeeze(-1)
+        mask = torch.cat((encoder_mask.unsqueeze(1).expand(-1, decoder_length, -1), decoder_mask.unsqueeze(0).expand(encoder_mask.size(0), -1, -1)), dim=2)
+        return mask
 
 
 class PositionalEncoding(nn.Module):
@@ -1825,7 +2216,7 @@ class PositionalEncoding(nn.Module):
         >>> pos_encoder = PositionalEncoding(d_model)
     """
 
-    def __init__(self, d_model: int, dropout: float=0.1, max_len: int=5000):
+    def __init__(self, d_model: 'int', dropout: 'float'=0.1, max_len: 'int'=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(max_len, d_model)
@@ -1836,7 +2227,7 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self, x: torch.Tensor, pos_idx: Optional[Tuple[int]]=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', pos_idx: 'Optional[Tuple[int]]'=None) ->torch.Tensor:
         """Inputs of forward function
         Args:
             x (torch.Tensor(B, L, N)):
@@ -1856,7 +2247,7 @@ class PositionalEncoding(nn.Module):
 
 class DecoderNetwork(nn.Module):
 
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]]=None) ->torch.Tensor:
+    def forward(self, x_future: 'torch.Tensor', encoder_output: 'torch.Tensor', pos_idx: 'Optional[Tuple[int]]'=None) ->torch.Tensor:
         """
         Base forecasting Decoder Network, its output needs to be a 3-d Tensor:
 
@@ -1874,7 +2265,7 @@ class DecoderNetwork(nn.Module):
 
 class EncoderNetwork(nn.Module):
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False) ->torch.Tensor:
         """
         Base forecasting network, its output needs to be a 2-d or 3-d Tensor:
         When the decoder is an auto-regressive model, then it needs to output a 3-d Tensor, in which case, output_seq
@@ -1897,7 +2288,7 @@ class EncoderNetwork(nn.Module):
         """
         raise NotImplementedError
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         get the last value of the sequential output
         Args:
@@ -1914,7 +2305,7 @@ class EncoderNetwork(nn.Module):
 
 class TimeSeriesMLP(EncoderNetwork):
 
-    def __init__(self, window_size: int, network: Optional[nn.Module]=None):
+    def __init__(self, window_size: 'int', network: 'Optional[nn.Module]'=None):
         """
         Transform the input features (B, T, N) to fit the requirement of MLP
         Args:
@@ -1926,7 +2317,7 @@ class TimeSeriesMLP(EncoderNetwork):
         self.window_size = window_size
         self.network = network
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False) ->torch.Tensor:
         """
 
         Args:
@@ -1948,13 +2339,13 @@ class TimeSeriesMLP(EncoderNetwork):
         x = x.flatten(-2)
         return x if self.network is None else self.network(x)
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         return x
 
 
 class _InceptionBlock(nn.Module):
 
-    def __init__(self, n_inputs: int, n_filters: int, kernel_size: int, bottleneck: int=None):
+    def __init__(self, n_inputs: 'int', n_filters: 'int', kernel_size: 'int', bottleneck: 'int'=None):
         super(_InceptionBlock, self).__init__()
         self.n_filters = n_filters
         self.bottleneck = None if bottleneck is None else nn.Conv1d(n_inputs, bottleneck, kernel_size=1)
@@ -1970,7 +2361,7 @@ class _InceptionBlock(nn.Module):
         self.convpool = nn.Conv1d(n_inputs, n_filters, 1)
         self.bn = nn.BatchNorm1d(4 * n_filters)
 
-    def _padding(self, kernel_size: int) ->Tuple[int, int]:
+    def _padding(self, kernel_size: 'int') ->Tuple[int, int]:
         if kernel_size % 2 == 0:
             return kernel_size // 2, kernel_size // 2 - 1
         else:
@@ -1979,7 +2370,7 @@ class _InceptionBlock(nn.Module):
     def get_n_outputs(self) ->int:
         return 4 * self.n_filters
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.bottleneck is not None:
             x = self.bottleneck(x)
         x1 = self.conv1(self.pad1(x))
@@ -1993,12 +2384,12 @@ class _InceptionBlock(nn.Module):
 
 class _ResidualBlock(nn.Module):
 
-    def __init__(self, n_res_inputs: int, n_outputs: int):
+    def __init__(self, n_res_inputs: 'int', n_outputs: 'int'):
         super(_ResidualBlock, self).__init__()
         self.shortcut = nn.Conv1d(n_res_inputs, n_outputs, 1, bias=False)
         self.bn = nn.BatchNorm1d(n_outputs)
 
-    def forward(self, x: torch.Tensor, res: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', res: 'torch.Tensor') ->torch.Tensor:
         shortcut = self.shortcut(res)
         shortcut = self.bn(shortcut)
         x = x + shortcut
@@ -2007,7 +2398,7 @@ class _ResidualBlock(nn.Module):
 
 class _InceptionTime(nn.Module):
 
-    def __init__(self, in_features: int, config: Dict[str, Any]) ->None:
+    def __init__(self, in_features: 'int', config: 'Dict[str, Any]') ->None:
         super().__init__()
         self.config = config
         n_inputs = in_features
@@ -2027,7 +2418,7 @@ class _InceptionTime(nn.Module):
             n_inputs = block.get_n_outputs()
         self.receptive_field = receptive_field
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False) ->torch.Tensor:
         x = x.transpose(1, 2).contiguous()
         res = x
         for i in range(self.config['num_blocks']):
@@ -2041,13 +2432,13 @@ class _InceptionTime(nn.Module):
         else:
             return self.get_last_seq_value(x)
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         return x[:, -1:, :]
 
 
 class _RNN(EncoderNetwork):
 
-    def __init__(self, in_features: int, config: Dict[str, Any], lagged_value: Optional[List[int]]=None):
+    def __init__(self, in_features: 'int', config: 'Dict[str, Any]', lagged_value: 'Optional[List[int]]'=None):
         super().__init__()
         if lagged_value is None:
             self.lagged_value = [0]
@@ -2061,7 +2452,7 @@ class _RNN(EncoderNetwork):
         self.lstm = cell_type(input_size=in_features, hidden_size=config['hidden_size'], num_layers=config['num_layers'], dropout=config.get('dropout', 0.0), bidirectional=config['bidirectional'], batch_first=True)
         self.cell_type = config['cell_type']
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False, hx: Optional[Tuple[torch.Tensor, torch.Tensor]]=None) ->Tuple[torch.Tensor, ...]:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False, hx: 'Optional[Tuple[torch.Tensor, torch.Tensor]]'=None) ->Tuple[torch.Tensor, ...]:
         B, T, _ = x.shape
         x, hidden_state = self.lstm(x, hx)
         if output_seq:
@@ -2069,7 +2460,7 @@ class _RNN(EncoderNetwork):
         else:
             return self.get_last_seq_value(x), hidden_state
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         B, T, _ = x.shape
         if not self.config['bidirectional']:
             return x[:, -1:]
@@ -2081,17 +2472,17 @@ class _RNN(EncoderNetwork):
 
 class _Chomp1d(nn.Module):
 
-    def __init__(self, chomp_size: int):
+    def __init__(self, chomp_size: 'int'):
         super(_Chomp1d, self).__init__()
         self.chomp_size = chomp_size
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         return x[:, :, :-self.chomp_size].contiguous()
 
 
 class _TemporalBlock(nn.Module):
 
-    def __init__(self, n_inputs: int, n_outputs: int, kernel_size: int, stride: int, dilation: int, padding: int, dropout: float=0.2):
+    def __init__(self, n_inputs: 'int', n_outputs: 'int', kernel_size: 'int', stride: 'int', dilation: 'int', padding: 'int', dropout: 'float'=0.2):
         super(_TemporalBlock, self).__init__()
         self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size, stride=stride, padding=padding, dilation=dilation))
         self.chomp1 = _Chomp1d(padding)
@@ -2111,7 +2502,7 @@ class _TemporalBlock(nn.Module):
         if self.downsample is not None:
             self.downsample.weight.data.normal_(0, 0.01)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         out = self.net(x)
         res = x if self.downsample is None else self.downsample(x)
         return self.relu(out + res)
@@ -2119,9 +2510,9 @@ class _TemporalBlock(nn.Module):
 
 class _TemporalConvNet(EncoderNetwork):
 
-    def __init__(self, num_inputs: int, num_channels: List[int], kernel_size: List[int], dropout: float=0.2):
+    def __init__(self, num_inputs: 'int', num_channels: 'List[int]', kernel_size: 'List[int]', dropout: 'float'=0.2):
         super(_TemporalConvNet, self).__init__()
-        layers: List[Any] = []
+        layers: 'List[Any]' = []
         num_levels = len(num_channels)
         receptive_field = 1
         for i in range(num_levels):
@@ -2135,7 +2526,7 @@ class _TemporalConvNet(EncoderNetwork):
         self.receptive_field = receptive_field
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False) ->torch.Tensor:
         x = x.transpose(1, 2).contiguous()
         x = self.network(x)
         x = x.transpose(1, 2).contiguous()
@@ -2144,13 +2535,13 @@ class _TemporalConvNet(EncoderNetwork):
         else:
             return self.get_last_seq_value(x)
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         return x[:, -1:]
 
 
 class _TransformerEncoder(EncoderNetwork):
 
-    def __init__(self, in_features: int, d_model: int, num_layers: int, transformer_encoder_layers: nn.Module, use_positional_encoder: bool, use_layer_norm_output: bool, dropout_pe: float=0.0, layer_norm_eps_output: Optional[float]=None, lagged_value: Optional[List[int]]=None):
+    def __init__(self, in_features: 'int', d_model: 'int', num_layers: 'int', transformer_encoder_layers: 'nn.Module', use_positional_encoder: 'bool', use_layer_norm_output: 'bool', dropout_pe: 'float'=0.0, layer_norm_eps_output: 'Optional[float]'=None, lagged_value: 'Optional[List[int]]'=None):
         super().__init__()
         if lagged_value is None:
             self.lagged_value = [0]
@@ -2170,7 +2561,7 @@ class _TransformerEncoder(EncoderNetwork):
             norm = None
         self.transformer_encoder_layers = nn.TransformerEncoder(encoder_layer=transformer_encoder_layers, num_layers=num_layers, norm=norm)
 
-    def forward(self, x: torch.Tensor, output_seq: bool=False, mask: Optional[torch.Tensor]=None, src_key_padding_mask: Optional[torch.Tensor]=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', output_seq: 'bool'=False, mask: 'Optional[torch.Tensor]'=None, src_key_padding_mask: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
         x = self.input_layer(x)
         x = self.transformer_encoder_layers(x)
         if output_seq:
@@ -2178,515 +2569,6 @@ class _TransformerEncoder(EncoderNetwork):
         else:
             return self.get_last_seq_value(x)
 
-    def get_last_seq_value(self, x: torch.Tensor) ->torch.Tensor:
+    def get_last_seq_value(self, x: 'torch.Tensor') ->torch.Tensor:
         return x[:, -1:]
-
-
-class _LearnedEntityEmbedding(nn.Module):
-    """ Learned entity embedding module for categorical features"""
-
-    def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
-        """
-        Args:
-            config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
-            num_input_features (np.ndarray): column wise information of number of output columns after transformation
-                for each categorical column and 0 for numerical columns
-            num_numerical_features (int): number of numerical features in X
-        """
-        super().__init__()
-        self.config = config
-        self.num_numerical = num_numerical_features
-        self.num_input_features = num_input_features
-        categorical_features: np.ndarray = self.num_input_features > 0
-        self.num_categorical_features = self.num_input_features[categorical_features]
-        self.embed_features = [(num_in >= config['min_unique_values_for_embedding']) for num_in in self.num_input_features]
-        self.num_output_dimensions = [0] * num_numerical_features
-        self.num_output_dimensions.extend([(config['dimension_reduction_' + str(i)] * num_in) for i, num_in in enumerate(self.num_categorical_features)])
-        self.num_output_dimensions = [int(np.clip(num_out, 1, num_in - 1)) for num_out, num_in in zip(self.num_output_dimensions, self.num_input_features)]
-        self.num_output_dimensions = [(num_out if embed else num_in) for num_out, embed, num_in in zip(self.num_output_dimensions, self.embed_features, self.num_input_features)]
-        self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
-        self.ee_layers = self._create_ee_layers()
-
-    def get_partial_models(self, subset_features: List[int]) ->'_LearnedEntityEmbedding':
-        """
-        extract a partial models that only works on a subset of the data that ought to be passed to the embedding
-        network, this function is implemented for time series forecasting tasks where the known future features is only
-        a subset of the past features
-        Args:
-            subset_features (List[int]):
-                a set of index identifying which features will pass through the partial model
-
-        Returns:
-            partial_model (_LearnedEntityEmbedding)
-                a new partial model
-        """
-        num_input_features = self.num_input_features[subset_features]
-        num_numerical_features = sum([(sf < self.num_numerical) for sf in subset_features])
-        num_output_dimensions = [self.num_output_dimensions[sf] for sf in subset_features]
-        embed_features = [self.embed_features[sf] for sf in subset_features]
-        ee_layers = []
-        ee_layer_tracker = 0
-        for sf in subset_features:
-            if self.embed_features[sf]:
-                ee_layers.append(self.ee_layers[ee_layer_tracker])
-                ee_layer_tracker += 1
-        ee_layers = nn.ModuleList(ee_layers)
-        return PartialLearnedEntityEmbedding(num_input_features, num_numerical_features, embed_features, num_output_dimensions, ee_layers)
-
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        concat_seq = []
-        last_concat = 0
-        x_pointer = 0
-        layer_pointer = 0
-        for num_in, embed in zip(self.num_input_features, self.embed_features):
-            if not embed:
-                x_pointer += 1
-                continue
-            if x_pointer > last_concat:
-                concat_seq.append(x[..., last_concat:x_pointer])
-            categorical_feature_slice = x[..., x_pointer:x_pointer + num_in]
-            concat_seq.append(self.ee_layers[layer_pointer](categorical_feature_slice))
-            layer_pointer += 1
-            x_pointer += num_in
-            last_concat = x_pointer
-        concat_seq.append(x[..., last_concat:])
-        return torch.cat(concat_seq, dim=-1)
-
-    def _create_ee_layers(self) ->nn.ModuleList:
-        layers = nn.ModuleList()
-        for i, (num_in, embed, num_out) in enumerate(zip(self.num_input_features, self.embed_features, self.num_output_dimensions)):
-            if not embed:
-                continue
-            layers.append(nn.Linear(num_in, num_out))
-        return layers
-
-
-class TransposeLinear(nn.Module):
-
-    def __init__(self, weights: torch.Tensor):
-        super().__init__()
-        self.register_buffer('weights', weights)
-
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        return x.mm(self.weights)
-
-
-class ProjectionLayer(nn.Module):
-    """
-    A projection layer that project features to a torch distribution
-    """
-    value_in_support = 0.0
-
-    def __init__(self, num_in_features: int, output_shape: Tuple[int, ...], n_prediction_heads: int, decoder_has_local_layer: bool, **kwargs: Any):
-        super().__init__(**kwargs)
-
-        def build_single_proj_layer(arg_dim: int) ->nn.Module:
-            """
-            build a single proj layer given the input dims, the output is unflattened to fit the required output_shape
-            and n_prediction_steps.
-            we note that output_shape's first dimensions is always n_prediction_steps
-            Args:
-                arg_dim (int):
-                    dimension of the target distribution
-
-            Returns:
-                proj_layer (nn.Module):
-                    projection layer that maps the decoder output to parameterize distributions
-            """
-            if decoder_has_local_layer:
-                return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim), nn.Unflatten(-1, (*output_shape, arg_dim)))
-            else:
-                return nn.Sequential(nn.Linear(num_in_features, n_prediction_heads * np.prod(output_shape).item() * arg_dim), nn.Unflatten(-1, (n_prediction_heads, *output_shape, arg_dim)))
-        self.proj = nn.ModuleList([build_single_proj_layer(dim) for dim in self.arg_dims.values()])
-
-    def forward(self, x: torch.Tensor) ->torch.distributions:
-        """
-        get a target distribution
-        Args:
-            x: input tensor ([batch_size, in_features]):
-                input tensor, acquired by the base header, have the shape [batch_size, in_features]
-
-        Returns:
-            dist: torch.distributions ([batch_size, n_prediction_steps, output_shape]):
-                an output torch distribution with shape (batch_size, n_prediction_steps, output_shape)
-        """
-        params_unbounded = [proj(x) for proj in self.proj]
-        return self.dist_cls(*self.domain_map(*params_unbounded))
-
-    @property
-    @abstractmethod
-    def arg_dims(self) ->Dict[str, int]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def domain_map(self, *args: torch.Tensor) ->Tuple[torch.Tensor, ...]:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def dist_cls(self) ->Type[Distribution]:
-        raise NotImplementedError
-
-
-class NormalOutput(ProjectionLayer):
-
-    @property
-    def arg_dims(self) ->Dict[str, int]:
-        return {'loc': 1, 'scale': 1}
-
-    def domain_map(self, loc: torch.Tensor, scale: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
-        scale = F.softplus(scale) + 1e-10
-        return loc.squeeze(-1), scale.squeeze(-1)
-
-    @property
-    def dist_cls(self) ->Type[Distribution]:
-        return Normal
-
-
-class StudentTOutput(ProjectionLayer):
-
-    @property
-    def arg_dims(self) ->Dict[str, int]:
-        return {'df': 1, 'loc': 1, 'scale': 1}
-
-    def domain_map(self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        scale = F.softplus(scale) + 1e-10
-        df = 2.0 + F.softplus(df)
-        return df.squeeze(-1), loc.squeeze(-1), scale.squeeze(-1)
-
-    @property
-    def dist_cls(self) ->Type[Distribution]:
-        return StudentT
-
-
-class BetaOutput(ProjectionLayer):
-    value_in_support = 0.5
-
-    @property
-    def arg_dims(self) ->Dict[str, int]:
-        return {'concentration1': 1, 'concentration0': 1}
-
-    def domain_map(self, concentration1: torch.Tensor, concentration0: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
-        epsilon = 1e-10
-        concentration1 = F.softplus(concentration1) + epsilon
-        concentration0 = F.softplus(concentration0) + epsilon
-        return concentration1.squeeze(-1), concentration0.squeeze(-1)
-
-    @property
-    def dist_cls(self) ->Type[Distribution]:
-        return Beta
-
-
-class GammaOutput(ProjectionLayer):
-    value_in_support = 0.5
-
-    @property
-    def arg_dims(self) ->Dict[str, int]:
-        return {'concentration': 1, 'rate': 1}
-
-    def domain_map(self, concentration: torch.Tensor, rate: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
-        epsilon = 1e-10
-        concentration = F.softplus(concentration) + epsilon
-        rate = F.softplus(rate) + epsilon
-        return concentration.squeeze(-1), rate.squeeze(-1)
-
-    @property
-    def dist_cls(self) ->Type[Distribution]:
-        return Gamma
-
-
-class PoissonOutput(ProjectionLayer):
-
-    @property
-    def arg_dims(self) ->Dict[str, int]:
-        return {'rate': 1}
-
-    def domain_map(self, rate: torch.Tensor) ->Tuple[torch.Tensor]:
-        rate_pos = F.softplus(rate).clone()
-        return rate_pos.squeeze(-1),
-
-    @property
-    def dist_cls(self) ->Type[Distribution]:
-        return Poisson
-
-
-class QuantileHead(nn.Module):
-
-    def __init__(self, head_components: List[nn.Module]):
-        super().__init__()
-        self.net = nn.ModuleList(head_components)
-
-    def forward(self, x: torch.Tensor) ->List[torch.Tensor]:
-        return [net(x) for net in self.net]
-
-
-class _FullyConvolutional2DHead(nn.Module):
-
-    def __init__(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...], pooling_method: str, activation: str, num_layers: int, num_channels: List[int]):
-        super().__init__()
-        layers = []
-        in_channels = input_shape[0]
-        for i in range(1, num_layers):
-            layers.append(nn.Conv2d(in_channels=in_channels, out_channels=num_channels[i - 1], kernel_size=1))
-            layers.append(_activations[activation]())
-            in_channels = num_channels[i - 1]
-        out_channels = output_shape[0]
-        layers.append(nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1))
-        if pooling_method == 'average':
-            layers.append(nn.AdaptiveAvgPool2d(output_size=1))
-        else:
-            layers.append(nn.AdaptiveMaxPool2d(output_size=1))
-        self.head = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        B, C, H, W = x.size()
-        return self.head(x).view(B, -1)
-
-
-class AbstractForecastingLoss(Loss):
-    __constants__ = ['reduction']
-
-    def __init__(self, reduction: str='mean') ->None:
-        super(AbstractForecastingLoss, self).__init__(reduction=reduction)
-
-    def aggregate_loss(self, loss_values: torch.Tensor) ->torch.Tensor:
-        if self.reduction == 'mean':
-            return loss_values.mean()
-        elif self.reduction == 'sum':
-            return loss_values.sum()
-        else:
-            return loss_values
-
-
-class LogProbLoss(AbstractForecastingLoss):
-
-    def forward(self, input_dist: torch.distributions.Distribution, target_tensor: torch.Tensor) ->torch.Tensor:
-        scores = input_dist.log_prob(target_tensor)
-        return self.aggregate_loss(-scores)
-
-
-class MAPELoss(AbstractForecastingLoss):
-
-    def forward(self, predictions: torch.Tensor, target_tensor: torch.Tensor) ->torch.Tensor:
-        denominator = torch.abs(target_tensor)
-        diff = torch.abs(predictions - target_tensor)
-        flag = (denominator == 0).float()
-        mape = diff * (1 - flag) / (denominator + flag)
-        return self.aggregate_loss(mape)
-
-
-class MASELoss(AbstractForecastingLoss):
-
-    def __init__(self, reduction: str='mean') ->None:
-        super(MASELoss, self).__init__(reduction=reduction)
-        self._mase_coefficient: Union[float, torch.Tensor] = 1.0
-
-    def set_mase_coefficient(self, mase_coefficient: torch.Tensor) ->'MASELoss':
-        """
-        set mase coefficient for computing MASE losses
-        Args:
-            mase_coefficient (torch.Tensor): mase coefficient, its dimensions corresponds to [B, L, N] and can be
-                broadcasted
-
-        Returns:
-
-        """
-        if len(mase_coefficient.shape) == 2:
-            mase_coefficient = mase_coefficient.unsqueeze(1)
-        self._mase_coefficient = mase_coefficient
-        return self
-
-    def forward(self, predictions: torch.Tensor, target_tensor: torch.Tensor) ->torch.Tensor:
-        if isinstance(self._mase_coefficient, torch.Tensor):
-            mase_shape = self._mase_coefficient.shape
-            pred_shape = predictions.shape
-            if len(mase_shape) == len(pred_shape):
-                if mase_shape[0] != pred_shape[0] or mase_shape[-1] != pred_shape[-1]:
-                    raise ValueError(f'If self._mase_coefficient is a Tensor, it must have the same batch size and num_targets as the predictions, However, their shapes are {mase_shape}(self._mase_coefficient) and {pred_shape}(pred_shape)')
-        loss_values = torch.abs(predictions - target_tensor) * self._mase_coefficient
-        return self.aggregate_loss(loss_values)
-
-
-class QuantileLoss(AbstractForecastingLoss):
-
-    def __init__(self, reduction: str='mean', quantiles: List[float]=[0.5]) ->None:
-        super(QuantileLoss, self).__init__(reduction=reduction)
-        self.quantiles = quantiles
-
-    def set_quantiles(self, quantiles: List[float]) ->None:
-        self.quantiles = quantiles
-
-    def forward(self, predictions: List[torch.Tensor], target_tensor: torch.Tensor) ->torch.Tensor:
-        assert len(self.quantiles) == len(predictions)
-        losses_all = []
-        for q, y_pred in zip(self.quantiles, predictions):
-            diff = target_tensor - y_pred
-            loss_q = torch.max(q * diff, (q - 1) * diff)
-            losses_all.append(loss_q.unsqueeze(-1))
-        losses_all = torch.mean(torch.concat(losses_all, dim=-1), dim=-1)
-        return self.aggregate_loss(losses_all)
-
-
-class DummyEmbedding(torch.nn.Module):
-
-    def forward(self, x):
-        if x.shape[-1] > 10:
-            return x[..., :-10]
-        return x
-
-
-class DummyEncoderNetwork(EncoderNetwork):
-
-    def forward(self, x, output_seq=False):
-        if output_seq:
-            return torch.ones((*x.shape[:-1], 10))
-        return torch.ones((*x.shape[:-2], 1, 10))
-
-
-class ReducedEmbedding(torch.nn.Module):
-
-    def __init__(self, num_input_features, num_numerical_features: int):
-        super(ReducedEmbedding, self).__init__()
-        self.num_input_features = num_input_features
-        self.num_numerical_features = num_numerical_features
-        self.n_cat_features = len(num_input_features) - num_numerical_features
-
-    def forward(self, x):
-        x = x[..., :-self.n_cat_features]
-        return x
-
-    def get_partial_models(self, subset_features):
-        num_numerical_features = sum([(sf < self.num_numerical_features) for sf in subset_features])
-        num_input_features = [self.num_input_features[sf] for sf in subset_features]
-        return ReducedEmbedding(num_input_features, num_numerical_features)
-
-
-import torch
-from torch.nn import MSELoss, ReLU
-from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
-
-
-TESTCASES = [
-    # (nn.Module, init_args, forward_args, jit_compiles)
-    (AddLayer,
-     lambda: ([], {'input_size': 4, 'skip_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (DummyEmbedding,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (DummyEncoderNetwork,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (MAPELoss,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (MASELoss,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (PositionalEncoding,
-     lambda: ([], {'d_model': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (QuantileHead,
-     lambda: ([], {'head_components': [_mock_layer()]}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ReducedEmbedding,
-     lambda: ([], {'num_input_features': [4, 4], 'num_numerical_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ResBlock,
-     lambda: ([], {'config': _mock_config(num_groups=1, use_dropout=0.5, use_shake_shake=4, use_shake_drop=4, max_shake_drop_probability=4), 'in_features': 4, 'out_features': 4, 'blocks_per_group': 4, 'block_index': 4, 'dropout': 0.5, 'activation': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
-    (TimeSeriesMLP,
-     lambda: ([], {'window_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (_Chomp1d,
-     lambda: ([], {'chomp_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (_FullyConvolutional2DHead,
-     lambda: ([], {'input_shape': [4, 4], 'output_shape': [4, 4], 'pooling_method': 4, 'activation': 4, 'num_layers': 1, 'num_channels': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (_InceptionBlock,
-     lambda: ([], {'n_inputs': 4, 'n_filters': 4, 'kernel_size': 4}),
-     lambda: ([torch.rand([4, 4])], {}),
-     False),
-    (_InceptionTime,
-     lambda: ([], {'in_features': 4, 'config': _mock_config(num_filters=4, bottleneck_size=4, kernel_size=4, num_blocks=4)}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
-    (_NoEmbedding,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (_ResidualBlock,
-     lambda: ([], {'n_res_inputs': 4, 'n_outputs': 4}),
-     lambda: ([torch.rand([4, 4]), torch.rand([4, 4])], {}),
-     True),
-    (_TemporalConvNet,
-     lambda: ([], {'num_inputs': 4, 'num_channels': [4, 4], 'kernel_size': [4, 4]}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
-]
-
-class Test_automl_Auto_PyTorch(_paritybench_base):
-    def test_000(self):
-        self._check(*TESTCASES[0])
-
-    def test_001(self):
-        self._check(*TESTCASES[1])
-
-    def test_002(self):
-        self._check(*TESTCASES[2])
-
-    def test_003(self):
-        self._check(*TESTCASES[3])
-
-    def test_004(self):
-        self._check(*TESTCASES[4])
-
-    def test_005(self):
-        self._check(*TESTCASES[5])
-
-    def test_006(self):
-        self._check(*TESTCASES[6])
-
-    def test_007(self):
-        self._check(*TESTCASES[7])
-
-    def test_008(self):
-        self._check(*TESTCASES[8])
-
-    def test_009(self):
-        self._check(*TESTCASES[9])
-
-    def test_010(self):
-        self._check(*TESTCASES[10])
-
-    def test_011(self):
-        self._check(*TESTCASES[11])
-
-    def test_012(self):
-        self._check(*TESTCASES[12])
-
-    def test_013(self):
-        self._check(*TESTCASES[13])
-
-    def test_014(self):
-        self._check(*TESTCASES[14])
-
-    def test_015(self):
-        self._check(*TESTCASES[15])
-
-    def test_016(self):
-        self._check(*TESTCASES[16])
 

@@ -108,7 +108,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -385,9 +387,6 @@ from numbers import Number
 from typing import Iterable
 
 
-from torch._six import string_classes
-
-
 import torch.backends.cudnn
 
 
@@ -445,6 +444,38 @@ def _get_default_group():
     return _default_pg
 
 
+def _rank_not_in_comm(comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """
+    Return ``True`` if the current process's rank is not in a given communicator.
+
+    """
+    if comm is None:
+        return False
+    return comm == CommMember.NON_COMM_MEMBER
+
+
+def allgather(send_tensor: 'torch.Tensor', recv_tensor: 'torch.Tensor', comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """Gathers send tensors from all processes associated with the communicator into :attr:`recv_tensor`.
+
+    Args:
+        send_tensor (torch.Tensor): Input of the collective.
+        recv_tensor (torch.Tensor): Output of the collective, must have a size of ``comm.nranks * send_tensor.size()`` elements.
+        comm: A handle of the Bagua communicator to work on. By default, the global
+             communicator of the default process group will be used.
+    """
+    if _rank_not_in_comm(comm):
+        return
+    assert send_tensor.device != torch.device('cpu'), 'send tensor must be CUDA and dense'
+    assert recv_tensor.device != torch.device('cpu'), 'recv tensor must be CUDA and dense'
+    if comm is None or comm is CommMember.WORLD:
+        comm = _get_default_group().get_global_communicator()
+    event = torch.cuda.current_stream().record_event()
+    comm.cuda_stream.wait_event(event)
+    with torch.cuda.stream(comm.cuda_stream):
+        comm.allgather(send_tensor.to_bagua_tensor().bagua_backend_tensor(), recv_tensor.to_bagua_tensor().bagua_backend_tensor())
+    comm.cuda_stream.synchronize()
+
+
 class ReduceOp(enum.IntEnum):
     """An enum-like class for available reduction operations: ``SUM``, ``PRODUCT``, ``MIN``, ``MAX``, ``BAND``,
     ``BOR``, ``BXOR`` and ``AVG``."""
@@ -456,6 +487,59 @@ class ReduceOp(enum.IntEnum):
     BAND = 8
     BXOR = 9
     AVG = 10
+
+
+def allreduce(send_tensor: 'torch.Tensor', recv_tensor: 'torch.Tensor', op: 'ReduceOp'=ReduceOp.SUM, comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """Reduces the tensor data across all processes associated with the communicator in such a way that all get
+    the final result. After the call :attr:`recv_tensor` is going to be bitwise identical
+    in all processes.
+
+    Args:
+        send_tensor: Input of the collective.
+        recv_tensor: Output of the collective, must have the same size with :attr:`send_tensor`.
+        op: One of the values from :class:`ReduceOp` enum. Specifies an operation used for element-wise reductions.
+        comm: A handle of the Bagua communicator to work on. By default, the global
+             communicator of the default process group will be used.
+
+    Examples::
+
+        >>> from bagua.torch_api import allreduce
+        >>>
+        >>> # All tensors below are of torch.int64 type.
+        >>> # We have 2 process groups, 2 ranks.
+        >>> send_tensor = torch.arange(2, dtype=torch.int64, device=tensor.device) + 1 + 2 * rank
+        >>> recv_tensor = torch.zeros(2, dtype=torch.int64, device=tensor.device)
+        >>> send_tensor
+        tensor([1, 2], device='cuda:0') # Rank 0
+        tensor([3, 4], device='cuda:1') # Rank 1
+        >>> allreduce(send_tensor, recv_tensor)
+        >>> recv_tensor
+        tensor([4, 6], device='cuda:0') # Rank 0
+        tensor([4, 6], device='cuda:1') # Rank 1
+
+        >>> # All tensors below are of torch.cfloat type.
+        >>> # We have 2 process groups, 2 ranks.
+        >>> send_tensor = torch.tensor([1+1j, 2+2j], dtype=torch.cfloat, device=tensor.device) + 2 * rank * (1+1j)
+        >>> recv_tensor = torch.zeros(2, dtype=torch.cfloat, device=tensor.device)
+        >>> send_tensor
+        tensor([1.+1.j, 2.+2.j], device='cuda:0') # Rank 0
+        tensor([3.+3.j, 4.+4.j], device='cuda:1') # Rank 1
+        >>> allreduce(send_tensor, recv_tensor)
+        >>> recv_tensor
+        tensor([4.+4.j, 6.+6.j], device='cuda:0') # Rank 0
+        tensor([4.+4.j, 6.+6.j], device='cuda:1') # Rank 1
+    """
+    if _rank_not_in_comm(comm):
+        return
+    if comm is None or comm is CommMember.WORLD:
+        comm = _get_default_group().get_global_communicator()
+    assert send_tensor.device != torch.device('cpu'), 'send tensor must be CUDA and dense'
+    assert recv_tensor.device != torch.device('cpu'), 'recv tensor must be CUDA and dense'
+    event = torch.cuda.current_stream().record_event()
+    comm.cuda_stream.wait_event(event)
+    with torch.cuda.stream(comm.cuda_stream):
+        comm.allreduce(send_tensor.to_bagua_tensor().bagua_backend_tensor(), recv_tensor.to_bagua_tensor().bagua_backend_tensor(), int(op))
+    comm.cuda_stream.synchronize()
 
 
 class _SyncBatchNorm(Function):
@@ -607,10 +691,123 @@ class SyncBatchNorm(_BatchNorm):
         return module_output
 
 
-class TensorDtype(str, enum.Enum):
-    F32 = 'f32'
-    F16 = 'f16'
-    U8 = 'u8'
+class StatisticalAverage:
+
+    def __init__(self, last_update_time: 'float'=time.time(), records: 'List[float]'=[], record_tail: 'Tuple[float, float]'=(0.0, 0.0)) ->None:
+        """Track and record the average over a period of time.
+
+        Args:
+            last_update_time (float, optional): last update time.
+                Defaults to time.time().
+            records (List[float], optional): statistical average value from
+                `last_update_time`, records[i] is the average value from
+                last_update_time to last_update_time + 2 ^ i (unit: seconds).
+                Defaults to [].
+            tail (Tuple[float, float], optional): tail of record, first one
+                is tail length (unit: seconds), second one is tail average
+                value. Defaults to (0., 0.).
+        """
+        self.last_update_time: 'float' = last_update_time
+        self.records: 'List[float]' = records
+        self.record_tail: 'Tuple[float, float]' = record_tail
+
+    def record_seconds(self) ->float:
+        return 2.0 ** (len(self.records) - 1) if len(self.records) != 0 else 0.0
+
+    def total_recording_time(self) ->float:
+        tail_seconds, _ = self.record_tail
+        return self.record_seconds() + tail_seconds
+
+    def get_records_mean(self, last_n_seconds: 'float') ->float:
+        if last_n_seconds <= 0.0:
+            return 0.0
+        records_seconds = self.record_seconds()
+        tail_seconds, tail_mean = self.record_tail
+        if len(self.records) == 0:
+            return tail_mean
+        if last_n_seconds < 1.0:
+            return self.records[0]
+        if last_n_seconds <= records_seconds:
+            floor_id = max(0, math.floor(math.log(last_n_seconds, 2.0)))
+            floor_time = 2.0 ** floor_id
+            if floor_id + 1 < len(self.records):
+                a, b = self.records[floor_id], self.records[floor_id + 1]
+                a_l, b_l = floor_time, floor_time * 2.0
+                mean = a + (b - a) * (last_n_seconds - a_l) / (b_l - a_l)
+            else:
+                mean = self.records[floor_id]
+        elif last_n_seconds <= records_seconds + tail_seconds:
+            a, b = self.records[-1], tail_mean
+            a_l, b_l = records_seconds, records_seconds + tail_seconds
+            mean = a + (b - a) * (last_n_seconds - a_l) / (b_l - a_l)
+        else:
+            mean = tail_mean
+        return mean
+
+    def record(self, val: 'float'):
+        now = time.time()
+        time_dist: 'float' = now - self.last_update_time
+        new_records: 'List[float]' = []
+        new_tail: 'Tuple[float, float]' = (0.0, 0.0)
+        for i in range(64):
+            coverage_period = 2.0 ** i
+            if coverage_period <= time_dist:
+                new_records.append(val)
+            elif coverage_period <= time_dist + self.total_recording_time():
+                record_contribution_percentage = time_dist / coverage_period
+                new_val = val * record_contribution_percentage + self.get_records_mean(coverage_period - time_dist) * (1.0 - record_contribution_percentage)
+                new_records.append(new_val)
+                if coverage_period > time_dist + self.total_recording_time():
+                    break
+            else:
+                new_total_time = time_dist + self.total_recording_time()
+                report_contribution_percentage = time_dist / new_total_time
+                tail_len = new_total_time - 2.0 ** (len(new_records) - 1)
+                tail_val = val * report_contribution_percentage + self.get_records_mean(self.total_recording_time()) * (1.0 - report_contribution_percentage)
+                new_tail = tail_len, tail_val
+                break
+        self.last_update_time = now
+        self.records = new_records
+        self.record_tail = new_tail
+
+    def get(self, last_n_seconds: 'float') ->float:
+        time_dist = time.time() - self.last_update_time
+        if last_n_seconds <= time_dist:
+            if len(self.records) != 0:
+                return self.records[0]
+            else:
+                tail_mean, _ = self.record_tail
+                return tail_mean
+        return self.get_records_mean(last_n_seconds - time_dist)
+
+    def __str__(self) ->str:
+        return str({'last_update_time': self.last_update_time, 'records': self.records, 'record_tail': self.record_tail})
+
+
+def broadcast(tensor: 'torch.Tensor', src: 'int'=0, comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """Broadcasts the tensor to all processes associated with the communicator.
+
+    :attr:`tensor` must have the same number of elements in all processes
+    participating in the collective.
+
+    Args:
+        tensor: Data to be sent if :attr:`src` is the rank of
+            current process, and tensor to be used to save received data
+            otherwise.
+        src: Source rank. Default: 0.
+        comm: A handle of the Bagua communicator to work on. By default, the global
+             communicator of the default process group will be used.
+    """
+    if _rank_not_in_comm(comm):
+        return
+    assert tensor.device != torch.device('cpu'), 'input tensor must be CUDA and dense'
+    if comm is None or comm is CommMember.WORLD:
+        comm = _get_default_group().get_global_communicator()
+    event = torch.cuda.current_stream().record_event()
+    comm.cuda_stream.wait_event(event)
+    with torch.cuda.stream(comm.cuda_stream):
+        comm.broadcast(tensor.to_bagua_tensor().bagua_backend_tensor(), src)
+    comm.cuda_stream.synchronize()
 
 
 def get_local_rank() ->int:
@@ -624,6 +821,452 @@ def get_local_rank() ->int:
         The local rank of the node.
     """
     return int(os.environ.get('LOCAL_RANK', 0))
+
+
+@lru_cache(maxsize=None)
+def get_backend(model_name: 'str'):
+    backend = B.BaguaCommBackendPy(100, device_id=get_local_rank())
+    backend.model_name = model_name
+    return backend
+
+
+def reset_error_retry(request_func):
+    """Retry request when catch ConnectionResetError."""
+
+    def wrap(*args, **kwargs):
+        MAX_RETRIES = 3
+        for retry in range(MAX_RETRIES + 1):
+            try:
+                result = request_func(*args, **kwargs)
+                return result
+            except (ConnectionResetError, requests.exceptions.ConnectionError) as e:
+                if retry == MAX_RETRIES:
+                    raise e
+                logging.warning('request failed, retry={}, e={}'.format(retry, e))
+                time.sleep(1)
+    return wrap
+
+
+def get_master_addr() ->str:
+    return os.environ.get('MASTER_ADDR', '127.0.0.1')
+
+
+@lru_cache(maxsize=None)
+def get_hyperparameters_service_client():
+    global _autotune_service_port
+    hyperparameters_service_client = AutotuneClient(get_master_addr(), _autotune_service_port)
+    return hyperparameters_service_client
+
+
+def is_moe_param(param: 'torch.Tensor') ->bool:
+    if hasattr(param, 'expert') and param.expert:
+        return True
+    return False
+
+
+def to_bagua_datatype(datatype):
+    if datatype == torch.float32:
+        return 'f32'
+    elif datatype == torch.float16:
+        return 'f16'
+    elif datatype == torch.uint8:
+        return 'u8'
+    elif datatype == torch.long:
+        return 'i64'
+    else:
+        raise ValueError(f'unsupported data type {datatype}.')
+
+
+class BaguaDistributedDataParallel:
+
+    def __init__(self, module: 'Module', optimizers: 'List[torch.optim.Optimizer]', algorithm: "'bagua.torch_api.algorithms.Algorithm'", process_group: 'BaguaProcessGroup', bagua_module_name: 'Optional[str]'=None, gradient_as_bucket_view: 'bool'=True, find_unused_parameters: 'bool'=False) ->None:
+        self.module = module
+        self.bagua_module_name = bagua_module_name
+        self.bagua_optimizers = optimizers
+        self.bagua_algorithm = algorithm.reify(process_group)
+        self.process_group = process_group
+        self.gradient_as_bucket_view = gradient_as_bucket_view
+        self.find_unused_parameters = find_unused_parameters
+        self.parameters_to_ignore = []
+        if hasattr(self.module, '_bagua_params_and_buffers_to_ignore'):
+            self.parameters_to_ignore.extend(self.module._bagua_params_and_buffers_to_ignore)
+        if hasattr(self.module, '_ddp_params_and_buffers_to_ignore'):
+            self.parameters_to_ignore.extend(self.module._ddp_params_and_buffers_to_ignore)
+        self.bagua_train_step_counter = 0
+        """
+        Number of iterations in training mode.
+        """
+        self.bagua_buckets = []
+        """
+        All Bagua buckets in a list.
+        """
+        self._bagua_autotune_last_report_time = time.time()
+        self._bagua_autotune_completed = False
+
+
+        class BaguaDistributedDataParallelStates:
+            """Empty class whose instances are used for keeping track of BaguaDistributedDataParallel's internal states."""
+            pass
+        if hasattr(self.module, '_bagua_states'):
+            self._reset_algorithm_state()
+        self.module._bagua_states = BaguaDistributedDataParallelStates()
+        bagua_states = self.module._bagua_states
+        bagua_states._bagua_autograd_hooks = []
+        bagua_states._bagua_framework_hooks = []
+        self._bagua_backend = get_backend(self.bagua_module_name)
+        self._bagua_hyperparameters = BaguaHyperparameter()
+        self._speed_metrics_switch_on = env.get_autotune_level() >= 1
+        self._speed_metrics = StatisticalAverage()
+        self.require_backward_grad_sync = True
+        self.autograd_graph_params: 'Dict[str, torch.nn.Parameter]' = {}
+        ddp = self
+
+        def autotune_hook(self, input):
+            if self.training:
+                if env.get_autotune_level() >= 1 and not ddp._bagua_autotune_completed:
+                    ddp._bagua_autotune_step()
+
+        def clear_post_backward_callback_queued_hook(self, input):
+            ddp._is_post_backward_callback_queued = False
+
+        def num_iteration_step_hook(self, input):
+            if self.training:
+                ddp.bagua_train_step_counter += 1
+
+        def algorithm_reset_hook(self, input):
+            if ddp.bagua_algorithm.need_reset() and self.training:
+                ddp._bagua_init_algorithm()
+
+        def algorithm_forward_pre_hook(self, input):
+            if self.training:
+                ddp.bagua_algorithm.init_forward_pre_hook(ddp)(input)
+
+        def record_speed_metrics_event(self, _):
+            if not ddp._speed_metrics_switch_on:
+                return
+            if hasattr(ddp, '_last_event_pair'):
+                start, stop = ddp._last_event_pair
+                try:
+                    elapsed_time_s = start.elapsed_time(stop) / 1000.0
+                    total_bytes = sum(bucket.bytes() for bucket in ddp.bagua_buckets)
+                    total_gbytes = total_bytes / 1024.0 ** 3
+                    speed = total_gbytes / elapsed_time_s
+                    ddp._speed_metrics.record(speed)
+                except RuntimeError as err:
+                    logging.debug('Ignore cuda err={}'.format(err))
+            start_event = torch.Event(enable_timing=True)
+            ddp._speed_metrics_end_event = torch.Event(enable_timing=True)
+            torch.cuda.current_stream().record_event(start_event)
+            ddp._last_event_pair = start_event, ddp._speed_metrics_end_event
+
+        def clear_autograd_graph_params(self, _):
+            ddp.autograd_graph_params.clear()
+        bagua_states._bagua_framework_hooks.extend([self.module.register_forward_pre_hook(clear_autograd_graph_params), self.module.register_forward_pre_hook(num_iteration_step_hook), self.module.register_forward_pre_hook(algorithm_reset_hook), self.module.register_forward_pre_hook(algorithm_forward_pre_hook), self.module.register_forward_pre_hook(record_speed_metrics_event), self.module.register_forward_pre_hook(autotune_hook), self.module.register_forward_pre_hook(clear_post_backward_callback_queued_hook)])
+        self._bagua_autotune_client = get_hyperparameters_service_client()
+        self._bagua_init_algorithm()
+
+    def bagua_build_params(self) ->List[Tuple[str, torch.nn.Parameter]]:
+        """
+        Build tuple of ``(parameter_name, parameter)`` for all parameters that
+        require grads and not in the ``_bagua_params_and_buffers_to_ignore`` attribute.
+        """
+        modules_and_parameters = [(module, parameter) for module_name, module in self.module.named_modules() for parameter in [(f'{module_name}.{param_name}', param) for param_name, param in module.named_parameters(recurse=False) if param.requires_grad and f'{module_name}.{param_name}' not in self.parameters_to_ignore and not is_moe_param(param)]]
+        if self.find_unused_parameters and len(self.autograd_graph_params) != 0:
+            modules_and_parameters = filter(lambda it: it[1][0] in self.autograd_graph_params, modules_and_parameters)
+        memo = set()
+        modules_and_parameters = [(m, p) for m, p in modules_and_parameters if p[1] not in memo and not memo.add(p[1])]
+        parameters = [parameter for _, parameter in modules_and_parameters]
+
+        def produces_sparse_gradient(module):
+            if isinstance(module, torch.nn.Embedding) or isinstance(module, torch.nn.EmbeddingBag):
+                return module.sparse
+            return False
+        expect_sparse_gradient = [produces_sparse_gradient(module) for module, _ in modules_and_parameters]
+        if any(expect_sparse_gradient):
+            raise NotImplementedError('sparse gradient not supported yet')
+        return parameters
+
+    def _bagua_broadcast_optimizer_state(self, optimizer):
+        if isinstance(optimizer, torch.optim.LBFGS):
+            raise ValueError('cannot broadcast torch.optim.LBFGS state')
+        optimizer_state_dict = optimizer.state_dict()
+        if len(optimizer_state_dict['state']) == 0:
+            for group in optimizer.param_groups:
+                for p in group['params']:
+                    if p.requires_grad and id(p) not in optimizer_state_dict['state']:
+                        p.bagua_ensure_grad()
+                        if isinstance(optimizer, torch.optim.SparseAdam):
+                            p.grad = p.grad.to_sparse()
+            optimizer_state_dict = optimizer.state_dict()
+        if len(optimizer_state_dict['state']) == 0:
+            return
+
+        def _state_param_callback(param_id, param_name):
+
+            def _assign_state(v):
+                optimizer_state_dict['state'][param_id][param_name] = v
+            return _assign_state
+
+        def _hyper_param_callback(index, group_key):
+
+            def _assign_hyper(v):
+                optimizer.param_groups[index][group_key] = v
+            return _assign_hyper
+        params = []
+        scalars = collections.OrderedDict()
+        call_back_param = {}
+        repeat_param_count = collections.defaultdict(int)
+        for index, param_group in enumerate(optimizer_state_dict['param_groups']):
+            for group_key, group_value in sorted(param_group.items(), key=lambda item: item[0]):
+                if group_key != 'params':
+                    key = '%s_%d' % (group_key, index)
+                    scalars[key] = group_value
+                    call_back_param[key] = _hyper_param_callback(index, group_key)
+            for param_id in sorted(param_group['params']):
+                if param_id not in optimizer_state_dict['state']:
+                    continue
+                param_state = optimizer_state_dict['state'][param_id]
+                for param_name, inner_state in sorted(param_state.items(), key=lambda item: item[0]):
+                    repeat_param_count[param_name] += 1
+                    key = '%s_%d' % (str(param_name), repeat_param_count[param_name])
+                    if isinstance(inner_state, torch.Tensor):
+                        params.append((key, inner_state))
+                    else:
+                        scalars[key] = inner_state
+                        call_back_param[key] = _state_param_callback(param_id, param_name)
+        for key, param in params:
+            broadcast(param, src=0, comm=self.process_group.get_global_communicator())
+        scalars = self._bagua_broadcast_scalars(scalars, src=0)
+        for key, p in scalars.items():
+            call_back_param[key](p)
+
+    def _bagua_broadcast_scalars(self, scalars, src):
+        b = io.BytesIO()
+        pickle.dump(scalars, b)
+        t = torch.ByteTensor(bytearray(b.getvalue()))
+        broadcast(t, src=0, comm=self.process_group.get_global_communicator())
+        if env.get_rank() != src:
+            buf = io.BytesIO(t.cpu().numpy().tobytes())
+            scalars = pickle.load(buf)
+        return scalars
+
+    def _bagua_broadcast_parameters(self):
+        """
+        Broadcast model and optimizer states.
+        """
+        module_states = self.bagua_build_params()
+        for name, state in module_states:
+            broadcast(state, src=0, comm=self.process_group.get_global_communicator())
+        for optimizer in self.bagua_optimizers:
+            self._bagua_broadcast_optimizer_state(optimizer)
+
+    def _bagua_autotune_step(self):
+        CYCLE_STEP = 100
+        start_time = time.time()
+        if self.bagua_train_step_counter != 0 and self.bagua_train_step_counter % CYCLE_STEP == 0:
+            time_since_last_update = time.time() - self._bagua_autotune_last_report_time
+            speed = self._speed_metrics.get(time_since_last_update)
+            rsp = self._bagua_autotune_client.report_metrics(model_name=self.bagua_module_name, rank=env.get_rank(), train_iter=self.bagua_train_step_counter, hyperparameters=self._bagua_hyperparameters.dict(), speed=speed)
+            assert rsp.status_code == 200, 'Unexpected rsp={}'.format(rsp)
+            self._reset_buckets()
+            self._bagua_autotune_last_report_time = time.time()
+        logging.debug('autotune overhead=%s', time.time() - start_time)
+
+    def _bagua_autotune_register_tensors(self):
+        """
+        Register tensors on autotune server, and return first bucketing suggestions
+        """
+        autotune_tensor_list = [TensorDeclaration({'name': tensor.bagua_tensor_name, 'num_elements': tensor.numel(), 'dtype': to_bagua_datatype(tensor.dtype)}) for tensor in self._bagua_tensors]
+        rsp = self._bagua_autotune_client.register_tensors(model_name=self.bagua_module_name, tensor_list=autotune_tensor_list)
+        assert rsp.status_code == 200, 'Unexpected rsp={}'.format(rsp)
+
+    def _bagua_autotune_get_buckets(self):
+        rsp = self._bagua_autotune_client.ask_hyperparameters(model_name=self.bagua_module_name, rank=env.get_rank(), train_iter=self.bagua_train_step_counter)
+        assert rsp.status_code == 200, 'Unexpected rsp={}'.format(rsp)
+        recommended_hyperparameters = rsp.json()['recommended_hyperparameters']
+        is_autotune_completed = rsp.json()['is_autotune_completed']
+        self._bagua_hyperparameters.update(recommended_hyperparameters)
+        self._bagua_autotune_completed = is_autotune_completed
+        recommended_buckets = map(lambda x: list(map(lambda y: self._bagua_tensor_map[y['name']], x)), recommended_hyperparameters['buckets'])
+        return list(recommended_buckets)
+
+    def _bagua_init_algorithm(self):
+        self._bagua_broadcast_parameters()
+        self._bagua_tensors = self.bagua_algorithm.init_tensors(self)
+        self._bagua_tensor_map = dict([(tensor.bagua_tensor_name, tensor) for tensor in self._bagua_tensors])
+        self._bagua_autotune_register_tensors()
+        self._reset_buckets()
+        self._register_autograd_hooks()
+        self._register_optimizer_hooks()
+
+    def _delay_allreduce(self):
+        for param_name, parameter in self.bagua_build_params():
+            self.bagua_algorithm.init_backward_hook(self)(param_name, parameter)
+            self.bagua_algorithm.init_post_backward_hook(self)()
+
+    def _cleanup_autograd_hooks(self):
+        bagua_states = self.module._bagua_states
+        for hook in bagua_states._bagua_autograd_hooks:
+            hook.remove()
+        bagua_states._bagua_autograd_hooks.clear()
+
+    def _register_autograd_hooks(self):
+        bagua_states = self.module._bagua_states
+        self._cleanup_autograd_hooks()
+        for name, param in self.module.named_parameters():
+
+            def real_hook_factory(param_name, parameter):
+
+                def real_hook(*unused):
+                    if not self.require_backward_grad_sync:
+                        return
+                    if self.find_unused_parameters:
+                        self.autograd_graph_params[param_name] = parameter
+                    self.bagua_algorithm.init_backward_hook(self)(param_name, parameter)
+
+                    def real_post_backward_hook(*unused):
+                        self.bagua_algorithm.init_post_backward_hook(self)()
+                        if self._speed_metrics_switch_on:
+                            torch.cuda.current_stream().record_event(self._speed_metrics_end_event)
+                        if self.find_unused_parameters:
+                            if set(self.autograd_graph_params.keys()) != self.params_in_use:
+                                self._reset_buckets()
+                                self._delay_allreduce()
+                    if not self._is_post_backward_callback_queued:
+                        torch.autograd.Variable._execution_engine.queue_callback(real_post_backward_hook)
+                        self._is_post_backward_callback_queued = True
+                return real_hook
+            if param.requires_grad:
+                param_tmp = param.expand_as(param)
+                grad_acc = param_tmp.grad_fn.next_functions[0][0]
+                hook = grad_acc.register_hook(real_hook_factory(name, param))
+                hook.grad_acc = grad_acc
+                bagua_states._bagua_autograd_hooks.append(hook)
+
+    def _register_optimizer_hooks(self):
+        optimizer_hook = self.bagua_algorithm.init_post_optimizer_step_hook(self)
+        from types import MethodType
+        for optimizer in self.bagua_optimizers:
+            if not hasattr(optimizer, '_bagua_original_step'):
+                optimizer._bagua_original_step = optimizer.step
+
+            def new_step_factory(optimizer):
+
+                def new_step(self, *args, **kwargs):
+                    result = self._bagua_original_step(*args, **kwargs)
+                    optimizer_hook(self)
+                    return result
+                return MethodType(new_step, optimizer)
+            optimizer.step = new_step_factory(optimizer)
+
+    def _reset_buckets(self):
+        raw_buckets = self._bagua_autotune_get_buckets()
+        self.bagua_buckets = self.bagua_algorithm.tensors_to_buckets(raw_buckets, self.gradient_as_bucket_view)
+        for bucket in self.bagua_buckets:
+            self.bagua_algorithm.init_operations(self, bucket)
+        self._bagua_backend.register_ordered_buckets([bucket.backend_bucket for bucket in self.bagua_buckets])
+        self.params_in_use = set([name for name, _ in self.bagua_build_params()])
+
+    def _reset_algorithm_state(self):
+        bagua_states = self.module._bagua_states
+        if hasattr(bagua_states, '_bagua_framework_hooks'):
+            for hook in bagua_states._bagua_framework_hooks:
+                hook.remove()
+        if hasattr(bagua_states, '_bagua_autograd_hooks'):
+            self._cleanup_autograd_hooks()
+
+
+class _AlgorithmRegistry(dict):
+
+    def register(self, name: 'str', algorithm: 'Callable', description: 'Optional[str]'=None):
+        """Registers an Bagua Algorithm mapped to a name and with required metadata.
+
+        Args:
+            name: The name that identifies a Bagua algorithm, e.g. "gradient_allreduce".
+            algorithm: Class of the Bagua algorithm.
+            description: Description of the Bagua algorithm.
+        """
+        if not (name is None or isinstance(name, str)):
+            raise TypeError(f'`name` must be a str, found {name}')
+        if name in self:
+            raise ValueError(f"'{name}' is already present in the registry.")
+        data: 'Dict[str, Any]' = {}
+        data['algorithm'] = algorithm
+        data['description'] = description if description is not None else ''
+        self[name] = data
+
+    def get(self, name: 'str') ->Callable:
+        """Calls the registered Bagua algorithm with the name and returns the algorithm class.
+
+        Args:
+            name: The name that identifies a Bagua algorithm, e.g. "gradient_allreduce".
+
+        Returns:
+            The class of the Bagua algorithm.
+        """
+        if name in self:
+            data = self[name]
+            return data['algorithm']
+        err_msg = "'{}' not found in registry. Available names: {}"
+        available_names = ', '.join(sorted(self.keys())) or 'none'
+        raise KeyError(err_msg.format(name, available_names))
+
+    def available_algorithms(self) ->List[str]:
+        """Returns a list of registered Bagua algorithms."""
+        return list(self.keys())
+
+    def __str__(self) ->str:
+        return 'Registered Algorithms: {}'.format(', '.join(self.keys()))
+
+
+GlobalAlgorithmRegistry = _AlgorithmRegistry()
+
+
+def _bagua_backend_comm(comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """
+    Return ``None`` if the current process's rank is not in a given communicator.
+    Otherwise return the communicator passed in.
+    """
+    if _rank_not_in_comm(comm):
+        return None
+    return comm
+
+
+def check_contiguous(tensors):
+    data_ptr = None
+    for t in tensors:
+        if data_ptr is not None and t.data_ptr() != data_ptr:
+            return False
+        data_ptr = t.data_ptr() + t.numel() * t.element_size()
+    return True
+
+
+def get_flattened_tensor(tensors: 'List[torch.Tensor]') ->torch.Tensor:
+    if len(tensors) == 0:
+        return
+    total_size = 0
+    for tensor in tensors:
+        total_size += tensor.numel()
+    flatten_tensor = torch.zeros(total_size, dtype=tensors[0].dtype, device=tensors[0].device)
+    offset = 0
+    for tensor in tensors:
+        flatten_tensor[offset:offset + tensor.numel()] = tensor.reshape(-1)
+        offset += tensor.numel()
+    return flatten_tensor
+
+
+def allgather_inplace(tensor: 'torch.Tensor', comm: 'Optional[B.BaguaSingleCommunicatorPy]'=None):
+    """The in-place version of :func:`allgather`."""
+    if _rank_not_in_comm(comm):
+        return
+    assert tensor.device != torch.device('cpu'), 'input tensor must be CUDA and dense'
+    if comm is None or comm is CommMember.WORLD:
+        comm = _get_default_group().get_global_communicator()
+    event = torch.cuda.current_stream().record_event()
+    comm.cuda_stream.wait_event(event)
+    with torch.cuda.stream(comm.cuda_stream):
+        comm.allgather_inplace(tensor.to_bagua_tensor().bagua_backend_tensor())
+    comm.cuda_stream.synchronize()
 
 
 def _is_elastic_launched():
@@ -681,7 +1324,7 @@ def _get_rank_mappings():
     return rank_mappings
 
 
-def broadcast_nccl_unique_id(comm_key: str, root):
+def broadcast_nccl_unique_id(comm_key: 'str', root):
     global _default_store
     if get_rank() == root:
         idstr = B.BaguaSingleCommunicatorPy.generate_nccl_unique_id_str()
@@ -693,7 +1336,7 @@ def broadcast_nccl_unique_id(comm_key: str, root):
 
 
 @lru_cache(maxsize=None)
-def get_communicator(group_name: str, comm_name: str):
+def get_communicator(group_name: 'str', comm_name: 'str'):
     global _pg_map
     pg = _pg_map[group_name]
     if comm_name == 'global':
@@ -716,220 +1359,28 @@ def get_communicator(group_name: str, comm_name: str):
     return comm
 
 
-class StatisticalAverage:
+def to_bagua_process_group(process_group: 'Union[TorchProcessGroup, BaguaProcessGroup, None]'=None):
+    """Convert a PyTorch process group to a Bagua process group.
 
-    def __init__(self, last_update_time: float=time.time(), records: List[float]=[], record_tail: Tuple[float, float]=(0.0, 0.0)) ->None:
-        """Track and record the average over a period of time.
+    Args:
+        process_group (Union[TorchProcessGroup, BaguaProcessGroup, None], optional): PyTorch
+            process group or Bagua process group. The default PyTorch process group is used if ``None`` is passed in.
 
-        Args:
-            last_update_time (float, optional): last update time.
-                Defaults to time.time().
-            records (List[float], optional): statistical average value from
-                `last_update_time`, records[i] is the average value from
-                last_update_time to last_update_time + 2 ^ i (unit: seconds).
-                Defaults to [].
-            tail (Tuple[float, float], optional): tail of record, first one
-                is tail length (unit: seconds), second one is tail average
-                value. Defaults to (0., 0.).
-        """
-        self.last_update_time: float = last_update_time
-        self.records: List[float] = records
-        self.record_tail: Tuple[float, float] = record_tail
+    Raises:
+        Exception: raise unexpect input exception if input is not
+            ``TorchProcessGroup``, ``BaguaProcessGroup`` or ``None``.
 
-    def record_seconds(self) ->float:
-        return 2.0 ** (len(self.records) - 1) if len(self.records) != 0 else 0.0
-
-    def total_recording_time(self) ->float:
-        tail_seconds, _ = self.record_tail
-        return self.record_seconds() + tail_seconds
-
-    def get_records_mean(self, last_n_seconds: float) ->float:
-        if last_n_seconds <= 0.0:
-            return 0.0
-        records_seconds = self.record_seconds()
-        tail_seconds, tail_mean = self.record_tail
-        if len(self.records) == 0:
-            return tail_mean
-        if last_n_seconds < 1.0:
-            return self.records[0]
-        if last_n_seconds <= records_seconds:
-            floor_id = max(0, math.floor(math.log(last_n_seconds, 2.0)))
-            floor_time = 2.0 ** floor_id
-            if floor_id + 1 < len(self.records):
-                a, b = self.records[floor_id], self.records[floor_id + 1]
-                a_l, b_l = floor_time, floor_time * 2.0
-                mean = a + (b - a) * (last_n_seconds - a_l) / (b_l - a_l)
-            else:
-                mean = self.records[floor_id]
-        elif last_n_seconds <= records_seconds + tail_seconds:
-            a, b = self.records[-1], tail_mean
-            a_l, b_l = records_seconds, records_seconds + tail_seconds
-            mean = a + (b - a) * (last_n_seconds - a_l) / (b_l - a_l)
-        else:
-            mean = tail_mean
-        return mean
-
-    def record(self, val: float):
-        now = time.time()
-        time_dist: float = now - self.last_update_time
-        new_records: List[float] = []
-        new_tail: Tuple[float, float] = (0.0, 0.0)
-        for i in range(64):
-            coverage_period = 2.0 ** i
-            if coverage_period <= time_dist:
-                new_records.append(val)
-            elif coverage_period <= time_dist + self.total_recording_time():
-                record_contribution_percentage = time_dist / coverage_period
-                new_val = val * record_contribution_percentage + self.get_records_mean(coverage_period - time_dist) * (1.0 - record_contribution_percentage)
-                new_records.append(new_val)
-                if coverage_period > time_dist + self.total_recording_time():
-                    break
-            else:
-                new_total_time = time_dist + self.total_recording_time()
-                report_contribution_percentage = time_dist / new_total_time
-                tail_len = new_total_time - 2.0 ** (len(new_records) - 1)
-                tail_val = val * report_contribution_percentage + self.get_records_mean(self.total_recording_time()) * (1.0 - report_contribution_percentage)
-                new_tail = tail_len, tail_val
-                break
-        self.last_update_time = now
-        self.records = new_records
-        self.record_tail = new_tail
-
-    def get(self, last_n_seconds: float) ->float:
-        time_dist = time.time() - self.last_update_time
-        if last_n_seconds <= time_dist:
-            if len(self.records) != 0:
-                return self.records[0]
-            else:
-                tail_mean, _ = self.record_tail
-                return tail_mean
-        return self.get_records_mean(last_n_seconds - time_dist)
-
-    def __str__(self) ->str:
-        return str({'last_update_time': self.last_update_time, 'records': self.records, 'record_tail': self.record_tail})
-
-
-@lru_cache(maxsize=None)
-def get_backend(model_name: str):
-    backend = B.BaguaCommBackendPy(100, device_id=get_local_rank())
-    backend.model_name = model_name
-    return backend
-
-
-def reset_error_retry(request_func):
-    """Retry request when catch ConnectionResetError."""
-
-    def wrap(*args, **kwargs):
-        MAX_RETRIES = 3
-        for retry in range(MAX_RETRIES + 1):
-            try:
-                result = request_func(*args, **kwargs)
-                return result
-            except (ConnectionResetError, requests.exceptions.ConnectionError) as e:
-                if retry == MAX_RETRIES:
-                    raise e
-                logging.warning('request failed, retry={}, e={}'.format(retry, e))
-                time.sleep(1)
-    return wrap
-
-
-def get_master_addr() ->str:
-    return os.environ.get('MASTER_ADDR', '127.0.0.1')
-
-
-@lru_cache(maxsize=None)
-def get_hyperparameters_service_client():
-    global _autotune_service_port
-    hyperparameters_service_client = AutotuneClient(get_master_addr(), _autotune_service_port)
-    return hyperparameters_service_client
-
-
-def is_moe_param(param: torch.Tensor) ->bool:
-    if hasattr(param, 'expert') and param.expert:
-        return True
-    return False
-
-
-def to_bagua_datatype(datatype):
-    if datatype == torch.float32:
-        return 'f32'
-    elif datatype == torch.float16:
-        return 'f16'
-    elif datatype == torch.uint8:
-        return 'u8'
-    elif datatype == torch.long:
-        return 'i64'
+    Returns:
+        BaguaProcessGroup: process group for communication in bagua.
+    """
+    if process_group is None:
+        return _get_default_group()
+    elif type(process_group) in [TorchProcessGroup, torch.distributed.ProcessGroupNCCL]:
+        return process_group.bagua_patch().bagua_pg
+    elif type(process_group) is BaguaProcessGroup:
+        return process_group
     else:
-        raise ValueError(f'unsupported data type {datatype}.')
-
-
-class _AlgorithmRegistry(dict):
-
-    def register(self, name: str, algorithm: Callable, description: Optional[str]=None):
-        """Registers an Bagua Algorithm mapped to a name and with required metadata.
-
-        Args:
-            name: The name that identifies a Bagua algorithm, e.g. "gradient_allreduce".
-            algorithm: Class of the Bagua algorithm.
-            description: Description of the Bagua algorithm.
-        """
-        if not (name is None or isinstance(name, str)):
-            raise TypeError(f'`name` must be a str, found {name}')
-        if name in self:
-            raise ValueError(f"'{name}' is already present in the registry.")
-        data: Dict[str, Any] = {}
-        data['algorithm'] = algorithm
-        data['description'] = description if description is not None else ''
-        self[name] = data
-
-    def get(self, name: str) ->Callable:
-        """Calls the registered Bagua algorithm with the name and returns the algorithm class.
-
-        Args:
-            name: The name that identifies a Bagua algorithm, e.g. "gradient_allreduce".
-
-        Returns:
-            The class of the Bagua algorithm.
-        """
-        if name in self:
-            data = self[name]
-            return data['algorithm']
-        err_msg = "'{}' not found in registry. Available names: {}"
-        available_names = ', '.join(sorted(self.keys())) or 'none'
-        raise KeyError(err_msg.format(name, available_names))
-
-    def available_algorithms(self) ->List[str]:
-        """Returns a list of registered Bagua algorithms."""
-        return list(self.keys())
-
-    def __str__(self) ->str:
-        return 'Registered Algorithms: {}'.format(', '.join(self.keys()))
-
-
-GlobalAlgorithmRegistry = _AlgorithmRegistry()
-
-
-def check_contiguous(tensors):
-    data_ptr = None
-    for t in tensors:
-        if data_ptr is not None and t.data_ptr() != data_ptr:
-            return False
-        data_ptr = t.data_ptr() + t.numel() * t.element_size()
-    return True
-
-
-def get_flattened_tensor(tensors: List[torch.Tensor]) ->torch.Tensor:
-    if len(tensors) == 0:
-        return
-    total_size = 0
-    for tensor in tensors:
-        total_size += tensor.numel()
-    flatten_tensor = torch.zeros(total_size, dtype=tensors[0].dtype, device=tensors[0].device)
-    offset = 0
-    for tensor in tensors:
-        flatten_tensor[offset:offset + tensor.numel()] = tensor.reshape(-1)
-        offset += tensor.numel()
-    return flatten_tensor
+        raise Exception('unexpect input {}'.format(type(process_group)))
 
 
 class Experts(torch.nn.Module):
@@ -957,7 +1408,7 @@ class Experts(torch.nn.Module):
 class _AllToAll(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx: Any, group: dist.ProcessGroup, input: Tensor) ->Tensor:
+    def forward(ctx: 'Any', group: 'dist.ProcessGroup', input: 'Tensor') ->Tensor:
         ctx.group = group
         input = input.contiguous()
         output = torch.empty_like(input)
@@ -965,11 +1416,11 @@ class _AllToAll(torch.autograd.Function):
         return output
 
     @staticmethod
-    def backward(ctx: Any, *grad_output: Tensor) ->Tuple[None, Tensor]:
+    def backward(ctx: 'Any', *grad_output: Tensor) ->Tuple[None, Tensor]:
         return None, _AllToAll.apply(ctx.group, *grad_output)
 
 
-def multiplicative_jitter(x, device: torch.device, epsilon=0.01):
+def multiplicative_jitter(x, device: 'torch.device', epsilon=0.01):
     """
     Modified from swtich transformer paper. mesh transformers
     Multiply values by a random number between 1-epsilon and 1+epsilon.
@@ -991,7 +1442,7 @@ def multiplicative_jitter(x, device: torch.device, epsilon=0.01):
     return x * uniform(x.shape)
 
 
-def gumbel_rsample(shape: Tuple, device: torch.device) ->Tensor:
+def gumbel_rsample(shape: 'Tuple', device: 'torch.device') ->Tensor:
     gumbel = gumbel_map.get(device)
     if gumbel is None:
         one = torch.tensor(1.0, device=device)
@@ -1001,7 +1452,7 @@ def gumbel_rsample(shape: Tuple, device: torch.device) ->Tensor:
     return gumbel(shape)
 
 
-def top1gating(logits: torch.Tensor, capacity_factor: float, min_capacity: int, used_token: torch.Tensor=None, noisy_gate_policy: Optional[str]=None) ->Tuple[Tensor, Tensor, Tensor, Tensor]:
+def top1gating(logits: 'torch.Tensor', capacity_factor: 'float', min_capacity: 'int', used_token: 'torch.Tensor'=None, noisy_gate_policy: 'Optional[str]'=None) ->Tuple[Tensor, Tensor, Tensor, Tensor]:
     """Implements Top1Gating on logits."""
     if noisy_gate_policy == 'RSample':
         logits_w_noise = logits + gumbel_rsample(logits.shape, device=logits.device)
@@ -1037,7 +1488,7 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, min_capacity: int, 
     return l_aux, combine_weights, dispatch_mask, exp_counts
 
 
-def top2gating(logits: torch.Tensor, capacity_factor: float) ->Tuple[Tensor, Tensor, Tensor, Tensor]:
+def top2gating(logits: 'torch.Tensor', capacity_factor: 'float') ->Tuple[Tensor, Tensor, Tensor, Tensor]:
     """Implements Top2Gating on logits."""
     gates = F.softmax(logits, dim=1)
     num_tokens = gates.shape[0]
@@ -1094,9 +1545,9 @@ class TopKGate(torch.nn.Module):
         num_experts (ints):
             number of experts in model
     """
-    wg: torch.nn.Linear
+    wg: 'torch.nn.Linear'
 
-    def __init__(self, model_dim: int, num_experts: int, k: int=1, capacity_factor: float=1.0, eval_capacity_factor: float=1.0, min_capacity: int=4, noisy_gate_policy: Optional[str]=None) ->None:
+    def __init__(self, model_dim: 'int', num_experts: 'int', k: 'int'=1, capacity_factor: 'float'=1.0, eval_capacity_factor: 'float'=1.0, min_capacity: 'int'=4, noisy_gate_policy: 'Optional[str]'=None) ->None:
         super().__init__()
         if k != 1 and k != 2:
             raise ValueError('Only top-1 and top-2 gatings are supported.')
@@ -1107,7 +1558,7 @@ class TopKGate(torch.nn.Module):
         self.min_capacity = min_capacity
         self.noisy_gate_policy = noisy_gate_policy
 
-    def forward(self, input: torch.Tensor, used_token: torch.Tensor=None) ->Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, input: 'torch.Tensor', used_token: 'torch.Tensor'=None) ->Tuple[Tensor, Tensor, Tensor, Tensor]:
         if self.wg.weight.dtype != torch.float32:
             self.wg = self.wg.float()
         input_fp32 = input.float()
@@ -1122,7 +1573,7 @@ class TopKGate(torch.nn.Module):
 
 class MoE(torch.nn.Module):
 
-    def __init__(self, hidden_size, expert, num_local_experts=1, k=1, output_dropout_prob=0.0, capacity_factor=1.0, eval_capacity_factor=1.0, min_capacity=4, noisy_gate_policy: typing.Optional[str]=None):
+    def __init__(self, hidden_size, expert, num_local_experts=1, k=1, output_dropout_prob=0.0, capacity_factor=1.0, eval_capacity_factor=1.0, min_capacity=4, noisy_gate_policy: 'typing.Optional[str]'=None):
         """Initialize an MoE layer.
 
         Arguments:
@@ -1366,7 +1817,7 @@ class MinMaxUInt8:
         self.eps = 1e-07
         self.quantization_level = 255.0
 
-    def compress(self, tensor: torch.Tensor) ->(torch.Tensor, torch.Tensor):
+    def compress(self, tensor: 'torch.Tensor') ->(torch.Tensor, torch.Tensor):
         _min = torch.min(tensor)
         _max = torch.max(tensor)
         scale = self.quantization_level / (_max - _min + self.eps)
@@ -1379,7 +1830,7 @@ class MinMaxUInt8:
         _minmax[1] = _max
         return _minmax, level - lower_bound
 
-    def decompress(self, _minmax: torch.Tensor, compressed: torch.Tensor) ->torch.Tensor:
+    def decompress(self, _minmax: 'torch.Tensor', compressed: 'torch.Tensor') ->torch.Tensor:
         _min = _minmax[0]
         _max = _minmax[1]
         scale = self.quantization_level / (_max - _min + self.eps)
@@ -1432,7 +1883,7 @@ class LowPrecDecentralizedAlgor(nn.Module):
     def step(self):
         self.optimizer.step()
 
-        def communicate_with_peers(tensor: torch.Tensor, comm_size: int) ->(torch.Tensor, torch.Tensor):
+        def communicate_with_peers(tensor: 'torch.Tensor', comm_size: 'int') ->(torch.Tensor, torch.Tensor):
             if comm_size == 1:
                 return tensor, tensor
             tensor = tensor.cpu()

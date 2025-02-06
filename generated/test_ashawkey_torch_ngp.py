@@ -67,7 +67,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -706,6 +708,63 @@ class _grid_encode(Function):
 grid_encode = _grid_encode.apply
 
 
+class _sh_encoder(Function):
+
+    @staticmethod
+    @custom_fwd(cast_inputs=torch.float32)
+    def forward(ctx, inputs, degree, calc_grad_inputs=False):
+        inputs = inputs.contiguous()
+        B, input_dim = inputs.shape
+        output_dim = degree ** 2
+        outputs = torch.empty(B, output_dim, dtype=inputs.dtype, device=inputs.device)
+        if calc_grad_inputs:
+            dy_dx = torch.empty(B, input_dim * output_dim, dtype=inputs.dtype, device=inputs.device)
+        else:
+            dy_dx = None
+        _backend.sh_encode_forward(inputs, outputs, B, input_dim, degree, dy_dx)
+        ctx.save_for_backward(inputs, dy_dx)
+        ctx.dims = [B, input_dim, degree]
+        return outputs
+
+    @staticmethod
+    @custom_bwd
+    def backward(ctx, grad):
+        inputs, dy_dx = ctx.saved_tensors
+        if dy_dx is not None:
+            grad = grad.contiguous()
+            B, input_dim, degree = ctx.dims
+            grad_inputs = torch.zeros_like(inputs)
+            _backend.sh_encode_backward(grad, inputs, B, input_dim, degree, dy_dx, grad_inputs)
+            return grad_inputs, None, None
+        else:
+            return None, None, None
+
+
+sh_encode = _sh_encoder.apply
+
+
+class SHEncoder(nn.Module):
+
+    def __init__(self, input_dim=3, degree=4):
+        super().__init__()
+        self.input_dim = input_dim
+        self.degree = degree
+        self.output_dim = degree ** 2
+        assert self.input_dim == 3, 'SH encoder only support input dim == 3'
+        assert self.degree > 0 and self.degree <= 8, 'SH encoder only supports degree in [1, 8]'
+
+    def __repr__(self):
+        return f'SHEncoder: input_dim={self.input_dim} degree={self.degree}'
+
+    def forward(self, inputs, size=1):
+        inputs = inputs / size
+        prefix_shape = list(inputs.shape[:-1])
+        inputs = inputs.reshape(-1, self.input_dim)
+        outputs = sh_encode(inputs, self.degree, inputs.requires_grad)
+        outputs = outputs.reshape(prefix_shape + [self.output_dim])
+        return outputs
+
+
 def get_encoder(encoding, input_dim=3, multires=6, degree=4, num_levels=16, level_dim=2, base_resolution=16, log2_hashmap_size=19, desired_resolution=2048, align_corners=False, **kwargs):
     if encoding == 'None':
         return lambda x, **kwargs: x, input_dim
@@ -904,63 +963,6 @@ class SDFNetwork(nn.Module):
         if self.clip_sdf is not None:
             h = h.clamp(-self.clip_sdf, self.clip_sdf)
         return h
-
-
-class _sh_encoder(Function):
-
-    @staticmethod
-    @custom_fwd(cast_inputs=torch.float32)
-    def forward(ctx, inputs, degree, calc_grad_inputs=False):
-        inputs = inputs.contiguous()
-        B, input_dim = inputs.shape
-        output_dim = degree ** 2
-        outputs = torch.empty(B, output_dim, dtype=inputs.dtype, device=inputs.device)
-        if calc_grad_inputs:
-            dy_dx = torch.empty(B, input_dim * output_dim, dtype=inputs.dtype, device=inputs.device)
-        else:
-            dy_dx = None
-        _backend.sh_encode_forward(inputs, outputs, B, input_dim, degree, dy_dx)
-        ctx.save_for_backward(inputs, dy_dx)
-        ctx.dims = [B, input_dim, degree]
-        return outputs
-
-    @staticmethod
-    @custom_bwd
-    def backward(ctx, grad):
-        inputs, dy_dx = ctx.saved_tensors
-        if dy_dx is not None:
-            grad = grad.contiguous()
-            B, input_dim, degree = ctx.dims
-            grad_inputs = torch.zeros_like(inputs)
-            _backend.sh_encode_backward(grad, inputs, B, input_dim, degree, dy_dx, grad_inputs)
-            return grad_inputs, None, None
-        else:
-            return None, None, None
-
-
-sh_encode = _sh_encoder.apply
-
-
-class SHEncoder(nn.Module):
-
-    def __init__(self, input_dim=3, degree=4):
-        super().__init__()
-        self.input_dim = input_dim
-        self.degree = degree
-        self.output_dim = degree ** 2
-        assert self.input_dim == 3, 'SH encoder only support input dim == 3'
-        assert self.degree > 0 and self.degree <= 8, 'SH encoder only supports degree in [1, 8]'
-
-    def __repr__(self):
-        return f'SHEncoder: input_dim={self.input_dim} degree={self.degree}'
-
-    def forward(self, inputs, size=1):
-        inputs = inputs / size
-        prefix_shape = list(inputs.shape[:-1])
-        inputs = inputs.reshape(-1, self.input_dim)
-        outputs = sh_encode(inputs, self.degree, inputs.requires_grad)
-        outputs = outputs.reshape(prefix_shape + [self.output_dim])
-        return outputs
 
 
 class MLP(nn.Module):

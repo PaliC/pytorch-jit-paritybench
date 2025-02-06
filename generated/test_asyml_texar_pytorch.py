@@ -272,7 +272,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -534,49 +536,37 @@ from typing import cast
 from torch.nn.modules.conv import _ConvNd
 
 
-class LabelSmoothingLoss(nn.Module):
-    """With label smoothing,
-    KL-divergence between q_{smoothed ground truth prob.}(w)
-    and p_{prob. computed by model}(w) is minimized.
+class ModelWrapper(nn.Module):
 
-    Args:
-        label_confidence: the confidence weight on the ground truth label.
-        tgt_vocab_size: the size of the final classification.
-        ignore_index: The index in the vocabulary to ignore weight.
-    """
-    one_hot: torch.Tensor
-
-    def __init__(self, label_confidence, tgt_vocab_size, ignore_index=0):
+    def __init__(self, model: 'Transformer', beam_width: 'int'):
         super().__init__()
-        self.ignore_index = ignore_index
-        self.tgt_vocab_size = tgt_vocab_size
-        label_smoothing = 1 - label_confidence
-        assert 0.0 < label_smoothing <= 1.0
-        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
-        one_hot = torch.full((tgt_vocab_size,), smoothing_value)
-        one_hot[self.ignore_index] = 0
-        self.register_buffer('one_hot', one_hot.unsqueeze(0))
-        self.confidence = label_confidence
+        self.model = model
+        self.beam_width = beam_width
 
-    def forward(self, output: torch.Tensor, target: torch.Tensor, label_lengths: torch.LongTensor) ->torch.Tensor:
-        """Compute the label smoothing loss.
+    def forward(self, batch: 'tx.data.Batch') ->Dict[str, torch.Tensor]:
+        loss = self.model(encoder_input=batch.source, decoder_input=batch.target_input, labels=batch.target_output)
+        return {'loss': loss}
 
-        Args:
-            output (FloatTensor): batch_size x seq_length * n_classes
-            target (LongTensor): batch_size * seq_length, specify the label
-                target
-            label_lengths(torch.LongTensor): specify the length of the labels
-        """
-        orig_shapes = output.size(), target.size()
-        output = output.view(-1, self.tgt_vocab_size)
-        target = target.view(-1)
-        model_prob = self.one_hot.repeat(target.size(0), 1)
-        model_prob = model_prob
-        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
-        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
-        output = output.view(orig_shapes[0])
-        model_prob = model_prob.view(orig_shapes[0])
-        return tx.losses.sequence_softmax_cross_entropy(labels=model_prob, logits=output, sequence_length=label_lengths, average_across_batch=False, sum_over_timesteps=False)
+    def predict(self, batch: 'tx.data.Batch') ->Dict[str, torch.Tensor]:
+        predictions = self.model(encoder_input=batch.source, beam_width=self.beam_width)
+        if self.beam_width == 1:
+            decoded_ids = predictions[0].sample_id
+        else:
+            decoded_ids = predictions['sample_id'][:, :, 0]
+        return {'preds': decoded_ids}
+
+
+class SentenceClassifier(nn.Module):
+
+    def __init__(self, vocab_size: 'int', max_seq_length: 'int', emb_dim: 'int', hparams: 'Dict[str, Any]'):
+        super().__init__()
+        self.embedder = tx.modules.WordEmbedder(vocab_size=vocab_size, hparams=hparams['embedder'])
+        self.classifier = tx.modules.Conv1DClassifier(in_channels=max_seq_length, in_features=emb_dim, hparams=hparams['classifier'])
+
+    def forward(self, batch: 'tx.data.Batch') ->Tuple[torch.Tensor, torch.Tensor]:
+        logits, pred = self.classifier(self.embedder(batch['sentence_text_ids']))
+        loss = F.cross_entropy(logits, batch['label'])
+        return pred, loss
 
 
 class Seq2SeqAttn(nn.Module):
@@ -606,18 +596,158 @@ class Seq2SeqAttn(nn.Module):
             return infer_outputs
 
 
+class LabelSmoothingLoss(nn.Module):
+    """With label smoothing,
+    KL-divergence between q_{smoothed ground truth prob.}(w)
+    and p_{prob. computed by model}(w) is minimized.
+
+    Args:
+        label_confidence: the confidence weight on the ground truth label.
+        tgt_vocab_size: the size of the final classification.
+        ignore_index: The index in the vocabulary to ignore weight.
+    """
+    one_hot: 'torch.Tensor'
+
+    def __init__(self, label_confidence, tgt_vocab_size, ignore_index=0):
+        super().__init__()
+        self.ignore_index = ignore_index
+        self.tgt_vocab_size = tgt_vocab_size
+        label_smoothing = 1 - label_confidence
+        assert 0.0 < label_smoothing <= 1.0
+        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
+        one_hot = torch.full((tgt_vocab_size,), smoothing_value)
+        one_hot[self.ignore_index] = 0
+        self.register_buffer('one_hot', one_hot.unsqueeze(0))
+        self.confidence = label_confidence
+
+    def forward(self, output: 'torch.Tensor', target: 'torch.Tensor', label_lengths: 'torch.LongTensor') ->torch.Tensor:
+        """Compute the label smoothing loss.
+
+        Args:
+            output (FloatTensor): batch_size x seq_length * n_classes
+            target (LongTensor): batch_size * seq_length, specify the label
+                target
+            label_lengths(torch.LongTensor): specify the length of the labels
+        """
+        orig_shapes = output.size(), target.size()
+        output = output.view(-1, self.tgt_vocab_size)
+        target = target.view(-1)
+        model_prob = self.one_hot.repeat(target.size(0), 1)
+        model_prob = model_prob
+        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
+        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
+        output = output.view(orig_shapes[0])
+        model_prob = model_prob.view(orig_shapes[0])
+        return tx.losses.sequence_softmax_cross_entropy(labels=model_prob, logits=output, sequence_length=label_lengths, average_across_batch=False, sum_over_timesteps=False)
+
+
+class Transformer(nn.Module):
+    """A standalone sequence-to-sequence Transformer model, from "Attention
+    Is All You Need". The Transformer model consists of the word embedding
+    layer, position embedding layer, an encoder and a decoder. Both encoder
+    and decoder are stacks of self-attention layers followed by feed-forward
+    layers. See "Attention Is All You Need" (https://arxiv.org/abs/1706.03762)
+    for the full description of the model.
+    """
+
+    def __init__(self, model_config, data_config, vocab: 'tx.data.Vocab'):
+        super().__init__()
+        self.config_model = model_config
+        self.config_data = data_config
+        self.vocab = vocab
+        self.vocab_size = vocab.size
+        self.word_embedder = tx.modules.WordEmbedder(vocab_size=self.vocab_size, hparams=self.config_model.emb)
+        self.pos_embedder = tx.modules.SinusoidsPositionEmbedder(position_size=self.config_data.max_decoding_length, hparams=self.config_model.position_embedder_hparams)
+        self.encoder = tx.modules.TransformerEncoder(hparams=self.config_model.encoder)
+        self.decoder = tx.modules.TransformerDecoder(token_pos_embedder=self._embedding_fn, vocab_size=self.vocab_size, output_layer=self.word_embedder.embedding, hparams=self.config_model.decoder)
+        self.smoothed_loss_func = LabelSmoothingLoss(label_confidence=self.config_model.loss_label_confidence, tgt_vocab_size=self.vocab_size, ignore_index=0)
+
+    def _embedding_fn(self, tokens: 'torch.LongTensor', positions: 'torch.LongTensor') ->torch.Tensor:
+        word_embed = self.word_embedder(tokens)
+        scale = self.config_model.hidden_dim ** 0.5
+        pos_embed = self.pos_embedder(positions)
+        return word_embed * scale + pos_embed
+
+    def forward(self, encoder_input: 'torch.Tensor', decoder_input: 'Optional[torch.LongTensor]'=None, labels: 'Optional[torch.LongTensor]'=None, beam_width: 'Optional[int]'=None):
+        """Compute the maximum likelihood loss or perform decoding, depending
+        on arguments.
+
+        Args:
+            encoder_input: the source sentence embedding, with the shape of
+                `[batch_size, source_seq_length, input_dim]`.
+            decoder_input: the target sentence embedding, with the shape of
+                `[batch_size, target_seq_length, input_dim]`.
+            labels: the target sentence labels, with the shape of
+                `[batch_size, target_seq_length]`.
+            beam_width: Used in beam search.
+
+        :returns:
+            - If both :attr:`decoder_input` and :attr:`labels` are both
+              provided, the function enters training logic and returns the
+              maximum likelihood loss.
+            - Otherwise the function enters inference logic and returns the
+              decoded sequence.
+            - If `beam_width` > 1, beam search decoding is performed. Please
+              refer to :meth:`texar.modules.TransformerDecoder.forward` for
+              details on return types.
+        """
+        batch_size = encoder_input.size(0)
+        encoder_input_length = (encoder_input != 0).int().sum(dim=1)
+        positions = torch.arange(encoder_input_length.max(), dtype=torch.long, device=encoder_input.device).unsqueeze(0).expand(batch_size, -1)
+        src_input_embedding = self._embedding_fn(encoder_input, positions)
+        encoder_output = self.encoder(inputs=src_input_embedding, sequence_length=encoder_input_length)
+        if decoder_input is not None and labels is not None:
+            outputs = self.decoder(memory=encoder_output, memory_sequence_length=encoder_input_length, inputs=decoder_input, decoding_strategy='train_greedy')
+            label_lengths = (labels != 0).long().sum(dim=1)
+            is_target = (labels != 0).float()
+            mle_loss = self.smoothed_loss_func(outputs.logits, labels, label_lengths)
+            mle_loss = (mle_loss * is_target).sum() / is_target.sum()
+            return mle_loss
+        else:
+            start_tokens = encoder_input.new_full((batch_size,), self.vocab.bos_token_id)
+            predictions = self.decoder(memory=encoder_output, memory_sequence_length=encoder_input_length, beam_width=beam_width, length_penalty=self.config_model.length_penalty, start_tokens=start_tokens, end_token=self.vocab.eos_token_id, max_decoding_length=self.config_data.max_decoding_length, decoding_strategy='infer_greedy')
+            return predictions
+
+
 def MultivariateNormalDiag(loc, scale_diag):
     if loc.dim() < 1:
         raise ValueError('loc must be at least one-dimensional.')
     return Independent(Normal(loc, scale_diag), 1)
 
 
-def kl_divergence(means: Tensor, logvars: Tensor) ->Tensor:
+def kl_divergence(means: 'Tensor', logvars: 'Tensor') ->Tensor:
     """Compute the KL divergence between Gaussian distribution
     """
     kl_cost = -0.5 * (logvars - means ** 2 - torch.exp(logvars) + 1.0)
     kl_cost = torch.mean(kl_cost, 0)
     return torch.sum(kl_cost)
+
+
+class DummyClassifier(nn.Module):
+
+    def __init__(self, vocab_size: 'int', n_classes: 'int'):
+        super().__init__()
+        self.embedder = tx.modules.WordEmbedder(vocab_size=vocab_size, hparams={'dim': 10})
+        self.encoder = tx.modules.BidirectionalRNNEncoder(input_size=10, hparams={'rnn_cell_fw': {'kwargs': {'num_units': 256}}})
+        self.linear = nn.Linear(sum(self.encoder.output_size), n_classes)
+
+    def _compute_logits(self, tokens: 'torch.LongTensor') ->torch.Tensor:
+        embeds = self.embedder(tokens)
+        fw_state, bw_state = self.encoder(embeds)[1]
+        state = torch.cat([fw_state[0], bw_state[0]], dim=1)
+        logits = self.linear(state)
+        return logits
+
+    def forward(self, batch: 'tx.data.Batch') ->Dict[str, torch.Tensor]:
+        logits = self._compute_logits(batch.tokens)
+        loss = F.cross_entropy(logits, batch.label)
+        preds = torch.argmax(logits, dim=1)
+        return {'loss': loss, 'preds': preds}
+
+    def predict(self, batch: 'tx.data.Batch') ->Dict[str, torch.Tensor]:
+        logits = self._compute_logits(batch.tokens)
+        preds = torch.argmax(logits, dim=1)
+        return {'preds': preds}
 
 
 State = TypeVar('State')
@@ -637,7 +767,7 @@ class RNNCellBase(nn.Module, Generic[State]):
        routines.
     """
 
-    def __init__(self, cell: Union[nn.RNNCellBase, 'RNNCellBase']):
+    def __init__(self, cell: "Union[nn.RNNCellBase, 'RNNCellBase']"):
         super().__init__()
         if not isinstance(cell, nn.Module):
             raise ValueError("Type of parameter 'cell' must be derived fromnn.Module, and has 'input_size' and 'hidden_size'attributes.")
@@ -666,7 +796,7 @@ class RNNCellBase(nn.Module, Generic[State]):
         """
         pass
 
-    def zero_state(self, batch_size: int) ->State:
+    def zero_state(self, batch_size: 'int') ->State:
         """Return zero-filled state tensor(s).
 
         Args:
@@ -683,7 +813,7 @@ class RNNCellBase(nn.Module, Generic[State]):
             state = self._cell.zero_state(batch_size)
         return state
 
-    def forward(self, input: torch.Tensor, state: Optional[State]=None) ->Tuple[torch.Tensor, State]:
+    def forward(self, input: 'torch.Tensor', state: 'Optional[State]'=None) ->Tuple[torch.Tensor, State]:
         """
         Returns:
             A tuple of (output, state). For single layer RNNs, output is
@@ -701,7 +831,7 @@ class MaxReducePool1d(nn.Module):
     the pooling dimension is entirely reduced (i.e., `pool_size=input_length`).
     """
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         output, _ = torch.max(input, dim=2)
         return output
 
@@ -712,7 +842,7 @@ class AvgReducePool1d(nn.Module):
     the pooling dimension is entirely reduced (i.e., `pool_size=input_length`).
     """
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         return torch.mean(input, dim=2)
 
 
@@ -721,6 +851,101 @@ def is_str(x):
     Returns `False` otherwise.
     """
     return isinstance(x, str)
+
+
+def get_layer(hparams: 'Union[HParams, Dict[str, Any]]') ->nn.Module:
+    """Makes a layer instance.
+
+    The layer must be an instance of :torch_nn:`Module`.
+
+    Args:
+        hparams (dict or HParams): Hyperparameters of the layer, with
+            structure:
+
+            .. code-block:: python
+
+                {
+                    "type": "LayerClass",
+                    "kwargs": {
+                        # Keyword arguments of the layer class
+                        # ...
+                    }
+                }
+
+            Here:
+
+            `"type"`: str or layer class or layer instance
+                The layer type. This can be
+
+                - The string name or full module path of a layer class. If
+                  the class name is provided, the class must be in module
+                  :torch_nn:`Module`, :mod:`texar.torch.core`, or
+                  :mod:`texar.torch.custom`.
+                - A layer class.
+                - An instance of a layer class.
+
+                For example
+
+                .. code-block:: python
+
+                    "type": "Conv1D"                               # class name
+                    "type": "texar.torch.core.MaxReducePooling1D"  # module path
+                    "type": "my_module.MyLayer"                    # module path
+                    "type": torch.nn.Module.Linear                 # class
+                    "type": Conv1D(filters=10, kernel_size=2)  # cell instance
+                    "type": MyLayer(...)                       # cell instance
+
+            `"kwargs"`: dict
+                A dictionary of keyword arguments for constructor of the
+                layer class. Ignored if :attr:`"type"` is a layer instance.
+
+                - Arguments named "activation" can be a callable, or a `str` of
+                  the name or module path to the activation function.
+                - Arguments named "\\*_regularizer" and "\\*_initializer" can be a
+                  class instance, or a `dict` of hyperparameters of respective
+                  regularizers and initializers. See
+                - Arguments named "\\*_constraint" can be a callable, or a `str`
+                  of the name or full path to the constraint function.
+
+    Returns:
+        A layer instance. If ``hparams["type"]`` is a layer instance, returns it
+        directly.
+
+    Raises:
+        ValueError: If :attr:`hparams` is `None`.
+        ValueError: If the resulting layer is not an instance of
+            :torch_nn:`Module`.
+    """
+    if hparams is None:
+        raise ValueError('`hparams` must not be `None`.')
+    layer_type = hparams['type']
+    if not is_str(layer_type) and not isinstance(layer_type, type):
+        layer = layer_type
+    else:
+        layer_modules = ['torch.nn', 'texar.torch.core', 'texar.torch.custom']
+        layer_class: 'Type[nn.Module]' = utils.check_or_get_class(layer_type, layer_modules)
+        if isinstance(hparams, dict):
+            if layer_class.__name__ == 'Linear' and 'in_features' not in hparams['kwargs']:
+                raise ValueError('"in_features" should be specified for "torch.nn.{}"'.format(layer_class.__name__))
+            elif layer_class.__name__ in ['Conv1d', 'Conv2d', 'Conv3d'] and 'in_channels' not in hparams['kwargs']:
+                raise ValueError('"in_channels" should be specified for "torch.nn.{}"'.format(layer_class.__name__))
+            default_kwargs: 'Dict[str, Any]' = {}
+            default_hparams = {'type': layer_type, 'kwargs': default_kwargs}
+            hparams = HParams(hparams, default_hparams)
+        if layer_type == 'Sequential':
+            names: 'List[str]' = []
+            layer = nn.Sequential()
+            sub_hparams = hparams.kwargs.layers
+            for hparam in sub_hparams:
+                sub_layer = get_layer(hparam)
+                name = utils.uniquify_str(sub_layer.__class__.__name__, names)
+                names.append(name)
+                layer.add_module(name=name, module=sub_layer)
+        else:
+            layer = utils.get_instance(layer_type, hparams.kwargs.todict(), layer_modules)
+    if not isinstance(layer, nn.Module):
+        raise ValueError('layer must be an instance of `torch.nn.Module`.')
+    return layer
 
 
 class MergeLayer(nn.Module):
@@ -765,13 +990,13 @@ class MergeLayer(nn.Module):
         dim (int): The dim to use in merging. Ignored in modes
             :attr:`'elemwise_sum'` and :attr:`'elemwise_mul'`.
     """
-    _functions: Dict[str, Callable[[torch.Tensor, int], torch.Tensor]] = {'sum': torch.sum, 'mean': torch.mean, 'prod': torch.prod, 'max': lambda tensors, dim: torch.max(tensors, dim)[0], 'min': lambda tensors, dim: torch.min(tensors, dim)[0], 'and': torch.all, 'or': torch.any, 'logsumexp': torch.logsumexp}
+    _functions: 'Dict[str, Callable[[torch.Tensor, int], torch.Tensor]]' = {'sum': torch.sum, 'mean': torch.mean, 'prod': torch.prod, 'max': lambda tensors, dim: torch.max(tensors, dim)[0], 'min': lambda tensors, dim: torch.min(tensors, dim)[0], 'and': torch.all, 'or': torch.any, 'logsumexp': torch.logsumexp}
 
-    def __init__(self, layers: Optional[List[nn.Module]]=None, mode: str='concat', dim: Optional[int]=None):
+    def __init__(self, layers: 'Optional[List[nn.Module]]'=None, mode: 'str'='concat', dim: 'Optional[int]'=None):
         super().__init__()
         self._mode = mode
         self._dim = dim
-        self._layers: Optional[nn.ModuleList] = None
+        self._layers: 'Optional[nn.ModuleList]' = None
         if layers is not None:
             if len(layers) == 0:
                 raise ValueError("'layers' must be either None or a non-empty list.")
@@ -782,7 +1007,7 @@ class MergeLayer(nn.Module):
                 else:
                     self._layers.append(get_layer(hparams=layer))
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         """Feed input to every containing layer and merge the outputs.
 
         Args:
@@ -791,7 +1016,7 @@ class MergeLayer(nn.Module):
         Returns:
             The merged tensor.
         """
-        layer_outputs: List[torch.Tensor]
+        layer_outputs: 'List[torch.Tensor]'
         if self._layers is None:
             layer_outputs = input
             if not isinstance(layer_outputs, (list, tuple)):
@@ -829,14 +1054,14 @@ class MergeLayer(nn.Module):
 class Flatten(nn.Module):
     """Flatten layer to flatten a tensor after convolution."""
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         return input.view(input.size()[0], -1)
 
 
 class Identity(nn.Module):
     """Identity activation layer."""
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         return input
 
 
@@ -857,7 +1082,7 @@ class GPTGELU(nn.Module):
         return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
 
 
-def uniquify_str(str_: str, str_set: Collection[str]) ->str:
+def uniquify_str(str_: 'str', str_set: 'Collection[str]') ->str:
     """Uniquifies :attr:`str_` if :attr:`str_` is included in :attr:`str_set`.
 
     This is done by appending a number to :attr:`str_`. Returns
@@ -891,7 +1116,7 @@ def uniquify_str(str_: str, str_set: Collection[str]) ->str:
     raise ValueError('Failed to uniquify string: ' + str_)
 
 
-def _to_list(value: Union[Dict[str, Any], List, Tuple, int], name=None, list_length=None):
+def _to_list(value: 'Union[Dict[str, Any], List, Tuple, int]', name=None, list_length=None):
     """Converts `hparams` value into a list.
 
     If :attr:`list_length` is given, then the canonicalized :attr:`value`
@@ -911,7 +1136,28 @@ def _to_list(value: Union[Dict[str, Any], List, Tuple, int], name=None, list_len
 _POOLING_TO_REDUCE = {'MaxPool1d': 'MaxReducePool1d', 'AvgPool1d': 'AvgReducePool1d', torch.nn.MaxPool1d: MaxReducePool1d, torch.nn.AvgPool1d: AvgReducePool1d}
 
 
-def transpose_batch_time(inputs: torch.Tensor) ->torch.Tensor:
+def get_pooling_layer_hparams(hparams: 'Union[HParams, Dict[str, Any]]') ->Dict[str, Any]:
+    """Creates pooling layer hyperparameters `dict` for :func:`get_layer`.
+
+    If the :attr:`hparams` sets `'pool_size'` to `None`, the layer will be
+    changed to the respective reduce-pooling layer. For example,
+    :torch_docs:`torch.conv.MaxPool1d <nn.html#torch.nn.Conv1d>` is replaced
+    with :class:`~texar.torch.core.MaxReducePool1d`.
+    """
+    if isinstance(hparams, HParams):
+        hparams = hparams.todict()
+    new_hparams = copy.copy(hparams)
+    kwargs = new_hparams.get('kwargs', None)
+    if kwargs and kwargs.get('kernel_size', None) is None:
+        pool_type = hparams['type']
+        new_hparams['type'] = _POOLING_TO_REDUCE.get(pool_type, pool_type)
+        kwargs.pop('kernel_size', None)
+        kwargs.pop('stride', None)
+        kwargs.pop('padding', None)
+    return new_hparams
+
+
+def transpose_batch_time(inputs: 'torch.Tensor') ->torch.Tensor:
     """Transposes inputs between time-major and batch-major.
 
     Args:
@@ -926,7 +1172,7 @@ def transpose_batch_time(inputs: torch.Tensor) ->torch.Tensor:
     return inputs.transpose(0, 1)
 
 
-def mask_sequences(sequence: Union[torch.Tensor, List[int]], sequence_length: Union[torch.LongTensor, List[int]], dtype: Optional[torch.dtype]=None, time_major: bool=False) ->torch.Tensor:
+def mask_sequences(sequence: 'Union[torch.Tensor, List[int]]', sequence_length: 'Union[torch.LongTensor, List[int]]', dtype: 'Optional[torch.dtype]'=None, time_major: 'bool'=False) ->torch.Tensor:
     """Masks out sequence entries that are beyond the respective sequence
     lengths. Masks along the time dimension.
 
@@ -959,7 +1205,7 @@ def mask_sequences(sequence: Union[torch.Tensor, List[int]], sequence_length: Un
     """
     if not torch.is_tensor(sequence):
         sequence = torch.tensor(sequence, dtype=dtype)
-    sequence: torch.Tensor
+    sequence: 'torch.Tensor'
     rank = sequence.dim()
     if rank < 2:
         raise ValueError('`sequence` must be 2D or higher order.')
@@ -976,13 +1222,7 @@ def mask_sequences(sequence: Union[torch.Tensor, List[int]], sequence_length: Un
     return sequence
 
 
-T = TypeVar('T')
-
-
-MaybeList = Union[T, List[T]]
-
-
-def _extract_google_drive_file_id(url: str) ->str:
+def _extract_google_drive_file_id(url: 'str') ->str:
     url_suffix = url[url.find('/d/') + 3:]
     if url_suffix.find('/') == -1:
         return url_suffix
@@ -990,7 +1230,7 @@ def _extract_google_drive_file_id(url: str) ->str:
     return file_id
 
 
-def get_filename(url: str) ->str:
+def get_filename(url: 'str') ->str:
     """Extracts the filename of the downloaded checkpoint file from the URL.
     """
     if 'drive.google.com' in url:
@@ -999,7 +1239,7 @@ def get_filename(url: str) ->str:
     return filename or os.path.basename(url)
 
 
-def _download(url: str, filename: str, path: str) ->str:
+def _download(url: 'str', filename: 'str', path: 'str') ->str:
 
     def _progress_hook(count, block_size, total_size):
         percent = float(count * block_size) / float(total_size) * 100.0
@@ -1081,7 +1321,7 @@ Type_size_keeper = [nn.ELU, nn.Hardshrink, nn.Hardtanh, nn.LeakyReLU, nn.LogSigm
 Type_size_lambda_map = {nn.Linear: lambda x: x.out_features, nn.Bilinear: lambda x: x.out_features, _ConvNd: lambda x: x.out_channels * len(x.kernel_size), nn.Embedding: lambda x: x.embedding_dim, nn.EmbeddingBag: lambda x: x.embedding_dim, nn.RNNCellBase: lambda x: x.hidden_size}
 
 
-def get_output_size(input_instance: nn.Module) ->Optional[int]:
+def get_output_size(input_instance: 'nn.Module') ->Optional[int]:
     """Return the final dimension size of :attr:`input_instance` output.
 
     If type of :attr:`input_instance` is among the common types, the final
@@ -1105,7 +1345,7 @@ def get_output_size(input_instance: nn.Module) ->Optional[int]:
     return None
 
 
-def default_transformer_poswise_net_hparams(input_dim: int, output_dim: int=512) ->Dict[str, Any]:
+def default_transformer_poswise_net_hparams(input_dim: 'int', output_dim: 'int'=512) ->Dict[str, Any]:
     """Returns default hyperparameters of a
     :class:`~texar.torch.modules.FeedForwardNetwork` as a position-wise network
     used in :class:`~texar.torch.modules.TransformerEncoder` and
@@ -1155,7 +1395,7 @@ def default_transformer_poswise_net_hparams(input_dim: int, output_dim: int=512)
     return {'layers': [{'type': 'Linear', 'kwargs': {'in_features': input_dim, 'out_features': output_dim * 4, 'bias': True}}, {'type': 'ReLU', 'kwargs': {'inplace': True}}, {'type': 'Dropout', 'kwargs': {'p': 0.1}}, {'type': 'Linear', 'kwargs': {'in_features': output_dim * 4, 'out_features': output_dim, 'bias': True}}], 'name': 'ffn'}
 
 
-def sequence_mask(lengths: Union[torch.LongTensor, List[int]], max_len: Optional[int]=None, dtype: Optional[torch.dtype]=None, device: Optional[torch.device]=None) ->torch.ByteTensor:
+def sequence_mask(lengths: 'Union[torch.LongTensor, List[int]]', max_len: 'Optional[int]'=None, dtype: 'Optional[torch.dtype]'=None, device: 'Optional[torch.device]'=None) ->torch.ByteTensor:
     """Return a mask tensor representing the first N positions of each cell.
 
     If ``lengths`` has shape ``[d_1, d_2, ..., d_n]`` the resulting tensor
@@ -1197,7 +1437,7 @@ def sequence_mask(lengths: Union[torch.LongTensor, List[int]], max_len: Optional
         lengths = torch.tensor(lengths, device=device)
     elif device is None:
         device = lengths.device
-    lengths: torch.LongTensor
+    lengths: 'torch.LongTensor'
     if max_len is None:
         max_len = torch.max(lengths).item()
     size = lengths.size()
@@ -1209,6 +1449,33 @@ def sequence_mask(lengths: Union[torch.LongTensor, List[int]], max_len: Optional
 
 
 AnyDict = MutableMapping[str, Any]
+
+
+def dict_fetch(src_dict: 'Optional[ParamDict]', tgt_dict_or_keys: 'Union[ParamDict, List[str]]') ->Optional[AnyDict]:
+    """Fetches a sub-dictionary of :attr:`src_dict` with the keys in
+    :attr:`tgt_dict_or_keys`.
+
+    Args:
+        src_dict: A dictionary or instance of :class:`~texar.torch.HParams`.
+            The source dictionary to fetch values from.
+        tgt_dict_or_keys: A dictionary, instance of
+            :class:`~texar.torch.HParams`, or a list (or a
+            ``dict_keys``/``KeysView``) of keys to be included in the output
+            dictionary.
+
+    Returns:
+        A new dictionary that is a sub-dictionary of :attr:`src_dict`.
+    """
+    if src_dict is None:
+        return src_dict
+    if isinstance(tgt_dict_or_keys, HParams):
+        tgt_dict_or_keys = tgt_dict_or_keys.todict()
+    if isinstance(tgt_dict_or_keys, MutableMapping):
+        tgt_dict_or_keys = tgt_dict_or_keys.keys()
+    keys = list(tgt_dict_or_keys)
+    if isinstance(src_dict, HParams):
+        src_dict = src_dict.todict()
+    return {k: src_dict[k] for k in keys if k in src_dict}
 
 
 def get_initializer(hparams=None) ->Optional[Callable[[torch.Tensor], torch.Tensor]]:
@@ -1255,7 +1522,7 @@ class BuiltinCellWrapper(RNNCellBase[State]):
     RNN cells.
     """
 
-    def forward(self, input: torch.Tensor, state: Optional[State]=None) ->Tuple[torch.Tensor, State]:
+    def forward(self, input: 'torch.Tensor', state: 'Optional[State]'=None) ->Tuple[torch.Tensor, State]:
         if state is None:
             batch_size = input.size(0)
             state = self.zero_state(batch_size)
@@ -1271,7 +1538,7 @@ class LSTMCell(BuiltinCellWrapper[LSTMState]):
     option to initialize the forget-gate bias to a constant value.
     """
 
-    def __init__(self, input_size, hidden_size, bias=True, forget_bias: Optional[float]=None):
+    def __init__(self, input_size, hidden_size, bias=True, forget_bias: 'Optional[float]'=None):
         if forget_bias is not None and not bias:
             raise ValueError("Parameter 'forget_bias' must be set to None when'bias' is set to False.")
         cell = nn.LSTMCell(input_size, hidden_size, bias=bias)
@@ -1281,12 +1548,12 @@ class LSTMCell(BuiltinCellWrapper[LSTMState]):
                 cell.bias_hh[hidden_size:2 * hidden_size].fill_(forget_bias)
         super().__init__(cell)
 
-    def zero_state(self, batch_size: int) ->LSTMState:
+    def zero_state(self, batch_size: 'int') ->LSTMState:
         """Returns the zero state for LSTMs as (h, c)."""
         state = self._param.new_zeros(batch_size, self.hidden_size, requires_grad=False)
         return state, state
 
-    def forward(self, input: torch.Tensor, state: Optional[LSTMState]=None) ->Tuple[torch.Tensor, LSTMState]:
+    def forward(self, input: 'torch.Tensor', state: 'Optional[LSTMState]'=None) ->Tuple[torch.Tensor, LSTMState]:
         if state is None:
             batch_size = input.size(0)
             state = self.zero_state(batch_size)
@@ -1294,11 +1561,53 @@ class LSTMCell(BuiltinCellWrapper[LSTMState]):
         return new_state[0], new_state
 
 
+def _build_dense_output_layer(cell_output_size: 'int', hparams: 'HParams') ->Optional[nn.Sequential]:
+    """Build the output layers.
+
+    Args:
+        cell_output_size: The output size of the rnn cell.
+        hparams (dict or HParams): Hyperparameters. Missing hyperparameters
+            will be set to default values. See
+            :meth:`default_hparams` for the hyperparameter structure and
+            default values.
+
+    Returns:
+        A :torch_nn:`Sequential` module containing the output layers.
+    """
+    nlayers = hparams.num_layers
+    if nlayers <= 0:
+        return None
+    layer_size = _to_list(hparams.layer_size, 'output_layer.layer_size', nlayers)
+    dropout_layer_ids = _to_list(hparams.dropout_layer_ids)
+    other_kwargs = hparams.other_dense_kwargs or {}
+    if isinstance(other_kwargs, HParams):
+        other_kwargs = other_kwargs.todict()
+    if not isinstance(other_kwargs, dict):
+        raise ValueError("hparams 'output_layer.other_dense_kwargs' must be a dict.")
+    output_layers: 'List[nn.Module]' = []
+    for i in range(nlayers):
+        if i in dropout_layer_ids:
+            output_layers.append(nn.Dropout(p=hparams.dropout_rate))
+        dense_layer = nn.Linear(in_features=cell_output_size if i == 0 else layer_size[i - 1], out_features=layer_size[i], **other_kwargs)
+        output_layers.append(dense_layer)
+        if i == nlayers - 1:
+            activation = hparams.final_layer_activation
+        else:
+            activation = hparams.activation
+        if activation is not None:
+            layer_hparams = {'type': activation, 'kwargs': {}}
+            activation_layer = layers.get_layer(hparams=layer_hparams)
+            output_layers.append(activation_layer)
+    if nlayers in dropout_layer_ids:
+        output_layers.append(nn.Dropout(p=hparams.dropout_rate))
+    return nn.Sequential(*output_layers)
+
+
 def _default_output_layer_hparams() ->Dict[str, Any]:
     return {'num_layers': 0, 'layer_size': 128, 'activation': 'Identity', 'final_layer_activation': None, 'other_dense_kwargs': None, 'dropout_layer_ids': [], 'dropout_rate': 0.5, 'variational_dropout': False, '@no_typecheck': ['activation', 'final_layer_activation', 'layer_size', 'dropout_layer_ids']}
 
 
-def _forward_output_layers(inputs: torch.Tensor, output_layer: Optional[nn.Module], time_major: bool, sequence_length: Optional[Union[torch.LongTensor, List[int]]]=None) ->Tuple[torch.Tensor, int]:
+def _forward_output_layers(inputs: 'torch.Tensor', output_layer: 'Optional[nn.Module]', time_major: 'bool', sequence_length: 'Optional[Union[torch.LongTensor, List[int]]]'=None) ->Tuple[torch.Tensor, int]:
     """Forwards inputs through the output layers.
 
     Args:
@@ -1338,7 +1647,7 @@ R = TypeVar('R')
 
 
 @no_type_check
-def map_structure(fn: Callable[[T], R], obj: Collection[T]) ->Collection[R]:
+def map_structure(fn: 'Callable[[T], R]', obj: 'Collection[T]') ->Collection[R]:
     """Map a function over all elements in a (possibly nested) collection.
 
     Args:
@@ -1367,7 +1676,7 @@ def map_structure(fn: Callable[[T], R], obj: Collection[T]) ->Collection[R]:
 
 
 @no_type_check
-def map_structure_zip(fn: Callable[..., R], objs: Sequence[Collection[T]]) ->Collection[R]:
+def map_structure_zip(fn: 'Callable[..., R]', objs: 'Sequence[Collection[T]]') ->Collection[R]:
     """Map a function over tuples formed by taking one elements from each
     (possibly nested) collection. Each collection must have identical
     structures.
@@ -1406,13 +1715,16 @@ def map_structure_zip(fn: Callable[..., R], objs: Sequence[Collection[T]]) ->Col
     return fn(*objs)
 
 
+T = TypeVar('T')
+
+
 @lru_cache(maxsize=None)
-def _no_map_type(container_type: Type[T]) ->Type[T]:
+def _no_map_type(container_type: 'Type[T]') ->Type[T]:
     new_type = type('_no_map' + container_type.__name__, (container_type,), {'--no-map--': True})
     return new_type
 
 
-def no_map(container_type: Type[T], *args, **kwargs) ->T:
+def no_map(container_type: 'Type[T]', *args, **kwargs) ->T:
     """Create a "`non-mappable`" container type, i.e. it will be treated as a
     singleton object in :meth:`map_structure` and :meth:`map_structure_zip`,
     its contents will not be traversed.
@@ -1433,7 +1745,7 @@ def no_map(container_type: Type[T], *args, **kwargs) ->T:
     return _no_map_type(container_type)(*args, **kwargs)
 
 
-def _dynamic_rnn_loop(cell: RNNCellBase[State], inputs: torch.Tensor, initial_state: State, sequence_length: torch.LongTensor) ->Tuple[torch.Tensor, State]:
+def _dynamic_rnn_loop(cell: 'RNNCellBase[State]', inputs: 'torch.Tensor', initial_state: 'State', sequence_length: 'torch.LongTensor') ->Tuple[torch.Tensor, State]:
     """Internal implementation of Dynamic RNN.
 
     Args:
@@ -1479,7 +1791,7 @@ def _dynamic_rnn_loop(cell: RNNCellBase[State], inputs: torch.Tensor, initial_st
     return final_outputs, final_state
 
 
-def dynamic_rnn(cell: RNNCellBase[State], inputs: torch.Tensor, sequence_length: Optional[Union[torch.LongTensor, List[int]]]=None, initial_state: Optional[State]=None, time_major: bool=False) ->Tuple[torch.Tensor, State]:
+def dynamic_rnn(cell: 'RNNCellBase[State]', inputs: 'torch.Tensor', sequence_length: 'Optional[Union[torch.LongTensor, List[int]]]'=None, initial_state: 'Optional[State]'=None, time_major: 'bool'=False) ->Tuple[torch.Tensor, State]:
     """Creates a recurrent neural network specified by RNNCell ``cell``.
 
     Performs fully dynamic unrolling of ``inputs``.
@@ -1578,7 +1890,7 @@ def dynamic_rnn(cell: RNNCellBase[State], inputs: torch.Tensor, sequence_length:
 _XLNET_PATH = 'https://storage.googleapis.com/xlnet/released_models/'
 
 
-def init_weights(module: nn.Module):
+def init_weights(module: 'nn.Module'):
     if isinstance(module, nn.Linear):
         nn.init.normal_(module.weight, 0.0, 0.02)
         if module.bias is not None:
@@ -1588,25 +1900,25 @@ def init_weights(module: nn.Module):
 
 
 class PositionalEmbedding(nn.Module):
-    inv_freq: torch.Tensor
+    inv_freq: 'torch.Tensor'
 
-    def __init__(self, embed_dim: int):
+    def __init__(self, embed_dim: 'int'):
         super().__init__()
         freq_seq = torch.arange(0.0, embed_dim, 2.0)
         inv_freq = 1 / 10000 ** (freq_seq / embed_dim)
         self.register_buffer('inv_freq', inv_freq)
 
-    def forward(self, pos_seq: torch.Tensor) ->torch.Tensor:
+    def forward(self, pos_seq: 'torch.Tensor') ->torch.Tensor:
         sinusoid = torch.ger(pos_seq, self.inv_freq)
         pos_embed = torch.cat([sinusoid.sin(), sinusoid.cos()], dim=-1)
         return pos_embed
 
 
-def params_except_in(module: nn.Module, except_names: List[str]) ->Iterable[nn.Parameter]:
+def params_except_in(module: 'nn.Module', except_names: 'List[str]') ->Iterable[nn.Parameter]:
     return itertools.chain.from_iterable(child.parameters() for name, child in module.named_children() if name not in except_names)
 
 
-def sum_tensors(xs: List[Optional[torch.Tensor]]) ->Optional[torch.Tensor]:
+def sum_tensors(xs: 'List[Optional[torch.Tensor]]') ->Optional[torch.Tensor]:
     """Sum a list of tensors with possible `None` values.
 
     Args:
@@ -1631,16 +1943,7 @@ MaybeTuple = Union[T, Tuple[T, ...]]
 OutputSize = MaybeTuple[Union[int, torch.Size]]
 
 
-TensorStruct = Union[List[torch.Tensor], Dict[Any, torch.Tensor], MaybeTuple[torch.Tensor]]
-
-
-ActivationFn = Callable[[torch.Tensor], torch.Tensor]
-
-
-LinearLayer = Callable[[torch.Tensor], torch.Tensor]
-
-
-def _get_sizes(sizes: List[Any]) ->List[int]:
+def _get_sizes(sizes: 'List[Any]') ->List[int]:
     """
 
     Args:
@@ -1659,7 +1962,7 @@ def _get_sizes(sizes: List[Any]) ->List[int]:
     return size_list
 
 
-def _mlp_transform(inputs: TensorStruct, output_size: OutputSize, linear_layer: Optional[LinearLayer]=None, activation_fn: Optional[ActivationFn]=None) ->Any:
+def _mlp_transform(inputs: 'TensorStruct', output_size: 'OutputSize', linear_layer: 'Optional[LinearLayer]'=None, activation_fn: 'Optional[ActivationFn]'=None) ->Any:
     """Transforms inputs through a fully-connected layer that creates
     the output with specified size.
 
@@ -1696,7 +1999,7 @@ def _mlp_transform(inputs: TensorStruct, output_size: OutputSize, linear_layer: 
     return output
 
 
-def _sum_output_size(output_size: OutputSize) ->int:
+def _sum_output_size(output_size: 'OutputSize') ->int:
     """Return sum of all dim values in :attr:`output_size`
 
     Args:
@@ -1709,7 +2012,50 @@ def _sum_output_size(output_size: OutputSize) ->int:
     return ret
 
 
-def _assert_same_size(outputs: TensorStruct, output_size: OutputSize):
+def get_activation_fn(fn_name: 'Optional[Union[str, Callable[[torch.Tensor], torch.Tensor]]]'=None, kwargs: 'Union[HParams, Dict, None]'=None) ->Optional[Callable[[torch.Tensor], torch.Tensor]]:
+    """Returns an activation function `fn` with the signature
+    `output = fn(input)`.
+
+    If the function specified by :attr:`fn_name` has more than one arguments
+    without default values, then all these arguments except the input feature
+    argument must be specified in :attr:`kwargs`. Arguments with default values
+    can also be specified in :attr:`kwargs` to take values other than the
+    defaults. In this case a partial function is returned with the above
+    signature.
+
+    Args:
+        fn_name (str or callable): An activation function, or its name or
+            module path. The function can be:
+
+            - Built-in function defined in
+              :torch_docs:`torch.nn.functional<nn.html#torch-nn-functional>`
+            - User-defined activation functions in module
+              :mod:`texar.torch.custom`.
+            - External activation functions. Must provide the full module path,
+              e.g., ``"my_module.my_activation_fn"``.
+
+        kwargs (optional): A `dict` or instance of :class:`~texar.torch.HParams`
+            containing the keyword arguments of the activation function.
+
+    Returns:
+        An activation function. `None` if :attr:`fn_name` is `None`.
+    """
+    if fn_name is None:
+        return None
+    fn_modules = ['torch', 'torch.nn.functional', 'texar.torch.custom', 'texar.torch.core.layers']
+    activation_fn_ = utils.get_function(fn_name, fn_modules)
+    activation_fn = activation_fn_
+    if kwargs is not None:
+        if isinstance(kwargs, HParams):
+            kwargs = kwargs.todict()
+
+        def _partial_fn(features):
+            return activation_fn_(features, **kwargs)
+        activation_fn = _partial_fn
+    return activation_fn
+
+
+def _assert_same_size(outputs: 'TensorStruct', output_size: 'OutputSize'):
     """Check if outputs match output_size
 
     Args:
@@ -1725,9 +2071,6 @@ def _assert_same_size(outputs: TensorStruct, output_size: OutputSize):
                 raise ValueError('The output size does not matchthe required output_size')
         elif output[0].size()[-1] != size:
             raise ValueError('The output size does not match the required output_size')
-
-
-EmbeddingFn = Callable[[torch.LongTensor, torch.LongTensor], torch.Tensor]
 
 
 HelperInitTuple = Tuple[torch.ByteTensor, torch.Tensor]
@@ -1747,7 +2090,7 @@ class Helper(Generic[IDType], ABC):
     <https://www.tensorflow.org/api_docs/python/tf/contrib/seq2seq/Helper>`_.
     """
 
-    def initialize(self, embedding_fn: EmbeddingFn, inputs: Optional[torch.Tensor], sequence_length: Optional[torch.LongTensor]) ->HelperInitTuple:
+    def initialize(self, embedding_fn: 'EmbeddingFn', inputs: 'Optional[torch.Tensor]', sequence_length: 'Optional[torch.LongTensor]') ->HelperInitTuple:
         """Initialize the current batch.
 
         Args:
@@ -1761,12 +2104,12 @@ class Helper(Generic[IDType], ABC):
         """
         raise NotImplementedError
 
-    def sample(self, time: int, outputs: torch.Tensor) ->IDType:
+    def sample(self, time: 'int', outputs: 'torch.Tensor') ->IDType:
         """Returns ``sample_ids``.
         """
         raise NotImplementedError
 
-    def next_inputs(self, embedding_fn: EmbeddingFn, time: int, outputs: torch.Tensor, sample_ids: IDType) ->NextInputTuple:
+    def next_inputs(self, embedding_fn: 'EmbeddingFn', time: 'int', outputs: 'torch.Tensor', sample_ids: 'IDType') ->NextInputTuple:
         """Returns ``(finished, next_inputs, next_state)``.
         """
         raise NotImplementedError
@@ -1775,10 +2118,10 @@ class Helper(Generic[IDType], ABC):
 class XLNetDecoderOutput(NamedTuple):
     """The output of :class:`XLNetDecoder`.
     """
-    logits: torch.Tensor
+    logits: 'torch.Tensor'
     """A :tensor:`Tensor` of shape ``[batch_size, max_time, vocab_size]``
     containing the logits."""
-    sample_id: torch.LongTensor
+    sample_id: 'torch.LongTensor'
     """A :tensor:`LongTensor` of shape ``[batch_size, max_time]``
     (or ``[batch_size, max_time, vocab_size]``) containing the sampled token
     indices. Note that the shape of ``sample_id`` is different for different
@@ -1787,12 +2130,6 @@ class XLNetDecoderOutput(NamedTuple):
 
 
 Output = XLNetDecoderOutput
-
-
-TokenEmbedder = Union[nn.Module, Callable[[torch.LongTensor], torch.Tensor]]
-
-
-TokenPosEmbedder = Union[nn.Module, Callable[[torch.LongTensor, torch.LongTensor], torch.Tensor]]
 
 
 torch_bool = (torch.empty(()) < 0).dtype
@@ -1807,7 +2144,7 @@ _T5_PATH = 'https://storage.googleapis.com/t5-data/pretrained_models/'
 _T5_VOCAB_PATH = 'https://storage.googleapis.com/t5-data/vocabs/cc_all.32000/'
 
 
-def _generate_t5_file_list(ckpt_tuple: tuple) ->List[str]:
+def _generate_t5_file_list(ckpt_tuple: 'tuple') ->List[str]:
     """ Helper function to generate file list given a tuple of model_id and
     partition size.
 
@@ -1823,7 +2160,7 @@ def _generate_t5_file_list(ckpt_tuple: tuple) ->List[str]:
 IMPORTANT_PARAMS = 'd_ff', 'd_kv', 'd_model', 'dropout', 'num_heads', 'num_layers', 'inputs_length'
 
 
-def read_t5_gin_config_file(config_file_path: str) ->Dict:
+def read_t5_gin_config_file(config_file_path: 'str') ->Dict:
     """Simple helper function to read a gin file
     and get hyperparameters for T5.
 
@@ -1849,12 +2186,12 @@ class T5LayerNorm(nn.Module):
     """ Custom LayerNorm for T5 with no mean subtraction and no bias.
     """
 
-    def __init__(self, input_size: int, eps: float=1e-05):
+    def __init__(self, input_size: 'int', eps: 'float'=1e-05):
         super().__init__()
         self.w = nn.Parameter(torch.ones(input_size))
         self.eps = eps
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         x = x / torch.sqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
         return self.w * x
 
@@ -1875,9 +2212,9 @@ class EmbeddingHelper(Helper[IDType], ABC):
         ValueError: if :attr:`start_tokens` is not a 1D tensor or
             :attr:`end_token` is not a scalar.
     """
-    _start_inputs: torch.Tensor
+    _start_inputs: 'torch.Tensor'
 
-    def __init__(self, start_tokens: torch.LongTensor, end_token: Union[int, torch.LongTensor]):
+    def __init__(self, start_tokens: 'torch.LongTensor', end_token: 'Union[int, torch.LongTensor]'):
         if start_tokens.dim() != 1:
             raise ValueError('start_tokens must be a vector')
         if not isinstance(end_token, int) and end_token.dim() != 0:
@@ -1893,7 +2230,7 @@ class EmbeddingHelper(Helper[IDType], ABC):
     def batch_size(self) ->int:
         return self._batch_size
 
-    def initialize(self, embedding_fn: EmbeddingFn, inputs: Optional[torch.Tensor], sequence_length: Optional[torch.LongTensor]) ->HelperInitTuple:
+    def initialize(self, embedding_fn: 'EmbeddingFn', inputs: 'Optional[torch.Tensor]', sequence_length: 'Optional[torch.LongTensor]') ->HelperInitTuple:
         del inputs, sequence_length
         times = torch.zeros_like(self._start_tokens)
         self._start_inputs = embedding_fn(self._start_tokens, times)
@@ -1904,10 +2241,10 @@ class EmbeddingHelper(Helper[IDType], ABC):
 class TransformerDecoderOutput(NamedTuple):
     """The output of :class:`TransformerDecoder`.
     """
-    logits: torch.Tensor
+    logits: 'torch.Tensor'
     """A :tensor:`Tensor` of shape ``[batch_size, max_time, vocab_size]``
     containing the logits."""
-    sample_id: torch.LongTensor
+    sample_id: 'torch.LongTensor'
     """A :tensor:`LongTensor` of shape ``[batch_size, max_time]``
     (or ``[batch_size, max_time, vocab_size]``) containing the sampled
     token indices. Note that the shape of ``sample_id`` is different for
@@ -1915,7 +2252,7 @@ class TransformerDecoderOutput(NamedTuple):
     :class:`~texar.torch.modules.Helper` for the detailed information."""
 
 
-def identity(inputs: torch.Tensor):
+def identity(inputs: 'torch.Tensor'):
     """Returns a tensor with the same content as the input tensor.
 
     Arguments:
@@ -1927,7 +2264,7 @@ def identity(inputs: torch.Tensor):
     return inputs
 
 
-def _make_output_layer(layer: Optional[Union[nn.Module, torch.Tensor]], vocab_size: Optional[int], output_size: int, bias: bool) ->Tuple[nn.Module, Optional[int]]:
+def _make_output_layer(layer: 'Optional[Union[nn.Module, torch.Tensor]]', vocab_size: 'Optional[int]', output_size: 'int', bias: 'bool') ->Tuple[nn.Module, Optional[int]]:
     """Construct the output layer for decoders. Based on the input, multiple
     types of output layers could be constructed:
 
@@ -1964,7 +2301,7 @@ def _make_output_layer(layer: Optional[Union[nn.Module, torch.Tensor]], vocab_si
 INF = 1.0 * 10000000.0
 
 
-def _expand_to_beam_size(tensor: Any, beam_size: int) ->Any:
+def _expand_to_beam_size(tensor: 'Any', beam_size: 'int') ->Any:
     """Tiles a given tensor by :attr:`beam_size`.
 
     Args:
@@ -1982,7 +2319,7 @@ def _expand_to_beam_size(tensor: Any, beam_size: int) ->Any:
     return tensor.repeat(tuple(tile_dims))
 
 
-def _merge_beam_dim(tensor: Any) ->Any:
+def _merge_beam_dim(tensor: 'Any') ->Any:
     """Reshapes first two dimensions in to single dimension.
 
     Args:
@@ -1999,7 +2336,7 @@ def _merge_beam_dim(tensor: Any) ->Any:
     return tensor.view(tuple(shape))
 
 
-def _unmerge_beam_dim(tensor: Any, batch_size: int, beam_size: int) ->Any:
+def _unmerge_beam_dim(tensor: 'Any', batch_size: 'int', beam_size: 'int') ->Any:
     """Reshapes first dimension back to `[batch_size, beam_size]`.
 
     Args:
@@ -2017,7 +2354,7 @@ def _unmerge_beam_dim(tensor: Any, batch_size: int, beam_size: int) ->Any:
     return tensor.view(tuple(new_shape))
 
 
-def compute_batch_indices(batch_size: int, beam_size: int) ->torch.LongTensor:
+def compute_batch_indices(batch_size: 'int', beam_size: 'int') ->torch.LongTensor:
     """Computes the i-th coordinate that contains the batch index for
     gathers.
 
@@ -2037,7 +2374,7 @@ def compute_batch_indices(batch_size: int, beam_size: int) ->torch.LongTensor:
     return batch_pos
 
 
-def gather_nd(params: Any, indices: torch.Tensor) ->Any:
+def gather_nd(params: 'Any', indices: 'torch.Tensor') ->Any:
     if not isinstance(params, torch.Tensor):
         return params
     assert len(indices.size()) == 3
@@ -2048,7 +2385,7 @@ def gather_nd(params: Any, indices: torch.Tensor) ->Any:
     return ret
 
 
-def compute_topk_scores_and_seq(sequences: torch.LongTensor, scores: torch.Tensor, scores_to_gather: torch.Tensor, flags: torch.ByteTensor, beam_size: int, batch_size: int, states_to_gather: Optional[State]=None) ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
+def compute_topk_scores_and_seq(sequences: 'torch.LongTensor', scores: 'torch.Tensor', scores_to_gather: 'torch.Tensor', flags: 'torch.ByteTensor', beam_size: 'int', batch_size: 'int', states_to_gather: 'Optional[State]'=None) ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
     """Given sequences and scores, will gather the top-k (`k = beam`) size
     sequences.
 
@@ -2094,7 +2431,7 @@ def compute_topk_scores_and_seq(sequences: torch.LongTensor, scores: torch.Tenso
     return topk_seq, topk_gathered_scores, topk_flags, topk_gathered_states
 
 
-def log_prob_from_logits(logits: torch.Tensor) ->torch.Tensor:
+def log_prob_from_logits(logits: 'torch.Tensor') ->torch.Tensor:
     return logits - torch.logsumexp(logits, dim=-1, keepdim=True)
 
 
@@ -2158,7 +2495,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
     finished_scores = finished_scores
     finished_flags = finished_flags
 
-    def grow_finished(finished_seq: torch.LongTensor, finished_scores: torch.Tensor, finished_flags: torch.ByteTensor, curr_seq: torch.LongTensor, curr_scores: torch.Tensor, curr_finished: torch.ByteTensor) ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor]:
+    def grow_finished(finished_seq: 'torch.LongTensor', finished_scores: 'torch.Tensor', finished_flags: 'torch.ByteTensor', curr_seq: 'torch.LongTensor', curr_scores: 'torch.Tensor', curr_finished: 'torch.ByteTensor') ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor]:
         """Given sequences and scores, will gather the top-k (`k = beam`) size
         sequences.
 
@@ -2194,7 +2531,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
         next_seq, next_scores, next_flags, _ = compute_topk_scores_and_seq(curr_finished_seq, curr_finished_scores, curr_finished_scores, curr_finished_flags, beam_size, batch_size)
         return next_seq, next_scores, next_flags
 
-    def grow_alive(curr_seq: torch.LongTensor, curr_scores: torch.Tensor, curr_log_probs: torch.Tensor, curr_finished: torch.ByteTensor, states: Optional[State]) ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
+    def grow_alive(curr_seq: 'torch.LongTensor', curr_scores: 'torch.Tensor', curr_log_probs: 'torch.Tensor', curr_finished: 'torch.ByteTensor', states: 'Optional[State]') ->Tuple[torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
         """Given sequences and scores, will gather the top k=beam size
         sequences.
 
@@ -2220,7 +2557,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
         curr_scores = curr_scores + curr_finished.float() * -INF
         return compute_topk_scores_and_seq(curr_seq, curr_scores, curr_log_probs, curr_finished, beam_size, batch_size, states)
 
-    def grow_topk(i: int, alive_seq: torch.LongTensor, alive_log_probs: torch.Tensor, states: Optional[State]) ->Tuple[torch.LongTensor, torch.Tensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
+    def grow_topk(i: 'int', alive_seq: 'torch.LongTensor', alive_log_probs: 'torch.Tensor', states: 'Optional[State]') ->Tuple[torch.LongTensor, torch.Tensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
         """Inner beam search loop.
 
         This function takes the current alive sequences, and grows them to
@@ -2278,7 +2615,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
         topk_finished = topk_ids == eos_id
         return topk_seq, topk_log_probs, topk_scores, topk_finished, states
 
-    def inner_loop(i: int, alive_seq: torch.LongTensor, alive_log_probs: torch.Tensor, finished_seq: torch.LongTensor, finished_scores: torch.Tensor, finished_flags: torch.ByteTensor, states: Optional[State]) ->Tuple[int, torch.LongTensor, torch.Tensor, torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
+    def inner_loop(i: 'int', alive_seq: 'torch.LongTensor', alive_log_probs: 'torch.Tensor', finished_seq: 'torch.LongTensor', finished_scores: 'torch.Tensor', finished_flags: 'torch.ByteTensor', states: 'Optional[State]') ->Tuple[int, torch.LongTensor, torch.Tensor, torch.LongTensor, torch.Tensor, torch.ByteTensor, Optional[State]]:
         """Inner beam search loop.
 
         There are three groups of tensors: `alive`, `finished`, and `top-k`.
@@ -2338,7 +2675,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
         finished_seq, finished_scores, finished_flags = grow_finished(finished_seq, finished_scores, finished_flags, topk_seq, topk_scores, topk_finished)
         return i + 1, alive_seq, alive_log_probs, finished_seq, finished_scores, finished_flags, states
 
-    def _is_finished(i: int, alive_log_probs: torch.Tensor, finished_scores: torch.Tensor) ->bool:
+    def _is_finished(i: 'int', alive_log_probs: 'torch.Tensor', finished_scores: 'torch.Tensor') ->bool:
         """Check termination condition.
 
         We terminate when we decoded up to `decode_length` or the lowest
@@ -2380,7 +2717,7 @@ def beam_search(symbols_to_logits_fn, initial_ids, beam_size, decode_length, voc
     return ret_seq, ret_scores
 
 
-def reverse_sequence(inputs: torch.Tensor, seq_lengths: Union[torch.LongTensor, List[int]], time_major: bool) ->torch.Tensor:
+def reverse_sequence(inputs: 'torch.Tensor', seq_lengths: 'Union[torch.LongTensor, List[int]]', time_major: 'bool') ->torch.Tensor:
     """Reverses variable length slices.
 
     This op first slices input along the dimension batch_axis, and for each
@@ -2423,7 +2760,7 @@ def reverse_sequence(inputs: torch.Tensor, seq_lengths: Union[torch.LongTensor, 
     return outputs
 
 
-def bidirectional_dynamic_rnn(cell_fw: RNNCellBase[State], cell_bw: RNNCellBase[State], inputs: torch.Tensor, sequence_length: Optional[Union[torch.LongTensor, List[int]]]=None, initial_state_fw: Optional[State]=None, initial_state_bw: Optional[State]=None, time_major: bool=False) ->Tuple[Tuple[torch.Tensor, torch.Tensor], Tuple[State, State]]:
+def bidirectional_dynamic_rnn(cell_fw: 'RNNCellBase[State]', cell_bw: 'RNNCellBase[State]', inputs: 'torch.Tensor', sequence_length: 'Optional[Union[torch.LongTensor, List[int]]]'=None, initial_state_fw: 'Optional[State]'=None, initial_state_bw: 'Optional[State]'=None, time_major: 'bool'=False) ->Tuple[Tuple[torch.Tensor, torch.Tensor], Tuple[State, State]]:
     """Creates a dynamic version of bidirectional recurrent neural network.
 
     Takes input and builds independent forward and backward RNNs. The

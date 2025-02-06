@@ -52,7 +52,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -140,7 +142,7 @@ class LogisticRegression(nn.Module):
         return z
 
 
-def _similarity(h1: torch.Tensor, h2: torch.Tensor):
+def _similarity(h1: 'torch.Tensor', h2: 'torch.Tensor'):
     h1 = F.normalize(h1)
     h2 = F.normalize(h2)
     return h1 @ h2.t()
@@ -158,7 +160,7 @@ class HardMixingLoss(torch.nn.Module):
         z2 = F.normalize(z2, dim=-1)
         return torch.bmm(z2, z1.unsqueeze(dim=-1)).squeeze()
 
-    def forward(self, z1: torch.Tensor, z2: torch.Tensor, threshold=0.1, s=150, mixup=0.2, *args, **kwargs):
+    def forward(self, z1: 'torch.Tensor', z2: 'torch.Tensor', threshold=0.1, s=150, mixup=0.2, *args, **kwargs):
         f = lambda x: torch.exp(x / self.tau)
         num_samples = z1.shape[0]
         device = z1.device
@@ -200,7 +202,7 @@ class RingLoss(torch.nn.Module):
     def __init__(self):
         super(RingLoss, self).__init__()
 
-    def forward(self, h1: torch.Tensor, h2: torch.Tensor, y: torch.Tensor, tau, threshold=0.1, *args, **kwargs):
+    def forward(self, h1: 'torch.Tensor', h2: 'torch.Tensor', y: 'torch.Tensor', tau, threshold=0.1, *args, **kwargs):
         f = lambda x: torch.exp(x / tau)
         num_samples = h1.shape[0]
         device = h1.device
@@ -226,17 +228,6 @@ class RingLoss(torch.nn.Module):
         loss2 = -torch.log(pos / neg2)
         loss = (loss1 + loss2) * 0.5
         loss = loss.mean()
-        return loss
-
-
-class Loss(ABC):
-
-    @abstractmethod
-    def compute(self, anchor, sample, pos_mask, neg_mask, *args, **kwargs) ->torch.FloatTensor:
-        pass
-
-    def __call__(self, anchor, sample, pos_mask=None, neg_mask=None, *args, **kwargs) ->torch.FloatTensor:
-        loss = self.compute(anchor, sample, pos_mask, neg_mask, *args, **kwargs)
         return loss
 
 
@@ -320,7 +311,7 @@ class SameScaleSampler(Sampler):
         return anchor, sample, pos_mask, neg_mask
 
 
-def get_sampler(mode: str, intraview_negs: bool) ->Sampler:
+def get_sampler(mode: 'str', intraview_negs: 'bool') ->Sampler:
     if mode in {'L2L', 'G2G'}:
         return SameScaleSampler(intraview_negs=intraview_negs)
     elif mode == 'G2L':
@@ -331,7 +322,7 @@ def get_sampler(mode: str, intraview_negs: bool) ->Sampler:
 
 class SingleBranchContrast(torch.nn.Module):
 
-    def __init__(self, loss: Loss, mode: str, intraview_negs: bool=False, **kwargs):
+    def __init__(self, loss: 'Loss', mode: 'str', intraview_negs: 'bool'=False, **kwargs):
         super(SingleBranchContrast, self).__init__()
         assert mode == 'G2L'
         self.loss = loss
@@ -353,7 +344,7 @@ class SingleBranchContrast(torch.nn.Module):
 
 class DualBranchContrast(torch.nn.Module):
 
-    def __init__(self, loss: Loss, mode: str, intraview_negs: bool=False, **kwargs):
+    def __init__(self, loss: 'Loss', mode: 'str', intraview_negs: 'bool'=False, **kwargs):
         super(DualBranchContrast, self).__init__()
         self.loss = loss
         self.mode = mode
@@ -419,7 +410,7 @@ class BootstrapContrast(torch.nn.Module):
 
 class WithinEmbedContrast(torch.nn.Module):
 
-    def __init__(self, loss: Loss, **kwargs):
+    def __init__(self, loss: 'Loss', **kwargs):
         super(WithinEmbedContrast, self).__init__()
         self.loss = loss
         self.kwargs = kwargs

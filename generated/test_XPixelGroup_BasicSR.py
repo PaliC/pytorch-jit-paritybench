@@ -143,7 +143,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -252,7 +254,7 @@ from scipy import special
 from scipy.stats import multivariate_normal
 
 
-from torchvision.transforms.functional_tensor import rgb_to_grayscale
+from torchvision.transforms.functional import rgb_to_grayscale
 
 
 import time
@@ -419,84 +421,6 @@ class Upsample(nn.Sequential):
         else:
             raise ValueError(f'scale {scale} is not supported. Supported scales: 2^n and 3.')
         super(Upsample, self).__init__(*m)
-
-
-class Registry:
-    """
-    The registry that provides name -> object mapping, to support third-party
-    users' custom modules.
-
-    To create a registry (e.g. a backbone registry):
-
-    .. code-block:: python
-
-        BACKBONE_REGISTRY = Registry('BACKBONE')
-
-    To register an object:
-
-    .. code-block:: python
-
-        @BACKBONE_REGISTRY.register()
-        class MyBackbone():
-            ...
-
-    Or:
-
-    .. code-block:: python
-
-        BACKBONE_REGISTRY.register(MyBackbone)
-    """
-
-    def __init__(self, name):
-        """
-        Args:
-            name (str): the name of this registry
-        """
-        self._name = name
-        self._obj_map = {}
-
-    def _do_register(self, name, obj, suffix=None):
-        if isinstance(suffix, str):
-            name = name + '_' + suffix
-        assert name not in self._obj_map, f"An object named '{name}' was already registered in '{self._name}' registry!"
-        self._obj_map[name] = obj
-
-    def register(self, obj=None, suffix=None):
-        """
-        Register the given object under the the name `obj.__name__`.
-        Can be used as either a decorator or not.
-        See docstring of this class for usage.
-        """
-        if obj is None:
-
-            def deco(func_or_class):
-                name = func_or_class.__name__
-                self._do_register(name, func_or_class, suffix)
-                return func_or_class
-            return deco
-        name = obj.__name__
-        self._do_register(name, obj, suffix)
-
-    def get(self, name, suffix='basicsr'):
-        ret = self._obj_map.get(name)
-        if ret is None:
-            ret = self._obj_map.get(name + '_' + suffix)
-            None
-        if ret is None:
-            raise KeyError(f"No object named '{name}' found in '{self._name}' registry!")
-        return ret
-
-    def __contains__(self, name):
-        return name in self._obj_map
-
-    def __iter__(self):
-        return iter(self._obj_map.items())
-
-    def keys(self):
-        return self._obj_map.keys()
-
-
-ARCH_REGISTRY = Registry('arch')
 
 
 def make_layer(basic_block, num_basic_block, **kwarg):
@@ -4263,7 +4187,7 @@ class StyleGAN2GeneratorBilinear(nn.Module):
             return image, None
 
 
-def drop_path(x, drop_prob: float=0.0, training: bool=False):
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
 
     From: https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py
@@ -5086,9 +5010,6 @@ class TOFlow(nn.Module):
         return self.denormalize(hr)
 
 
-LOSS_REGISTRY = Registry('loss')
-
-
 _reduction_modes = ['none', 'mean', 'sum']
 
 
@@ -5334,7 +5255,7 @@ class PerceptualLoss(nn.Module):
         if self.criterion_type == 'l1':
             self.criterion = torch.nn.L1Loss()
         elif self.criterion_type == 'l2':
-            self.criterion = torch.nn.L2loss()
+            self.criterion = torch.nn.MSELoss()
         elif self.criterion_type == 'fro':
             self.criterion = None
         else:

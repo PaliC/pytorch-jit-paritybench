@@ -4,27 +4,37 @@ del sys
 configs = _module
 backbones = _module
 alexnet = _module
+beit = _module
 conformer = _module
 convmixer = _module
 convnext = _module
 cspnet = _module
+davit = _module
 deit = _module
+deit3 = _module
 densenet = _module
+edgenext = _module
 efficientformer = _module
 efficientnet = _module
+efficientnet_v2 = _module
 hornet = _module
 hrnet = _module
 lenet = _module
+levit = _module
+mixmim = _module
 mlp_mixer = _module
 mobilenet_v2 = _module
 mobilenet_v3 = _module
+mobilevit = _module
 mvit = _module
 poolformer = _module
 regnet = _module
+replknet = _module
 repvgg = _module
 res2net = _module
 resnet = _module
 resnext = _module
+revvit = _module
 seresnet = _module
 seresnext = _module
 shufflenet_v1 = _module
@@ -32,6 +42,7 @@ shufflenet_v2 = _module
 swin_transformer = _module
 swin_transformer_v2 = _module
 t2t_vit = _module
+tinyvit = _module
 tnt = _module
 twins = _module
 van = _module
@@ -52,6 +63,7 @@ conv_module = _module
 depthwise_separable_conv_module = _module
 drop_path = _module
 embed = _module
+fuse_conv_bn = _module
 helpers = _module
 inverted_residual = _module
 layer_scale = _module
@@ -64,6 +76,7 @@ cls_head = _module
 conformer_head = _module
 deit_head = _module
 efficientformer_head = _module
+levit_head = _module
 linear_head = _module
 stacked_head = _module
 vision_transformer_head = _module
@@ -97,6 +110,7 @@ visualization = _module
 color = _module
 image = _module
 alexnet_ = _module
+beit_base = _module
 build = _module
 base_p16 = _module
 small_p16 = _module
@@ -112,6 +126,9 @@ convnext_tiny = _module
 cspdarknet50 = _module
 cspresnet50 = _module
 cspresnext50 = _module
+davit_base = _module
+davit_small = _module
+davit_tiny = _module
 deit_base = _module
 deit_base_384 = _module
 deit_base_distilled = _module
@@ -120,10 +137,22 @@ deit_small = _module
 deit_small_distilled = _module
 deit_tiny = _module
 deit_tiny_distilled = _module
+deit3_base_p16 = _module
+deit3_base_p16_384 = _module
+deit3_huge_p16 = _module
+deit3_large_p16 = _module
+deit3_large_p16_384 = _module
+deit3_medium_p16 = _module
+deit3_small_p16 = _module
+deit3_small_p16_384 = _module
 densenet121 = _module
 densenet161 = _module
 densenet169 = _module
 densenet201 = _module
+edgenext_base = _module
+edgenext_small = _module
+edgenext_xssmall = _module
+edgenext_xxssmall = _module
 efficientformer_l1 = _module
 efficientformer_l3 = _module
 efficientformer_l7 = _module
@@ -138,6 +167,21 @@ efficientnet_b7 = _module
 efficientnet_b8 = _module
 efficientnet_em = _module
 efficientnet_es = _module
+efficientnetv2_b0 = _module
+efficientnetv2_b1 = _module
+efficientnetv2_b2 = _module
+efficientnetv2_b3 = _module
+efficientnetv2_l = _module
+efficientnetv2_l_480 = _module
+efficientnetv2_m = _module
+efficientnetv2_m_480 = _module
+efficientnetv2_s = _module
+efficientnetv2_s_384 = _module
+efficientnetv2_xl = _module
+efficientnetv2_xl_512 = _module
+eva_l_p14_196 = _module
+eva_l_p14_336 = _module
+eva_l_p14_headless = _module
 hornet_base = _module
 hornet_base_gf = _module
 hornet_large = _module
@@ -154,11 +198,15 @@ hrnet_w40 = _module
 hrnet_w44 = _module
 hrnet_w48 = _module
 lenet_ = _module
+mixmim_base = _module
 mlp_mixer_base_p16 = _module
 mlp_mixer_large_p16 = _module
 mobilenet_v2_ = _module
 mobilenet_v3_large = _module
 mobilenet_v3_small = _module
+mobilevit_s = _module
+mobilevit_xs = _module
+mobilevit_xxs = _module
 mvit_base = _module
 mvit_large = _module
 mvit_small = _module
@@ -208,6 +256,8 @@ resnetv1d50 = _module
 resnext101 = _module
 resnext152 = _module
 resnext50 = _module
+revvit_base = _module
+revvit_small = _module
 seresnet101 = _module
 seresnet50 = _module
 seresnext101 = _module
@@ -225,6 +275,9 @@ tiny_256 = _module
 t2t_vit_t_14 = _module
 t2t_vit_t_19 = _module
 t2t_vit_t_24 = _module
+tinyvit_11m = _module
+tinyvit_21m = _module
+tinyvit_5m = _module
 tnt_s_patch16_224 = _module
 twins_pcpvt_base = _module
 twins_pcpvt_large = _module
@@ -255,10 +308,14 @@ vit_large_p32_384 = _module
 wide_resnet101 = _module
 wide_resnet50 = _module
 tools = _module
+backbone_feature = _module
 batch_test = _module
+batch_vis_cam = _module
 evaluation = _module
+export_onnx = _module
 get_annotation = _module
 get_flops = _module
+print_model = _module
 single_test = _module
 split_data = _module
 train = _module
@@ -280,7 +337,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -299,7 +358,22 @@ wraps = functools.wraps
 import torch.nn as nn
 
 
+from typing import List
+
+
+from typing import Optional
+
+
 from typing import Sequence
+
+
+from typing import Tuple
+
+
+from typing import Union
+
+
+import numpy as np
 
 
 import torch
@@ -314,13 +388,19 @@ from functools import partial
 from itertools import chain
 
 
+import torch.utils.checkpoint as cp
+
+
 import math
 
 
 from torch.nn.modules.batchnorm import _BatchNorm
 
 
-import torch.utils.checkpoint as cp
+from copy import deepcopy
+
+
+from torch import nn
 
 
 from torch.jit.annotations import List
@@ -329,31 +409,31 @@ from torch.jit.annotations import List
 import itertools
 
 
-from typing import Optional
-
-
 import copy
+
+
+from torch import Tensor
 
 
 import torch.utils.checkpoint as checkpoint
 
 
-import numpy as np
+from torch.utils.checkpoint import checkpoint
 
 
-from copy import deepcopy
+from typing import Callable
+
+
+from torch.autograd import Function as Function
+
+
+from torch.nn import functional as F
 
 
 import inspect
 
 
 from torch.nn.modules.instancenorm import _InstanceNorm
-
-
-from torch import nn
-
-
-from torch.nn import functional as F
 
 
 from torch.nn.modules.utils import _pair
@@ -386,13 +466,34 @@ from numbers import Number
 from torch.nn.functional import one_hot
 
 
-from torch import Tensor
-
-
 from inspect import getfullargspec
 
 
 from collections import abc
+
+
+import torchvision.transforms
+
+
+from torch.utils.tensorboard import SummaryWriter
+
+
+import re
+
+
+from torch.nn import BatchNorm1d
+
+
+from torch.nn import BatchNorm2d
+
+
+from torch.nn import GroupNorm
+
+
+from torch.nn import LayerNorm
+
+
+import random
 
 
 from sklearn.metrics import roc_curve
@@ -425,25 +526,7 @@ from torch.nn.parallel import DataParallel
 import time
 
 
-import random
-
-
 import torch.optim as optim
-
-
-import re
-
-
-from torch.nn import BatchNorm1d
-
-
-from torch.nn import BatchNorm2d
-
-
-from torch.nn import GroupNorm
-
-
-from torch.nn import LayerNorm
 
 
 from torch.optim import Optimizer
@@ -467,16 +550,10 @@ from torchvision import transforms
 from typing import Any
 
 
-from typing import Callable
-
-
 from typing import Dict
 
 
 from typing import TextIO
-
-
-from typing import Tuple
 
 
 import matplotlib
@@ -491,14 +568,93 @@ import torch.distributed as dist
 import types
 
 
-class Residual(nn.Module):
+def _initialize(module, cfg, wholemodule=False):
+    func = eval(cfg.pop('type') + 'Init')(**cfg)
+    func.wholemodule = wholemodule
+    func(module)
 
-    def __init__(self, fn):
-        super().__init__()
-        self.fn = fn
 
-    def forward(self, x):
-        return self.fn(x) + x
+def _initialize_override(module, override, cfg):
+    if not isinstance(override, (dict, list)):
+        raise TypeError(f'override must be a dict or a list of dict,                 but got {type(override)}')
+    override = [override] if isinstance(override, dict) else override
+    for override_ in override:
+        cp_override = copy.deepcopy(override_)
+        name = cp_override.pop('name', None)
+        if name is None:
+            raise ValueError(f'`override` must contain the key "name",but got {cp_override}')
+        if not cp_override:
+            cp_override.update(cfg)
+        elif 'type' not in cp_override.keys():
+            raise ValueError(f'`override` need "type" key, but got {cp_override}')
+        if hasattr(module, name):
+            _initialize(getattr(module, name), cp_override, wholemodule=True)
+        else:
+            raise RuntimeError(f'module did not have attribute {name}, but init_cfg is {cp_override}.')
+
+
+def initialize(module, init_cfg):
+    """Initialize a module.
+
+    Args:
+        module (``torch.nn.Module``): the module will be initialized.
+        init_cfg (dict | list[dict]): initialization configuration dict to
+            define initializer. OpenMMLab has implemented 6 initializers
+            including ``Constant``, ``Xavier``, ``Normal``, ``Uniform``,
+            ``Kaiming``, and ``Pretrained``.
+
+    Example:
+        >>> module = nn.Linear(2, 3, bias=True)
+        >>> init_cfg = dict(type='Constant', layer='Linear', val =1 , bias =2)
+        >>> initialize(module, init_cfg)
+
+        >>> module = nn.Sequential(nn.Conv1d(3, 1, 3), nn.Linear(1,2))
+        >>> # define key ``'layer'`` for initializing layer with different
+        >>> # configuration
+        >>> init_cfg = [dict(type='Constant', layer='Conv1d', val=1),
+                dict(type='Constant', layer='Linear', val=2)]
+        >>> initialize(module, init_cfg)
+
+        >>> # define key``'override'`` to initialize some specific part in
+        >>> # module
+        >>> class FooNet(nn.Module):
+        >>>     def __init__(self):
+        >>>         super().__init__()
+        >>>         self.feat = nn.Conv2d(3, 16, 3)
+        >>>         self.reg = nn.Conv2d(16, 10, 3)
+        >>>         self.cls = nn.Conv2d(16, 5, 3)
+        >>> model = FooNet()
+        >>> init_cfg = dict(type='Constant', val=1, bias=2, layer='Conv2d',
+        >>>     override=dict(type='Constant', name='reg', val=3, bias=4))
+        >>> initialize(model, init_cfg)
+
+        >>> model = ResNet(depth=50)
+        >>> # Initialize weights with the pretrained model.
+        >>> init_cfg = dict(type='Pretrained',
+                checkpoint='torchvision://resnet50')
+        >>> initialize(model, init_cfg)
+
+        >>> # Initialize weights of a sub-module with the specific part of
+        >>> # a pretrained model by using "prefix".
+        >>> url = 'http://download.openmmlab.com/mmdetection/v2.0/retinanet/'\\
+        >>>     'retinanet_r50_fpn_1x_coco/'\\
+        >>>     'retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'
+        >>> init_cfg = dict(type='Pretrained',
+                checkpoint=url, prefix='backbone.')
+    """
+    if not isinstance(init_cfg, (dict, list)):
+        raise TypeError(f'init_cfg must be a dict or a list of dict,                 but got {type(init_cfg)}')
+    if isinstance(init_cfg, dict):
+        init_cfg = [init_cfg]
+    for cfg in init_cfg:
+        cp_cfg = copy.deepcopy(cfg)
+        override = cp_cfg.pop('override', None)
+        _initialize(module, cp_cfg)
+        if override is not None:
+            cp_cfg.pop('layer', None)
+            _initialize_override(module, override, cp_cfg)
+        else:
+            pass
 
 
 class BaseModule(nn.Module):
@@ -543,6 +699,56 @@ class BaseModule(nn.Module):
             self._is_init = True
         else:
             warnings.warn(f'init_weights of {self.__class__.__name__} has been called more than once.')
+
+
+def drop_path(x, drop_prob=0.0, training=False):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of
+    residual blocks).
+
+    We follow the implementation
+    https://github.com/rwightman/pytorch-image-models/blob/a2727c1bf78ba0d7b5727f5f95e37fb7f8866b1f/timm/models/layers/drop.py  # noqa: E501
+    """
+    if drop_prob == 0.0 or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    output = x.div(keep_prob) * random_tensor.floor()
+    return output
+
+
+class DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of
+    residual blocks).
+
+    We follow the implementation
+    https://github.com/rwightman/pytorch-image-models/blob/a2727c1bf78ba0d7b5727f5f95e37fb7f8866b1f/timm/models/layers/drop.py  # noqa: E501
+
+    Args:
+        drop_prob (float): Probability of the path to be zeroed. Default: 0.1
+    """
+
+    def __init__(self, drop_prob=0.1):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
+
+
+class Residual(BaseModule):
+
+    def __init__(self, block, drop_path_rate=0.0):
+        super(Residual, self).__init__()
+        self.block = block
+        if drop_path_rate > 0:
+            self.drop_path = DropPath(drop_path_rate)
+        else:
+            self.drop_path = nn.Identity()
+
+    def forward(self, x):
+        x = x + self.drop_path(self.block(x))
+        return x
 
 
 def build_activation_layer(cfg):
@@ -733,7 +939,7 @@ class Flat(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         x = x.flatten(2).transpose(1, 2)
         return x
 
@@ -860,41 +1066,6 @@ class gnConv(nn.Module):
         return x
 
 
-def drop_path(x, drop_prob=0.0, training=False):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of
-    residual blocks).
-
-    We follow the implementation
-    https://github.com/rwightman/pytorch-image-models/blob/a2727c1bf78ba0d7b5727f5f95e37fb7f8866b1f/timm/models/layers/drop.py  # noqa: E501
-    """
-    if drop_prob == 0.0 or not training:
-        return x
-    keep_prob = 1 - drop_prob
-    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
-    output = x.div(keep_prob) * random_tensor.floor()
-    return output
-
-
-class DropPath(nn.Module):
-    """Drop paths (Stochastic Depth) per sample  (when applied in main path of
-    residual blocks).
-
-    We follow the implementation
-    https://github.com/rwightman/pytorch-image-models/blob/a2727c1bf78ba0d7b5727f5f95e37fb7f8866b1f/timm/models/layers/drop.py  # noqa: E501
-
-    Args:
-        drop_prob (float): Probability of the path to be zeroed. Default: 0.1
-    """
-
-    def __init__(self, drop_prob=0.1):
-        super(DropPath, self).__init__()
-        self.drop_prob = drop_prob
-
-    def forward(self, x):
-        return drop_path(x, self.drop_prob, self.training)
-
-
 class LayerScale(nn.Module):
     """LayerScale layer.
 
@@ -907,7 +1078,7 @@ class LayerScale(nn.Module):
              (B, N, C) format data respectively.
     """
 
-    def __init__(self, dim: int, inplace: bool=False, data_format: str='channels_last'):
+    def __init__(self, dim: 'int', inplace: 'bool'=False, data_format: 'str'='channels_last'):
         super().__init__()
         assert data_format in ('channels_last', 'channels_first'), "'data_format' could only be channels_last or channels_first."
         self.inplace = inplace
@@ -966,6 +1137,682 @@ class HorNetBlock(nn.Module):
         x = self.gamma2(x)
         x = x.permute(0, 3, 1, 2)
         x = input + self.drop_path(x)
+        return x
+
+
+class MLP(BaseModule):
+    """MLP module for TinyViT.
+
+    Args:
+        in_channels (int): The number of input channels.
+        hidden_channels (int, optional): The number of hidden channels.
+            Default: None.
+        out_channels (int, optional): The number of output channels.
+            Default: None.
+        act_cfg (dict): The activation config of the module.
+            Default: dict(type='GELU').
+        drop (float): Probability of an element to be zeroed.
+            Default: 0.
+        init_cfg (dict | list[dict], optional): Initialization config dict.
+            Default: None.
+    """
+
+    def __init__(self, in_channels, hidden_channels=None, out_channels=None, act_cfg=dict(type='GELU'), drop=0.0, init_cfg=None):
+        super().__init__(init_cfg=init_cfg)
+        out_channels = out_channels or in_channels
+        hidden_channels = hidden_channels or in_channels
+        self.norm = nn.LayerNorm(in_channels)
+        self.fc1 = nn.Linear(in_channels, hidden_channels)
+        self.fc2 = nn.Linear(hidden_channels, out_channels)
+        self.act = build_activation_layer(act_cfg)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.norm(x)
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+
+class LinearBatchNorm(BaseModule):
+
+    def __init__(self, in_feature, out_feature, norm_cfg=dict(type='BN1d')):
+        super(LinearBatchNorm, self).__init__()
+        self.linear = nn.Linear(in_feature, out_feature, bias=False)
+        self.bn = build_norm_layer(norm_cfg, out_feature)
+
+    def forward(self, x):
+        x = self.linear(x)
+        x = self.bn(x.flatten(0, 1)).reshape_as(x)
+        return x
+
+    @torch.no_grad()
+    def fuse(self):
+        w = self.bn.weight / (self.bn.running_var + self.bn.eps) ** 0.5
+        w = self.linear.weight * w[:, None]
+        b = self.bn.bias - self.bn.running_mean * self.bn.weight / (self.bn.running_var + self.bn.eps) ** 0.5
+        factory_kwargs = {'device': self.linear.weight.device, 'dtype': self.linear.weight.dtype}
+        bias = nn.Parameter(torch.empty(self.linear.out_features, **factory_kwargs))
+        self.linear.register_parameter('bias', bias)
+        self.linear.weight.data.copy_(w)
+        self.linear.bias.data.copy_(b)
+        return self.linear
+
+
+class Subsample(BaseModule):
+
+    def __init__(self, stride, resolution):
+        super(Subsample, self).__init__()
+        self.stride = stride
+        self.resolution = resolution
+
+    def forward(self, x):
+        B, _, C = x.shape
+        x = x.view(B, self.resolution, self.resolution, C)
+        x = x[:, ::self.stride, ::self.stride]
+        x = x.reshape(B, -1, C)
+        return x
+
+
+class AttentionSubsample(nn.Sequential):
+
+    def __init__(self, in_dim, out_dim, key_dim, num_heads=8, attn_ratio=2, act_cfg=dict(type='HSwish'), stride=2, resolution=14):
+        super(AttentionSubsample, self).__init__()
+        self.num_heads = num_heads
+        self.scale = key_dim ** -0.5
+        self.key_dim = key_dim
+        self.nh_kd = nh_kd = key_dim * num_heads
+        self.d = int(attn_ratio * key_dim)
+        self.dh = int(attn_ratio * key_dim) * self.num_heads
+        self.attn_ratio = attn_ratio
+        self.sub_resolution = (resolution - 1) // stride + 1
+        h = self.dh + nh_kd
+        self.kv = LinearBatchNorm(in_dim, h)
+        self.q = nn.Sequential(Subsample(stride, resolution), LinearBatchNorm(in_dim, nh_kd))
+        self.proj = nn.Sequential(build_activation_layer(act_cfg), LinearBatchNorm(self.dh, out_dim))
+        self.stride = stride
+        self.resolution = resolution
+        points = list(itertools.product(range(resolution), range(resolution)))
+        sub_points = list(itertools.product(range(self.sub_resolution), range(self.sub_resolution)))
+        N = len(points)
+        N_sub = len(sub_points)
+        attention_offsets = {}
+        idxs = []
+        for p1 in sub_points:
+            for p2 in points:
+                size = 1
+                offset = abs(p1[0] * stride - p2[0] + (size - 1) / 2), abs(p1[1] * stride - p2[1] + (size - 1) / 2)
+                if offset not in attention_offsets:
+                    attention_offsets[offset] = len(attention_offsets)
+                idxs.append(attention_offsets[offset])
+        self.attention_biases = torch.nn.Parameter(torch.zeros(num_heads, len(attention_offsets)))
+        self.register_buffer('attention_bias_idxs', torch.LongTensor(idxs).view(N_sub, N))
+
+    @torch.no_grad()
+    def train(self, mode=True):
+        super(AttentionSubsample, self).train(mode)
+        if mode and hasattr(self, 'ab'):
+            del self.ab
+        else:
+            self.ab = self.attention_biases[:, self.attention_bias_idxs]
+
+    def forward(self, x):
+        B, N, C = x.shape
+        k, v = self.kv(x).view(B, N, self.num_heads, -1).split([self.key_dim, self.d], dim=3)
+        k = k.permute(0, 2, 1, 3)
+        v = v.permute(0, 2, 1, 3)
+        q = self.q(x).view(B, self.sub_resolution ** 2, self.num_heads, self.key_dim).permute(0, 2, 1, 3)
+        attn = q @ k.transpose(-2, -1) * self.scale + (self.attention_biases[:, self.attention_bias_idxs] if self.training else self.ab)
+        attn = attn.softmax(dim=-1)
+        x = (attn @ v).transpose(1, 2).reshape(B, -1, self.dh)
+        x = self.proj(x)
+        return x
+
+
+CONV_LAYERS = ['Conv1d', 'Conv2d', 'Conv3d', 'Conv', 'Conv2dAdaptivePadding']
+
+
+def build_conv_layer(cfg, *args, **kwargs):
+    """Build convolution layer.
+
+    Args:
+        cfg (None or dict): The conv layer config, which should contain:
+            - type (str): Layer type.
+            - layer args: Args needed to instantiate an conv layer.
+        args (argument list): Arguments passed to the `__init__`
+            method of the corresponding conv layer.
+        kwargs (keyword arguments): Keyword arguments passed to the `__init__`
+            method of the corresponding conv layer.
+
+    Returns:
+        nn.Module: Created conv layer.
+    """
+    if cfg is None:
+        cfg_ = dict(type='Conv2d')
+    else:
+        if not isinstance(cfg, dict):
+            raise TypeError('cfg must be a dict')
+        if 'type' not in cfg:
+            raise KeyError('the cfg dict must contain the key "type"')
+        cfg_ = cfg.copy()
+    layer_type = cfg_.pop('type')
+    if layer_type not in CONV_LAYERS:
+        raise KeyError(f'Unrecognized layer type {layer_type}')
+    else:
+        conv_layer = eval(layer_type)
+    layer = conv_layer(*args, **kwargs, **cfg_)
+    return layer
+
+
+PADDING_LAYERS = ['zero', 'reflect', 'replicate']
+
+
+def build_padding_layer(cfg, *args, **kwargs):
+    """Build padding layer.
+
+    Args:
+        cfg (None or dict): The padding layer config, which should contain:
+            - type (str): Layer type.
+            - layer args: Args needed to instantiate a padding layer.
+
+    Returns:
+        nn.Module: Created padding layer.
+    """
+    if not isinstance(cfg, dict):
+        raise TypeError('cfg must be a dict')
+    if 'type' not in cfg:
+        raise KeyError('the cfg dict must contain the key "type"')
+    cfg_ = cfg.copy()
+    padding_type = cfg_.pop('type')
+    if padding_type not in PADDING_LAYERS:
+        raise KeyError(f'Unrecognized padding type {padding_type}.')
+    else:
+        padding_layer = eval(padding_type)
+    layer = padding_layer(*args, **kwargs, **cfg_)
+    return layer
+
+
+def constant_init(module, val, bias=0):
+    if hasattr(module, 'weight') and module.weight is not None:
+        nn.init.constant_(module.weight, val)
+    if hasattr(module, 'bias') and module.bias is not None:
+        nn.init.constant_(module.bias, bias)
+
+
+def kaiming_init(module, a=0, mode='fan_out', nonlinearity='relu', bias=0, distribution='normal'):
+    assert distribution in ['uniform', 'normal']
+    if hasattr(module, 'weight') and module.weight is not None:
+        if distribution == 'uniform':
+            nn.init.kaiming_uniform_(module.weight, a=a, mode=mode, nonlinearity=nonlinearity)
+        else:
+            nn.init.kaiming_normal_(module.weight, a=a, mode=mode, nonlinearity=nonlinearity)
+    if hasattr(module, 'bias') and module.bias is not None:
+        nn.init.constant_(module.bias, bias)
+
+
+class ConvModule(nn.Module):
+    """A conv block that bundles conv/norm/activation layers.
+
+    This block simplifies the usage of convolution layers, which are commonly
+    used with a norm layer (e.g., BatchNorm) and activation layer (e.g., ReLU).
+    It is based upon three build methods: `build_conv_layer()`,
+    `build_norm_layer()` and `build_activation_layer()`.
+
+    Besides, we add some additional features in this module.
+    1. Automatically set `bias` of the conv layer.
+    2. Spectral norm is supported.
+    3. More padding modes are supported. Before PyTorch 1.5, nn.Conv2d only
+    supports zero and circular padding, and we add "reflect" padding mode.
+
+    Args:
+        in_channels (int): Number of channels in the input feature map.
+            Same as that in ``nn._ConvNd``.
+        out_channels (int): Number of channels produced by the convolution.
+            Same as that in ``nn._ConvNd``.
+        kernel_size (int | tuple[int]): Size of the convolving kernel.
+            Same as that in ``nn._ConvNd``.
+        stride (int | tuple[int]): Stride of the convolution.
+            Same as that in ``nn._ConvNd``.
+        padding (int | tuple[int]): Zero-padding added to both sides of
+            the input. Same as that in ``nn._ConvNd``.
+        dilation (int | tuple[int]): Spacing between kernel elements.
+            Same as that in ``nn._ConvNd``.
+        groups (int): Number of blocked connections from input channels to
+            output channels. Same as that in ``nn._ConvNd``.
+        bias (bool | str): If specified as `auto`, it will be decided by the
+            norm_cfg. Bias will be set as True if `norm_cfg` is None, otherwise
+            False. Default: "auto".
+        conv_cfg (dict): Config dict for convolution layer. Default: None,
+            which means using conv2d.
+        norm_cfg (dict): Config dict for normalization layer. Default: None.
+        act_cfg (dict): Config dict for activation layer.
+            Default: dict(type='ReLU').
+        inplace (bool): Whether to use inplace mode for activation.
+            Default: True.
+        with_spectral_norm (bool): Whether use spectral norm in conv module.
+            Default: False.
+        padding_mode (str): If the `padding_mode` has not been supported by
+            current `Conv2d` in PyTorch, we will use our own padding layer
+            instead. Currently, we support ['zeros', 'circular'] with official
+            implementation and ['reflect'] with our own implementation.
+            Default: 'zeros'.
+        order (tuple[str]): The order of conv/norm/activation layers. It is a
+            sequence of "conv", "norm" and "act". Common examples are
+            ("conv", "norm", "act") and ("act", "conv", "norm").
+            Default: ('conv', 'norm', 'act').
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias='auto', conv_cfg=None, norm_cfg=None, act_cfg=dict(type='ReLU'), inplace=True, with_spectral_norm=False, padding_mode='zeros', order=('conv', 'norm', 'act')):
+        super(ConvModule, self).__init__()
+        assert conv_cfg is None or isinstance(conv_cfg, dict)
+        assert norm_cfg is None or isinstance(norm_cfg, dict)
+        assert act_cfg is None or isinstance(act_cfg, dict)
+        official_padding_mode = ['zeros', 'circular']
+        self.conv_cfg = copy.deepcopy(conv_cfg)
+        self.norm_cfg = copy.deepcopy(norm_cfg)
+        self.act_cfg = copy.deepcopy(act_cfg)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.inplace = inplace
+        self.with_spectral_norm = with_spectral_norm
+        self.with_explicit_padding = padding_mode not in official_padding_mode
+        self.order = order
+        assert isinstance(self.order, tuple) and len(self.order) == 3
+        assert set(order) == set(['conv', 'norm', 'act'])
+        self.with_norm = norm_cfg is not None
+        self.with_activation = act_cfg is not None
+        if bias == 'auto':
+            bias = not self.with_norm
+        self.with_bias = bias
+        if self.with_explicit_padding:
+            pad_cfg = dict(type=padding_mode)
+            self.padding_layer = build_padding_layer(pad_cfg, padding)
+        conv_padding = 0 if self.with_explicit_padding else padding
+        self.conv = build_conv_layer(conv_cfg, in_channels, out_channels, kernel_size, stride=stride, padding=conv_padding, dilation=dilation, groups=groups, bias=bias)
+        if self.with_spectral_norm:
+            self.conv = nn.utils.spectral_norm(self.conv)
+        if self.with_norm:
+            if order.index('norm') > order.index('conv'):
+                norm_channels = out_channels
+            else:
+                norm_channels = in_channels
+            self.norm_name, norm = build_norm_layer(norm_cfg, norm_channels)
+            self.add_module(self.norm_name, norm)
+        if self.with_activation:
+            act_cfg_ = act_cfg.copy()
+            if act_cfg_['type'] not in ['Tanh', 'PReLU', 'Sigmoid', 'HSigmoid', 'Swish']:
+                act_cfg_.setdefault('inplace', inplace)
+            self.activate = build_activation_layer(act_cfg_)
+        self.init_weights()
+
+    @property
+    def norm(self):
+        if self.norm_name:
+            return getattr(self, self.norm_name)
+        else:
+            return None
+
+    def init_weights(self):
+        if not hasattr(self.conv, 'init_weights'):
+            if self.with_activation and self.act_cfg['type'] == 'LeakyReLU':
+                nonlinearity = 'leaky_relu'
+                a = self.act_cfg.get('negative_slope', 0.01)
+            else:
+                nonlinearity = 'relu'
+                a = 0
+            kaiming_init(self.conv, a=a, nonlinearity=nonlinearity)
+        if self.with_norm:
+            constant_init(self.norm, 1, bias=0)
+
+    def forward(self, x, activate=True, norm=True):
+        for layer in self.order:
+            if layer == 'conv':
+                if self.with_explicit_padding:
+                    x = self.padding_layer(x)
+                x = self.conv(x)
+            elif layer == 'norm' and norm and self.with_norm:
+                x = self.norm(x)
+            elif layer == 'act' and activate and self.with_activation:
+                x = self.activate(x)
+        return x
+
+
+class NewEmptyTensorOp(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, new_shape):
+        ctx.shape = x.shape
+        return x.new_empty(new_shape)
+
+    @staticmethod
+    def backward(ctx, grad):
+        shape = ctx.shape
+        return NewEmptyTensorOp.apply(grad, shape), None
+
+
+def obsolete_torch_version(torch_version, version_threshold):
+    return torch_version == 'parrots' or torch_version <= version_threshold
+
+
+class Linear(torch.nn.Linear):
+
+    def forward(self, x):
+        if x.numel() == 0 and obsolete_torch_version(TORCH_VERSION, (1, 5)):
+            out_shape = [x.shape[0], self.out_features]
+            empty = NewEmptyTensorOp.apply(x, out_shape)
+            if self.training:
+                dummy = sum(x.view(-1)[0] for x in self.parameters()) * 0.0
+                return empty + dummy
+            else:
+                return empty
+        return super().forward(x)
+
+
+class Sequential(BaseModule, nn.Sequential):
+    """Sequential module in openmmlab.
+
+    Args:
+        init_cfg (dict, optional): Initialization config dict.
+    """
+
+    def __init__(self, *args, init_cfg=None):
+        BaseModule.__init__(self, init_cfg)
+        nn.Sequential.__init__(self, *args)
+
+
+def build_dropout(cfg):
+    cfg_ = cfg.copy()
+    return eval(cfg_.pop('type'))(**cfg_)
+
+
+class FFN(BaseModule):
+    """Implements feed-forward networks (FFNs) with identity connection.
+
+    Args:
+        embed_dims (int): The feature dimension. Same as
+            `MultiheadAttention`. Defaults: 256.
+        feedforward_channels (int): The hidden dimension of FFNs.
+            Defaults: 1024.
+        num_fcs (int, optional): The number of fully-connected layers in
+            FFNs. Default: 2.
+        act_cfg (dict, optional): The activation config for FFNs.
+            Default: dict(type='ReLU')
+        ffn_drop (float, optional): Probability of an element to be
+            zeroed in FFN. Default 0.0.
+        add_identity (bool, optional): Whether to add the
+            identity connection. Default: `True`.
+        dropout_layer (obj:`ConfigDict`): The dropout_layer used
+            when adding the shortcut.
+        init_cfg (obj:`mmcv.ConfigDict`): The Config for initialization.
+            Default: None.
+    """
+
+    def __init__(self, embed_dims=256, feedforward_channels=1024, num_fcs=2, act_cfg=dict(type='ReLU', inplace=True), ffn_drop=0.0, dropout_layer=None, add_identity=True, init_cfg=None, **kwargs):
+        super(FFN, self).__init__(init_cfg)
+        assert num_fcs >= 2, f'num_fcs should be no less than 2. got {num_fcs}.'
+        self.embed_dims = embed_dims
+        self.feedforward_channels = feedforward_channels
+        self.num_fcs = num_fcs
+        self.act_cfg = act_cfg
+        self.activate = build_activation_layer(act_cfg)
+        layers = []
+        in_channels = embed_dims
+        for _ in range(num_fcs - 1):
+            layers.append(Sequential(Linear(in_channels, feedforward_channels), self.activate, nn.Dropout(ffn_drop)))
+            in_channels = feedforward_channels
+        layers.append(Linear(feedforward_channels, embed_dims))
+        layers.append(nn.Dropout(ffn_drop))
+        self.layers = Sequential(*layers)
+        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else torch.nn.Identity()
+        self.add_identity = add_identity
+
+    def forward(self, x, identity=None):
+        """Forward function for `FFN`.
+
+        The function would add x to the output tensor if residue is None.
+        """
+        out = self.layers(x)
+        if not self.add_identity:
+            return self.dropout_layer(out)
+        if identity is None:
+            identity = x
+        return identity + self.dropout_layer(out)
+
+
+class MultiheadAttention(BaseModule):
+    """A wrapper for ``torch.nn.MultiheadAttention``.
+
+    This module implements MultiheadAttention with identity connection,
+    and positional encoding  is also passed as input.
+
+    Args:
+        embed_dims (int): The embedding dimension.
+        num_heads (int): Parallel attention heads.
+        attn_drop (float): A Dropout layer on attn_output_weights.
+            Default: 0.0.
+        proj_drop (float): A Dropout layer after `nn.MultiheadAttention`.
+            Default: 0.0.
+        dropout_layer (obj:`ConfigDict`): The dropout_layer used
+            when adding the shortcut.
+        init_cfg (obj:`mmcv.ConfigDict`): The Config for initialization.
+            Default: None.
+        batch_first (bool): When it is True,  Key, Query and Value are shape of
+            (batch, n, embed_dim), otherwise (n, batch, embed_dim).
+             Default to False.
+    """
+
+    def __init__(self, embed_dims, num_heads, attn_drop=0.0, proj_drop=0.0, dropout_layer=dict(type='Dropout', drop_prob=0.0), init_cfg=None, batch_first=False, **kwargs):
+        super(MultiheadAttention, self).__init__(init_cfg)
+        if 'dropout' in kwargs:
+            warnings.warn('The arguments `dropout` in MultiheadAttention has been deprecated, now you can separately set `attn_drop`(float), proj_drop(float), and `dropout_layer`(dict) ', DeprecationWarning)
+            attn_drop = kwargs['dropout']
+            dropout_layer['drop_prob'] = kwargs.pop('dropout')
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.batch_first = batch_first
+        self.attn = nn.MultiheadAttention(embed_dims, num_heads, attn_drop, **kwargs)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else nn.Identity()
+
+    def forward(self, query, key=None, value=None, identity=None, query_pos=None, key_pos=None, attn_mask=None, key_padding_mask=None, **kwargs):
+        """Forward function for `MultiheadAttention`.
+
+        **kwargs allow passing a more general data flow when combining
+        with other operations in `transformerlayer`.
+
+        Args:
+            query (Tensor): The input query with shape [num_queries, bs,
+                embed_dims] if self.batch_first is False, else
+                [bs, num_queries embed_dims].
+            key (Tensor): The key tensor with shape [num_keys, bs,
+                embed_dims] if self.batch_first is False, else
+                [bs, num_keys, embed_dims] .
+                If None, the ``query`` will be used. Defaults to None.
+            value (Tensor): The value tensor with same shape as `key`.
+                Same in `nn.MultiheadAttention.forward`. Defaults to None.
+                If None, the `key` will be used.
+            identity (Tensor): This tensor, with the same shape as x,
+                will be used for the identity link.
+                If None, `x` will be used. Defaults to None.
+            query_pos (Tensor): The positional encoding for query, with
+                the same shape as `x`. If not None, it will
+                be added to `x` before forward function. Defaults to None.
+            key_pos (Tensor): The positional encoding for `key`, with the
+                same shape as `key`. Defaults to None. If not None, it will
+                be added to `key` before forward function. If None, and
+                `query_pos` has the same shape as `key`, then `query_pos`
+                will be used for `key_pos`. Defaults to None.
+            attn_mask (Tensor): ByteTensor mask with shape [num_queries,
+                num_keys]. Same in `nn.MultiheadAttention.forward`.
+                Defaults to None.
+            key_padding_mask (Tensor): ByteTensor with shape [bs, num_keys].
+                Defaults to None.
+
+        Returns:
+            Tensor: forwarded results with shape
+            [num_queries, bs, embed_dims]
+            if self.batch_first is False, else
+            [bs, num_queries embed_dims].
+        """
+        if key is None:
+            key = query
+        if value is None:
+            value = key
+        if identity is None:
+            identity = query
+        if key_pos is None:
+            if query_pos is not None:
+                if query_pos.shape == key.shape:
+                    key_pos = query_pos
+                else:
+                    warnings.warn(f'position encoding of key ismissing in {self.__class__.__name__}.')
+        if query_pos is not None:
+            query = query + query_pos
+        if key_pos is not None:
+            key = key + key_pos
+        if self.batch_first:
+            query = query.transpose(0, 1)
+            key = key.transpose(0, 1)
+            value = value.transpose(0, 1)
+        out = self.attn(query=query, key=key, value=value, attn_mask=attn_mask, key_padding_mask=key_padding_mask)[0]
+        if self.batch_first:
+            out = out.transpose(0, 1)
+        return identity + self.dropout_layer(self.proj_drop(out))
+
+
+class TransformerEncoderLayer(BaseModule):
+    """Implements one encoder layer in Vision Transformer.
+
+    Args:
+        embed_dims (int): The feature dimension
+        num_heads (int): Parallel attention heads
+        feedforward_channels (int): The hidden dimension for FFNs
+        drop_rate (float): Probability of an element to be zeroed
+            after the feed forward layer. Defaults to 0.
+        attn_drop_rate (float): The drop out rate for attention output weights.
+            Defaults to 0.
+        drop_path_rate (float): Stochastic depth rate. Defaults to 0.
+        num_fcs (int): The number of fully-connected layers for FFNs.
+            Defaults to 2.
+        qkv_bias (bool): enable bias for qkv if True. Defaults to True.
+        act_cfg (dict): The activation config for FFNs.
+            Defaluts to ``dict(type='GELU')``.
+        norm_cfg (dict): Config dict for normalization layer.
+            Defaults to ``dict(type='LN')``.
+        init_cfg (dict, optional): Initialization config dict.
+            Defaults to None.
+    """
+
+    def __init__(self, embed_dims, num_heads, feedforward_channels, drop_rate=0.0, attn_drop_rate=0.0, drop_path_rate=0.0, num_fcs=2, qkv_bias=True, act_cfg=dict(type='GELU'), norm_cfg=dict(type='LN'), init_cfg=None):
+        super(TransformerEncoderLayer, self).__init__(init_cfg=init_cfg)
+        self.embed_dims = embed_dims
+        self.norm1_name, norm1 = build_norm_layer(norm_cfg, self.embed_dims, postfix=1)
+        self.add_module(self.norm1_name, norm1)
+        self.attn = MultiheadAttention(embed_dims=embed_dims, num_heads=num_heads, attn_drop=attn_drop_rate, proj_drop=drop_rate, dropout_layer=dict(type='DropPath', drop_prob=drop_path_rate), qkv_bias=qkv_bias)
+        self.norm2_name, norm2 = build_norm_layer(norm_cfg, self.embed_dims, postfix=2)
+        self.add_module(self.norm2_name, norm2)
+        self.ffn = FFN(embed_dims=embed_dims, feedforward_channels=feedforward_channels, num_fcs=num_fcs, ffn_drop=drop_rate, dropout_layer=dict(type='DropPath', drop_prob=drop_path_rate), act_cfg=act_cfg)
+
+    @property
+    def norm1(self):
+        return getattr(self, self.norm1_name)
+
+    @property
+    def norm2(self):
+        return getattr(self, self.norm2_name)
+
+    def init_weights(self):
+        super(TransformerEncoderLayer, self).init_weights()
+        for m in self.ffn.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.normal_(m.bias, std=1e-06)
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
+        x = self.ffn(self.norm2(x), identity=x)
+        return x
+
+
+class MobileVitBlock(nn.Module):
+    """MobileViT block.
+
+    According to the paper, the MobileViT block has a local representation.
+    a transformer-as-convolution layer which consists of a global
+    representation with unfolding and folding, and a final fusion layer.
+
+    Args:
+        in_channels (int): Number of input image channels.
+        transformer_dim (int): Number of transformer channels.
+        ffn_dim (int): Number of ffn channels in transformer block.
+        out_channels (int): Number of channels in output.
+        conv_ksize (int): Conv kernel size in local representation
+            and fusion. Defaults to 3.
+        conv_cfg (dict, optional): Config dict for convolution layer.
+            Defaults to None, which means using conv2d.
+        norm_cfg (dict, optional): Config dict for normalization layer.
+            Defaults to dict(type='BN').
+        act_cfg (dict, optional): Config dict for activation layer.
+            Defaults to dict(type='Swish').
+        num_transformer_blocks (int): Number of transformer blocks in
+            a MobileViT block. Defaults to 2.
+        patch_size (int): Patch size for unfolding and folding.
+             Defaults to 2.
+        num_heads (int): Number of heads in global representation.
+             Defaults to 4.
+        drop_rate (float): Probability of an element to be zeroed
+            after the feed forward layer. Defaults to 0.
+        attn_drop_rate (float): The drop out rate for attention output weights.
+            Defaults to 0.
+        drop_path_rate (float): Stochastic depth rate. Defaults to 0.
+        no_fusion (bool): Whether to remove the fusion layer.
+            Defaults to False.
+        transformer_norm_cfg (dict, optional): Config dict for normalization
+            layer in transformer. Defaults to dict(type='LN').
+    """
+
+    def __init__(self, in_channels: 'int', transformer_dim: 'int', ffn_dim: 'int', out_channels: 'int', conv_ksize: 'int'=3, conv_cfg: 'Optional[dict]'=None, norm_cfg: 'Optional[dict]'=dict(type='BN'), act_cfg: 'Optional[dict]'=dict(type='Swish'), num_transformer_blocks: 'int'=2, patch_size: 'int'=2, num_heads: 'int'=4, drop_rate: 'float'=0.0, attn_drop_rate: 'float'=0.0, drop_path_rate: 'float'=0.0, no_fusion: 'bool'=False, transformer_norm_cfg: 'Callable'=dict(type='LN')):
+        super(MobileVitBlock, self).__init__()
+        self.local_rep = nn.Sequential(ConvModule(in_channels=in_channels, out_channels=in_channels, kernel_size=conv_ksize, padding=int((conv_ksize - 1) / 2), conv_cfg=conv_cfg, norm_cfg=norm_cfg, act_cfg=act_cfg), ConvModule(in_channels=in_channels, out_channels=transformer_dim, kernel_size=1, bias=False, conv_cfg=conv_cfg, norm_cfg=None, act_cfg=None))
+        global_rep = [TransformerEncoderLayer(embed_dims=transformer_dim, num_heads=num_heads, feedforward_channels=ffn_dim, drop_rate=drop_rate, attn_drop_rate=attn_drop_rate, drop_path_rate=drop_path_rate, qkv_bias=True, act_cfg=dict(type='Swish'), norm_cfg=transformer_norm_cfg) for _ in range(num_transformer_blocks)]
+        global_rep.append(build_norm_layer(transformer_norm_cfg, transformer_dim)[1])
+        self.global_rep = nn.Sequential(*global_rep)
+        self.conv_proj = ConvModule(in_channels=transformer_dim, out_channels=out_channels, kernel_size=1, conv_cfg=conv_cfg, norm_cfg=norm_cfg, act_cfg=act_cfg)
+        if no_fusion:
+            self.conv_fusion = None
+        else:
+            self.conv_fusion = ConvModule(in_channels=in_channels + out_channels, out_channels=out_channels, kernel_size=conv_ksize, padding=int((conv_ksize - 1) / 2), conv_cfg=conv_cfg, norm_cfg=norm_cfg, act_cfg=act_cfg)
+        self.patch_size = patch_size, patch_size
+        self.patch_area = self.patch_size[0] * self.patch_size[1]
+
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        shortcut = x
+        x = self.local_rep(x)
+        patch_h, patch_w = self.patch_size
+        B, C, H, W = x.shape
+        new_h, new_w = math.ceil(H / patch_h) * patch_h, math.ceil(W / patch_w) * patch_w
+        num_patch_h, num_patch_w = new_h // patch_h, new_w // patch_w
+        num_patches = num_patch_h * num_patch_w
+        interpolate = False
+        if new_h != H or new_w != W:
+            x = F.interpolate(x, size=(new_h, new_w), mode='bilinear', align_corners=False)
+            interpolate = True
+        x = x.reshape(B * C * num_patch_h, patch_h, num_patch_w, patch_w).transpose(1, 2)
+        x = x.reshape(B, C, num_patches, self.patch_area).transpose(1, 3).reshape(B * self.patch_area, num_patches, -1)
+        x = self.global_rep(x)
+        x = x.contiguous().view(B, self.patch_area, num_patches, -1)
+        x = x.transpose(1, 3).reshape(B * C * num_patch_h, num_patch_w, patch_h, patch_w)
+        x = x.transpose(1, 2).reshape(B, C, num_patch_h * patch_h, num_patch_w * patch_w)
+        if interpolate:
+            x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=False)
+        x = self.conv_proj(x)
+        if self.conv_fusion is not None:
+            x = self.conv_fusion(torch.cat((shortcut, x), dim=1))
         return x
 
 
@@ -1062,41 +1909,6 @@ class AdaptivePadding(nn.Module):
             elif self.padding == 'same':
                 x = F.pad(x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2])
         return x
-
-
-CONV_LAYERS = ['Conv1d', 'Conv2d', 'Conv3d', 'Conv', 'Conv2dAdaptivePadding']
-
-
-def build_conv_layer(cfg, *args, **kwargs):
-    """Build convolution layer.
-
-    Args:
-        cfg (None or dict): The conv layer config, which should contain:
-            - type (str): Layer type.
-            - layer args: Args needed to instantiate an conv layer.
-        args (argument list): Arguments passed to the `__init__`
-            method of the corresponding conv layer.
-        kwargs (keyword arguments): Keyword arguments passed to the `__init__`
-            method of the corresponding conv layer.
-
-    Returns:
-        nn.Module: Created conv layer.
-    """
-    if cfg is None:
-        cfg_ = dict(type='Conv2d')
-    else:
-        if not isinstance(cfg, dict):
-            raise TypeError('cfg must be a dict')
-        if 'type' not in cfg:
-            raise KeyError('the cfg dict must contain the key "type"')
-        cfg_ = cfg.copy()
-    layer_type = cfg_.pop('type')
-    if layer_type not in CONV_LAYERS:
-        raise KeyError(f'Unrecognized layer type {layer_type}')
-    else:
-        conv_layer = eval(layer_type)
-    layer = conv_layer(*args, **kwargs, **cfg_)
-    return layer
 
 
 class PatchEmbed(BaseModule):
@@ -1387,6 +2199,218 @@ class ResLayer(nn.Sequential):
         super(ResLayer, self).__init__(*layers)
 
 
+class TwoStreamFusion(nn.Module):
+    """A general constructor for neural modules fusing two equal sized tensors
+    in forward.
+
+    Args:
+        mode (str): The mode of fusion. Options are 'add', 'max', 'min',
+            'avg', 'concat'.
+    """
+
+    def __init__(self, mode: 'str'):
+        super().__init__()
+        self.mode = mode
+        if mode == 'add':
+            self.fuse_fn = lambda x: torch.stack(x).sum(dim=0)
+        elif mode == 'max':
+            self.fuse_fn = lambda x: torch.stack(x).max(dim=0).values
+        elif mode == 'min':
+            self.fuse_fn = lambda x: torch.stack(x).min(dim=0).values
+        elif mode == 'avg':
+            self.fuse_fn = lambda x: torch.stack(x).mean(dim=0)
+        elif mode == 'concat':
+            self.fuse_fn = lambda x: torch.cat(x, dim=-1)
+        else:
+            raise NotImplementedError
+
+    def forward(self, x):
+        x = torch.chunk(x, 2, dim=2)
+        return self.fuse_fn(x)
+
+
+class PatchMerging(BaseModule):
+    """Merge patch feature map. Modified from mmcv, which uses pre-norm layer
+    whereas Swin V2 uses post-norm here. Therefore, add extra parameter to
+    decide whether use post-norm or not.
+
+    This layer groups feature map by kernel_size, and applies norm and linear
+    layers to the grouped feature map ((used in Swin Transformer)).
+    Our implementation uses `nn.Unfold` to
+    merge patches, which is about 25% faster than the original
+    implementation. However, we need to modify pretrained
+    models for compatibility.
+
+    Args:
+        in_channels (int): The num of input channels.
+            to gets fully covered by filter and stride you specified.
+        out_channels (int): The num of output channels.
+        kernel_size (int | tuple, optional): the kernel size in the unfold
+            layer. Defaults to 2.
+        stride (int | tuple, optional): the stride of the sliding blocks in the
+            unfold layer. Defaults to None. (Would be set as `kernel_size`)
+        padding (int | tuple | string ): The padding length of
+            embedding conv. When it is a string, it means the mode
+            of adaptive padding, support "same" and "corner" now.
+            Defaults to "corner".
+        dilation (int | tuple, optional): dilation parameter in the unfold
+            layer. Default: 1.
+        bias (bool, optional): Whether to add bias in linear layer or not.
+            Defaults to False.
+        norm_cfg (dict, optional): Config dict for normalization layer.
+            Defaults to dict(type='LN').
+        is_post_norm (bool): Whether to use post normalization here.
+            Defaults to False.
+        init_cfg (dict, optional): The extra config for initialization.
+            Defaults to None.
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=2, stride=None, padding='corner', dilation=1, bias=False, norm_cfg=dict(type='LN'), is_post_norm=False, init_cfg=None):
+        super().__init__(init_cfg=init_cfg)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.is_post_norm = is_post_norm
+        if stride:
+            stride = stride
+        else:
+            stride = kernel_size
+        kernel_size = to_2tuple(kernel_size)
+        stride = to_2tuple(stride)
+        dilation = to_2tuple(dilation)
+        if isinstance(padding, str):
+            self.adaptive_padding = AdaptivePadding(kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding)
+            padding = 0
+        else:
+            self.adaptive_padding = None
+        padding = to_2tuple(padding)
+        self.sampler = nn.Unfold(kernel_size=kernel_size, dilation=dilation, padding=padding, stride=stride)
+        sample_dim = kernel_size[0] * kernel_size[1] * in_channels
+        self.reduction = nn.Linear(sample_dim, out_channels, bias=bias)
+        if norm_cfg is not None:
+            if self.is_post_norm:
+                self.norm = build_norm_layer(norm_cfg, out_channels)[1]
+            else:
+                self.norm = build_norm_layer(norm_cfg, sample_dim)[1]
+        else:
+            self.norm = None
+
+    def forward(self, x, input_size):
+        """
+        Args:
+            x (Tensor): Has shape (B, H*W, C_in).
+            input_size (tuple[int]): The spatial shape of x, arrange as (H, W).
+                Default: None.
+
+        Returns:
+            tuple: Contains merged results and its spatial shape.
+
+            - x (Tensor): Has shape (B, Merged_H * Merged_W, C_out)
+            - out_size (tuple[int]): Spatial shape of x, arrange as
+              (Merged_H, Merged_W).
+        """
+        B, L, C = x.shape
+        assert isinstance(input_size, Sequence), f'Expect input_size is `Sequence` but get {input_size}'
+        H, W = input_size
+        assert L == H * W, 'input feature has wrong size'
+        x = x.view(B, H, W, C).permute([0, 3, 1, 2])
+        if self.adaptive_padding:
+            x = self.adaptive_padding(x)
+            H, W = x.shape[-2:]
+        x = self.sampler(x)
+        out_h = (H + 2 * self.sampler.padding[0] - self.sampler.dilation[0] * (self.sampler.kernel_size[0] - 1) - 1) // self.sampler.stride[0] + 1
+        out_w = (W + 2 * self.sampler.padding[1] - self.sampler.dilation[1] * (self.sampler.kernel_size[1] - 1) - 1) // self.sampler.stride[1] + 1
+        output_size = out_h, out_w
+        x = x.transpose(1, 2)
+        if self.is_post_norm:
+            x = self.reduction(x)
+            x = self.norm(x) if self.norm else x
+        else:
+            x = self.norm(x) if self.norm else x
+            x = self.reduction(x)
+        return x, output_size
+
+
+class ConvBN2d(Sequential):
+    """An implementation of Conv2d + BatchNorm2d with support of fusion.
+
+    Modified from
+    https://github.com/microsoft/Cream/blob/main/TinyViT/models/tiny_vit.py
+
+    Args:
+        in_channels (int): The number of input channels.
+        out_channels (int): The number of output channels.
+        kernel_size (int): The size of the convolution kernel.
+            Default: 1.
+        stride (int): The stride of the convolution.
+            Default: 1.
+        padding (int): The padding of the convolution.
+            Default: 0.
+        dilation (int): The dilation of the convolution.
+            Default: 1.
+        groups (int): The number of groups in the convolution.
+            Default: 1.
+        bn_weight_init (float): The initial value of the weight of
+            the nn.BatchNorm2d layer. Default: 1.0.
+        init_cfg (dict): The initialization config of the module.
+            Default: None.
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, groups=1, bn_weight_init=1.0, init_cfg=None):
+        super().__init__(init_cfg=init_cfg)
+        self.add_module('conv2d', nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=False))
+        bn2d = nn.BatchNorm2d(num_features=out_channels)
+        torch.nn.init.constant_(bn2d.weight, bn_weight_init)
+        torch.nn.init.constant_(bn2d.bias, 0)
+        self.add_module('bn2d', bn2d)
+
+    @torch.no_grad()
+    def fuse(self):
+        conv2d, bn2d = self._modules.values()
+        w = bn2d.weight / (bn2d.running_var + bn2d.eps) ** 0.5
+        w = conv2d.weight * w[:, None, None, None]
+        b = bn2d.bias - bn2d.running_mean * bn2d.weight / (bn2d.running_var + bn2d.eps) ** 0.5
+        m = nn.Conv2d(in_channels=w.size(1) * self.c.groups, out_channels=w.size(0), kernel_size=w.shape[2:], stride=self.conv2d.stride, padding=self.conv2d.padding, dilation=self.conv2d.dilation, groups=self.conv2d.groups)
+        m.weight.data.copy_(w)
+        m.bias.data.copy_(b)
+        return m
+
+
+class MBConvBlock(nn.Module):
+    """Mobile Inverted Residual Bottleneck Block for TinyViT. Adapted from
+    https://github.com/microsoft/Cream/blob/main/TinyViT/models/tiny_vit.py.
+
+    Args:
+        in_channels (int): The number of input channels.
+        out_channels (int): The number of output channels.
+        expand_ratio (int): The expand ratio of the hidden channels.
+        drop_rate (float): The drop rate of the block.
+        act_cfg (dict): The activation config of the module.
+            Default: dict(type='GELU').
+    """
+
+    def __init__(self, in_channels, out_channels, expand_ratio, drop_path, act_cfg=dict(type='GELU')):
+        super().__init__()
+        self.in_channels = in_channels
+        hidden_channels = int(in_channels * expand_ratio)
+        self.conv1 = ConvBN2d(in_channels, hidden_channels, kernel_size=1)
+        self.act = build_activation_layer(act_cfg)
+        self.conv2 = ConvBN2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1, groups=hidden_channels)
+        self.conv3 = ConvBN2d(hidden_channels, out_channels, kernel_size=1, bn_weight_init=0.0)
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
+
+    def forward(self, x):
+        shortcut = x
+        x = self.conv1(x)
+        x = self.act(x)
+        x = self.conv2(x)
+        x = self.act(x)
+        x = self.conv3(x)
+        x = self.drop_path(x)
+        x += shortcut
+        x = self.act(x)
+        return x
+
+
 class VANPatchEmbed(PatchEmbed):
     """Image to Patch Embedding of VAN.
 
@@ -1542,30 +2566,19 @@ class LayerNorm2d(nn.LayerNorm):
             to ones (for weights) and zeros (for biases). Defaults to True.
     """
 
-    def __init__(self, num_channels: int, **kwargs) ->None:
+    def __init__(self, num_channels: 'int', **kwargs) ->None:
         super().__init__(num_channels, **kwargs)
         self.num_channels = self.normalized_shape[0]
 
-    def forward(self, x):
+    def forward(self, x, data_format='channel_first'):
         assert x.dim() == 4, f'LayerNorm2d only supports inputs with shape (N, C, H, W), but got tensor with shape {x.shape}'
-        return F.layer_norm(x.permute(0, 2, 3, 1), self.normalized_shape, self.weight, self.bias, self.eps).permute(0, 3, 1, 2)
-
-
-class NewEmptyTensorOp(torch.autograd.Function):
-
-    @staticmethod
-    def forward(ctx, x, new_shape):
-        ctx.shape = x.shape
-        return x.new_empty(new_shape)
-
-    @staticmethod
-    def backward(ctx, grad):
-        shape = ctx.shape
-        return NewEmptyTensorOp.apply(grad, shape), None
-
-
-def obsolete_torch_version(torch_version, version_threshold):
-    return torch_version == 'parrots' or torch_version <= version_threshold
+        if data_format == 'channel_last':
+            x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+        elif data_format == 'channel_first':
+            x = x.permute(0, 2, 3, 1)
+            x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+            x = x.permute(0, 3, 1, 2).contiguous()
+        return x
 
 
 class Conv(nn.Conv2d):
@@ -1662,32 +2675,6 @@ class MaxPool3d(nn.MaxPool3d):
         return super().forward(x)
 
 
-class Linear(torch.nn.Linear):
-
-    def forward(self, x):
-        if x.numel() == 0 and obsolete_torch_version(TORCH_VERSION, (1, 5)):
-            out_shape = [x.shape[0], self.out_features]
-            empty = NewEmptyTensorOp.apply(x, out_shape)
-            if self.training:
-                dummy = sum(x.view(-1)[0] for x in self.parameters()) * 0.0
-                return empty + dummy
-            else:
-                return empty
-        return super().forward(x)
-
-
-class Sequential(BaseModule, nn.Sequential):
-    """Sequential module in openmmlab.
-
-    Args:
-        init_cfg (dict, optional): Initialization config dict.
-    """
-
-    def __init__(self, *args, init_cfg=None):
-        BaseModule.__init__(self, init_cfg)
-        nn.Sequential.__init__(self, *args)
-
-
 class ModuleList(BaseModule, nn.ModuleList):
     """ModuleList in openmmlab.
 
@@ -1713,177 +2700,6 @@ class ModuleDict(BaseModule, nn.ModuleDict):
     def __init__(self, modules=None, init_cfg=None):
         BaseModule.__init__(self, init_cfg)
         nn.ModuleDict.__init__(self, modules)
-
-
-PADDING_LAYERS = ['zero', 'reflect', 'replicate']
-
-
-def build_padding_layer(cfg, *args, **kwargs):
-    """Build padding layer.
-
-    Args:
-        cfg (None or dict): The padding layer config, which should contain:
-            - type (str): Layer type.
-            - layer args: Args needed to instantiate a padding layer.
-
-    Returns:
-        nn.Module: Created padding layer.
-    """
-    if not isinstance(cfg, dict):
-        raise TypeError('cfg must be a dict')
-    if 'type' not in cfg:
-        raise KeyError('the cfg dict must contain the key "type"')
-    cfg_ = cfg.copy()
-    padding_type = cfg_.pop('type')
-    if padding_type not in PADDING_LAYERS:
-        raise KeyError(f'Unrecognized padding type {padding_type}.')
-    else:
-        padding_layer = eval(padding_type)
-    layer = padding_layer(*args, **kwargs, **cfg_)
-    return layer
-
-
-def constant_init(module, val, bias=0):
-    if hasattr(module, 'weight') and module.weight is not None:
-        nn.init.constant_(module.weight, val)
-    if hasattr(module, 'bias') and module.bias is not None:
-        nn.init.constant_(module.bias, bias)
-
-
-def kaiming_init(module, a=0, mode='fan_out', nonlinearity='relu', bias=0, distribution='normal'):
-    assert distribution in ['uniform', 'normal']
-    if hasattr(module, 'weight') and module.weight is not None:
-        if distribution == 'uniform':
-            nn.init.kaiming_uniform_(module.weight, a=a, mode=mode, nonlinearity=nonlinearity)
-        else:
-            nn.init.kaiming_normal_(module.weight, a=a, mode=mode, nonlinearity=nonlinearity)
-    if hasattr(module, 'bias') and module.bias is not None:
-        nn.init.constant_(module.bias, bias)
-
-
-class ConvModule(nn.Module):
-    """A conv block that bundles conv/norm/activation layers.
-
-    This block simplifies the usage of convolution layers, which are commonly
-    used with a norm layer (e.g., BatchNorm) and activation layer (e.g., ReLU).
-    It is based upon three build methods: `build_conv_layer()`,
-    `build_norm_layer()` and `build_activation_layer()`.
-
-    Besides, we add some additional features in this module.
-    1. Automatically set `bias` of the conv layer.
-    2. Spectral norm is supported.
-    3. More padding modes are supported. Before PyTorch 1.5, nn.Conv2d only
-    supports zero and circular padding, and we add "reflect" padding mode.
-
-    Args:
-        in_channels (int): Number of channels in the input feature map.
-            Same as that in ``nn._ConvNd``.
-        out_channels (int): Number of channels produced by the convolution.
-            Same as that in ``nn._ConvNd``.
-        kernel_size (int | tuple[int]): Size of the convolving kernel.
-            Same as that in ``nn._ConvNd``.
-        stride (int | tuple[int]): Stride of the convolution.
-            Same as that in ``nn._ConvNd``.
-        padding (int | tuple[int]): Zero-padding added to both sides of
-            the input. Same as that in ``nn._ConvNd``.
-        dilation (int | tuple[int]): Spacing between kernel elements.
-            Same as that in ``nn._ConvNd``.
-        groups (int): Number of blocked connections from input channels to
-            output channels. Same as that in ``nn._ConvNd``.
-        bias (bool | str): If specified as `auto`, it will be decided by the
-            norm_cfg. Bias will be set as True if `norm_cfg` is None, otherwise
-            False. Default: "auto".
-        conv_cfg (dict): Config dict for convolution layer. Default: None,
-            which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer. Default: None.
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU').
-        inplace (bool): Whether to use inplace mode for activation.
-            Default: True.
-        with_spectral_norm (bool): Whether use spectral norm in conv module.
-            Default: False.
-        padding_mode (str): If the `padding_mode` has not been supported by
-            current `Conv2d` in PyTorch, we will use our own padding layer
-            instead. Currently, we support ['zeros', 'circular'] with official
-            implementation and ['reflect'] with our own implementation.
-            Default: 'zeros'.
-        order (tuple[str]): The order of conv/norm/activation layers. It is a
-            sequence of "conv", "norm" and "act". Common examples are
-            ("conv", "norm", "act") and ("act", "conv", "norm").
-            Default: ('conv', 'norm', 'act').
-    """
-
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias='auto', conv_cfg=None, norm_cfg=None, act_cfg=dict(type='ReLU'), inplace=True, with_spectral_norm=False, padding_mode='zeros', order=('conv', 'norm', 'act')):
-        super(ConvModule, self).__init__()
-        assert conv_cfg is None or isinstance(conv_cfg, dict)
-        assert norm_cfg is None or isinstance(norm_cfg, dict)
-        assert act_cfg is None or isinstance(act_cfg, dict)
-        official_padding_mode = ['zeros', 'circular']
-        self.conv_cfg = copy.deepcopy(conv_cfg)
-        self.norm_cfg = copy.deepcopy(norm_cfg)
-        self.act_cfg = copy.deepcopy(act_cfg)
-        self.inplace = inplace
-        self.with_spectral_norm = with_spectral_norm
-        self.with_explicit_padding = padding_mode not in official_padding_mode
-        self.order = order
-        assert isinstance(self.order, tuple) and len(self.order) == 3
-        assert set(order) == set(['conv', 'norm', 'act'])
-        self.with_norm = norm_cfg is not None
-        self.with_activation = act_cfg is not None
-        if bias == 'auto':
-            bias = not self.with_norm
-        self.with_bias = bias
-        if self.with_explicit_padding:
-            pad_cfg = dict(type=padding_mode)
-            self.padding_layer = build_padding_layer(pad_cfg, padding)
-        conv_padding = 0 if self.with_explicit_padding else padding
-        self.conv = build_conv_layer(conv_cfg, in_channels, out_channels, kernel_size, stride=stride, padding=conv_padding, dilation=dilation, groups=groups, bias=bias)
-        if self.with_spectral_norm:
-            self.conv = nn.utils.spectral_norm(self.conv)
-        if self.with_norm:
-            if order.index('norm') > order.index('conv'):
-                norm_channels = out_channels
-            else:
-                norm_channels = in_channels
-            self.norm_name, norm = build_norm_layer(norm_cfg, norm_channels)
-            self.add_module(self.norm_name, norm)
-        if self.with_activation:
-            act_cfg_ = act_cfg.copy()
-            if act_cfg_['type'] not in ['Tanh', 'PReLU', 'Sigmoid', 'HSigmoid', 'Swish']:
-                act_cfg_.setdefault('inplace', inplace)
-            self.activate = build_activation_layer(act_cfg_)
-        self.init_weights()
-
-    @property
-    def norm(self):
-        if self.norm_name:
-            return getattr(self, self.norm_name)
-        else:
-            return None
-
-    def init_weights(self):
-        if not hasattr(self.conv, 'init_weights'):
-            if self.with_activation and self.act_cfg['type'] == 'LeakyReLU':
-                nonlinearity = 'leaky_relu'
-                a = self.act_cfg.get('negative_slope', 0.01)
-            else:
-                nonlinearity = 'relu'
-                a = 0
-            kaiming_init(self.conv, a=a, nonlinearity=nonlinearity)
-        if self.with_norm:
-            constant_init(self.norm, 1, bias=0)
-
-    def forward(self, x, activate=True, norm=True):
-        for layer in self.order:
-            if layer == 'conv':
-                if self.with_explicit_padding:
-                    x = self.padding_layer(x)
-                x = self.conv(x)
-            elif layer == 'norm' and norm and self.with_norm:
-                x = self.norm(x)
-            elif layer == 'act' and activate and self.with_activation:
-                x = self.activate(x)
-        return x
 
 
 class DepthwiseSeparableConvModule(nn.Module):
@@ -2002,107 +2818,6 @@ class HybridEmbed(BaseModule):
             x = x[-1]
         x = self.projection(x).flatten(2).transpose(1, 2)
         return x
-
-
-class PatchMerging(BaseModule):
-    """Merge patch feature map. Modified from mmcv, which uses pre-norm layer
-    whereas Swin V2 uses post-norm here. Therefore, add extra parameter to
-    decide whether use post-norm or not.
-
-    This layer groups feature map by kernel_size, and applies norm and linear
-    layers to the grouped feature map ((used in Swin Transformer)).
-    Our implementation uses `nn.Unfold` to
-    merge patches, which is about 25% faster than the original
-    implementation. However, we need to modify pretrained
-    models for compatibility.
-
-    Args:
-        in_channels (int): The num of input channels.
-            to gets fully covered by filter and stride you specified.
-        out_channels (int): The num of output channels.
-        kernel_size (int | tuple, optional): the kernel size in the unfold
-            layer. Defaults to 2.
-        stride (int | tuple, optional): the stride of the sliding blocks in the
-            unfold layer. Defaults to None. (Would be set as `kernel_size`)
-        padding (int | tuple | string ): The padding length of
-            embedding conv. When it is a string, it means the mode
-            of adaptive padding, support "same" and "corner" now.
-            Defaults to "corner".
-        dilation (int | tuple, optional): dilation parameter in the unfold
-            layer. Default: 1.
-        bias (bool, optional): Whether to add bias in linear layer or not.
-            Defaults to False.
-        norm_cfg (dict, optional): Config dict for normalization layer.
-            Defaults to dict(type='LN').
-        is_post_norm (bool): Whether to use post normalization here.
-            Defaults to False.
-        init_cfg (dict, optional): The extra config for initialization.
-            Defaults to None.
-    """
-
-    def __init__(self, in_channels, out_channels, kernel_size=2, stride=None, padding='corner', dilation=1, bias=False, norm_cfg=dict(type='LN'), is_post_norm=False, init_cfg=None):
-        super().__init__(init_cfg=init_cfg)
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.is_post_norm = is_post_norm
-        if stride:
-            stride = stride
-        else:
-            stride = kernel_size
-        kernel_size = to_2tuple(kernel_size)
-        stride = to_2tuple(stride)
-        dilation = to_2tuple(dilation)
-        if isinstance(padding, str):
-            self.adaptive_padding = AdaptivePadding(kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding)
-            padding = 0
-        else:
-            self.adaptive_padding = None
-        padding = to_2tuple(padding)
-        self.sampler = nn.Unfold(kernel_size=kernel_size, dilation=dilation, padding=padding, stride=stride)
-        sample_dim = kernel_size[0] * kernel_size[1] * in_channels
-        self.reduction = nn.Linear(sample_dim, out_channels, bias=bias)
-        if norm_cfg is not None:
-            if self.is_post_norm:
-                self.norm = build_norm_layer(norm_cfg, out_channels)[1]
-            else:
-                self.norm = build_norm_layer(norm_cfg, sample_dim)[1]
-        else:
-            self.norm = None
-
-    def forward(self, x, input_size):
-        """
-        Args:
-            x (Tensor): Has shape (B, H*W, C_in).
-            input_size (tuple[int]): The spatial shape of x, arrange as (H, W).
-                Default: None.
-
-        Returns:
-            tuple: Contains merged results and its spatial shape.
-
-            - x (Tensor): Has shape (B, Merged_H * Merged_W, C_out)
-            - out_size (tuple[int]): Spatial shape of x, arrange as
-              (Merged_H, Merged_W).
-        """
-        B, L, C = x.shape
-        assert isinstance(input_size, Sequence), f'Expect input_size is `Sequence` but get {input_size}'
-        H, W = input_size
-        assert L == H * W, 'input feature has wrong size'
-        x = x.view(B, H, W, C).permute([0, 3, 1, 2])
-        if self.adaptive_padding:
-            x = self.adaptive_padding(x)
-            H, W = x.shape[-2:]
-        x = self.sampler(x)
-        out_h = (H + 2 * self.sampler.padding[0] - self.sampler.dilation[0] * (self.sampler.kernel_size[0] - 1) - 1) // self.sampler.stride[0] + 1
-        out_w = (W + 2 * self.sampler.padding[1] - self.sampler.dilation[1] * (self.sampler.kernel_size[1] - 1) - 1) // self.sampler.stride[1] + 1
-        output_size = out_h, out_w
-        x = x.transpose(1, 2)
-        if self.is_post_norm:
-            x = self.reduction(x)
-            x = self.norm(x) if self.norm else x
-        else:
-            x = self.norm(x) if self.norm else x
-            x = self.reduction(x)
-        return x, output_size
 
 
 def make_divisible(value, divisor, min_value=None, min_ratio=0.9):
@@ -2270,163 +2985,92 @@ class ConditionalPositionEncoding(BaseModule):
         return x
 
 
-def build_dropout(cfg):
-    return eval(cfg.pop('type'))(**cfg)
+def digit_version(version_str: 'str', length: 'int'=4):
+    """Convert a version string into a tuple of integers.
 
-
-class MultiheadAttention(BaseModule):
-    """A wrapper for ``torch.nn.MultiheadAttention``.
-
-    This module implements MultiheadAttention with identity connection,
-    and positional encoding  is also passed as input.
+    This method is usually used for comparing two versions. For pre-release
+    versions: alpha < beta < rc.
 
     Args:
-        embed_dims (int): The embedding dimension.
-        num_heads (int): Parallel attention heads.
-        attn_drop (float): A Dropout layer on attn_output_weights.
-            Default: 0.0.
-        proj_drop (float): A Dropout layer after `nn.MultiheadAttention`.
-            Default: 0.0.
-        dropout_layer (obj:`ConfigDict`): The dropout_layer used
-            when adding the shortcut.
-        init_cfg (obj:`mmcv.ConfigDict`): The Config for initialization.
-            Default: None.
-        batch_first (bool): When it is True,  Key, Query and Value are shape of
-            (batch, n, embed_dim), otherwise (n, batch, embed_dim).
-             Default to False.
+        version_str (str): The version string.
+        length (int): The maximum number of version levels. Default: 4.
+
+    Returns:
+        tuple[int]: The version info in digits (integers).
     """
-
-    def __init__(self, embed_dims, num_heads, attn_drop=0.0, proj_drop=0.0, dropout_layer=dict(type='Dropout', drop_prob=0.0), init_cfg=None, batch_first=False, **kwargs):
-        super(MultiheadAttention, self).__init__(init_cfg)
-        if 'dropout' in kwargs:
-            warnings.warn('The arguments `dropout` in MultiheadAttention has been deprecated, now you can separately set `attn_drop`(float), proj_drop(float), and `dropout_layer`(dict) ', DeprecationWarning)
-            attn_drop = kwargs['dropout']
-            dropout_layer['drop_prob'] = kwargs.pop('dropout')
-        self.embed_dims = embed_dims
-        self.num_heads = num_heads
-        self.batch_first = batch_first
-        self.attn = nn.MultiheadAttention(embed_dims, num_heads, attn_drop, **kwargs)
-        self.proj_drop = nn.Dropout(proj_drop)
-        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else nn.Identity()
-
-    def forward(self, query, key=None, value=None, identity=None, query_pos=None, key_pos=None, attn_mask=None, key_padding_mask=None, **kwargs):
-        """Forward function for `MultiheadAttention`.
-
-        **kwargs allow passing a more general data flow when combining
-        with other operations in `transformerlayer`.
-
-        Args:
-            query (Tensor): The input query with shape [num_queries, bs,
-                embed_dims] if self.batch_first is False, else
-                [bs, num_queries embed_dims].
-            key (Tensor): The key tensor with shape [num_keys, bs,
-                embed_dims] if self.batch_first is False, else
-                [bs, num_keys, embed_dims] .
-                If None, the ``query`` will be used. Defaults to None.
-            value (Tensor): The value tensor with same shape as `key`.
-                Same in `nn.MultiheadAttention.forward`. Defaults to None.
-                If None, the `key` will be used.
-            identity (Tensor): This tensor, with the same shape as x,
-                will be used for the identity link.
-                If None, `x` will be used. Defaults to None.
-            query_pos (Tensor): The positional encoding for query, with
-                the same shape as `x`. If not None, it will
-                be added to `x` before forward function. Defaults to None.
-            key_pos (Tensor): The positional encoding for `key`, with the
-                same shape as `key`. Defaults to None. If not None, it will
-                be added to `key` before forward function. If None, and
-                `query_pos` has the same shape as `key`, then `query_pos`
-                will be used for `key_pos`. Defaults to None.
-            attn_mask (Tensor): ByteTensor mask with shape [num_queries,
-                num_keys]. Same in `nn.MultiheadAttention.forward`.
-                Defaults to None.
-            key_padding_mask (Tensor): ByteTensor with shape [bs, num_keys].
-                Defaults to None.
-
-        Returns:
-            Tensor: forwarded results with shape
-            [num_queries, bs, embed_dims]
-            if self.batch_first is False, else
-            [bs, num_queries embed_dims].
-        """
-        if key is None:
-            key = query
-        if value is None:
-            value = key
-        if identity is None:
-            identity = query
-        if key_pos is None:
-            if query_pos is not None:
-                if query_pos.shape == key.shape:
-                    key_pos = query_pos
-                else:
-                    warnings.warn(f'position encoding of key ismissing in {self.__class__.__name__}.')
-        if query_pos is not None:
-            query = query + query_pos
-        if key_pos is not None:
-            key = key + key_pos
-        if self.batch_first:
-            query = query.transpose(0, 1)
-            key = key.transpose(0, 1)
-            value = value.transpose(0, 1)
-        out = self.attn(query=query, key=key, value=value, attn_mask=attn_mask, key_padding_mask=key_padding_mask)[0]
-        if self.batch_first:
-            out = out.transpose(0, 1)
-        return identity + self.dropout_layer(self.proj_drop(out))
+    assert 'parrots' not in version_str
+    version = parse(version_str)
+    assert version.release, f'failed to parse version {version_str}'
+    release = list(version.release)
+    release = release[:length]
+    if len(release) < length:
+        release = release + [0] * (length - len(release))
+    if version.is_prerelease:
+        mapping = {'a': -3, 'b': -2, 'rc': -1}
+        val = -4
+        if version.pre:
+            if version.pre[0] not in mapping:
+                warnings.warn(f'unknown prerelease version {version.pre[0]}, version checking may go wrong')
+            else:
+                val = mapping[version.pre[0]]
+            release.extend([val, version.pre[-1]])
+        else:
+            release.extend([val, 0])
+    elif version.is_postrelease:
+        release.extend([1, version.post])
+    else:
+        release.extend([0, 0])
+    return tuple(release)
 
 
-class FFN(BaseModule):
-    """Implements feed-forward networks (FFNs) with identity connection.
+class PositionEncodingFourier(BaseModule):
+    """The Position Encoding Fourier (PEF) module.
 
+    The PEF is adopted from EdgeNeXt <https://arxiv.org/abs/2206.10589>'_.
     Args:
-        embed_dims (int): The feature dimension. Same as
-            `MultiheadAttention`. Defaults: 256.
-        feedforward_channels (int): The hidden dimension of FFNs.
-            Defaults: 1024.
-        num_fcs (int, optional): The number of fully-connected layers in
-            FFNs. Default: 2.
-        act_cfg (dict, optional): The activation config for FFNs.
-            Default: dict(type='ReLU')
-        ffn_drop (float, optional): Probability of an element to be
-            zeroed in FFN. Default 0.0.
-        add_identity (bool, optional): Whether to add the
-            identity connection. Default: `True`.
-        dropout_layer (obj:`ConfigDict`): The dropout_layer used
-            when adding the shortcut.
-        init_cfg (obj:`mmcv.ConfigDict`): The Config for initialization.
+        in_channels (int): Number of input channels.
+            Default: 32
+        embed_dims (int): The feature dimension.
+            Default: 768.
+        temperature (int): Temperature.
+            Default: 10000.
+        dtype (torch.dtype): The data type.
+            Default: torch.float32.
+        init_cfg (dict): The config dict for initializing the module.
             Default: None.
     """
 
-    def __init__(self, embed_dims=256, feedforward_channels=1024, num_fcs=2, act_cfg=dict(type='ReLU', inplace=True), ffn_drop=0.0, dropout_layer=None, add_identity=True, init_cfg=None, **kwargs):
-        super(FFN, self).__init__(init_cfg)
-        assert num_fcs >= 2, f'num_fcs should be no less than 2. got {num_fcs}.'
+    def __init__(self, in_channels=32, embed_dims=768, temperature=10000, dtype=torch.float32, init_cfg=None):
+        super(PositionEncodingFourier, self).__init__(init_cfg=init_cfg)
+        self.proj = nn.Conv2d(in_channels * 2, embed_dims, kernel_size=1)
+        self.scale = 2 * math.pi
+        self.in_channels = in_channels
         self.embed_dims = embed_dims
-        self.feedforward_channels = feedforward_channels
-        self.num_fcs = num_fcs
-        self.act_cfg = act_cfg
-        self.activate = build_activation_layer(act_cfg)
-        layers = []
-        in_channels = embed_dims
-        for _ in range(num_fcs - 1):
-            layers.append(Sequential(Linear(in_channels, feedforward_channels), self.activate, nn.Dropout(ffn_drop)))
-            in_channels = feedforward_channels
-        layers.append(Linear(feedforward_channels, embed_dims))
-        layers.append(nn.Dropout(ffn_drop))
-        self.layers = Sequential(*layers)
-        self.dropout_layer = build_dropout(dropout_layer) if dropout_layer else torch.nn.Identity()
-        self.add_identity = add_identity
+        self.dtype = dtype
+        if digit_version(torch.__version__) < digit_version('1.8.0'):
+            floor_div = torch.floor_divide
+        else:
+            floor_div = partial(torch.div, rounding_mode='floor')
+        dim_t = torch.arange(in_channels, dtype=self.dtype)
+        self.dim_t = temperature ** (2 * floor_div(dim_t, 2) / in_channels)
 
-    def forward(self, x, identity=None):
-        """Forward function for `FFN`.
-
-        The function would add x to the output tensor if residue is None.
-        """
-        out = self.layers(x)
-        if not self.add_identity:
-            return self.dropout_layer(out)
-        if identity is None:
-            identity = x
-        return identity + self.dropout_layer(out)
+    def forward(self, bhw_shape):
+        B, H, W = bhw_shape
+        mask = torch.zeros(B, H, W).bool()
+        not_mask = ~mask
+        eps = 1e-06
+        y_embed = not_mask.cumsum(1, dtype=self.dtype)
+        x_embed = not_mask.cumsum(2, dtype=self.dtype)
+        y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
+        x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
+        dim_t = self.dim_t
+        pos_x = x_embed[:, :, :, None] / dim_t
+        pos_y = y_embed[:, :, :, None] / dim_t
+        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
+        pos = self.proj(pos)
+        return pos
 
 
 def accuracy_torch(pred, target, topk=(1,), thrs=0.0):
@@ -2594,7 +3238,7 @@ class ClsHead(BaseModule):
             return pred
 
 
-def _no_grad_trunc_normal_(tensor: Tensor, mean: float, std: float, a: float, b: float) ->Tensor:
+def _no_grad_trunc_normal_(tensor: 'Tensor', mean: 'float', std: 'float', a: 'float', b: 'float') ->Tensor:
 
     def norm_cdf(x):
         return (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
@@ -2611,7 +3255,7 @@ def _no_grad_trunc_normal_(tensor: Tensor, mean: float, std: float, a: float, b:
         return tensor
 
 
-def trunc_normal_(tensor: Tensor, mean: float=0.0, std: float=1.0, a: float=-2.0, b: float=2.0) ->Tensor:
+def trunc_normal_(tensor: 'Tensor', mean: 'float'=0.0, std: 'float'=1.0, a: 'float'=-2.0, b: 'float'=2.0) ->Tensor:
     """Fills the input Tensor with values drawn from a truncated
     normal distribution. The values are effectively drawn from the
     normal distribution :math:`\\mathcal{N}(\\text{mean}, \\text{std}^2)`
@@ -2802,6 +3446,69 @@ class EfficientFormerClsHead(ClsHead):
             return losses
 
 
+class BatchNormLinear(BaseModule):
+
+    def __init__(self, in_channels, out_channels, norm_cfg=dict(type='BN1d')):
+        super(BatchNormLinear, self).__init__()
+        self.bn = build_norm_layer(norm_cfg, in_channels)
+        self.linear = nn.Linear(in_channels, out_channels)
+
+    @torch.no_grad()
+    def fuse(self):
+        w = self.bn.weight / (self.bn.running_var + self.bn.eps) ** 0.5
+        b = self.bn.bias - self.bn.running_mean * self.bn.weight / (self.bn.running_var + self.bn.eps) ** 0.5
+        w = self.linear.weight * w[None, :]
+        b = (self.linear.weight @ b[:, None]).view(-1) + self.linear.bias
+        self.linear.weight.data.copy_(w)
+        self.linear.bias.data.copy_(b)
+        return self.linear
+
+    def forward(self, x):
+        x = self.bn(x)
+        x = self.linear(x)
+        return x
+
+
+def fuse_parameters(module):
+    for child_name, child in module.named_children():
+        if hasattr(child, 'fuse'):
+            setattr(module, child_name, child.fuse())
+        else:
+            fuse_parameters(child)
+
+
+class LeViTClsHead(ClsHead):
+
+    def __init__(self, num_classes=1000, distillation=True, in_channels=None, deploy=False, **kwargs):
+        super(LeViTClsHead, self).__init__(**kwargs)
+        self.num_classes = num_classes
+        self.distillation = distillation
+        self.deploy = deploy
+        self.head = BatchNormLinear(in_channels, num_classes)
+        if distillation:
+            self.head_dist = BatchNormLinear(in_channels, num_classes)
+        if self.deploy:
+            self.switch_to_deploy(self)
+
+    def switch_to_deploy(self):
+        if self.deploy:
+            return
+        fuse_parameters(self)
+        self.deploy = True
+
+    def forward(self, x):
+        x = self.pre_logits(x)
+        if self.distillation:
+            x = self.head(x), self.head_dist(x)
+            if not self.training:
+                x = (x[0] + x[1]) / 2
+            else:
+                raise NotImplementedError("MMPretrain doesn't support training in distillation mode.")
+        else:
+            x = self.head(x)
+        return x
+
+
 class LinearClsHead(ClsHead):
     """Linear classifier head.
 
@@ -2905,7 +3612,7 @@ class StackedLinearClsHead(ClsHead):
             hidden layer, except the last layer. Defaults to use "ReLU".
     """
 
-    def __init__(self, num_classes, in_channels, mid_channels, dropout_rate: float=0.0, norm_cfg=None, act_cfg=dict(type='ReLU'), **kwargs):
+    def __init__(self, num_classes, in_channels, mid_channels, dropout_rate: 'float'=0.0, norm_cfg=None, act_cfg=dict(type='ReLU'), **kwargs):
         super(StackedLinearClsHead, self).__init__(**kwargs)
         assert num_classes > 0, f'`num_classes` of StackedLinearClsHead must be a positive integer, got {num_classes} instead.'
         self.num_classes = num_classes
@@ -3241,7 +3948,7 @@ class CrossEntropyLoss(nn.Module):
         return loss_cls
 
 
-def convert_to_one_hot(targets: torch.Tensor, classes) ->torch.Tensor:
+def convert_to_one_hot(targets: 'torch.Tensor', classes) ->torch.Tensor:
     """This function converts target class indices to one-hot vectors, given
     the number of classes.
 
@@ -3544,21 +4251,23 @@ class BuildNet(BaseModule):
         if stage == 'neck':
             return x
 
-    def forward(self, x, return_loss=True, **kwargs):
-        if return_loss:
-            return self.forward_train(x, **kwargs)
+    def forward(self, x, return_loss=True, train_statu=False, **kwargs):
+        x = self.extract_feat(x)
+        if not train_statu:
+            if return_loss:
+                return self.forward_train(x, **kwargs)
+            else:
+                return self.forward_test(x, **kwargs)
         else:
-            return self.forward_test(x, **kwargs)
+            return self.forward_test(x), self.forward_train(x, **kwargs)
 
     def forward_train(self, x, targets, **kwargs):
-        x = self.extract_feat(x)
         losses = dict()
         loss = self.head.forward_train(x, targets, **kwargs)
         losses.update(loss)
         return losses
 
     def forward_test(self, x, **kwargs):
-        x = self.extract_feat(x)
         out = self.head.simple_test(x, **kwargs)
         return out
 
@@ -3597,6 +4306,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (ConvBN2d,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (ConvTranspose2d,
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -3644,7 +4357,7 @@ TESTCASES = [
     (LayerNorm2d,
      lambda: ([], {'num_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
+     False),
     (LayerScale,
      lambda: ([], {'dim': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -3655,6 +4368,14 @@ TESTCASES = [
      False),
     (LinearBlock,
      lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (MBConvBlock,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'expand_ratio': 4, 'drop_path': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (MLP,
+     lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (MaxPool2d,
@@ -3678,7 +4399,7 @@ TESTCASES = [
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (Residual,
-     lambda: ([], {'fn': _mock_layer()}),
+     lambda: ([], {'block': _mock_layer()}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (Sequential,
@@ -3772,4 +4493,13 @@ class Test_Fafa_DL_Awesome_Backbones(_paritybench_base):
 
     def test_026(self):
         self._check(*TESTCASES[26])
+
+    def test_027(self):
+        self._check(*TESTCASES[27])
+
+    def test_028(self):
+        self._check(*TESTCASES[28])
+
+    def test_029(self):
+        self._check(*TESTCASES[29])
 

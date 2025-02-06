@@ -34,7 +34,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -232,8 +234,8 @@ class IMDBModel(nn.Module):
         super().__init__()
         self.num_train_steps = num_train_steps
         self.learning_rate = learning_rate
-        hidden_dropout_prob: float = 0.1
-        layer_norm_eps: float = 1e-07
+        hidden_dropout_prob: 'float' = 0.1
+        layer_norm_eps: 'float' = 1e-07
         config = AutoConfig.from_pretrained(model_name)
         config.update({'output_hidden_states': True, 'hidden_dropout_prob': hidden_dropout_prob, 'layer_norm_eps': layer_norm_eps, 'add_pooling_layer': False, 'num_labels': 1})
         self.transformer = AutoModel.from_pretrained(model_name, config=config)
@@ -299,49 +301,15 @@ class AverageMeter:
         return f'AverageMeter(val={self.val}, avg={self.avg}, sum={self.sum}, count={self.count})'
 
 
-class Callback:
+class CallbackRunner:
 
-    def on_epoch_start(self, tez_trainer, **kwargs):
-        return
+    def __init__(self, callbacks: 'List[Callback]', tez_trainer):
+        self.tez_trainer = tez_trainer
+        self.callbacks = callbacks
 
-    def on_epoch_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_epoch_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_epoch_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_valid_epoch_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_valid_epoch_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_step_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_step_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_valid_step_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_valid_step_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_test_step_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_test_step_end(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_start(self, tez_trainer, **kwargs):
-        return
-
-    def on_train_end(self, tez_trainer, **kwargs):
-        return
+    def __call__(self, current_state, **kwargs):
+        for cb in self.callbacks:
+            _ = getattr(cb, current_state.value)(self.tez_trainer, **kwargs)
 
 
 class Model(nn.Module):

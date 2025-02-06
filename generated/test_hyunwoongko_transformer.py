@@ -21,8 +21,6 @@ model = _module
 decoder = _module
 encoder = _module
 transformer = _module
-retrain = _module
-test = _module
 train = _module
 util = _module
 bleu = _module
@@ -34,7 +32,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -59,9 +59,6 @@ from torch import nn
 import math
 
 
-import re
-
-
 import time
 
 
@@ -69,12 +66,6 @@ from torch import optim
 
 
 from torch.optim import Adam
-
-
-from collections import Counter
-
-
-import numpy as np
 
 
 class LayerNorm(nn.Module):
@@ -192,14 +183,14 @@ class DecoderLayer(nn.Module):
         self.norm3 = LayerNorm(d_model=d_model)
         self.dropout3 = nn.Dropout(p=drop_prob)
 
-    def forward(self, dec, enc, t_mask, s_mask):
+    def forward(self, dec, enc, trg_mask, src_mask):
         _x = dec
-        x = self.self_attention(q=dec, k=dec, v=dec, mask=t_mask)
+        x = self.self_attention(q=dec, k=dec, v=dec, mask=trg_mask)
         x = self.dropout1(x)
         x = self.norm1(x + _x)
         if enc is not None:
             _x = x
-            x = self.enc_dec_attention(q=x, k=enc, v=enc, mask=s_mask)
+            x = self.enc_dec_attention(q=x, k=enc, v=enc, mask=src_mask)
             x = self.dropout2(x)
             x = self.norm2(x + _x)
         _x = x
@@ -220,9 +211,9 @@ class EncoderLayer(nn.Module):
         self.norm2 = LayerNorm(d_model=d_model)
         self.dropout2 = nn.Dropout(p=drop_prob)
 
-    def forward(self, x, s_mask):
+    def forward(self, x, src_mask):
         _x = x
-        x = self.attention(q=x, k=x, v=x, mask=s_mask)
+        x = self.attention(q=x, k=x, v=x, mask=src_mask)
         x = self.dropout1(x)
         x = self.norm1(x + _x)
         _x = x
@@ -232,7 +223,7 @@ class EncoderLayer(nn.Module):
         return x
 
 
-class PostionalEncoding(nn.Module):
+class PositionalEncoding(nn.Module):
     """
     compute sinusoid encoding.
     """
@@ -245,7 +236,7 @@ class PostionalEncoding(nn.Module):
         :param max_len: max sequence length
         :param device: hardware device setting
         """
-        super(PostionalEncoding, self).__init__()
+        super(PositionalEncoding, self).__init__()
         self.encoding = torch.zeros(max_len, d_model, device=device)
         self.encoding.requires_grad = False
         pos = torch.arange(0, max_len, device=device)
@@ -290,7 +281,7 @@ class TransformerEmbedding(nn.Module):
         """
         super(TransformerEmbedding, self).__init__()
         self.tok_emb = TokenEmbedding(vocab_size, d_model)
-        self.pos_emb = PostionalEncoding(d_model, max_len, device)
+        self.pos_emb = PositionalEncoding(d_model, max_len, device)
         self.drop_out = nn.Dropout(p=drop_prob)
 
     def forward(self, x):
@@ -322,10 +313,10 @@ class Encoder(nn.Module):
         self.emb = TransformerEmbedding(d_model=d_model, max_len=max_len, vocab_size=enc_voc_size, drop_prob=drop_prob, device=device)
         self.layers = nn.ModuleList([EncoderLayer(d_model=d_model, ffn_hidden=ffn_hidden, n_head=n_head, drop_prob=drop_prob) for _ in range(n_layers)])
 
-    def forward(self, x, s_mask):
+    def forward(self, x, src_mask):
         x = self.emb(x)
         for layer in self.layers:
-            x = layer(x, s_mask)
+            x = layer(x, src_mask)
         return x
 
 
@@ -341,26 +332,22 @@ class Transformer(nn.Module):
         self.decoder = Decoder(d_model=d_model, n_head=n_head, max_len=max_len, ffn_hidden=ffn_hidden, dec_voc_size=dec_voc_size, drop_prob=drop_prob, n_layers=n_layers, device=device)
 
     def forward(self, src, trg):
-        src_mask = self.make_pad_mask(src, src)
-        src_trg_mask = self.make_pad_mask(trg, src)
-        trg_mask = self.make_pad_mask(trg, trg) * self.make_no_peak_mask(trg, trg)
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
         enc_src = self.encoder(src, src_mask)
-        output = self.decoder(trg, enc_src, trg_mask, src_trg_mask)
+        output = self.decoder(trg, enc_src, trg_mask, src_mask)
         return output
 
-    def make_pad_mask(self, q, k):
-        len_q, len_k = q.size(1), k.size(1)
-        k = k.ne(self.src_pad_idx).unsqueeze(1).unsqueeze(2)
-        k = k.repeat(1, 1, len_q, 1)
-        q = q.ne(self.src_pad_idx).unsqueeze(1).unsqueeze(3)
-        q = q.repeat(1, 1, 1, len_k)
-        mask = k & q
-        return mask
+    def make_src_mask(self, src):
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        return src_mask
 
-    def make_no_peak_mask(self, q, k):
-        len_q, len_k = q.size(1), k.size(1)
-        mask = torch.tril(torch.ones(len_q, len_k)).type(torch.BoolTensor)
-        return mask
+    def make_trg_mask(self, trg):
+        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(3)
+        trg_len = trg.shape[1]
+        trg_sub_mask = torch.tril(torch.ones(trg_len, trg_len)).type(torch.ByteTensor)
+        trg_mask = trg_pad_mask & trg_sub_mask
+        return trg_mask
 
 
 import torch

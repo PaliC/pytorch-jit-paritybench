@@ -62,7 +62,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -168,7 +170,7 @@ class Pointclouds(object):
     """
     _INTERNAL_TENSORS = ['_points_padded', '_normals_padded', '_colors_padded', '_features_padded', '_nonpad_mask', '_num_points_per_pointcloud']
 
-    def __init__(self, points: Union[List[torch.Tensor], torch.Tensor, None]=None, normals: Union[List[torch.Tensor], torch.Tensor, None]=None, colors: Union[List[torch.Tensor], torch.Tensor, None]=None, features: Union[List[torch.Tensor], torch.Tensor, None]=None, device: Union[torch.device, str, None]=None):
+    def __init__(self, points: 'Union[List[torch.Tensor], torch.Tensor, None]'=None, normals: 'Union[List[torch.Tensor], torch.Tensor, None]'=None, colors: 'Union[List[torch.Tensor], torch.Tensor, None]'=None, features: 'Union[List[torch.Tensor], torch.Tensor, None]'=None, device: 'Union[torch.device, str, None]'=None):
         super().__init__()
         if not (points is None or isinstance(points, list) or torch.is_tensor(points)):
             msg = 'Expected points to be of type list or tensor or None; got %r'
@@ -383,19 +385,19 @@ class Pointclouds(object):
         if other.shape[-2:] == (4, 4):
             return self.clone().transform_(other, pre_multiplication=False)
 
-    def rotate(self, rmat: torch.Tensor, *, pre_multiplication=True):
+    def rotate(self, rmat: 'torch.Tensor', *, pre_multiplication=True):
         """Out-of-place implementation of `Pointclouds.rotate_`"""
         return self.clone().rotate_(rmat, pre_multiplication=pre_multiplication)
 
-    def transform(self, transform: torch.Tensor, *, pre_multiplication=True):
+    def transform(self, transform: 'torch.Tensor', *, pre_multiplication=True):
         """Out-of-place implementation of `Pointclouds.transform_`"""
         return self.clone().transform_(transform, pre_multiplication=pre_multiplication)
 
-    def pinhole_projection(self, intrinsics: torch.Tensor):
+    def pinhole_projection(self, intrinsics: 'torch.Tensor'):
         """Out-of-place implementation of `Pointclouds.pinhole_projection_`"""
         return self.clone().pinhole_projection_(intrinsics)
 
-    def offset_(self, offset: Union[torch.Tensor, float, int]):
+    def offset_(self, offset: 'Union[torch.Tensor, float, int]'):
         """Adds :math:`offset` to all Pointclouds' points. In place operation.
 
         Args:
@@ -415,7 +417,7 @@ class Pointclouds(object):
         self._points_list = None
         return self
 
-    def scale_(self, scale: Union[torch.Tensor, float, int]):
+    def scale_(self, scale: 'Union[torch.Tensor, float, int]'):
         """Scales all Pointclouds' points by `scale`. In place operation.
 
         Args:
@@ -435,7 +437,7 @@ class Pointclouds(object):
         self._points_list = None
         return self
 
-    def rotate_(self, rmat: torch.Tensor, *, pre_multiplication=True):
+    def rotate_(self, rmat: 'torch.Tensor', *, pre_multiplication=True):
         """Applies batch or single :math:`SO(3)` rotation to all Pointclouds' points and normals. In place operation.
 
         Args:
@@ -469,7 +471,7 @@ class Pointclouds(object):
         self._normals_list = None
         return self
 
-    def transform_(self, transform: torch.Tensor, *, pre_multiplication=True):
+    def transform_(self, transform: 'torch.Tensor', *, pre_multiplication=True):
         """Applies batch or single :math:`SE(3)` transformation to all Pointclouds' points and normals. In place
         operation.
 
@@ -498,7 +500,7 @@ class Pointclouds(object):
             tvec = tvec.unsqueeze(-2)
         return self.rotate_(rmat, pre_multiplication=pre_multiplication).offset_(tvec)
 
-    def pinhole_projection_(self, intrinsics: torch.Tensor):
+    def pinhole_projection_(self, intrinsics: 'torch.Tensor'):
         """Projects Pointclouds' points onto :math:`z=1` plane using intrinsics of a pinhole camera. In place
         operation.
 
@@ -710,7 +712,7 @@ class Pointclouds(object):
         return self._num_points_per_pointcloud
 
     @points_list.setter
-    def points_list(self, value: List[torch.Tensor]):
+    def points_list(self, value: 'List[torch.Tensor]'):
         """Updates `points_list` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change.
 
@@ -724,7 +726,7 @@ class Pointclouds(object):
         self._points_padded = None
 
     @normals_list.setter
-    def normals_list(self, value: List[torch.Tensor]):
+    def normals_list(self, value: 'List[torch.Tensor]'):
         """Updates `normals_list` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change.
 
@@ -738,7 +740,7 @@ class Pointclouds(object):
         self._noramls_padded = None
 
     @colors_list.setter
-    def colors_list(self, value: List[torch.Tensor]):
+    def colors_list(self, value: 'List[torch.Tensor]'):
         """Updates `colors_list` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change.
 
@@ -752,7 +754,7 @@ class Pointclouds(object):
         self._noramls_padded = None
 
     @features_list.setter
-    def features_list(self, value: List[torch.Tensor]):
+    def features_list(self, value: 'List[torch.Tensor]'):
         """Updates `features_list` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change.
 
@@ -766,7 +768,7 @@ class Pointclouds(object):
         self._noramls_padded = None
 
     @points_padded.setter
-    def points_padded(self, value: torch.Tensor):
+    def points_padded(self, value: 'torch.Tensor'):
         """Updates `points_padded` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change
             (can not change the shape or padding of `points_padded`).
@@ -783,7 +785,7 @@ class Pointclouds(object):
         self._points_list = None
 
     @normals_padded.setter
-    def normals_padded(self, value: torch.Tensor):
+    def normals_padded(self, value: 'torch.Tensor'):
         """Updates `normals_padded` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change
             (can not change the shape or padding of `normals_padded`).
@@ -800,7 +802,7 @@ class Pointclouds(object):
         self._normals_list = None
 
     @colors_padded.setter
-    def colors_padded(self, value: torch.Tensor):
+    def colors_padded(self, value: 'torch.Tensor'):
         """Updates `colors_padded` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change
             (can not change the shape or padding of `colors_padded`).
@@ -817,7 +819,7 @@ class Pointclouds(object):
         self._colors_list = None
 
     @features_padded.setter
-    def features_padded(self, value: torch.Tensor):
+    def features_padded(self, value: 'torch.Tensor'):
         """Updates `features_padded` representation.
         .. note:: The number of pointclouds and the number of points per pointcloud can not change
             (can not change the shape or padding of `features_padded`).
@@ -833,7 +835,7 @@ class Pointclouds(object):
         self._features_padded = value.clone()
         self._features_list = None
 
-    def _compute_padded(self, refresh: bool=False):
+    def _compute_padded(self, refresh: 'bool'=False):
         """Computes the padded version of pointclouds.
 
         Args:
@@ -894,7 +896,7 @@ class Pointclouds(object):
                 setattr(other, k, v.detach())
         return other
 
-    def to(self, device: Union[torch.device, str], copy: bool=False):
+    def to(self, device: 'Union[torch.device, str]', copy: 'bool'=False):
         """Match functionality of torch.Tensor.to(device)
         If copy = True or the self Tensor is on a different device, the returned tensor is a copy of self with the
         desired torch.device.
@@ -942,7 +944,7 @@ class Pointclouds(object):
         """
         return self
 
-    def append_points(self, pointclouds: 'Pointclouds'):
+    def append_points(self, pointclouds: "'Pointclouds'"):
         """Appends points, normals, colors and features of a gradslam.Pointclouds object to the current pointclouds.
         Both Pointclouds must have/not have the same attributes. In place operation.
 
@@ -1006,7 +1008,7 @@ class Pointclouds(object):
         self._nonpad_mask = None
         return self
 
-    def open3d(self, index: int, include_colors: bool=True, max_num_points: Optional[int]=None, include_normals: bool=False):
+    def open3d(self, index: 'int', include_colors: 'bool'=True, max_num_points: 'Optional[int]'=None, include_normals: 'bool'=False):
         """Converts `index`-th pointcloud to a `open3d.geometry.Pointcloud` object (e.g. for visualization).
 
         Args:
@@ -1051,7 +1053,7 @@ class Pointclouds(object):
             pcd.normals = o3d.utility.Vector3dVector(numpy_normals)
         return pcd
 
-    def plotly(self, index: int, include_colors: bool=True, max_num_points: Optional[int]=200000, as_figure: bool=True, point_size: int=2):
+    def plotly(self, index: 'int', include_colors: 'bool'=True, max_num_points: 'Optional[int]'=200000, as_figure: 'bool'=True, point_size: 'int'=2):
         """Converts `index`-th pointcloud to either a `plotly.graph_objects.Figure` or a
         `plotly.graph_objects.Scatter3d` object (for visualization).
 
@@ -1098,7 +1100,7 @@ class Pointclouds(object):
         fig.update_layout(showlegend=False, scene=dict(xaxis=dict(showticklabels=False, showgrid=False, zeroline=False, visible=False), yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, visible=False), zaxis=dict(showticklabels=False, showgrid=False, zeroline=False, visible=False)))
         return fig
 
-    def _assert_set_padded(self, value: torch.Tensor, first_2_dims_only: bool=False):
+    def _assert_set_padded(self, value: 'torch.Tensor', first_2_dims_only: 'bool'=False):
         """Checks if value can be set as a padded representation attribute
 
         Args:
@@ -1121,7 +1123,7 @@ class Pointclouds(object):
         if not all([value[b][N_b:].eq(0).all().item() for b, N_b in enumerate(self.num_points_per_pointcloud)]):
             raise ValueError('value must have zeros wherever pointclouds.points_padded has zero padding.')
 
-    def _assert_set_list(self, value: List[torch.Tensor], first_dim_only: bool=False):
+    def _assert_set_list(self, value: 'List[torch.Tensor]', first_dim_only: 'bool'=False):
         """Checks if value can be set as a list representation attribute
 
         Args:
@@ -1143,7 +1145,7 @@ class Pointclouds(object):
             raise ValueError('shape of tensors in value and pointclouds.points_list must match')
 
 
-def gauss_newton_solve(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_normals: torch.Tensor, dist_thresh: Union[float, int, None]=None):
+def gauss_newton_solve(src_pc: 'torch.Tensor', tgt_pc: 'torch.Tensor', tgt_normals: 'torch.Tensor', dist_thresh: 'Union[float, int, None]'=None):
     """Computes Gauss Newton step by forming linear equation. Points from `src_pc` which have a distance greater
     than `dist_thresh` to the closest point in `tgt_pc` will be filtered.
 
@@ -1224,7 +1226,7 @@ def gauss_newton_solve(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_normals: 
 _eps = 1e-06
 
 
-def so3_hat(omega: torch.Tensor) ->torch.Tensor:
+def so3_hat(omega: 'torch.Tensor') ->torch.Tensor:
     """Implements the hat operator for SO(3), given an input axis-angle
     vector omega.
 
@@ -1240,7 +1242,7 @@ def so3_hat(omega: torch.Tensor) ->torch.Tensor:
     return omega_hat
 
 
-def se3_exp(xi: torch.Tensor) ->torch.Tensor:
+def se3_exp(xi: 'torch.Tensor') ->torch.Tensor:
     """Computes the exponential map for the coordinate-vector xi.
     Returns a 4 x 4 SE(3) matrix.
 
@@ -1267,7 +1269,7 @@ def se3_exp(xi: torch.Tensor) ->torch.Tensor:
     return torch.cat((torch.cat((R, t), dim=1), last_row.unsqueeze(0)), dim=0)
 
 
-def solve_linear_system(A: torch.Tensor, b: torch.Tensor, damp: Union[float, torch.Tensor]=1e-08):
+def solve_linear_system(A: 'torch.Tensor', b: 'torch.Tensor', damp: 'Union[float, torch.Tensor]'=1e-08):
     """Solves the normal equations of a linear system Ax = b, given the constraint matrix A and the coefficient vector
     b. Note that this solves the normal equations, not the linear system. That is, solves :math:`A^T A x = A^T b`,
     not :math:`Ax = b`.
@@ -1312,7 +1314,7 @@ def solve_linear_system(A: torch.Tensor, b: torch.Tensor, damp: Union[float, tor
     return torch.matmul(torch.inverse(At_A), torch.matmul(A_t, b))
 
 
-def transform_pointcloud(pointcloud: torch.Tensor, transform: torch.Tensor):
+def transform_pointcloud(pointcloud: 'torch.Tensor', transform: 'torch.Tensor'):
     """Applies a rigid-body transformation to a pointcloud.
 
     Args:
@@ -1344,7 +1346,7 @@ def transform_pointcloud(pointcloud: torch.Tensor, transform: torch.Tensor):
     return transformed_pointcloud
 
 
-def point_to_plane_gradICP(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_normals: torch.Tensor, initial_transform: Optional[torch.Tensor]=None, numiters: int=20, damp: float=1e-08, dist_thresh: Union[float, int, None]=None, lambda_max: Union[float, int]=2.0, B: Union[float, int]=1.0, B2: Union[float, int]=1.0, nu: Union[float, int]=200.0):
+def point_to_plane_gradICP(src_pc: 'torch.Tensor', tgt_pc: 'torch.Tensor', tgt_normals: 'torch.Tensor', initial_transform: 'Optional[torch.Tensor]'=None, numiters: 'int'=20, damp: 'float'=1e-08, dist_thresh: 'Union[float, int, None]'=None, lambda_max: 'Union[float, int]'=2.0, B: 'Union[float, int]'=1.0, B2: 'Union[float, int]'=1.0, nu: 'Union[float, int]'=200.0):
     """Computes a rigid transformation between `tgt_pc` (target pointcloud) and `src_pc` (source pointcloud) using a
     point-to-plane error metric and gradLM (:math:`\\nabla LM`) solver (See gradLM section of 
     `the gradSLAM paper <https://arxiv.org/abs/1910.10672>`__).  The iterate and damping coefficient are updated by:
@@ -1441,7 +1443,7 @@ def point_to_plane_gradICP(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_norma
     return transform, chamfer_indices
 
 
-def point_to_plane_ICP(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_normals: torch.Tensor, initial_transform: Optional[torch.Tensor]=None, numiters: int=20, damp: float=1e-08, dist_thresh: Union[float, int, None]=None):
+def point_to_plane_ICP(src_pc: 'torch.Tensor', tgt_pc: 'torch.Tensor', tgt_normals: 'torch.Tensor', initial_transform: 'Optional[torch.Tensor]'=None, numiters: 'int'=20, damp: 'float'=1e-08, dist_thresh: 'Union[float, int, None]'=None):
     """Computes a rigid transformation between `tgt_pc` (target pointcloud) and `src_pc` (source pointcloud) using a
     point-to-plane error metric and the LM (Levenberg–Marquardt) solver.
 
@@ -1515,7 +1517,7 @@ def point_to_plane_ICP(src_pc: torch.Tensor, tgt_pc: torch.Tensor, tgt_normals: 
     return transform, chamfer_indices
 
 
-def create_meshgrid(height: int, width: int, normalized_coords: Optional[bool]=True) ->torch.Tensor:
+def create_meshgrid(height: 'int', width: 'int', normalized_coords: 'Optional[bool]'=True) ->torch.Tensor:
     """Generates a coordinate grid for an image.
 
     When `normalized_coords` is set to True, the grid is normalized to
@@ -1534,19 +1536,19 @@ def create_meshgrid(height: int, width: int, normalized_coords: Optional[bool]=T
         (torch.Tensor): grid tensor (shape: :math:`1 \\times H \\times W \\times 2`).
 
     """
-    xs: Optional[torch.Tensor] = None
-    ys: Optional[torch.Tensor] = None
+    xs: 'Optional[torch.Tensor]' = None
+    ys: 'Optional[torch.Tensor]' = None
     if normalized_coords:
         xs = torch.linspace(-1, 1, height)
         ys = torch.linspace(-1, 1, width)
     else:
         xs = torch.linspace(0, height - 1, height)
         ys = torch.linspace(0, width - 1, width)
-    base_grid: torch.Tensor = torch.stack(torch.meshgrid([xs, ys]))
+    base_grid: 'torch.Tensor' = torch.stack(torch.meshgrid([xs, ys]))
     return base_grid.permute(1, 2, 0).unsqueeze(0)
 
 
-def inverse_intrinsics(K: torch.Tensor, eps: float=1e-06) ->torch.Tensor:
+def inverse_intrinsics(K: 'torch.Tensor', eps: 'float'=1e-06) ->torch.Tensor:
     """Efficient inversion of intrinsics matrix
 
     Args:
@@ -1674,7 +1676,7 @@ class RGBDImages(object):
     """
     _INTERNAL_TENSORS = ['_rgb_image', '_depth_image', '_intrinsics', '_poses', '_pixel_pos', '_vertex_map', '_normal_map', '_global_vertex_map', '_global_normal_map']
 
-    def __init__(self, rgb_image: torch.Tensor, depth_image: torch.Tensor, intrinsics: torch.Tensor, poses: Optional[torch.Tensor]=None, channels_first: bool=False, device: Union[torch.device, str, None]=None, *, pixel_pos: Optional[torch.Tensor]=None):
+    def __init__(self, rgb_image: 'torch.Tensor', depth_image: 'torch.Tensor', intrinsics: 'torch.Tensor', poses: 'Optional[torch.Tensor]'=None, channels_first: 'bool'=False, device: 'Union[torch.device, str, None]'=None, *, pixel_pos: Optional[torch.Tensor]=None):
         super().__init__()
         if not torch.is_tensor(rgb_image):
             msg = 'Expected rgb_image to be of type tensor; got {}'
@@ -2041,7 +2043,7 @@ class RGBDImages(object):
                 setattr(other, k, v.clone())
         return other
 
-    def to(self, device: Union[torch.device, str], copy: bool=False):
+    def to(self, device: 'Union[torch.device, str]', copy: 'bool'=False):
         """Match functionality of torch.Tensor.to(device)
         If copy = True or the self Tensor is on a different device, the returned tensor is a copy of self with the
         desired torch.device.
@@ -2081,7 +2083,7 @@ class RGBDImages(object):
         """
         return self
 
-    def to_channels_last(self, copy: bool=False):
+    def to_channels_last(self, copy: 'bool'=False):
         """Converts to channels last representation
         If copy = True or self channels_first is True, the returned RGBDImages object is a copy of self with
         channels last representation.
@@ -2097,7 +2099,7 @@ class RGBDImages(object):
             return self
         return self.clone().to_channels_last_()
 
-    def to_channels_first(self, copy: bool=False):
+    def to_channels_first(self, copy: 'bool'=False):
         """Converts to channels first representation
         If copy = True or self channels_first is False, the returned RGBDImages object is a copy of self with
         channels first representation.
@@ -2156,7 +2158,7 @@ class RGBDImages(object):
         return self
 
     @staticmethod
-    def _permute_if_not_None(tensor: Optional[torch.Tensor], ordering: tuple, contiguous: bool=True):
+    def _permute_if_not_None(tensor: 'Optional[torch.Tensor]', ordering: 'tuple', contiguous: 'bool'=True):
         """Permutes input if it is not None based on given ordering
 
         Args:
@@ -2207,8 +2209,8 @@ class RGBDImages(object):
 
     def _compute_normal_map(self):
         """Converts a batch of vertex maps to a batch of normal maps."""
-        dhoriz: torch.Tensor = torch.zeros_like(self.vertex_map)
-        dverti: torch.Tensor = torch.zeros_like(self.vertex_map)
+        dhoriz: 'torch.Tensor' = torch.zeros_like(self.vertex_map)
+        dverti: 'torch.Tensor' = torch.zeros_like(self.vertex_map)
         if self.channels_first:
             dhoriz[..., :-1] = self.vertex_map[..., 1:] - self.vertex_map[..., :-1]
             dverti[..., :-1, :] = self.vertex_map[..., 1:, :] - self.vertex_map[..., :-1, :]
@@ -2221,9 +2223,9 @@ class RGBDImages(object):
             dhoriz[..., -1, :] = dhoriz[..., -2, :]
             dverti[..., -1, :, :] = dverti[..., -2, :, :]
             dim = -1
-        normal_map: torch.Tensor = torch.cross(dhoriz, dverti, dim=dim)
-        norm: torch.Tensor = normal_map.norm(dim=dim).unsqueeze(dim)
-        self._normal_map: torch.Tensor = normal_map / torch.where(norm == 0, torch.ones_like(norm), norm)
+        normal_map: 'torch.Tensor' = torch.cross(dhoriz, dverti, dim=dim)
+        norm: 'torch.Tensor' = normal_map.norm(dim=dim).unsqueeze(dim)
+        self._normal_map: 'torch.Tensor' = normal_map / torch.where(norm == 0, torch.ones_like(norm), norm)
         self._normal_map = self._normal_map * self.valid_depth_mask
 
     def _compute_global_normal_map(self):
@@ -2239,7 +2241,7 @@ class RGBDImages(object):
         else:
             self._global_normal_map = torch.einsum('bsjc,bshwc->bshwj', rmat, local_normal_map)
 
-    def plotly(self, index: int, include_depth: bool=True, as_figure: bool=True, ms_per_frame: int=50):
+    def plotly(self, index: 'int', include_depth: 'bool'=True, as_figure: 'bool'=True, ms_per_frame: 'int'=50):
         """Converts `index`-th sequence of rgbd images to either a `plotly.graph_objects.Figure` or a
         list of dicts containing `plotly.graph_objects.Image` objects of rgb and (optionally) depth images:
 
@@ -2307,7 +2309,7 @@ class RGBDImages(object):
         fig.update_layout(updatemenus=updatemenus, sliders=sliders)
         return fig
 
-    def _assert_shape(self, value: torch.Tensor, shape: tuple):
+    def _assert_shape(self, value: 'torch.Tensor', shape: 'tuple'):
         """Asserts if value is a tensor with same shape as `shape`
 
         Args:
@@ -2321,7 +2323,7 @@ class RGBDImages(object):
             raise ValueError(msg.format(shape, value.shape))
 
 
-def downsample_pointclouds(pointclouds: Pointclouds, pc2im_bnhw: torch.Tensor, ds_ratio: int) ->Pointclouds:
+def downsample_pointclouds(pointclouds: 'Pointclouds', pc2im_bnhw: 'torch.Tensor', ds_ratio: 'int') ->Pointclouds:
     """Downsamples active points of pointclouds (points that project inside the live frame) and removes non-active
     points.
 
@@ -2358,7 +2360,7 @@ def downsample_pointclouds(pointclouds: Pointclouds, pc2im_bnhw: torch.Tensor, d
     return Pointclouds(points=maps_points, normals=maps_normals, colors=maps_colors)
 
 
-def downsample_rgbdimages(rgbdimages: RGBDImages, ds_ratio: int) ->Pointclouds:
+def downsample_rgbdimages(rgbdimages: 'RGBDImages', ds_ratio: 'int') ->Pointclouds:
     """Downsamples points and normals of RGBDImages and returns a gradslam.Pointclouds object
 
     Args:
@@ -2383,7 +2385,7 @@ def downsample_rgbdimages(rgbdimages: RGBDImages, ds_ratio: int) ->Pointclouds:
     return Pointclouds(points=points, normals=normals, colors=colors)
 
 
-def find_active_map_points(pointclouds: Pointclouds, rgbdimages: RGBDImages) ->torch.Tensor:
+def find_active_map_points(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages') ->torch.Tensor:
     """Returns lookup table for indices of active global map points and their position inside the live frames.
     (See section 4.1 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
 
@@ -2429,7 +2431,7 @@ def find_active_map_points(pointclouds: Pointclouds, rgbdimages: RGBDImages) ->t
     return pc2im_bnhw
 
 
-def pointclouds_from_rgbdimages(rgbdimages: RGBDImages, *, global_coordinates: bool=True, filter_missing_depths: bool=True) ->Pointclouds:
+def pointclouds_from_rgbdimages(rgbdimages: 'RGBDImages', *, global_coordinates: bool=True, filter_missing_depths: bool=True) ->Pointclouds:
     """Converts gradslam.RGBDImages containing batch of RGB-D images with sequence length of 1 to gradslam.Pointclouds
 
     Args:
@@ -2462,7 +2464,7 @@ def pointclouds_from_rgbdimages(rgbdimages: RGBDImages, *, global_coordinates: b
     return Pointclouds(points=points, normals=normals, colors=colors)
 
 
-def update_map_aggregate(pointclouds: Pointclouds, rgbdimages: RGBDImages, inplace: bool=False) ->Pointclouds:
+def update_map_aggregate(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', inplace: 'bool'=False) ->Pointclouds:
     """Aggregate points from live frames with global maps by appending the live frame points.
 
     Args:
@@ -2550,7 +2552,7 @@ class ICPSLAM(nn.Module):
         device = torch.device(device) if device is not None else torch.device('cpu')
         self.device = torch.Tensor().device
 
-    def forward(self, frames: RGBDImages):
+    def forward(self, frames: 'RGBDImages'):
         """Builds global map pointclouds from a batch of input RGBDImages with a batch size
         of :math:`B` and sequence length of :math:`L`.
 
@@ -2581,7 +2583,7 @@ class ICPSLAM(nn.Module):
             recovered_poses[:, s] = live_frame.poses[:, 0]
         return pointclouds, recovered_poses
 
-    def step(self, pointclouds: Pointclouds, live_frame: RGBDImages, prev_frame: Optional[RGBDImages]=None, inplace: bool=False):
+    def step(self, pointclouds: 'Pointclouds', live_frame: 'RGBDImages', prev_frame: 'Optional[RGBDImages]'=None, inplace: 'bool'=False):
         """Updates global map pointclouds with a SLAM step on `live_frame`.
         If `prev_frame` is not None, computes the relative transformation between `live_frame`
         and `prev_frame` using the selected odometry provider. If `prev_frame` is None,
@@ -2611,7 +2613,7 @@ class ICPSLAM(nn.Module):
         pointclouds = self._map(pointclouds, live_frame, inplace)
         return pointclouds, live_frame.poses
 
-    def _localize(self, pointclouds: Pointclouds, live_frame: RGBDImages, prev_frame: RGBDImages):
+    def _localize(self, pointclouds: 'Pointclouds', live_frame: 'RGBDImages', prev_frame: 'RGBDImages'):
         """Compute the poses for `live_frame`. If `prev_frame` is not None, computes the relative
         transformation between `live_frame` and `prev_frame` using the selected odometry provider.
         If `prev_frame` is None, use the pose from `live_frame`.
@@ -2656,7 +2658,7 @@ class ICPSLAM(nn.Module):
             transform = self.odomprov.provide(maps_pc, frames_pc)
             return compose_transformations(transform.squeeze(1), prev_frame.poses.squeeze(1)).unsqueeze(1)
 
-    def _map(self, pointclouds: Pointclouds, live_frame: RGBDImages, inplace: bool=False):
+    def _map(self, pointclouds: 'Pointclouds', live_frame: 'RGBDImages', inplace: 'bool'=False):
         """Updates global map pointclouds by aggregating them with points from `live_frame`.
 
         Args:
@@ -2672,7 +2674,7 @@ class ICPSLAM(nn.Module):
         return update_map_aggregate(pointclouds, live_frame, inplace)
 
 
-def find_best_unique_correspondences(pointclouds: Pointclouds, rgbdimages: RGBDImages, pc2im_bnhw: torch.Tensor) ->torch.Tensor:
+def find_best_unique_correspondences(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', pc2im_bnhw: 'torch.Tensor') ->torch.Tensor:
     """Amongst global map points which project to the same frame pixel, find the ones which have the highest
     confidence counter (and if confidence counter is equal then find the closest one to viewing ray).
     (See section 4.1 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
@@ -2728,7 +2730,7 @@ def find_best_unique_correspondences(pointclouds: Pointclouds, rgbdimages: RGBDI
     return pc2im_bnhw_unique
 
 
-def are_normals_similar(tensor1: torch.Tensor, tensor2: torch.Tensor, dot_th: Union[float, int], dim: int=-1) ->torch.Tensor:
+def are_normals_similar(tensor1: 'torch.Tensor', tensor2: 'torch.Tensor', dot_th: 'Union[float, int]', dim: 'int'=-1) ->torch.Tensor:
     """Returns bool tensor indicating dot product of two tensors containing normals along given dimension `dim` is
     greater than the given threshold value `dot_th`.
 
@@ -2763,7 +2765,7 @@ def are_normals_similar(tensor1: torch.Tensor, tensor2: torch.Tensor, dot_th: Un
     return dot_res > dot_th
 
 
-def are_points_close(tensor1: torch.Tensor, tensor2: torch.Tensor, dist_th: Union[float, int], dim: int=-1) ->torch.Tensor:
+def are_points_close(tensor1: 'torch.Tensor', tensor2: 'torch.Tensor', dist_th: 'Union[float, int]', dim: 'int'=-1) ->torch.Tensor:
     """Returns bool tensor indicating the euclidean distance between two tensors of vertices along given dimension
     `dim` is smaller than the given threshold value `dist_th`.
 
@@ -2795,7 +2797,7 @@ def are_points_close(tensor1: torch.Tensor, tensor2: torch.Tensor, dist_th: Unio
     return (tensor1 - tensor2).norm(dim=dim) < dist_th
 
 
-def find_similar_map_points(pointclouds: Pointclouds, rgbdimages: RGBDImages, pc2im_bnhw: torch.Tensor, dist_th: Union[float, int], dot_th: Union[float, int]) ->torch.Tensor:
+def find_similar_map_points(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', pc2im_bnhw: 'torch.Tensor', dist_th: 'Union[float, int]', dot_th: 'Union[float, int]') ->torch.Tensor:
     """Returns lookup table for points from global maps that are close and have similar normals to points from live
     frames occupying the same pixel as their projection (onto that live frame).
     (See section 4.1 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
@@ -2860,7 +2862,7 @@ def find_similar_map_points(pointclouds: Pointclouds, rgbdimages: RGBDImages, pc
     return pc2im_bnhw_similar, is_similar_mask
 
 
-def find_correspondences(pointclouds: Pointclouds, rgbdimages: RGBDImages, dist_th: Union[float, int], dot_th: Union[float, int]) ->torch.Tensor:
+def find_correspondences(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', dist_th: 'Union[float, int]', dot_th: 'Union[float, int]') ->torch.Tensor:
     """Returns a lookup table for inferring unique correspondences between points from the live frame and the global
     map (See section 4.1 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
 
@@ -2884,7 +2886,7 @@ def find_correspondences(pointclouds: Pointclouds, rgbdimages: RGBDImages, dist_
     return pc2im_bnhw
 
 
-def get_alpha(points: torch.Tensor, sigma: Union[torch.Tensor, float, int], dim: int=-1, keepdim: bool=False, eps: float=1e-07) ->torch.Tensor:
+def get_alpha(points: 'torch.Tensor', sigma: 'Union[torch.Tensor, float, int]', dim: 'int'=-1, keepdim: 'bool'=False, eps: 'float'=1e-07) ->torch.Tensor:
     """Computes sample confidence alpha.
     (See section 4.1 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
 
@@ -2918,7 +2920,7 @@ def get_alpha(points: torch.Tensor, sigma: Union[torch.Tensor, float, int], dim:
     return alpha
 
 
-def fuse_with_map(pointclouds: Pointclouds, rgbdimages: RGBDImages, pc2im_bnhw: torch.Tensor, sigma: Union[torch.Tensor, float, int], inplace: bool=False) ->Pointclouds:
+def fuse_with_map(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', pc2im_bnhw: 'torch.Tensor', sigma: 'Union[torch.Tensor, float, int]', inplace: 'bool'=False) ->Pointclouds:
     """Fuses points from live frames with global maps by merging corresponding points and appending new points.
     (See section 4.2 of Point-based Fusion paper: http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf )
 
@@ -2997,7 +2999,7 @@ def fuse_with_map(pointclouds: Pointclouds, rgbdimages: RGBDImages, pc2im_bnhw: 
     return pointclouds
 
 
-def update_map_fusion(pointclouds: Pointclouds, rgbdimages: RGBDImages, dist_th: Union[float, int], dot_th: Union[float, int], sigma: Union[torch.Tensor, float, int], inplace: bool=False) ->Pointclouds:
+def update_map_fusion(pointclouds: 'Pointclouds', rgbdimages: 'RGBDImages', dist_th: 'Union[float, int]', dot_th: 'Union[float, int]', sigma: 'Union[torch.Tensor, float, int]', inplace: 'bool'=False) ->Pointclouds:
     """Updates pointclouds in-place given the live frame RGB-D images using PointFusion.
     (See Point-based Fusion `paper <http://reality.cs.ucl.ac.uk/projects/kinect/keller13realtime.pdf>`__).
 
@@ -3072,6 +3074,6 @@ class PointFusion(ICPSLAM):
         self.dot_th = torch.cos(rad_th) if torch.is_tensor(rad_th) else math.cos(rad_th)
         self.sigma = sigma
 
-    def _map(self, pointclouds: Pointclouds, live_frame: RGBDImages, inplace: bool=False):
+    def _map(self, pointclouds: 'Pointclouds', live_frame: 'RGBDImages', inplace: 'bool'=False):
         return update_map_fusion(pointclouds, live_frame, self.dist_th, self.dot_th, self.sigma, inplace)
 

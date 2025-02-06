@@ -16,7 +16,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -329,7 +331,7 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, activation, bn=True, bias=False, dropblock=False, sam=False, eca=False, ws=False, coord=False, hard_mish=False, bcn=False, mbn=False):
         super().__init__()
         padding = (kernel_size - 1) // 2
-        modules: ty.List[ty.Union[nn.Module]] = []
+        modules: 'ty.List[ty.Union[nn.Module]]' = []
         if coord:
             in_channels += 2
             modules.append(AddCoordChannels())
@@ -911,7 +913,7 @@ class YOLOLayer(nn.Module):
             RepBoxes.append(RepBox)
         return torch.stack(RepGTS).mean(), torch.stack(RepBoxes).mean()
 
-    def forward(self, x: torch.Tensor, targets=None):
+    def forward(self, x: 'torch.Tensor', targets=None):
         FloatTensor = torch.FloatTensor if x.is_cuda else torch.FloatTensor
         num_samples = x.size(0)
         grid_size = x.size(2)

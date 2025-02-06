@@ -30,6 +30,7 @@ tldr = _module
 unicoil = _module
 use_qa = _module
 search = _module
+base = _module
 dense = _module
 exact_search = _module
 exact_search_multi_gpu = _module
@@ -92,7 +93,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -174,9 +177,6 @@ import time
 from torch.optim import Optimizer
 
 
-from typing import Type
-
-
 from typing import Callable
 
 
@@ -198,14 +198,14 @@ class MarginMSELoss(nn.Module):
     Remember: Pass the difference in scores of the passages as labels.
     """
 
-    def __init__(self, model, scale: float=1.0, similarity_fct='dot'):
+    def __init__(self, model, scale: 'float'=1.0, similarity_fct='dot'):
         super(MarginMSELoss, self).__init__()
         self.model = model
         self.scale = scale
         self.similarity_fct = similarity_fct
         self.loss_fct = nn.MSELoss()
 
-    def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
+    def forward(self, sentence_features: 'Iterable[Dict[str, Tensor]]', labels: 'Tensor'):
         reps = [self.model(sentence_feature)['sentence_embedding'] for sentence_feature in sentence_features]
         embeddings_query = reps[0]
         embeddings_pos = reps[1]
@@ -226,7 +226,7 @@ class SpladeNaver(torch.nn.Module):
         out = self.transformer(**kwargs)['logits']
         return torch.max(torch.log(1 + torch.relu(out)) * kwargs['attention_mask'].unsqueeze(-1), dim=1).values
 
-    def _text_length(self, text: Union[List[int], List[List[int]]]):
+    def _text_length(self, text: 'Union[List[int], List[List[int]]]'):
         """helper function to get the length for the input text. Text can be either
         a list of ints (which means a single text as input), or a tuple of list of ints
         (representing several text inputs to the model).
@@ -240,7 +240,7 @@ class SpladeNaver(torch.nn.Module):
         else:
             return sum([len(t) for t in text])
 
-    def encode_sentence_bert(self, tokenizer, sentences: Union[str, List[str], List[int]], batch_size: int=32, show_progress_bar: bool=None, output_value: str='sentence_embedding', convert_to_numpy: bool=True, convert_to_tensor: bool=False, device: str=None, normalize_embeddings: bool=False, maxlen: int=512, is_q: bool=False) ->Union[List[Tensor], ndarray, Tensor]:
+    def encode_sentence_bert(self, tokenizer, sentences: 'Union[str, List[str], List[int]]', batch_size: 'int'=32, show_progress_bar: 'bool'=None, output_value: 'str'='sentence_embedding', convert_to_numpy: 'bool'=True, convert_to_tensor: 'bool'=False, device: 'str'=None, normalize_embeddings: 'bool'=False, maxlen: 'int'=512, is_q: 'bool'=False) ->Union[List[Tensor], ndarray, Tensor]:
         """
         Computes sentence embeddings
         :param sentences: the sentences to embed

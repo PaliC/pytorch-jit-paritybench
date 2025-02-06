@@ -1,0 +1,103 @@
+
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 16}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'out_ptr0': '*fp32', 'out_ptr1': '*fp32', 'out_ptr2': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3, 4), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_avg_pool2d_5', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 9, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_avg_pool2d_5(in_ptr0, out_ptr0, out_ptr1, out_ptr2, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 16
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = (xindex % 4)
+    x1 = xindex // 4
+    x2 = xindex
+    tmp0 = tl.full([1], -1, tl.int64)
+    tmp1 = tl.full([1], 0, tl.int64)
+    tmp2 = tmp0 >= tmp1
+    tmp3 = tl.full([1], 2, tl.int64)
+    tmp4 = tmp0 < tmp3
+    tmp5 = tmp2 & tmp4
+    tmp6 = tmp5 & tmp5
+    tmp7 = tl.load(in_ptr0 + ((-12) + x0 + 16*x1), tmp6 & xmask, other=0.0)
+    tmp8 = tmp1 >= tmp1
+    tmp9 = tmp1 < tmp3
+    tmp10 = tmp8 & tmp9
+    tmp11 = tmp5 & tmp10
+    tmp12 = tl.load(in_ptr0 + ((-8) + x0 + 16*x1), tmp11 & xmask, other=0.0)
+    tmp13 = tmp12 + tmp7
+    tmp14 = tl.full([1], 1, tl.int64)
+    tmp15 = tmp14 >= tmp1
+    tmp16 = tmp14 < tmp3
+    tmp17 = tmp15 & tmp16
+    tmp18 = tmp5 & tmp17
+    tmp19 = tl.load(in_ptr0 + ((-4) + x0 + 16*x1), tmp18 & xmask, other=0.0)
+    tmp20 = tmp19 + tmp13
+    tmp21 = tmp10 & tmp5
+    tmp22 = tl.load(in_ptr0 + ((-4) + x0 + 16*x1), tmp21 & xmask, other=0.0)
+    tmp23 = tmp22 + tmp20
+    tmp24 = tmp10 & tmp10
+    tmp25 = tl.load(in_ptr0 + (x0 + 16*x1), tmp24 & xmask, other=0.0)
+    tmp26 = tmp25 + tmp23
+    tmp27 = tmp10 & tmp17
+    tmp28 = tl.load(in_ptr0 + (4 + x0 + 16*x1), tmp27 & xmask, other=0.0)
+    tmp29 = tmp28 + tmp26
+    tmp30 = tmp17 & tmp5
+    tmp31 = tl.load(in_ptr0 + (4 + x0 + 16*x1), tmp30 & xmask, other=0.0)
+    tmp32 = tmp31 + tmp29
+    tmp33 = tmp17 & tmp10
+    tmp34 = tl.load(in_ptr0 + (8 + x0 + 16*x1), tmp33 & xmask, other=0.0)
+    tmp35 = tmp34 + tmp32
+    tmp36 = tmp17 & tmp17
+    tmp37 = tl.load(in_ptr0 + (12 + x0 + 16*x1), tmp36 & xmask, other=0.0)
+    tmp38 = tmp37 + tmp35
+    tmp39 = tl.full([1], 9, tl.int32)
+    tmp40 = tmp38 / tmp39
+    tmp41 = tmp0 < tmp14
+    tmp42 = tmp2 & tmp41
+    tmp43 = tmp42 & tmp42
+    tmp44 = tmp1 < tmp14
+    tmp45 = tmp8 & tmp44
+    tmp46 = tmp42 & tmp45
+    tmp47 = tmp40 + tmp40
+    tmp48 = tmp14 < tmp14
+    tmp49 = tmp15 & tmp48
+    tmp50 = tmp42 & tmp49
+    tmp51 = tmp40 + tmp47
+    tmp52 = tmp45 & tmp42
+    tmp53 = tmp40 + tmp51
+    tmp54 = tmp45 & tmp45
+    tmp55 = tmp40 + tmp53
+    tmp56 = tmp45 & tmp49
+    tmp57 = tmp40 + tmp55
+    tmp58 = tmp49 & tmp42
+    tmp59 = tmp40 + tmp57
+    tmp60 = tmp49 & tmp45
+    tmp61 = tmp40 + tmp59
+    tmp62 = tmp49 & tmp49
+    tmp63 = tmp40 + tmp61
+    tmp64 = tmp63 / tmp39
+    tmp65 = tmp64 + tmp64
+    tmp66 = tmp64 + tmp65
+    tmp67 = tmp64 + tmp66
+    tmp68 = tmp64 + tmp67
+    tmp69 = tmp64 + tmp68
+    tmp70 = tmp64 + tmp69
+    tmp71 = tmp64 + tmp70
+    tmp72 = tmp64 + tmp71
+    tmp73 = tmp72 / tmp39
+    tl.store(out_ptr0 + (x2), tmp40, xmask)
+    tl.store(out_ptr1 + (x2), tmp64, xmask)
+    tl.store(out_ptr2 + (x2), tmp73, xmask)

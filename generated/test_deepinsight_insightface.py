@@ -16,48 +16,38 @@ dataset_synthetics = _module
 test_synthetics = _module
 prepare_synthetics = _module
 trainer_synthetics = _module
-config = _module
-function1 = _module
-function2 = _module
-loss = _module
-h36m = _module
-lsp = _module
-mpiinf = _module
-surreal = _module
-building_blocks = _module
-lifter = _module
-model = _module
-rotater = _module
-scaler = _module
-simple_model = _module
-misc = _module
-utils = _module
-vis = _module
-_init_paths = _module
-eval_lsp = _module
-get_diff = _module
-inference = _module
-main = _module
-mpi_get_diff = _module
-mpi_plot1 = _module
-mpi_plot2 = _module
-mpi_validate_project = _module
-plot1 = _module
-plot2 = _module
-process_yaml = _module
-validate_project = _module
-validate_project_pre = _module
 gen_image_feature = _module
 gen_video_feature = _module
 dataset_mask = _module
 mxnet_to_ort = _module
 onnx_helper = _module
+inspireface = _module
+modules = _module
+core = _module
+native = _module
+inspire_face = _module
+param = _module
+sample_face_detection = _module
+sample_face_recognition = _module
+sample_face_track_from_video = _module
+sample_feature_hub = _module
+sample_system_resource_statistics = _module
+integration = _module
+performance = _module
+test_lfw_precision = _module
+test_settings = _module
+test_utilis = _module
+unit = _module
+test_base_module = _module
+test_recognition_module = _module
+test_tracker_module = _module
+archive_packing = _module
+output_error_table = _module
 test_blazeface = _module
 PY_OP = _module
 cascade_refine = _module
 rpn_fpn_ohem3 = _module
 rcnn = _module
-core = _module
 callback = _module
 loader = _module
 module = _module
@@ -95,6 +85,7 @@ test_rcnn = _module
 test_rpn = _module
 train_rcnn = _module
 train_rpn = _module
+utils = _module
 combine_model = _module
 load_data = _module
 load_model = _module
@@ -422,6 +413,7 @@ mesh = _module
 light = _module
 render = _module
 transform = _module
+vis = _module
 mesh_numpy = _module
 morphable_model = _module
 fit = _module
@@ -482,6 +474,7 @@ utils_config = _module
 utils_logging = _module
 val = _module
 argparser = _module
+config = _module
 ms1mv2_mobileface = _module
 ms1mv3_r100 = _module
 common_dataset = _module
@@ -512,6 +505,7 @@ vit = _module
 ms1mv2_mbf = _module
 ms1mv2_r100 = _module
 ms1mv2_r50 = _module
+ms1mv3_r50_onegpu = _module
 wf12m_conflict_r50 = _module
 wf12m_conflict_r50_pfc03_filter04 = _module
 wf12m_flip_pfc01_filter04_r50 = _module
@@ -529,6 +523,7 @@ wf42m_pfc02_8gpus_r50_bs4k = _module
 wf42m_pfc02_r100 = _module
 wf42m_pfc02_r100_16gpus = _module
 wf42m_pfc02_r100_32gpus = _module
+wf42m_pfc02_vit_h = _module
 wf42m_pfc03_32gpu_r100 = _module
 wf42m_pfc03_32gpu_r18 = _module
 wf42m_pfc03_32gpu_r200 = _module
@@ -550,14 +545,25 @@ inference = _module
 losses = _module
 lr_scheduler = _module
 onnx_ijbc = _module
-partial_fc = _module
 partial_fc_v2 = _module
+shuffle_rec = _module
 torch2onnx = _module
-train = _module
 train_v2 = _module
 plot = _module
 utils_callbacks = _module
 utils_distributed_sampler = _module
+dataset_mix = _module
+evaluate = _module
+eval_buaa_112 = _module
+eval_casia_112 = _module
+eval_lamp_112 = _module
+eval_ops = _module
+eval_oulu_112 = _module
+losses = _module
+network = _module
+lightcnn112 = _module
+train = _module
+utils = _module
 callbacks = _module
 default = _module
 align_ijb = _module
@@ -602,6 +608,10 @@ train = _module
 general = _module
 plots = _module
 rend_util = _module
+dataset_gaze = _module
+models = _module
+test_gaze = _module
+trainer_gaze = _module
 iresnet = _module
 network = _module
 resnet = _module
@@ -682,12 +692,15 @@ _graph = _module
 _operators = _module
 _transformers = _module
 _weightloader = _module
+main = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -730,58 +743,31 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 
-import time
-
-
-import torch.nn.functional as F
-
-
-from itertools import permutations
-
-
-import math
-
-
-import random
-
-
-import matplotlib.pyplot as plt
-
-
-from scipy.io import loadmat
-
-
-from torch.nn.utils import spectral_norm
-
-
-import torch.optim as optim
-
-
-from sklearn.metrics import auc
+import numbers
 
 
 import warnings
 
 
-import torch.backends.cudnn as cudnn
+import matplotlib.pyplot as plt
 
 
-from torch.utils.data import TensorDataset
-
-
-from torch.optim import lr_scheduler
-
-
-import numbers
+import time
 
 
 import torch.distributed as dist
+
+
+import random
 
 
 from torch.nn.modules.utils import _pair
 
 
 from scipy.optimize import linear_sum_assignment
+
+
+import torch.nn.functional as F
 
 
 from abc import ABCMeta
@@ -791,6 +777,9 @@ from abc import abstractmethod
 
 
 from math import inf
+
+
+from scipy.io import loadmat
 
 
 from functools import partial
@@ -809,6 +798,9 @@ from torch._utils import _unflatten_dense_tensors
 
 
 import copy
+
+
+import math
 
 
 from collections import defaultdict
@@ -880,10 +872,16 @@ from torch.nn.modules.loss import _Loss
 from torch.autograd import Variable
 
 
+import torch.backends.cudnn as cudnn
+
+
 import torchvision.transforms as transforms
 
 
 from copy import deepcopy
+
+
+import torch.optim as optim
 
 
 import torchvision.utils as vutils
@@ -923,6 +921,9 @@ from sklearn.preprocessing import normalize
 
 
 from sklearn.metrics import roc_curve
+
+
+from sklearn.metrics import auc
 
 
 import sklearn
@@ -988,7 +989,7 @@ from sklearn.model_selection import KFold
 import matplotlib
 
 
-import collections
+from torch.optim import SGD
 
 
 from torch.nn.functional import linear
@@ -998,6 +999,18 @@ from torch.nn.functional import normalize
 
 
 from torch.utils.tensorboard import SummaryWriter
+
+
+from torch.distributed.algorithms.ddp_comm_hooks.default_hooks import fp16_compress_hook
+
+
+import torch.utils.data as data
+
+
+from torch.utils.data.sampler import Sampler
+
+
+from torch.nn import Parameter
 
 
 import torch.utils.data.distributed
@@ -1030,31 +1043,7 @@ import torch.utils.model_zoo as modelzoo
 import torch.utils.model_zoo as model_zoo
 
 
-from torch.nn import Parameter
-
-
 import scipy.sparse as sp
-
-
-class Losses(nn.CrossEntropyLoss):
-    """2D Cross Entropy Loss with Auxilary Loss"""
-
-    def __init__(self, parent, summary_writer):
-        super(Losses, self).__init__()
-        self.bone_idx = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16])
-        self.parent = parent
-        self.summary_writer = summary_writer
-        self.train_cnt = 0
-
-    def forward(self, pred, lbl):
-        gt_bones = (lbl - lbl[:, self.parent])[:, self.bone_idx]
-        pred_bones = (pred - pred[:, self.parent])[:, self.bone_idx]
-        self.loss_3d = torch.sqrt(torch.sum((lbl - pred) ** 2, -1)).mean()
-        self.loss_bone = torch.sqrt(torch.sum((gt_bones - pred_bones) ** 2, -1)).mean()
-        self.train_cnt += 1
-        self.summary_writer.add_scalar('h36m_train3d_loss', self.loss_3d.item(), self.train_cnt)
-        self.summary_writer.add_scalar('h36m_bone_loss', self.loss_bone.item(), self.train_cnt)
-        return self.loss_3d + self.loss_bone
 
 
 class ResBlock(nn.Module):
@@ -1090,576 +1079,27 @@ class ResBlock(nn.Module):
         return out
 
 
-def get_common_block(in_channels, dropout=0.25, use_bn=True, bn_track=True, use_spectral_norm=False):
-    fc1 = nn.Linear(in_channels, in_channels)
-    fc2 = nn.Linear(in_channels, in_channels)
-    relu1 = nn.ReLU(inplace=True)
-    relu2 = nn.ReLU(inplace=True)
-    dp1 = nn.Dropout(dropout)
-    dp2 = nn.Dropout(dropout)
-    if use_spectral_norm:
-        fc1 = spectral_norm(fc1)
-        fc2 = spectral_norm(fc2)
-    if use_bn:
-        bn1 = nn.BatchNorm1d(in_channels, track_running_stats=bn_track)
-        bn2 = nn.BatchNorm1d(in_channels, track_running_stats=bn_track)
-        layers = [fc1, bn1, relu1, dp1, fc2, bn2, relu2, dp2]
-    else:
-        layers = [fc1, relu1, dp1, fc2, relu2, dp2]
-    return nn.Sequential(*layers)
-
-
-class Branch(nn.Module):
-
-    def __init__(self, in_channels, res_channels, out_channels, dropout=0.25, bn_track=True):
-        super(Branch, self).__init__()
-        self.main = get_common_block(in_channels, dropout=dropout, bn_track=bn_track, use_spectral_norm=False)
-        self.sc = nn.Linear(in_channels + res_channels, in_channels)
-        self.out = nn.Linear(in_channels, out_channels)
-
-    def forward(self, x, joint_sc):
-        a = torch.cat([x, joint_sc], dim=-1)
-        x = self.main(x)
-        a = self.sc(a)
-        return self.out(x + a)
-
-
-class LifterBefore(nn.Module):
-
-    def __init__(self, num_joints, num_feats=2, num_channels=1024, num_res_blocks=2, dropout=0.25, bn_track=True):
-        super(LifterBefore, self).__init__()
-        input_size = num_joints * num_feats
-        self.num_joints = num_joints
-        self.num_channels = num_channels
-        self.num_res_blocks = num_res_blocks
-        self.pre = nn.Sequential(nn.Linear(input_size, num_channels), nn.BatchNorm1d(num_channels, track_running_stats=bn_track), nn.ReLU(inplace=True), nn.Dropout(dropout))
-        self.blocks = nn.ModuleList()
-        for _ in range(num_res_blocks):
-            self.blocks.append(ResBlock(num_channels, input_size, dropout=dropout, bn_track=bn_track, use_spectral_norm=False))
-
-    def forward(self, joints_2d, root_3d=None):
-        joints_2d = joints_2d.contiguous()
-        bs = joints_2d.size(0)
-        if root_3d is None:
-            joints_in = joints_2d.view(bs, -1)
-        else:
-            joints_in = torch.cat([joints_2d.view(bs, -1), root_3d.view(bs, -1)], -1)
-        x = self.pre(joints_in)
-        for block in self.blocks:
-            x = block(x, joints_in)
-        out = x.view(x.size(0), self.num_channels)
-        return out, joints_in
-
-
-class Lifter(nn.Module):
-
-    def __init__(self, num_joints, num_xyz=3, num_feats=5, num_channels=1024, num_res_blocks=2, dropout=0.25, bn_track=True):
-        super(Lifter, self).__init__()
-        input_size = num_joints * num_feats
-        self.num_xyz = num_xyz
-        self.num_joints = num_joints
-        self.num_res_blocks = num_res_blocks
-        self.pre = nn.Sequential(nn.Linear(input_size, num_channels), nn.BatchNorm1d(num_channels, track_running_stats=bn_track), nn.ReLU(inplace=True), nn.Dropout(dropout))
-        self.blocks, self.branches = nn.ModuleList(), nn.ModuleList()
-        for _ in range(num_res_blocks):
-            self.blocks.append(ResBlock(num_channels, input_size, dropout=dropout, bn_track=bn_track, use_spectral_norm=False))
-        for _ in range(num_xyz):
-            self.branches.append(Branch(num_channels, input_size, num_joints, dropout=dropout, bn_track=bn_track))
-
-    def forward(self, joints_2d, root_3d=None):
-        joints_2d = joints_2d.contiguous()
-        bs = joints_2d.size(0)
-        if root_3d is None:
-            joints_in = joints_2d.view(bs, -1)
-        else:
-            joints_in = torch.cat([joints_2d.view(bs, -1), root_3d.view(bs, -1)], -1)
-        x = self.pre(joints_in)
-        for block in self.blocks:
-            x = block(x, joints_in)
-        xyz = []
-        for branch in self.branches:
-            xyz.append(branch(x, joints_in))
-        out = torch.cat(xyz, -1)
-        out = out.view(out.size(0), self.num_joints, self.num_xyz)
-        return out
-
-
-class SimpleDiscriminator(nn.Module):
-
-    def __init__(self, linear_size=1024, num_stage=3, p_dropout=0.5, spectral_norm=False, use_bn=True):
-        super(SimpleDiscriminator, self).__init__()
-        self.linear_size = linear_size
-        self.p_dropout = p_dropout
-        self.num_stage = num_stage
-        self.use_spectral_norm = spectral_norm
-        self.use_bn = use_bn
-        self.input_size = 17 * 2
-        self.w1 = nn.Linear(self.input_size, self.linear_size)
-        if self.use_spectral_norm:
-            self.w1 = nn.utils.spectral_norm(self.w1)
-        self.batch_norm1 = nn.BatchNorm1d(self.linear_size)
-        self.linear_stages = []
-        for l in range(num_stage):
-            self.linear_stages.append(Linear(self.linear_size, self.p_dropout, spectral_norm=spectral_norm, use_bn=use_bn))
-        self.linear_stages = nn.ModuleList(self.linear_stages)
-        self.out = nn.Linear(self.linear_size, 1)
-        if self.use_spectral_norm:
-            self.out = nn.utils.spectral_norm(self.out)
-
-    def forward(self, joints_2d):
-        joints_2d = joints_2d.contiguous()
-        joints_2d = joints_2d.view(joints_2d.size(0), -1)
-        x = self.w1(joints_2d)
-        if self.use_bn:
-            x = self.batch_norm1(x)
-        for l in range(self.num_stage):
-            x = self.linear_stages[l](x)
-        out = self.out(x)
-        return out
-
-
-class Discriminator(nn.Module):
-
-    def __init__(self, cfg, is_temp=False):
-        super(Discriminator, self).__init__()
-        num_feats, num_xyz = 2, 3
-        num_joints = cfg.DATA.NUM_JOINTS
-        num_channels = cfg.NETWORK.NUM_CHANNELS
-        num_res_blocks = cfg.NETWORK.DIS_RES_BLOCKS if not is_temp else cfg.NETWORK.DIS_TEMP_RES_BLOCKS
-        dropout = cfg.NETWORK.DROPOUT
-        use_bn = cfg.NETWORK.DIS_USE_BN
-        use_spectral_norm = cfg.NETWORK.DIS_USE_SPECTRAL_NORM
-        bn_track = cfg.NETWORK.BN_TRACK
-        input_size = num_feats * num_joints if not is_temp else num_feats * 2 * num_joints
-        self.num_xyz = num_xyz
-        self.num_res_blocks = num_res_blocks
-        self.pre = nn.ModuleList()
-        if use_spectral_norm:
-            self.pre.append(nn.utils.spectral_norm(nn.Linear(input_size, num_channels)))
-        else:
-            self.pre.append(nn.Linear(input_size, num_channels))
-        if use_bn:
-            self.pre.append(nn.BatchNorm1d(num_channels, track_running_stats=bn_track))
-        self.pre.append(nn.ReLU(inplace=True))
-        self.pre.append(nn.Dropout(dropout))
-        self.pre = nn.Sequential(*self.pre)
-        self.blocks = nn.ModuleList()
-        for _ in range(num_res_blocks):
-            self.blocks.append(ResBlock(num_channels, input_size, dropout=dropout, use_bn=use_bn, bn_track=bn_track, use_spectral_norm=use_spectral_norm))
-        if use_spectral_norm:
-            self.out = nn.utils.spectral_norm(nn.Linear(num_channels, 1))
-        else:
-            self.out = nn.Linear(num_channels, 1)
-
-    def forward(self, joints_2d):
-        joints_2d = joints_2d.contiguous()
-        joints_2d = joints_2d.view(joints_2d.size(0), -1)
-        x = self.pre(joints_2d)
-        for block in self.blocks:
-            x = block(x, joints_2d)
-        out = self.out(x)
-        return out
-
-
-class LinearModelAfter(nn.Module):
-
-    def __init__(self):
-        super(LinearModelAfter, self).__init__()
-        self.main = nn.Linear(1024, 17 * 1)
-
-    def forward(self, x, y):
-        return self.main(x)
-
-
-class LinearModelBefore(nn.Module):
-
-    def __init__(self, linear_size=1024, num_stage=4, p_dropout=0.5):
-        super(LinearModelBefore, self).__init__()
-        self.linear_size = linear_size
-        self.p_dropout = p_dropout
-        self.num_stage = num_stage
-        self.input_size = 17 * 2
-        self.output_size = 17 * 1
-        self.w1 = nn.Linear(self.input_size, self.linear_size)
-        self.batch_norm1 = nn.BatchNorm1d(self.linear_size)
-        self.linear_stages = []
-        for l in range(num_stage):
-            self.linear_stages.append(Linear(self.linear_size, self.p_dropout))
-        self.linear_stages = nn.ModuleList(self.linear_stages)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(self.p_dropout)
-
-    def forward(self, x):
-        x = x.view(x.size(0), -1)
-        y = self.w1(x)
-        y = self.batch_norm1(y)
-        y = self.relu(y)
-        y = self.dropout(y)
-        for i in range(self.num_stage):
-            y = self.linear_stages[i](y)
-        return y, x
-
-
-def get_lifter_after(num_joints, num_feats=2, num_xyz=1, num_channels=1024, is_generic_baseline=False):
-    output_size = num_joints
-    input_size = num_joints * num_feats
-    return Branch(num_channels, input_size, output_size)
-
-
-def get_lifter_before(num_joints, num_feats=2, num_channels=1024, num_res_blocks=2, dropout=0.25, bn_track=True):
-    lifter_before = LifterBefore(num_joints, num_feats, num_channels, num_res_blocks, dropout=dropout, bn_track=bn_track)
-    return lifter_before
-
-
-class Rotater(nn.Module):
-
-    def __init__(self, input_size=51, is_euler=True, num_channels=1024, num_res_blocks=1, dropout=0.25, bn_track=True):
-        super(Rotater, self).__init__()
-        self.output_size = 3 if is_euler else 9
-        self.blocks = nn.ModuleList()
-        self.pre = nn.Linear(input_size, num_channels)
-        for _ in range(num_res_blocks):
-            self.blocks.append(ResBlock(num_channels, input_size, dropout=dropout, use_bn=True, bn_track=bn_track))
-        self.out = nn.Linear(num_channels, self.output_size)
-
-    def forward(self, x):
-        bs = x.size(0)
-        x = x.view(bs, -1)
-        out = self.pre(x)
-        for block in self.blocks:
-            out = block(out, x)
-        out = self.out(out)
-        if self.output_size == 3:
-            out = torch.clamp(out, min=-3.14159 / 2, max=3.14159 / 2)
-            pass
-        else:
-            out = torch.clamp(out, min=-1.0, max=1.0)
-        return out
-
-
-def get_rotater(cfg):
-    num_res_blocks = cfg.NETWORK.ROTATER_RES_BLOCKS
-    num_channels = cfg.NETWORK.NUM_CHANNELS
-    bn_track = cfg.NETWORK.BN_TRACK
-    dropout = cfg.NETWORK.DROPOUT
-    is_euler = cfg.NETWORK.ROTATER_PRE_EULER
-    rotater = Rotater(is_euler=is_euler, num_channels=num_channels, num_res_blocks=num_res_blocks, dropout=dropout, bn_track=bn_track)
-    return rotater
-
-
-class Scaler(nn.Module):
-
-    def __init__(self, input_size=37, num_channels=1024, num_res_blocks=1, dropout=0.25, bn_track=True):
-        super(Scaler, self).__init__()
-        self.blocks = nn.ModuleList()
-        self.pre = nn.Linear(input_size, num_channels)
-        for _ in range(num_res_blocks):
-            self.blocks.append(ResBlock(num_channels, input_size, dropout=dropout, use_bn=True, bn_track=bn_track))
-        self.out = nn.Linear(num_channels, 1)
-
-    def forward(self, x):
-        bs = x.size(0)
-        x = x.view(bs, -1)
-        out = self.pre(x)
-        for block in self.blocks:
-            out = block(out, x)
-        out = self.out(out)
-        return out
-
-
-def get_scaler(cfg):
-    input_size = cfg.NETWORK.SCALER_INPUT_SIZE
-    num_res_blocks = cfg.NETWORK.SCALER_RES_BLOCKS
-    num_channels = cfg.NETWORK.NUM_CHANNELS
-    bn_track = cfg.NETWORK.BN_TRACK
-    dropout = cfg.NETWORK.DROPOUT
-    scaler = Scaler(input_size=input_size, num_channels=num_channels, num_res_blocks=num_res_blocks, dropout=dropout, bn_track=bn_track)
-    return scaler
-
-
-def get_rotation_x(angle):
-    bs = angle.size(0)
-    sin, cos = torch.sin(angle), torch.cos(angle)
-    mat = torch.zeros((bs * 3, 3)).type_as(sin)
-    mat[0:bs, 0] = 1.0
-    mat[bs:bs * 2, 1:2], mat[bs:bs * 2, 2:3] = cos, -sin
-    mat[bs * 2:bs * 3, 1:2], mat[bs * 2:bs * 3, 2:3] = sin, cos
-    mat = mat.view(3, bs, 3).permute(1, 0, 2)
-    return mat
-
-
-def get_rotation_y(angle):
-    bs = angle.size(0)
-    sin, cos = torch.sin(angle), torch.cos(angle)
-    mat = torch.zeros((bs * 3, 3)).type_as(sin)
-    mat[0:bs, 0:1], mat[0:bs, 2:3] = cos, sin
-    mat[bs:2 * bs, 1] = 1.0
-    mat[bs * 2:bs * 3, 0:1], mat[bs * 2:bs * 3, 2:3] = -sin, cos
-    mat = mat.view(3, bs, 3).permute(1, 0, 2)
-    return mat
-
-
-def get_rotation_z(angle):
-    bs = angle.size(0)
-    sin, cos = torch.sin(angle), torch.cos(angle)
-    mat = torch.zeros((bs * 3, 3)).type_as(sin)
-    mat[2 * bs:3 * bs, 2] = 1.0
-    mat[0:bs, 0:1], mat[0:bs, 1:2] = cos, -sin
-    mat[bs:2 * bs, 0:1], mat[bs:2 * bs, 1:2] = sin, cos
-    mat = mat.view(3, bs, 3).permute(1, 0, 2)
-    return mat
-
-
-def euler2rotmat(eulers):
-    n = eulers.size(0)
-    thetax, thetay, thetaz = eulers[:, 0:1], eulers[:, 1:2], eulers[:, 2:3]
-    matx = get_rotation_x(thetax)
-    maty = get_rotation_y(thetay)
-    matz = get_rotation_z(thetaz)
-    rotmat = matz.matmul(matx).matmul(maty)
-    return rotmat
-
-
-def rotate(joints_3d, eulers):
-    rotmat = euler2rotmat(eulers)
-    root = joints_3d[:, 13:14] if joints_3d.shape[1] == 17 else joints_3d[:, 12:13]
-    joints_3d = joints_3d - root
-    joints_3d = joints_3d.matmul(rotmat)
-    joints_3d = joints_3d + root
-    return joints_3d
-
-
-def rotate2(joints_3d, rotmat):
-    n = rotmat.size(0)
-    rotmat = rotmat.view(n, 3, 3)
-    joints_3d = joints_3d.matmul(rotmat)
-    return joints_3d
-
-
-def get_rotation_y_v2(angle, is_mpi=False):
-    bs = angle.size(0)
-    cos, sin = torch.cos(angle), torch.sin(angle)
-    cos = cos.repeat(3, 1).view(3, bs).permute(1, 0).contiguous().view(-1, 1)
-    sin = sin.repeat(3, 1).view(3, bs).permute(1, 0).contiguous().view(-1, 1)
-    rx, ry, rz = -0.01474, 0.96402, 0.261718
-    r = torch.tensor([[rx, ry, rz]])
-    r_mat = r.t().matmul(r)
-    r_hat = torch.tensor([[0, -rz, ry], [rz, 0, -rx], [-ry, rx, 0]])
-    e1 = cos * torch.eye(3).repeat(bs, 1).type_as(cos)
-    e2 = (1 - cos) * r_mat.repeat(bs, 1).type_as(cos)
-    e3 = sin * r_hat.repeat(bs, 1).type_as(sin)
-    mat = e1 + e2 + e3
-    mat = mat.view(bs, 3, 3)
-    return mat
-
-
-def transform_3d_v2(inputs, rot_y, rot_x, shift, is_reverse, rot_z=None, use_new_rot=False, is_mpi=False):
-    shift = torch.FloatTensor([0.0, 0.0, shift]).type_as(inputs).view(1, 1, 3)
-    shift = shift.expand_as(inputs)
-    if is_reverse:
-        outputs = inputs - shift
-    else:
-        root3d = inputs[:, 13:14].clone() if inputs.shape[1] == 17 else inputs[:, 12:13]
-        outputs = inputs - root3d
-    if use_new_rot:
-        rot_y_mat = get_rotation_y_v2(rot_y, is_mpi=is_mpi)
-    else:
-        rot_y_mat = get_rotation_y(rot_y)
-    rot_x_mat = get_rotation_x(rot_x)
-    if rot_z is None:
-        rot_mat = rot_x_mat.bmm(rot_y_mat) if not is_reverse else rot_y_mat.bmm(rot_x_mat)
-    else:
-        rot_z_mat = get_rotation_z(rot_z)
-        rot_mat = rot_z_mat.bmm(rot_x_mat).bmm(rot_y_mat) if not is_reverse else rot_y_mat.bmm(rot_x_mat).bmm(rot_z_mat)
-    outputs = rot_mat.bmm(outputs.permute(0, 2, 1))
-    outputs = outputs.permute(0, 2, 1)
-    if not is_reverse:
-        outputs += shift
-    return outputs
-
-
-class PoseModel(nn.Module):
-
-    def __init__(self, cfg):
-        super(PoseModel, self).__init__()
-        num_joints = cfg.DATA.NUM_JOINTS
-        dropout = cfg.NETWORK.DROPOUT
-        bn_track = cfg.NETWORK.BN_TRACK
-        num_channels = cfg.NETWORK.NUM_CHANNELS
-        lifter_res_blocks = cfg.NETWORK.LIFTER_RES_BLOCKS
-        depth_estimator_res_blocks = cfg.NETWORK.DEPTH_ESTIMATOR_RES_BLOCKS
-        self.is_15joints = num_joints == 15
-        self.num_joints = num_joints
-        self.use_scaler = cfg.TRAIN.USE_SCALER
-        self.use_rotater = cfg.TRAIN.USE_ROTATER
-        self.c = cfg.TRAIN.CAMERA_SKELETON_DISTANCE
-        self.use_new_rot = cfg.TRAIN.USE_NEW_ROT
-        self.bound_azim = cfg.TRAIN.BOUND_AZIM
-        self.bound_elev = cfg.TRAIN.BOUND_ELEV
-        self.num_frames = cfg.DATA.NUM_FRAMES
-        self.frame_interval = cfg.DATA.FRAME_INTERVAL
-        self.multi_new_temp = cfg.TRAIN.MULTI_NEW_TEMP
-        self.use_simple_model = cfg.NETWORK.USE_SIMPLE_MODEL
-        if self.use_simple_model:
-            self.lifter_before = LinearModelBefore()
-            self.lifter_after = LinearModelAfter()
-        else:
-            self.lifter_before = get_lifter_before(num_joints, num_feats=2, num_channels=num_channels, num_res_blocks=lifter_res_blocks, bn_track=bn_track, dropout=dropout)
-            self.lifter_after = get_lifter_after(num_joints, num_feats=2, num_xyz=1, num_channels=num_channels, is_generic_baseline=cfg.TRAIN.GENERIC_BASELINE)
-        self.is_euler = cfg.NETWORK.ROTATER_PRE_EULER
-        self.learn_symmetry = cfg.TRAIN.LEARN_SYMMETRY
-        self.scaler_input_size = cfg.NETWORK.SCALER_INPUT_SIZE
-        self.is_mpi = cfg.DATA.DATASET_NAME == 'mpi'
-        self.is_surreal = cfg.DATA.DATASET_NAME == 'surreal'
-        self.is_generic_baseline = cfg.TRAIN.GENERIC_BASELINE
-        self.scale_on_3d = cfg.TRAIN.SCALE_ON_3D
-        if self.use_scaler:
-            self.scaler = get_scaler(cfg)
-        if self.use_rotater:
-            self.rotater = get_rotater(cfg)
-            self.rotate = rotate if self.is_euler else rotate2
-
-    def _project(self, joints_3d):
-        if self.is_generic_baseline:
-            return joints_3d[..., :2]
-        if self.is_surreal:
-            joints_2d = torch.clamp(joints_3d[..., :2] / joints_3d[..., 2:], min=-0.25, max=0.25)
-        elif not self.is_mpi:
-            joints_2d = torch.clamp(joints_3d[..., :2] / joints_3d[..., 2:], min=-0.2, max=0.2)
-        else:
-            joints_2d = torch.clamp(joints_3d[..., :2] / joints_3d[..., 2:], min=-0.35, max=0.35)
-        return joints_2d
-
-    def _compute_3d(self, joints_2d, depths):
-        if depths.dim() < joints_2d.dim():
-            depths = depths.unsqueeze(-1)
-        ones = torch.ones_like(depths)
-        depths = torch.max(ones, depths + self.c)
-        if self.is_generic_baseline:
-            joints_3d = torch.cat((joints_2d, depths), dim=-1)
-        else:
-            joints_3d = torch.cat((depths * joints_2d, depths), dim=-1)
-        return joints_3d
-
-    @staticmethod
-    def _get_extra_info(joints_2d):
-        ws = joints_2d[..., 0].max(dim=1, keepdims=True)[0] - joints_2d[..., 0].min(dim=1, keepdims=True)[0]
-        hs = joints_2d[..., 1].max(dim=1, keepdims=True)[0] - joints_2d[..., 1].min(dim=1, keepdims=True)[0]
-        return hs, ws
-
-    def forward(self, joints_in, rot=None, is_train=True, is_diff=False):
-        if self.use_scaler:
-            bs = joints_in.size(0)
-            hs, ws = self._get_extra_info(joints_in)
-            hws = (hs + ws) / 2
-            if self.scaler_input_size == 1:
-                scaler_inputs = hws.view(bs, -1)
-            elif self.scaler_input_size == 34:
-                scaler_inputs = joints_in.view(bs, -1)
-            elif self.scaler_input_size == 35:
-                scaler_inputs = torch.cat([joints_in.view(bs, -1), hws], dim=1)
-            elif self.scaler_input_size == 37:
-                scaler_inputs = torch.cat([joints_in.view(bs, -1), hs, ws, hws], dim=1)
-            else:
-                raise NotImplementedError("Can not recognize {} for scaler's input size".format(self.scaler_input_size))
-            if self.learn_symmetry:
-                scale_mids = self.scaler(scaler_inputs)
-                scales = 2 * scale_mids - hws
-            else:
-                scales = self.scaler(scaler_inputs)
-                scale_mids = (scales + hws) / 2
-            if not self.scale_on_3d:
-                joints_in = joints_in * scales.view(-1, 1, 1)
-            scaled_2d = None
-        else:
-            scale_mids = None
-            scales = None
-            scaled_2d = None
-        if not is_train:
-            center_joints_in = joints_in
-            out_features, out_joints_sc = [], []
-            features, joints_sc = self.lifter_before(joints_in)
-            depths = self.lifter_after(features, joints_sc)
-            if depths.size(1) == self.num_joints:
-                estimated_joints_3d = self._compute_3d(center_joints_in, depths)
-            else:
-                estimated_joints_3d = depths.view(depths.size(0), self.num_joints, 3)
-            if self.scale_on_3d:
-                estimated_joints_3d = estimated_joints_3d * scales.view(-1, 1, 1)
-            if self.use_rotater:
-                rot_out = self.rotater(estimated_joints_3d)
-                estimated_joints_3d = self.rotate(estimated_joints_3d, rot_out)
-            return estimated_joints_3d, scales, scale_mids
-        rot_y, rot_x, rot_z = rot[:, 0:1], rot[:, 1:2], rot[:, 2:3]
-        out_features, out_joints_sc = [], []
-        first_half_feature, second_half_feature = None, None
-        features, joints_sc = self.lifter_before(joints_in)
-        depths = self.lifter_after(features, joints_sc)
-        if depths.size(1) == self.num_joints:
-            estimated_joints_3d = self._compute_3d(joints_in, depths)
-        else:
-            estimated_joints_3d = depths.view(depths.size(0), -1, 3)
-        if self.scale_on_3d:
-            estimated_joints_3d = estimated_joints_3d * scales.view(-1, 1, 1)
-        root_3d = estimated_joints_3d[:, 13:14] if self.num_joints == 17 else estimated_joints_3d[:, 12:13]
-        transformed_joints_3d = transform_3d_v2(estimated_joints_3d, rot_y, rot_x, self.c, False, rot_z=rot_z, use_new_rot=self.use_new_rot, is_mpi=self.is_mpi)
-        projected_joints_2d = self._project(transformed_joints_3d)
-        projected_joints_2d = projected_joints_2d + 1e-05
-        recon_features, recon_joints_sc = self.lifter_before(projected_joints_2d)
-        recon_depths = self.lifter_after(recon_features, recon_joints_sc)
-        if recon_depths.size(1) == self.num_joints:
-            recon_joints_3d = self._compute_3d(projected_joints_2d.detach(), recon_depths)
-        else:
-            recon_joints_3d = recon_depths.view(recon_depths.size(0), -1, 3)
-        recovered_joints_3d = transform_3d_v2(recon_joints_3d, -rot_y, -rot_x, self.c, True, rot_z=-rot_z if rot_z is not None else None)
-        recovered_joints_3d += root_3d
-        recovered_joints_2d = self._project(recovered_joints_3d)
-        return (first_half_feature, second_half_feature), estimated_joints_3d, transformed_joints_3d, projected_joints_2d, recon_joints_3d, recovered_joints_3d, recovered_joints_2d, scale_mids, scales
-
-
-class Linear(nn.Module):
-
-    def __init__(self, linear_size, p_dropout=0.5, spectral_norm=False, use_bn=True):
-        super(Linear, self).__init__()
-        self.l_size = linear_size
-        self.use_bn = use_bn
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(p_dropout)
-        self.w1 = nn.Linear(self.l_size, self.l_size)
-        self.batch_norm1 = nn.BatchNorm1d(self.l_size)
-        self.w2 = nn.Linear(self.l_size, self.l_size)
-        self.batch_norm2 = nn.BatchNorm1d(self.l_size)
-        if spectral_norm:
-            self.w1 = nn.utils.spectral_norm(self.w1)
-            self.w2 = nn.utils.spectral_norm(self.w2)
-
-    def forward(self, x):
-        y = self.w1(x)
-        if self.use_bn:
-            y = self.batch_norm1(y)
-        y = self.relu(y)
-        y = self.dropout(y)
-        y = self.w2(y)
-        if self.use_bn:
-            y = self.batch_norm2(y)
-        y = self.relu(y)
-        y = self.dropout(y)
-        out = x + y
-        return out
-
-
-def load_checkpoint(model, optimizer, output_dir, filename='checkpoint.pth.tar'):
-    file = os.path.join(output_dir, filename)
-    if os.path.isfile(file):
-        checkpoint = torch.load(file)
-        start_epoch = checkpoint['epoch']
-        model.module.load_state_dict(checkpoint['state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        None
-        return start_epoch, model, optimizer
-    else:
-        None
-        return 0, model, optimizer
+def load_checkpoint(prefix, epoch):
+    """
+    Load model checkpoint from file.
+    :param prefix: Prefix of model name.
+    :param epoch: Epoch number of model we would like to load.
+    :return: (arg_params, aux_params)
+    arg_params : dict of str to NDArray
+        Model parameter, dict of name to NDArray of net's weights.
+    aux_params : dict of str to NDArray
+        Model parameter, dict of name to NDArray of net's auxiliary states.
+    """
+    save_dict = mx.nd.load('%s-%04d.params' % (prefix, epoch))
+    arg_params = {}
+    aux_params = {}
+    for k, v in save_dict.items():
+        tp, name = k.split(':', 1)
+        if tp == 'arg':
+            arg_params[name] = v
+        if tp == 'aux':
+            aux_params[name] = v
+    return arg_params, aux_params
 
 
 class Darknet(nn.Module):
@@ -2809,7 +2249,7 @@ class ResNet(nn.Module):
             x = self.layer4(x)
         return x
 
-    def forward_head(self, x, pre_logits: bool=False):
+    def forward_head(self, x, pre_logits: 'bool'=False):
         x = self.global_pool(x)
         if self.drop_rate:
             x = F.dropout(x, p=float(self.drop_rate), training=self.training)
@@ -4450,48 +3890,18 @@ def bbox2result(bboxes, labels, num_classes):
         return [bboxes[labels == i, :] for i in range(num_classes)]
 
 
-def accuracy(pred, target, topk=1, thresh=None):
-    """Calculate accuracy according to the prediction and target.
-
-    Args:
-        pred (torch.Tensor): The model prediction, shape (N, num_class)
-        target (torch.Tensor): The target of each prediction, shape (N, )
-        topk (int | tuple[int], optional): If the predictions in ``topk``
-            matches the target, the predictions will be regarded as
-            correct ones. Defaults to 1.
-        thresh (float, optional): If not None, predictions with scores under
-            this threshold are considered incorrect. Default to None.
-
-    Returns:
-        float | tuple[float]: If the input ``topk`` is a single integer,
-            the function will return a single float as accuracy. If
-            ``topk`` is a tuple containing multiple integers, the
-            function will return a tuple containing accuracies of
-            each ``topk`` number.
-    """
-    assert isinstance(topk, (int, tuple))
-    if isinstance(topk, int):
-        topk = topk,
-        return_single = True
-    else:
-        return_single = False
+def accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
-    if pred.size(0) == 0:
-        accu = [pred.new_tensor(0.0) for i in range(len(topk))]
-        return accu[0] if return_single else accu
-    assert pred.ndim == 2 and target.ndim == 1
-    assert pred.size(0) == target.size(0)
-    assert maxk <= pred.size(1), f'maxk {maxk} exceeds pred dimension {pred.size(1)}'
-    pred_value, pred_label = pred.topk(maxk, dim=1)
-    pred_label = pred_label.t()
-    correct = pred_label.eq(target.view(1, -1).expand_as(pred_label))
-    if thresh is not None:
-        correct = correct & (pred_value > thresh).t()
+    batch_size = target.size(0)
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.unsqueeze(0).expand_as(pred))
     res = []
     for k in topk:
-        correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-        res.append(correct_k.mul_(100.0 / pred.size(0)))
-    return res[0] if return_single else res
+        correct_k = correct[:k].contiguous().view(-1).float().sum(0, keepdim=True)
+        res.append(correct_k.mul_(100.0 / batch_size))
+    return res
 
 
 class Accuracy(nn.Module):
@@ -8657,7 +8067,7 @@ class ArcFace(nn.Module):
         self.s = s
         self.m = m
 
-    def forward(self, cosine: torch.Tensor, label):
+    def forward(self, cosine: 'torch.Tensor', label):
         index = torch.where(label != -1)[0]
         m_hot = torch.zeros(index.size()[0], cosine.size()[1], device=cosine.device)
         m_hot.scatter_(1, label[index, None], self.m)
@@ -8665,6 +8075,41 @@ class ArcFace(nn.Module):
         cosine[index] += m_hot
         cosine.cos_().mul_(self.s)
         return cosine
+
+
+class OFRecordDataLoader(nn.Module):
+
+    def __init__(self, ofrecord_root: 'str'='./ofrecord', mode: 'str'='train', dataset_size: 'int'=9469, batch_size: 'int'=1, total_batch_size: 'int'=1, data_part_num: 'int'=8, placement: 'flow.placement'=None, sbp: 'Union[flow.sbp.sbp, List[flow.sbp.sbp]]'=None):
+        super().__init__()
+        channel_last = False
+        output_layout = 'NHWC' if channel_last else 'NCHW'
+        assert (ofrecord_root, mode)
+        self.train_record_reader = flow.nn.OfrecordReader(os.path.join(ofrecord_root, mode), batch_size=batch_size, data_part_num=data_part_num, part_name_suffix_length=5, random_shuffle=True if mode == 'train' else False, shuffle_after_epoch=True if mode == 'train' else False, placement=placement, sbp=sbp)
+        self.record_label_decoder = flow.nn.OfrecordRawDecoder('label', shape=(), dtype=flow.int32)
+        color_space = 'RGB'
+        height = 112
+        width = 112
+        self.record_image_decoder = flow.nn.OFRecordImageDecoder('encoded', color_space=color_space)
+        self.resize = flow.nn.image.Resize(target_size=[height, width]) if mode == 'train' else flow.nn.image.Resize(resize_side='shorter', keep_aspect_ratio=True, target_size=112)
+        self.flip = flow.nn.CoinFlip(batch_size=batch_size, placement=placement, sbp=sbp) if mode == 'train' else None
+        rgb_mean = [127.5, 127.5, 127.5]
+        rgb_std = [127.5, 127.5, 127.5]
+        self.crop_mirror_norm = flow.nn.CropMirrorNormalize(color_space=color_space, output_layout=output_layout, mean=rgb_mean, std=rgb_std, output_dtype=flow.float) if mode == 'train' else flow.nn.CropMirrorNormalize(color_space=color_space, output_layout=output_layout, crop_h=0, crop_w=0, crop_pos_y=0.5, crop_pos_x=0.5, mean=rgb_mean, std=rgb_std, output_dtype=flow.float)
+        self.batch_size = batch_size
+        self.total_batch_size = total_batch_size
+        self.dataset_size = dataset_size
+
+    def __len__(self):
+        return self.dataset_size // self.total_batch_size
+
+    def forward(self):
+        train_record = self.train_record_reader()
+        label = self.record_label_decoder(train_record)
+        image_raw_buffer = self.record_image_decoder(train_record)
+        image = self.resize(image_raw_buffer)[0]
+        rng = self.flip() if self.flip != None else None
+        image = self.crop_mirror_norm(image, rng)
+        return image, label
 
 
 class Flatten(Module):
@@ -8808,7 +8253,7 @@ class VITBatchNorm(nn.Module):
 
 class Attention(nn.Module):
 
-    def __init__(self, dim: int, num_heads: int=8, qkv_bias: bool=False, qk_scale: Optional[None]=None, attn_drop: float=0.0, proj_drop: float=0.0):
+    def __init__(self, dim: 'int', num_heads: 'int'=8, qkv_bias: 'bool'=False, qk_scale: 'Optional[None]'=None, attn_drop: 'float'=0.0, proj_drop: 'float'=0.0):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -8929,7 +8374,7 @@ class VisionTransformer(nn.Module):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
-    def __init__(self, img_size: int=112, patch_size: int=16, in_channels: int=3, num_classes: int=1000, embed_dim: int=768, depth: int=12, num_heads: int=12, mlp_ratio: float=4.0, qkv_bias: bool=False, qk_scale: Optional[None]=None, drop_rate: float=0.0, attn_drop_rate: float=0.0, drop_path_rate: float=0.0, hybrid_backbone: Optional[None]=None, norm_layer: str='ln', mask_ratio=0.1, using_checkpoint=False):
+    def __init__(self, img_size: 'int'=112, patch_size: 'int'=16, in_channels: 'int'=3, num_classes: 'int'=1000, embed_dim: 'int'=768, depth: 'int'=12, num_heads: 'int'=12, mlp_ratio: 'float'=4.0, qkv_bias: 'bool'=False, qk_scale: 'Optional[None]'=None, drop_rate: 'float'=0.0, attn_drop_rate: 'float'=0.0, drop_path_rate: 'float'=0.0, hybrid_backbone: 'Optional[None]'=None, norm_layer: 'str'='ln', mask_ratio=0.1, using_checkpoint=False):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim
@@ -9095,7 +8540,7 @@ class DistCrossEntropyFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, logits: torch.Tensor, label: torch.Tensor):
+    def forward(ctx, logits: 'torch.Tensor', label: 'torch.Tensor'):
         """ """
         batch_size = logits.size(0)
         max_logits, _ = torch.max(logits, dim=1, keepdim=True)
@@ -9139,338 +8584,6 @@ class DistCrossEntropy(torch.nn.Module):
         return DistCrossEntropyFunc.apply(logit_part, label_part)
 
 
-class PartialFC(torch.nn.Module):
-    """
-    https://arxiv.org/abs/2203.15565
-    A distributed sparsely updating variant of the FC layer, named Partial FC (PFC).
-
-    When sample rate less than 1, in each iteration, positive class centers and a random subset of
-    negative class centers are selected to compute the margin-based softmax loss, all class
-    centers are still maintained throughout the whole training process, but only a subset is
-    selected and updated in each iteration.
-
-    .. note::
-        When sample rate equal to 1, Partial FC is equal to model parallelism(default sample rate is 1).
-
-    Example:
-    --------
-    >>> module_pfc = PartialFC(embedding_size=512, num_classes=8000000, sample_rate=0.2)
-    >>> for img, labels in data_loader:
-    >>>     embeddings = net(img)
-    >>>     loss = module_pfc(embeddings, labels, optimizer)
-    >>>     loss.backward()
-    >>>     optimizer.step()
-    """
-    _version = 1
-
-    def __init__(self, margin_loss: Callable, embedding_size: int, num_classes: int, sample_rate: float=1.0, fp16: bool=False):
-        """
-        Paramenters:
-        -----------
-        embedding_size: int
-            The dimension of embedding, required
-        num_classes: int
-            Total number of classes, required
-        sample_rate: float
-            The rate of negative centers participating in the calculation, default is 1.0.
-        """
-        super(PartialFC, self).__init__()
-        assert distributed.is_initialized(), 'must initialize distributed before create this'
-        self.rank = distributed.get_rank()
-        self.world_size = distributed.get_world_size()
-        self.dist_cross_entropy = DistCrossEntropy()
-        self.embedding_size = embedding_size
-        self.sample_rate: float = sample_rate
-        self.fp16 = fp16
-        self.num_local: int = num_classes // self.world_size + int(self.rank < num_classes % self.world_size)
-        self.class_start: int = num_classes // self.world_size * self.rank + min(self.rank, num_classes % self.world_size)
-        self.num_sample: int = int(self.sample_rate * self.num_local)
-        self.last_batch_size: int = 0
-        self.weight: torch.Tensor
-        self.weight_mom: torch.Tensor
-        self.weight_activated: torch.nn.Parameter
-        self.weight_activated_mom: torch.Tensor
-        self.is_updated: bool = True
-        self.init_weight_update: bool = True
-        if self.sample_rate < 1:
-            self.register_buffer('weight', tensor=torch.normal(0, 0.01, (self.num_local, embedding_size)))
-            self.register_buffer('weight_mom', tensor=torch.zeros_like(self.weight))
-            self.register_parameter('weight_activated', param=torch.nn.Parameter(torch.empty(0, 0)))
-            self.register_buffer('weight_activated_mom', tensor=torch.empty(0, 0))
-            self.register_buffer('weight_index', tensor=torch.empty(0, 0))
-        else:
-            self.weight_activated = torch.nn.Parameter(torch.normal(0, 0.01, (self.num_local, embedding_size)))
-        if isinstance(margin_loss, Callable):
-            self.margin_softmax = margin_loss
-        else:
-            raise
-
-    @torch.no_grad()
-    def sample(self, labels: torch.Tensor, index_positive: torch.Tensor, optimizer: torch.optim.Optimizer):
-        """
-        This functions will change the value of labels
-
-        Parameters:
-        -----------
-        labels: torch.Tensor
-            pass
-        index_positive: torch.Tensor
-            pass
-        optimizer: torch.optim.Optimizer
-            pass
-        """
-        positive = torch.unique(labels[index_positive], sorted=True)
-        if self.num_sample - positive.size(0) >= 0:
-            perm = torch.rand(size=[self.num_local])
-            perm[positive] = 2.0
-            index = torch.topk(perm, k=self.num_sample)[1]
-            index = index.sort()[0]
-        else:
-            index = positive
-        self.weight_index = index
-        labels[index_positive] = torch.searchsorted(index, labels[index_positive])
-        self.weight_activated = torch.nn.Parameter(self.weight[self.weight_index])
-        self.weight_activated_mom = self.weight_mom[self.weight_index]
-        if isinstance(optimizer, torch.optim.SGD):
-            optimizer.state.pop(optimizer.param_groups[-1]['params'][0], None)
-            optimizer.param_groups[-1]['params'][0] = self.weight_activated
-            optimizer.state[self.weight_activated]['momentum_buffer'] = self.weight_activated_mom
-        else:
-            raise
-
-    @torch.no_grad()
-    def update(self):
-        """ partial weight to global
-        """
-        if self.init_weight_update:
-            self.init_weight_update = False
-            return
-        if self.sample_rate < 1:
-            self.weight[self.weight_index] = self.weight_activated
-            self.weight_mom[self.weight_index] = self.weight_activated_mom
-
-    def forward(self, local_embeddings: torch.Tensor, local_labels: torch.Tensor, optimizer: torch.optim.Optimizer):
-        """
-        Parameters:
-        ----------
-        local_embeddings: torch.Tensor
-            feature embeddings on each GPU(Rank).
-        local_labels: torch.Tensor
-            labels on each GPU(Rank).
-
-        Returns:
-        -------
-        loss: torch.Tensor
-            pass
-        """
-        local_labels.squeeze_()
-        local_labels = local_labels.long()
-        self.update()
-        batch_size = local_embeddings.size(0)
-        if self.last_batch_size == 0:
-            self.last_batch_size = batch_size
-        assert self.last_batch_size == batch_size, 'last batch size do not equal current batch size: {} vs {}'.format(self.last_batch_size, batch_size)
-        _gather_embeddings = [torch.zeros((batch_size, self.embedding_size)) for _ in range(self.world_size)]
-        _gather_labels = [torch.zeros(batch_size).long() for _ in range(self.world_size)]
-        _list_embeddings = AllGather(local_embeddings, *_gather_embeddings)
-        distributed.all_gather(_gather_labels, local_labels)
-        embeddings = torch.cat(_list_embeddings)
-        labels = torch.cat(_gather_labels)
-        labels = labels.view(-1, 1)
-        index_positive = (self.class_start <= labels) & (labels < self.class_start + self.num_local)
-        labels[~index_positive] = -1
-        labels[index_positive] -= self.class_start
-        if self.sample_rate < 1:
-            self.sample(labels, index_positive, optimizer)
-        with torch.amp.autocast(self.fp16):
-            norm_embeddings = normalize(embeddings)
-            norm_weight_activated = normalize(self.weight_activated)
-            logits = linear(norm_embeddings, norm_weight_activated)
-        if self.fp16:
-            logits = logits.float()
-        logits = logits.clamp(-1, 1)
-        logits = self.margin_softmax(logits, labels)
-        loss = self.dist_cross_entropy(logits, labels)
-        return loss
-
-    def state_dict(self, destination=None, prefix='', keep_vars=False):
-        if destination is None:
-            destination = collections.OrderedDict()
-            destination._metadata = collections.OrderedDict()
-        for name, module in self._modules.items():
-            if module is not None:
-                module.state_dict(destination, prefix + name + '.', keep_vars=keep_vars)
-        if self.sample_rate < 1:
-            destination['weight'] = self.weight.detach()
-        else:
-            destination['weight'] = self.weight_activated.data.detach()
-        return destination
-
-    def load_state_dict(self, state_dict, strict: bool=True):
-        if self.sample_rate < 1:
-            self.weight = state_dict['weight']
-            self.weight_mom.zero_()
-            self.weight_activated.data.zero_()
-            self.weight_activated_mom.zero_()
-            self.weight_index.zero_()
-        else:
-            self.weight_activated.data = state_dict['weight']
-
-
-class PartialFCAdamW(torch.nn.Module):
-
-    def __init__(self, margin_loss: Callable, embedding_size: int, num_classes: int, sample_rate: float=1.0, fp16: bool=False):
-        """
-        Paramenters:
-        -----------
-        embedding_size: int
-            The dimension of embedding, required
-        num_classes: int
-            Total number of classes, required
-        sample_rate: float
-            The rate of negative centers participating in the calculation, default is 1.0.
-        """
-        super(PartialFCAdamW, self).__init__()
-        assert distributed.is_initialized(), 'must initialize distributed before create this'
-        self.rank = distributed.get_rank()
-        self.world_size = distributed.get_world_size()
-        self.dist_cross_entropy = DistCrossEntropy()
-        self.embedding_size = embedding_size
-        self.sample_rate: float = sample_rate
-        self.fp16 = fp16
-        self.num_local: int = num_classes // self.world_size + int(self.rank < num_classes % self.world_size)
-        self.class_start: int = num_classes // self.world_size * self.rank + min(self.rank, num_classes % self.world_size)
-        self.num_sample: int = int(self.sample_rate * self.num_local)
-        self.last_batch_size: int = 0
-        self.weight: torch.Tensor
-        self.weight_exp_avg: torch.Tensor
-        self.weight_exp_avg_sq: torch.Tensor
-        self.weight_activated: torch.nn.Parameter
-        self.weight_activated_exp_avg: torch.Tensor
-        self.weight_activated_exp_avg_sq: torch.Tensor
-        self.is_updated: bool = True
-        self.init_weight_update: bool = True
-        if self.sample_rate < 1:
-            self.register_buffer('weight', tensor=torch.normal(0, 0.01, (self.num_local, embedding_size)))
-            self.register_buffer('weight_exp_avg', tensor=torch.zeros_like(self.weight))
-            self.register_buffer('weight_exp_avg_sq', tensor=torch.zeros_like(self.weight))
-            self.register_parameter('weight_activated', param=torch.nn.Parameter(torch.empty(0, 0)))
-            self.register_buffer('weight_activated_exp_avg', tensor=torch.empty(0, 0))
-            self.register_buffer('weight_activated_exp_avg_sq', tensor=torch.empty(0, 0))
-        else:
-            self.weight_activated = torch.nn.Parameter(torch.normal(0, 0.01, (self.num_local, embedding_size)))
-        self.step = 0
-        if isinstance(margin_loss, Callable):
-            self.margin_softmax = margin_loss
-        else:
-            raise
-
-    @torch.no_grad()
-    def sample(self, labels, index_positive, optimizer):
-        self.step += 1
-        positive = torch.unique(labels[index_positive], sorted=True)
-        if self.num_sample - positive.size(0) >= 0:
-            perm = torch.rand(size=[self.num_local])
-            perm[positive] = 2.0
-            index = torch.topk(perm, k=self.num_sample)[1]
-            index = index.sort()[0]
-        else:
-            index = positive
-        self.weight_index = index
-        labels[index_positive] = torch.searchsorted(index, labels[index_positive])
-        self.weight_activated = torch.nn.Parameter(self.weight[self.weight_index])
-        self.weight_activated_exp_avg = self.weight_exp_avg[self.weight_index]
-        self.weight_activated_exp_avg_sq = self.weight_exp_avg_sq[self.weight_index]
-        if isinstance(optimizer, (torch.optim.Adam, torch.optim.AdamW)):
-            optimizer.state.pop(optimizer.param_groups[-1]['params'][0], None)
-            optimizer.param_groups[-1]['params'][0] = self.weight_activated
-            optimizer.state[self.weight_activated]['exp_avg'] = self.weight_activated_exp_avg
-            optimizer.state[self.weight_activated]['exp_avg_sq'] = self.weight_activated_exp_avg_sq
-            optimizer.state[self.weight_activated]['step'] = self.step
-        else:
-            raise
-
-    @torch.no_grad()
-    def update(self):
-        """ partial weight to global
-        """
-        if self.init_weight_update:
-            self.init_weight_update = False
-            return
-        if self.sample_rate < 1:
-            self.weight[self.weight_index] = self.weight_activated
-            self.weight_exp_avg[self.weight_index] = self.weight_activated_exp_avg
-            self.weight_exp_avg_sq[self.weight_index] = self.weight_activated_exp_avg_sq
-
-    def forward(self, local_embeddings: torch.Tensor, local_labels: torch.Tensor, optimizer: torch.optim.Optimizer):
-        """
-        Parameters:
-        ----------
-        local_embeddings: torch.Tensor
-            feature embeddings on each GPU(Rank).
-        local_labels: torch.Tensor
-            labels on each GPU(Rank).
-
-        Returns:
-        -------
-        loss: torch.Tensor
-            pass
-        """
-        local_labels.squeeze_()
-        local_labels = local_labels.long()
-        self.update()
-        batch_size = local_embeddings.size(0)
-        if self.last_batch_size == 0:
-            self.last_batch_size = batch_size
-        assert self.last_batch_size == batch_size, 'last batch size do not equal current batch size: {} vs {}'.format(self.last_batch_size, batch_size)
-        _gather_embeddings = [torch.zeros((batch_size, self.embedding_size)) for _ in range(self.world_size)]
-        _gather_labels = [torch.zeros(batch_size).long() for _ in range(self.world_size)]
-        _list_embeddings = AllGather(local_embeddings, *_gather_embeddings)
-        distributed.all_gather(_gather_labels, local_labels)
-        embeddings = torch.cat(_list_embeddings)
-        labels = torch.cat(_gather_labels)
-        labels = labels.view(-1, 1)
-        index_positive = (self.class_start <= labels) & (labels < self.class_start + self.num_local)
-        labels[~index_positive] = -1
-        labels[index_positive] -= self.class_start
-        if self.sample_rate < 1:
-            self.sample(labels, index_positive, optimizer)
-        with torch.amp.autocast(self.fp16):
-            norm_embeddings = normalize(embeddings)
-            norm_weight_activated = normalize(self.weight_activated)
-            logits = linear(norm_embeddings, norm_weight_activated)
-        if self.fp16:
-            logits = logits.float()
-        logits = logits.clamp(-1, 1)
-        logits = self.margin_softmax(logits, labels)
-        loss = self.dist_cross_entropy(logits, labels)
-        return loss
-
-    def state_dict(self, destination=None, prefix='', keep_vars=False):
-        if destination is None:
-            destination = collections.OrderedDict()
-            destination._metadata = collections.OrderedDict()
-        for name, module in self._modules.items():
-            if module is not None:
-                module.state_dict(destination, prefix + name + '.', keep_vars=keep_vars)
-        if self.sample_rate < 1:
-            destination['weight'] = self.weight.detach()
-        else:
-            destination['weight'] = self.weight_activated.data.detach()
-        return destination
-
-    def load_state_dict(self, state_dict, strict: bool=True):
-        if self.sample_rate < 1:
-            self.weight = state_dict['weight']
-            self.weight_exp_avg.zero_()
-            self.weight_exp_avg_sq.zero_()
-            self.weight_activated.data.zero_()
-            self.weight_activated_exp_avg.zero_()
-            self.weight_activated_exp_avg_sq.zero_()
-        else:
-            self.weight_activated.data = state_dict['weight']
-
-
 class PartialFC_V2(torch.nn.Module):
     """
     https://arxiv.org/abs/2203.15565
@@ -9492,7 +8605,7 @@ class PartialFC_V2(torch.nn.Module):
     """
     _version = 2
 
-    def __init__(self, margin_loss: Callable, embedding_size: int, num_classes: int, sample_rate: float=1.0, fp16: bool=False):
+    def __init__(self, margin_loss: 'Callable', embedding_size: 'int', num_classes: 'int', sample_rate: 'float'=1.0, fp16: 'bool'=False):
         """
         Paramenters:
         -----------
@@ -9509,14 +8622,14 @@ class PartialFC_V2(torch.nn.Module):
         self.world_size = distributed.get_world_size()
         self.dist_cross_entropy = DistCrossEntropy()
         self.embedding_size = embedding_size
-        self.sample_rate: float = sample_rate
+        self.sample_rate: 'float' = sample_rate
         self.fp16 = fp16
-        self.num_local: int = num_classes // self.world_size + int(self.rank < num_classes % self.world_size)
-        self.class_start: int = num_classes // self.world_size * self.rank + min(self.rank, num_classes % self.world_size)
-        self.num_sample: int = int(self.sample_rate * self.num_local)
-        self.last_batch_size: int = 0
-        self.is_updated: bool = True
-        self.init_weight_update: bool = True
+        self.num_local: 'int' = num_classes // self.world_size + int(self.rank < num_classes % self.world_size)
+        self.class_start: 'int' = num_classes // self.world_size * self.rank + min(self.rank, num_classes % self.world_size)
+        self.num_sample: 'int' = int(self.sample_rate * self.num_local)
+        self.last_batch_size: 'int' = 0
+        self.is_updated: 'bool' = True
+        self.init_weight_update: 'bool' = True
         self.weight = torch.nn.Parameter(torch.normal(0, 0.01, (self.num_local, embedding_size)))
         if isinstance(margin_loss, Callable):
             self.margin_softmax = margin_loss
@@ -9548,7 +8661,7 @@ class PartialFC_V2(torch.nn.Module):
             labels[index_positive] = torch.searchsorted(index, labels[index_positive])
         return self.weight[self.weight_index]
 
-    def forward(self, local_embeddings: torch.Tensor, local_labels: torch.Tensor):
+    def forward(self, local_embeddings: 'torch.Tensor', local_labels: 'torch.Tensor'):
         """
         Parameters:
         ----------
@@ -9593,6 +8706,221 @@ class PartialFC_V2(torch.nn.Module):
         return loss
 
 
+class IDMMD(nn.Module):
+
+    def __init__(self, kernel_type='rbf', kernel_mul=2.0, kernel_num=5):
+        super(IDMMD, self).__init__()
+        self.kernel_num = kernel_num
+        self.kernel_mul = kernel_mul
+        self.fix_sigma = None
+        self.kernel_type = kernel_type
+
+    def get_centers_by_id(self, x_rgb, x_ir, targets):
+        centers_rgb = []
+        centers_ir = []
+        batch_y_set = set(targets.data.cpu().numpy())
+        for _, l in enumerate(batch_y_set):
+            feat1 = x_rgb[targets == l]
+            feat2 = x_ir[targets == l]
+            centers_rgb.append(feat1.mean(dim=0).unsqueeze(0))
+            centers_ir.append(feat2.mean(dim=0).unsqueeze(0))
+        centers_rgb = torch.cat(centers_rgb, 0)
+        centers_ir = torch.cat(centers_ir, 0)
+        return centers_rgb, centers_ir
+
+    def forward(self, x_rgb, x_ir, targets):
+        centers_rgb, centers_ir = self.get_centers_by_id(x_rgb, x_ir, targets)
+        if self.kernel_type == 'linear':
+            loss = self.linear_mmd(centers_rgb, centers_ir)
+        elif self.kernel_type == 'rbf':
+            B = centers_rgb.size(0)
+            kernels = self.guassian_kernel(centers_rgb, centers_ir)
+            XX = kernels[:B, :B]
+            YY = kernels[B:, B:]
+            XY = kernels[:B, B:]
+            YX = kernels[B:, :B]
+            loss = (XX + YY - XY - YX).mean()
+        return loss
+
+    def linear_mmd(self, center_rgb, center_ir):
+
+        def compute_dist_(x_rgb, x_ir):
+            n = x_rgb.size(0)
+            dist1 = torch.pow(x_rgb, 2).sum(dim=1, keepdim=True).expand(n, n)
+            dist2 = torch.pow(x_ir, 2).sum(dim=1, keepdim=True).expand(n, n)
+            dist = dist1 + dist2.t()
+            dist.addmm_(mat1=x_rgb, mat2=x_ir.t(), beta=1, alpha=-2)
+            dist = dist.clamp(min=1e-12)
+            return dist
+        matrix = compute_dist_(center_rgb, center_ir)
+        loss = matrix.diag()
+        return loss.mean()
+
+    def guassian_kernel(self, x_rgb, x_ir):
+        total = torch.cat([x_rgb, x_ir], dim=0)
+        N = total.size(0)
+        total0 = total.unsqueeze(0).expand(int(total.size(0)), int(total.size(0)), int(total.size(1)))
+        total1 = total.unsqueeze(1).expand(int(total.size(0)), int(total.size(0)), int(total.size(1)))
+        dists = ((total0 - total1) ** 2).sum(2)
+        if self.fix_sigma:
+            bandwidth = self.fix_sigma
+        else:
+            bandwidth = torch.sum(dists.data) / (N ** 2 - N)
+        bandwidth /= self.kernel_mul ** (self.kernel_num // 2)
+        bandwidth_list = [(bandwidth * self.kernel_mul ** i) for i in range(self.kernel_num)]
+        kernel_val = [torch.exp(-dists / bandwidth_temp) for bandwidth_temp in bandwidth_list]
+        return sum(kernel_val)
+
+
+class mfm(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, type=1):
+        super(mfm, self).__init__()
+        self.out_channels = out_channels
+        if type == 1:
+            self.filter = nn.Conv2d(in_channels, 2 * out_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        else:
+            self.filter = nn.Linear(in_channels, 2 * out_channels)
+
+    def forward(self, x):
+        x = self.filter(x)
+        out = torch.split(x, self.out_channels, 1)
+        return torch.max(out[0], out[1])
+
+
+class group(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
+        super(group, self).__init__()
+        self.conv_a = mfm(in_channels, in_channels, 1, 1, 0)
+        self.conv = mfm(in_channels, out_channels, kernel_size, stride, padding)
+
+    def forward(self, x):
+        x = self.conv_a(x)
+        x = self.conv(x)
+        return x
+
+
+class resblock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(resblock, self).__init__()
+        self.conv1 = mfm(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = mfm(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, x):
+        res = x
+        out = self.conv1(x)
+        out = self.conv2(out)
+        out = out + res
+        return out
+
+
+class network_29layers(nn.Module):
+
+    def __init__(self, block, layers, num_classes=79077):
+        super(network_29layers, self).__init__()
+        self.conv1 = mfm(1, 48, 5, 1, 2)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block1 = self._make_layer(block, layers[0], 48, 48)
+        self.group1 = group(48, 96, 3, 1, 1)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block2 = self._make_layer(block, layers[1], 96, 96)
+        self.group2 = group(96, 192, 3, 1, 1)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block3 = self._make_layer(block, layers[2], 192, 192)
+        self.group3 = group(192, 128, 3, 1, 1)
+        self.block4 = self._make_layer(block, layers[3], 128, 128)
+        self.group4 = group(128, 128, 3, 1, 1)
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.fc = mfm(7 * 7 * 128, 256, type=0)
+        self.fc2 = nn.Linear(256, num_classes)
+
+    def _make_layer(self, block, num_blocks, in_channels, out_channels):
+        layers = []
+        for i in range(0, num_blocks):
+            layers.append(block(in_channels, out_channels))
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.pool1(x)
+        x = self.block1(x)
+        x = self.group1(x)
+        x = self.pool2(x)
+        x = self.block2(x)
+        x = self.group2(x)
+        x = self.pool3(x)
+        x = self.block3(x)
+        x = self.group3(x)
+        x = self.block4(x)
+        x = self.group4(x)
+        x = self.pool4(x)
+        x = x.view(x.size(0), -1)
+        fc = self.fc(x)
+        if self.training:
+            x = F.dropout(fc, training=self.training)
+            out = self.fc2(x)
+            return out, F.normalize(fc, p=2, dim=1)
+        return F.normalize(fc, p=2, dim=1)
+
+
+class network_29layers_cosface(nn.Module):
+
+    def __init__(self, block, layers, num_classes=79077):
+        super(network_29layers_cosface, self).__init__()
+        self.conv1 = mfm(1, 48, 5, 1, 2)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block1 = self._make_layer(block, layers[0], 48, 48)
+        self.group1 = group(48, 96, 3, 1, 1)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block2 = self._make_layer(block, layers[1], 96, 96)
+        self.group2 = group(96, 192, 3, 1, 1)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.block3 = self._make_layer(block, layers[2], 192, 192)
+        self.group3 = group(192, 128, 3, 1, 1)
+        self.block4 = self._make_layer(block, layers[3], 128, 128)
+        self.group4 = group(128, 128, 3, 1, 1)
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+        self.fc = mfm(7 * 7 * 128, 256, type=0)
+        self.weight = Parameter(torch.Tensor(num_classes, 256))
+        nn.init.xavier_uniform_(self.weight)
+
+    def _make_layer(self, block, num_blocks, in_channels, out_channels):
+        layers = []
+        for i in range(0, num_blocks):
+            layers.append(block(in_channels, out_channels))
+        return nn.Sequential(*layers)
+
+    def cosine_sim(self, x1, x2, dim=1, eps=1e-08):
+        ip = torch.mm(x1, x2.t())
+        w1 = torch.norm(x1, 2, dim)
+        w2 = torch.norm(x2, 2, dim)
+        return ip / torch.ger(w1, w2).clamp(min=eps)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.pool1(x)
+        x = self.block1(x)
+        x = self.group1(x)
+        x = self.pool2(x)
+        x = self.block2(x)
+        x = self.group2(x)
+        x = self.pool3(x)
+        x = self.block3(x)
+        x = self.group3(x)
+        x = self.block4(x)
+        x = self.group4(x)
+        x = self.pool4(x)
+        x = x.view(x.size(0), -1)
+        fc = self.fc(x)
+        if self.training:
+            x = F.dropout(fc, training=self.training)
+            out = self.cosine_sim(x, self.weight)
+            return out, F.normalize(fc, p=2, dim=1)
+        return F.normalize(fc, p=2, dim=1)
+
+
 class VPL(Module):
     """
     Modified from Partial-FC
@@ -9603,26 +8931,26 @@ class VPL(Module):
         super(VPL, self).__init__()
         assert sample_rate == 1.0
         assert not resume
-        self.num_classes: int = num_classes
-        self.rank: int = rank
-        self.local_rank: int = local_rank
-        self.device: torch.device = torch.device('cuda:{}'.format(self.local_rank))
-        self.world_size: int = world_size
-        self.batch_size: int = batch_size
-        self.margin_softmax: callable = margin_softmax
-        self.sample_rate: float = sample_rate
-        self.embedding_size: int = embedding_size
-        self.prefix: str = prefix
-        self.num_local: int = num_classes // world_size + int(rank < num_classes % world_size)
-        self.class_start: int = num_classes // world_size * rank + min(rank, num_classes % world_size)
-        self.num_sample: int = int(self.sample_rate * self.num_local)
+        self.num_classes: 'int' = num_classes
+        self.rank: 'int' = rank
+        self.local_rank: 'int' = local_rank
+        self.device: 'torch.device' = torch.device('cuda:{}'.format(self.local_rank))
+        self.world_size: 'int' = world_size
+        self.batch_size: 'int' = batch_size
+        self.margin_softmax: 'callable' = margin_softmax
+        self.sample_rate: 'float' = sample_rate
+        self.embedding_size: 'int' = embedding_size
+        self.prefix: 'str' = prefix
+        self.num_local: 'int' = num_classes // world_size + int(rank < num_classes % world_size)
+        self.class_start: 'int' = num_classes // world_size * rank + min(rank, num_classes % world_size)
+        self.num_sample: 'int' = int(self.sample_rate * self.num_local)
         self.weight_name = os.path.join(self.prefix, 'rank_{}_softmax_weight.pt'.format(self.rank))
         self.weight_mom_name = os.path.join(self.prefix, 'rank_{}_softmax_weight_mom.pt'.format(self.rank))
         self.weight = torch.normal(0, 0.01, (self.num_local, self.embedding_size), device=self.device)
-        self.weight_mom: torch.Tensor = torch.zeros_like(self.weight)
+        self.weight_mom: 'torch.Tensor' = torch.zeros_like(self.weight)
         logging.info('softmax weight init successfully!')
         logging.info('softmax weight mom init successfully!')
-        self.stream: torch.Stream = torch.Stream(local_rank)
+        self.stream: 'torch.cuda.Stream' = torch.cuda.Stream(local_rank)
         self.index = None
         self.update = lambda : 0
         self.sub_weight = Parameter(self.weight)
@@ -9726,7 +9054,7 @@ class VPL(Module):
         logits.backward(grad)
         if total_features.grad is not None:
             total_features.grad.detach_()
-        x_grad: torch.Tensor = torch.zeros_like(features, requires_grad=True)
+        x_grad: 'torch.Tensor' = torch.zeros_like(features, requires_grad=True)
         dist.reduce_scatter(x_grad, list(total_features.grad.chunk(self.world_size, dim=0)))
         x_grad = x_grad * self.world_size
         if self.vpl_mode >= 0:
@@ -10446,6 +9774,11 @@ class ResnetBlock_Adain(nn.Module):
         return out
 
 
+def resnet_jmlr(pretrained=False, **kwargs):
+    model_args = dict(block=BasicBlock, layers=[5, 3, 4, 2], stem_width=32, stem_type='deep', avg_down=True, channels=[64, 160, 272, 512], **kwargs)
+    return ResNet(**model_args)
+
+
 class OneNetwork(nn.Module):
 
     def __init__(self, cfg):
@@ -10538,6 +9871,46 @@ class OneNetwork(nn.Module):
                 feat = torch.cat((pred, feate), 1)
                 pred = self.fc(feat)
         return pred
+
+
+class EyeDataset:
+
+    def __init__(self, root, load_data=True):
+        eyes_info = mio.import_pickle(osp.join(root, 'eyes3d.pkl'))
+        idxs481 = eyes_info['mask481']['idxs']
+        tri481 = eyes_info['mask481']['trilist']
+        self.iris_idx_481 = eyes_info['mask481']['idxs_iris']
+        eyel_template = eyes_info['left_points'][idxs481]
+        eyer_template = eyes_info['right_points'][idxs481]
+        eyel_template_homo = np.append(eyel_template, np.ones((eyel_template.shape[0], 1)), axis=1)
+        eyer_template_homo = np.append(eyer_template, np.ones((eyer_template.shape[0], 1)), axis=1)
+        points = mio.import_pickle(osp.join(root, 'eyespoints.pkl'))
+        self.homol = eyel_template_homo.T
+        self.homor = eyer_template_homo.T
+        if load_data:
+            self.worldl = {}
+            self.worldr = {}
+            for k in points:
+                p = k.find('/')
+                newk = k[p + 1:]
+                value = points[k]
+                self.worldl[newk] = value['left']
+                self.worldr[newk] = value['right']
+
+    def get(self, key, to_homo=False):
+        if key not in self.worldl:
+            return None, None
+        left = self.worldl[key]
+        right = self.worldr[key]
+        if to_homo:
+            left = (left @ self.homol).T
+            right = (right @ self.homor).T
+        return left, right
+
+    def to_homo(self, eyel, eyer):
+        eyel = (eyel @ self.homol).T
+        eyer = (eyer @ self.homor).T
+        return eyel, eyer
 
 
 def get_network(cfg):
@@ -10708,7 +10081,7 @@ class JMLRInference(nn.Module):
         return R, t
 
 
-def eye_like(x: torch.Tensor, n: int) ->torch.Tensor:
+def eye_like(x: 'torch.Tensor', n: 'int') ->torch.Tensor:
     return torch.eye(n, n, dtype=x.dtype, device=x.device).unsqueeze(0).repeat(x.shape[0], 1, 1)
 
 
@@ -12007,9 +11380,6 @@ class Graph_to_Featuremaps_savemem(nn.Module):
         return F.relu(feature_out)
 
 
-graph = model.graph
-
-
 class Graph_trans(nn.Module):
 
     def __init__(self, in_features, out_features, begin_nodes=7, end_nodes=2, bias=False, adj=None):
@@ -12111,10 +11481,6 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      False),
-    (Branch,
-     lambda: ([], {'in_channels': 4, 'res_channels': 4, 'out_channels': 4}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
-     True),
     (CIoULoss,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
@@ -12211,10 +11577,6 @@ TESTCASES = [
      lambda: ([], {'n_dims': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (Linear,
-     lambda: ([], {'linear_size': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
     (LinearBlock,
      lambda: ([], {'in_c': 4, 'out_c': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -12307,6 +11669,18 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 3, 64, 64])], {}),
      False),
+    (group,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'stride': 1, 'padding': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (mfm,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (resblock,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
 ]
 
 class Test_deepinsight_insightface(_paritybench_base):
@@ -12489,4 +11863,7 @@ class Test_deepinsight_insightface(_paritybench_base):
 
     def test_059(self):
         self._check(*TESTCASES[59])
+
+    def test_060(self):
+        self._check(*TESTCASES[60])
 

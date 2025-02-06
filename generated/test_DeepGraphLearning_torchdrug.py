@@ -80,6 +80,7 @@ tox21 = _module
 toxcast = _module
 uspto50k = _module
 wn18 = _module
+yago310 = _module
 yeast_ppi = _module
 zinc250k = _module
 zinc2m = _module
@@ -136,7 +137,6 @@ transform = _module
 utils = _module
 comm = _module
 decorator = _module
-doc = _module
 file = _module
 io = _module
 plot = _module
@@ -146,7 +146,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -222,9 +224,6 @@ from collections.abc import Sequence
 import warnings
 
 
-from collections import Sequence
-
-
 from functools import reduce
 
 
@@ -232,6 +231,9 @@ from matplotlib import pyplot as plt
 
 
 from copy import copy
+
+
+import string
 
 
 import copy
@@ -262,9 +264,6 @@ from torch.utils import cpp_extension
 
 
 import torch.nn.functional as F
-
-
-from collections import Mapping
 
 
 class ProteinResNetBlock(nn.Module):
@@ -713,10 +712,10 @@ class SinusoidalPositionEmbedding(nn.Module):
     Positional embedding based on sine and cosine functions, proposed in `Attention Is All You Need`_.
 
     .. _Attention Is All You Need:
-        https://arxiv.org/pdf/1706.03762.pdf
+       https://arxiv.org/pdf/1706.03762.pdf
 
     Parameters:
-        output_dim (int): output dimension
+       output_dim (int): output dimension
     """
 
     def __init__(self, output_dim):
@@ -2079,7 +2078,7 @@ class PatchedModule(nn.Module):
             raise RuntimeError('ScriptModule does not support non-persistent buffers')
         if '_buffers' not in self.__dict__:
             raise AttributeError('cannot assign buffer before Module.__init__() call')
-        elif not isinstance(name, torch._six.string_classes):
+        elif not isinstance(name, str):
             raise TypeError('buffer name should be a string. Got {}'.format(torch.typename(name)))
         elif '.' in name:
             raise KeyError('buffer name can\'t contain "."')
@@ -2095,17 +2094,6 @@ class PatchedModule(nn.Module):
                 self._non_persistent_buffers_set.discard(name)
             else:
                 self._non_persistent_buffers_set.add(name)
-
-
-class PatchedDistributedDataParallel(nn.parallel.DistributedDataParallel):
-
-    def _distributed_broadcast_coalesced(self, tensors, buffer_size, *args, **kwargs):
-        new_tensors = []
-        for tensor in tensors:
-            if isinstance(tensor, torch.Tensor):
-                new_tensors.append(tensor)
-        if new_tensors:
-            dist._broadcast_coalesced(self.process_group, new_tensors, buffer_size, *args, **kwargs)
 
 
 class Task(nn.Module):

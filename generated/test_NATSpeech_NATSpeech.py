@@ -100,7 +100,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -646,7 +648,7 @@ class PositionalEncoding(torch.nn.Module):
         pe = pe.unsqueeze(0)
         self.pe = pe
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Add positional encoding.
         Args:
             x (torch.Tensor): Input tensor (batch, time, `*`).
@@ -3050,7 +3052,7 @@ class GaussianDiffusion(nn.Module):
         posterior_log_variance_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape)
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
-    def p_mean_variance(self, x, t, cond, clip_denoised: bool):
+    def p_mean_variance(self, x, t, cond, clip_denoised: 'bool'):
         noise_pred = self.denoise_fn(x, t, cond=cond)
         x_recon = self.predict_start_from_noise(x, t=t, noise=noise_pred)
         if clip_denoised:
@@ -3592,6 +3594,9 @@ class HifiGanGenerator(torch.nn.Module):
         remove_weight_norm(self.conv_post)
 
 
+hparams = {}
+
+
 class DiscriminatorP(torch.nn.Module):
 
     def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False, use_cond=False, c_in=1):
@@ -3946,9 +3951,6 @@ def get_last_checkpoint(work_dir, steps=None):
         last_ckpt_path = ckpt_paths[0]
         checkpoint = torch.load(last_ckpt_path, map_location='cpu')
     return checkpoint, last_ckpt_path
-
-
-hparams = {}
 
 
 def move_to_cuda(batch, gpu_id=0):
@@ -4326,7 +4328,7 @@ class Trainer:
         return root_node
 
     def get_task_ref(self):
-        task: BaseTask = self.task.module if isinstance(self.task, DDP) else self.task
+        task: 'BaseTask' = self.task.module if isinstance(self.task, DDP) else self.task
         return task
 
     def log_metrics_to_tb(self, metrics, step=None):
@@ -4424,7 +4426,7 @@ class BaseTask(nn.Module):
         self.gradient_clip_val = hparams.get('clip_grad_value', 0)
         self.model = None
         self.training_losses_meter = None
-        self.logger: SummaryWriter = None
+        self.logger: 'SummaryWriter' = None
 
     def build_model(self):
         raise NotImplementedError

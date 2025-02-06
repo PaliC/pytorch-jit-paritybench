@@ -11,6 +11,7 @@ dataset = _module
 base = _module
 coco = _module
 xml_dataset = _module
+yolo = _module
 transform = _module
 color = _module
 mosaic = _module
@@ -80,6 +81,7 @@ test_batch_process = _module
 test_collate = _module
 test_cocodataset = _module
 test_xmldataset = _module
+test_yolodataset = _module
 test_color = _module
 test_warp = _module
 test_coco_detection = _module
@@ -127,7 +129,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -159,9 +163,6 @@ import collections
 
 
 import re
-
-
-from torch._six import string_classes
 
 
 import random
@@ -574,7 +575,7 @@ class MBConvBlock(nn.Module):
 efficientnet_lite_params = {'efficientnet_lite0': [1.0, 1.0, 224, 0.2], 'efficientnet_lite1': [1.0, 1.1, 240, 0.2], 'efficientnet_lite2': [1.1, 1.2, 260, 0.3], 'efficientnet_lite3': [1.2, 1.4, 280, 0.3], 'efficientnet_lite4': [1.4, 1.8, 300, 0.3]}
 
 
-model_urls = {'shufflenetv2_0.5x': 'https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth', 'shufflenetv2_1.0x': 'https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth', 'shufflenetv2_1.5x': None, 'shufflenetv2_2.0x': None}
+model_urls = {'shufflenetv2_0.5x': 'https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth', 'shufflenetv2_1.0x': 'https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth', 'shufflenetv2_1.5x': 'https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth', 'shufflenetv2_2.0x': 'https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth'}
 
 
 def round_filters(filters, multiplier, divisor=8, min_width=None):
@@ -711,7 +712,7 @@ def _make_divisible(v, divisor, min_value=None):
     return new_v
 
 
-def hard_sigmoid(x, inplace: bool=False):
+def hard_sigmoid(x, inplace: 'bool'=False):
     if inplace:
         return x.add_(3.0).clamp_(0.0, 6.0).div_(6.0)
     else:
@@ -3008,8 +3009,8 @@ class DynamicSoftLabelAssigner(BaseAssigner):
         gt_onehot_label = F.one_hot(gt_labels, pred_scores.shape[-1]).float().unsqueeze(0).repeat(num_valid, 1, 1)
         valid_pred_scores = valid_pred_scores.unsqueeze(1).repeat(1, num_gt, 1)
         soft_label = gt_onehot_label * pairwise_ious[..., None]
-        scale_factor = soft_label - valid_pred_scores
-        cls_cost = F.binary_cross_entropy(valid_pred_scores, soft_label, reduction='none') * scale_factor.abs().pow(2.0)
+        scale_factor = soft_label - valid_pred_scores.sigmoid()
+        cls_cost = F.binary_cross_entropy_with_logits(valid_pred_scores, soft_label, reduction='none') * scale_factor.abs().pow(2.0)
         cls_cost = cls_cost.sum(dim=-1)
         cost_matrix = cls_cost + iou_cost * self.iou_factor
         matched_pred_ious, matched_gt_inds = self.dynamic_k_matching(cost_matrix, pairwise_ious, num_gt, valid_mask)
@@ -3226,7 +3227,7 @@ class NanoDetPlusHead(nn.Module):
         if gt_bboxes_ignore is not None:
             gt_bboxes_ignore = torch.from_numpy(gt_bboxes_ignore)
             gt_bboxes_ignore = gt_bboxes_ignore
-        assign_result = self.assigner.assign(cls_preds.sigmoid(), center_priors, decoded_bboxes, gt_bboxes, gt_labels, gt_bboxes_ignore)
+        assign_result = self.assigner.assign(cls_preds, center_priors, decoded_bboxes, gt_bboxes, gt_labels, gt_bboxes_ignore)
         pos_inds, neg_inds, pos_gt_bboxes, pos_assigned_gt_inds = self.sample(assign_result, gt_bboxes)
         num_priors = center_priors.size(0)
         bbox_targets = torch.zeros_like(center_priors)
@@ -3448,14 +3449,18 @@ class OneStageDetector(nn.Module):
 
     def inference(self, meta):
         with torch.no_grad():
-            torch.cuda.synchronize()
+            is_cuda_available = torch.cuda.is_available()
+            if is_cuda_available:
+                torch.cuda.synchronize()
             time1 = time.time()
             preds = self(meta['img'])
-            torch.cuda.synchronize()
+            if is_cuda_available:
+                torch.cuda.synchronize()
             time2 = time.time()
             None
             results = self.head.post_process(preds, meta)
-            torch.cuda.synchronize()
+            if is_cuda_available:
+                torch.cuda.synchronize()
             None
         return results
 
@@ -3760,10 +3765,6 @@ TESTCASES = [
      lambda: ([], {'inp': 4, 'oup': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (GhostNet,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 3, 64, 64])], {}),
-     False),
     (InvertedResidual,
      lambda: ([], {'inp': 4, 'oup': 4, 'stride': 1, 'expand_ratio': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -3788,10 +3789,6 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (ShuffleNetV2,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 3, 64, 64])], {}),
-     False),
     (ShuffleV2Block,
      lambda: ([], {'inp': 4, 'oup': 4, 'stride': 1}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -3864,10 +3861,4 @@ class Test_RangiLyu_nanodet(_paritybench_base):
 
     def test_017(self):
         self._check(*TESTCASES[17])
-
-    def test_018(self):
-        self._check(*TESTCASES[18])
-
-    def test_019(self):
-        self._check(*TESTCASES[19])
 

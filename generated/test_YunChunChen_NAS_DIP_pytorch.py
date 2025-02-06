@@ -47,7 +47,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -118,9 +120,6 @@ from torch.utils.data import Dataset
 
 
 from torch.utils.data import DataLoader
-
-
-from torchvision.models.vgg import model_urls
 
 
 from torchvision.models import vgg19
@@ -1427,10 +1426,6 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (TransConv,
-     lambda: ([], {'C_in': 4, 'kernel_size': 4, 'stride': 1, 'padding': 4}),
-     lambda: ([torch.rand([4, 4, 64, 64])], {}),
-     True),
     (View,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -1512,7 +1507,4 @@ class Test_YunChunChen_NAS_DIP_pytorch(_paritybench_base):
 
     def test_020(self):
         self._check(*TESTCASES[20])
-
-    def test_021(self):
-        self._check(*TESTCASES[21])
 

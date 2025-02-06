@@ -3,6 +3,7 @@ _module = sys.modules[__name__]
 del sys
 dectect = _module
 emotion = _module
+newdectect = _module
 loss = _module
 pfld = _module
 utils = _module
@@ -12,7 +13,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -86,9 +89,6 @@ class Res18Feature(nn.Module):
         attention_weights = self.alpha(x)
         out = attention_weights * self.fc(x)
         return attention_weights, out
-
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class PFLDLoss(nn.Module):

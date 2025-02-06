@@ -11,10 +11,13 @@ numpy = _module
 pytorch_dataset = _module
 file_dataset = _module
 heuristics = _module
+aliases = _module
 heuristics = _module
 heuristics_gpu = _module
 stochastics = _module
+stopping_criteria = _module
 bayesian = _module
+caching_utils = _module
 common = _module
 consistent_dropout = _module
 dropout = _module
@@ -22,6 +25,10 @@ weight_drop = _module
 calibration = _module
 calibration = _module
 ensemble = _module
+experiments = _module
+base = _module
+modelwrapper = _module
+transformers = _module
 metrics = _module
 mixin = _module
 modelwrapper = _module
@@ -38,8 +45,9 @@ pytorch_lightning = _module
 ssl_iterator = _module
 ssl_module = _module
 transforms = _module
-experiments = _module
+warnings = _module
 mlp_mcdropout = _module
+mlp_mcdropout_epig = _module
 mlp_regression_mcdropout = _module
 nlp_bert_mcdropout = _module
 active_image_classification = _module
@@ -52,6 +60,7 @@ pimodel_mcdropout_cifar10 = _module
 vgg_mcdropout_cifar10 = _module
 tests = _module
 active_loop_test = _module
+criterion_test = _module
 dataset_test = _module
 nlp_dataset_test = _module
 test_numpy_dataset = _module
@@ -63,10 +72,12 @@ common_test = _module
 consistent_dropout_test = _module
 dropconnect_test = _module
 dropout_test = _module
+test_caching = _module
 calibration_test = _module
 conftest = _module
 documentation_test = _module
 ensemble_test = _module
+test_adapter = _module
 integration_test = _module
 test_mixin = _module
 modelwrapper_test = _module
@@ -87,7 +98,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -136,6 +149,9 @@ from typing import TYPE_CHECKING
 from typing import Protocol
 
 
+from typing import Tuple
+
+
 from sklearn.utils import check_random_state
 
 
@@ -146,9 +162,6 @@ import torch
 
 
 from itertools import zip_longest
-
-
-from typing import Tuple
 
 
 from copy import deepcopy
@@ -187,10 +200,10 @@ from scipy.special import xlogy
 import torch.nn.functional as F
 
 
-import copy
-
-
 from torch import nn
+
+
+import copy
 
 
 from torch.nn import functional as F
@@ -208,7 +221,16 @@ from torch.optim import Adam
 from typing import OrderedDict
 
 
+import itertools
+
+
+from torch.utils.data import Subset
+
+
 from collections import defaultdict
+
+
+from numpy._typing import NDArray
 
 
 from torch.optim import Optimizer
@@ -230,6 +252,9 @@ from collections.abc import Mapping
 
 
 from functools import singledispatch
+
+
+from typing import TypeVar
 
 
 import math
@@ -280,10 +305,10 @@ from torchvision.models import vgg16
 from torchvision.transforms import transforms
 
 
-from torchvision import datasets
-
-
 from functools import partial
+
+
+from torchvision import datasets
 
 
 from torch.hub import load_state_dict_from_url
@@ -316,6 +341,18 @@ from torchvision.transforms import ToTensor
 from torchvision.transforms import ToPILImage
 
 
+from torch.nn import Sequential
+
+
+from torch.nn import Linear
+
+
+from torch.nn import MSELoss
+
+
+from torch.optim import SGD
+
+
 from torchvision.models import vgg
 
 
@@ -328,9 +365,31 @@ from collections import namedtuple
 from collections import OrderedDict
 
 
+class LRUCacheModule(nn.Module):
+
+    def __init__(self, module, size=1):
+        super().__init__()
+        if size != 1:
+            raise ValueError('We do not support LRUCache bigger than 1.')
+        self.module = module
+        self._memory_input = None
+        self._memory_output = None
+
+    def _is_cache_void(self, x):
+        return self._memory_input is None or not torch.equal(self._memory_input, x)
+
+    def __call__(self, x: 'Tensor'):
+        if self.training:
+            return self.module(x)
+        if self._is_cache_void(x):
+            self._memory_input = x
+            self._memory_output = self.module(x)
+        return self._memory_output
+
+
 class BayesianModule(torch.nn.Module):
-    patching_function: Callable[..., torch.nn.Module]
-    unpatch_function: Callable[..., torch.nn.Module]
+    patching_function: 'Callable[..., torch.nn.Module]'
+    unpatch_function: 'Callable[..., torch.nn.Module]'
 
     def __init__(self, module, *args, **kwargs):
         super().__init__()
@@ -351,7 +410,7 @@ class BayesianModule(torch.nn.Module):
 
 class ConsistentDropout(_DropoutNd):
     """
-    ConsistentDropout is useful when doing research.
+    ConsistentDropout is useful when doing learn.
     It guarantees that while the masks are the same between batches
     during inference. The masks are different inside the batch.
 
@@ -398,7 +457,7 @@ class ConsistentDropout(_DropoutNd):
 
 class ConsistentDropout2d(_DropoutNd):
     """
-    ConsistentDropout is useful when doing research.
+    ConsistentDropout is useful when doing learn.
     It guarantees that while the mask are the same between batches,
     they are different inside the batch.
 
@@ -441,7 +500,7 @@ class ConsistentDropout2d(_DropoutNd):
 
 
 class WeightDropMixin:
-    _kwargs: Dict
+    _kwargs: 'Dict'
 
     def unpatch(self):
         new_module = self.__class__.__bases__[0](**self._kwargs)
@@ -497,23 +556,23 @@ class WeightDropLinear(torch.nn.Linear, WeightDropMixin):
         return torch.nn.functional.linear(input, w, self.bias)
 
 
-def get_weight_drop_module(name: str, weight_dropout, **kwargs):
+def get_weight_drop_module(name: 'str', weight_dropout, **kwargs):
     return {'Conv2d': WeightDropConv2d, 'Linear': WeightDropLinear}[name](weight_dropout, **kwargs)
 
 
-def _dropconnect_mapping_fn(module: torch.nn.Module, layers, weight_dropout) ->Optional[nn.Module]:
-    new_module: Optional[nn.Module] = None
+def _dropconnect_mapping_fn(module: 'torch.nn.Module', layers, weight_dropout) ->Optional[nn.Module]:
+    new_module: 'Optional[nn.Module]' = None
     for layer in layers:
         if isinstance(module, getattr(torch.nn, layer)):
             new_module = get_weight_drop_module(layer, weight_dropout, **module.__dict__)
             break
     if isinstance(module, nn.Dropout):
-        module._baal_p: float = module.p
+        module._baal_p: 'float' = module.p
         module.p = 0.0
     return new_module
 
 
-def replace_layers_in_module(module: nn.Module, mapping_fn: Callable, *args, **kwargs) ->bool:
+def replace_layers_in_module(module: 'nn.Module', mapping_fn: 'Callable', *args, **kwargs) ->bool:
     """
     Recursively iterate over the children of a module and replace them according to `mapping_fn`.
 
@@ -522,15 +581,16 @@ def replace_layers_in_module(module: nn.Module, mapping_fn: Callable, *args, **k
     """
     changed = False
     for name, child in module.named_children():
-        new_module = mapping_fn(child, *args, **kwargs)
+        new_module: 'Optional[nn.Module]' = mapping_fn(child, *args, **kwargs)
         if new_module is not None:
             changed = True
+            new_module.train(mode=child.training)
             module.add_module(name, new_module)
         changed |= replace_layers_in_module(child, mapping_fn, *args, **kwargs)
     return changed
 
 
-def _patching_wrapper(module: nn.Module, inplace: bool, patching_fn: Callable[..., Optional[nn.Module]], *args, **kwargs) ->nn.Module:
+def _patching_wrapper(module: 'nn.Module', inplace: 'bool', patching_fn: 'Callable[..., Optional[nn.Module]]', *args, **kwargs) ->nn.Module:
     if not inplace:
         module = copy.deepcopy(module)
     changed = replace_layers_in_module(module, patching_fn, *args, **kwargs)
@@ -539,7 +599,7 @@ def _patching_wrapper(module: nn.Module, inplace: bool, patching_fn: Callable[..
     return module
 
 
-def patch_module(module: torch.nn.Module, layers: Sequence, weight_dropout: float=0.0, inplace: bool=True) ->torch.nn.Module:
+def patch_module(module: 'torch.nn.Module', layers: 'Sequence', weight_dropout: 'float'=0.0, inplace: 'bool'=True) ->torch.nn.Module:
     """
     Replace given layers with weight_drop module of that layer.
 
@@ -560,8 +620,8 @@ def patch_module(module: torch.nn.Module, layers: Sequence, weight_dropout: floa
     return _patching_wrapper(module, inplace=inplace, patching_fn=_dropconnect_mapping_fn, layers=layers, weight_dropout=weight_dropout)
 
 
-def _droconnect_unmapping_fn(module: torch.nn.Module) ->Optional[nn.Module]:
-    new_module: Optional[nn.Module] = None
+def _droconnect_unmapping_fn(module: 'torch.nn.Module') ->Optional[nn.Module]:
+    new_module: 'Optional[nn.Module]' = None
     if isinstance(module, WeightDropMixin):
         new_module = module.unpatch()
     if isinstance(module, nn.Dropout):
@@ -569,7 +629,7 @@ def _droconnect_unmapping_fn(module: torch.nn.Module) ->Optional[nn.Module]:
     return new_module
 
 
-def unpatch_module(module: torch.nn.Module, inplace: bool=True) ->torch.nn.Module:
+def unpatch_module(module: 'torch.nn.Module', inplace: 'bool'=True) ->torch.nn.Module:
     """
     Unpatch Dropconnect module to recover initial module.
 
@@ -812,6 +872,17 @@ class SimpleModel(nn.Module):
         return x
 
 
+class LinearMocked(Linear):
+    call_count = 0
+
+    def __init__(self, in_features: 'int', out_features: 'int'):
+        super().__init__(in_features, out_features)
+
+    def __call__(self, x):
+        LinearMocked.call_count += 1
+        return super().__call__(x)
+
+
 class DummyModel(nn.Module):
 
     def __init__(self):
@@ -888,6 +959,10 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (LinearMocked,
+     lambda: ([], {'in_features': 4, 'out_features': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (MCConsistentDropoutModule,
      lambda: ([], {'module': _mock_layer(), 'layers': 1}),
      lambda: ([], {'input': torch.rand([4, 4])}),
@@ -949,4 +1024,7 @@ class Test_baal_org_baal(_paritybench_base):
 
     def test_012(self):
         self._check(*TESTCASES[12])
+
+    def test_013(self):
+        self._check(*TESTCASES[13])
 

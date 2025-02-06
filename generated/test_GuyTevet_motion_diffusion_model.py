@@ -60,6 +60,7 @@ rotation2xyz = _module
 smpl = _module
 edit = _module
 generate = _module
+predict = _module
 train_mdm = _module
 train_platforms = _module
 training_loop = _module
@@ -74,6 +75,7 @@ fit_seq = _module
 customloss = _module
 prior = _module
 smplify = _module
+motions2hik = _module
 render_mesh = _module
 simplify_loc2rot = _module
 vis_utils = _module
@@ -82,7 +84,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -191,13 +195,19 @@ from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import polynomial_kernel
 
 
+from typing import Any
+
+
+from typing import List
+
+
+from typing import Optional
+
+
 from types import SimpleNamespace
 
 
 from torch.optim import AdamW
-
-
-from typing import Optional
 
 
 class ContrastiveLoss(torch.nn.Module):
@@ -744,6 +754,7 @@ class ClassifierFreeSampleModel(nn.Module):
         self.nfeats = self.model.nfeats
         self.data_rep = self.model.data_rep
         self.cond_mode = self.model.cond_mode
+        self.encode_text = self.model.encode_text
 
     def forward(self, x, timesteps, y=None):
         cond_mode = self.model.cond_mode
@@ -830,7 +841,7 @@ JOINTSTYPES = ['a2m', 'a2mpl', 'smpl', 'vibe', 'vertices']
 JOINTSTYPE_ROOT = {'a2m': 0, 'smpl': 0, 'a2mpl': 0, 'vibe': 8}
 
 
-JOINT_MAP = {'OP Nose': 24, 'OP Neck': 12, 'OP RShoulder': 17, 'OP RElbow': 19, 'OP RWrist': 21, 'OP LShoulder': 16, 'OP LElbow': 18, 'OP LWrist': 20, 'OP MidHip': 0, 'OP RHip': 2, 'OP RKnee': 5, 'OP RAnkle': 8, 'OP LHip': 1, 'OP LKnee': 4, 'OP LAnkle': 7, 'OP REye': 25, 'OP LEye': 26, 'OP REar': 27, 'OP LEar': 28, 'OP LBigToe': 29, 'OP LSmallToe': 30, 'OP LHeel': 31, 'OP RBigToe': 32, 'OP RSmallToe': 33, 'OP RHeel': 34, 'Right Ankle': 8, 'Right Knee': 5, 'Right Hip': 45, 'Left Hip': 46, 'Left Knee': 4, 'Left Ankle': 7, 'Right Wrist': 21, 'Right Elbow': 19, 'Right Shoulder': 17, 'Left Shoulder': 16, 'Left Elbow': 18, 'Left Wrist': 20, 'Neck (LSP)': 47, 'Top of Head (LSP)': 48, 'Pelvis (MPII)': 49, 'Thorax (MPII)': 50, 'Spine (H36M)': 51, 'Jaw (H36M)': 52, 'Head (H36M)': 53, 'Nose': 24, 'Left Eye': 26, 'Right Eye': 25, 'Left Ear': 28, 'Right Ear': 27}
+JOINT_MAP = ['Hips', 'LeftUpLeg', 'RightUpLeg', 'Spine', 'LeftLeg', 'RightLeg', 'Spine1', 'LeftFoot', 'RightFoot', 'Spine2', 'LeftToeBase', 'RightToeBase', 'Neck', 'LeftShoulder', 'RightShoulder', 'Head', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand']
 
 
 JOINT_NAMES = ['OP Nose', 'OP Neck', 'OP RShoulder', 'OP RElbow', 'OP RWrist', 'OP LShoulder', 'OP LElbow', 'OP LWrist', 'OP MidHip', 'OP RHip', 'OP RKnee', 'OP RAnkle', 'OP LHip', 'OP LKnee', 'OP LAnkle', 'OP REye', 'OP LEye', 'OP REar', 'OP LEar', 'OP LBigToe', 'OP LSmallToe', 'OP LHeel', 'OP RBigToe', 'OP RSmallToe', 'OP RHeel', 'Right Ankle', 'Right Knee', 'Right Hip', 'Left Hip', 'Left Knee', 'Left Ankle', 'Right Wrist', 'Right Elbow', 'Right Shoulder', 'Left Shoulder', 'Left Elbow', 'Left Wrist', 'Neck (LSP)', 'Top of Head (LSP)', 'Pelvis (MPII)', 'Thorax (MPII)', 'Spine (H36M)', 'Jaw (H36M)', 'Head (H36M)', 'Nose', 'Left Eye', 'Right Eye', 'Left Ear', 'Right Ear']
@@ -1017,7 +1028,10 @@ class MDM(nn.Module):
         emb = self.embed_timestep(timesteps)
         force_mask = y.get('uncond', False)
         if 'text' in self.cond_mode:
-            enc_text = self.encode_text(y['text'])
+            if 'text_embed' in y.keys():
+                enc_text = y['text_embed']
+            else:
+                enc_text = self.encode_text(y['text'])
             emb += self.embed_text(self.mask_cond(enc_text, force_mask=force_mask))
         if 'action' in self.cond_mode:
             action_emb = self.embed_action(y['action'])

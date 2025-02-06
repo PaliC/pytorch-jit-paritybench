@@ -27,7 +27,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -915,7 +917,7 @@ class Model(nn.Module):
 class FocusSelector(nn.Module):
     """Sample focus (sequential binary masks) from source sequence"""
 
-    def __init__(self, word_embed_size: int=300, answer_position_embed_size: int=16, ner_embed_size: int=16, pos_embed_size: int=16, case_embed_size: int=16, focus_embed_size: int=16, enc_hidden_size: int=300, dec_hidden_size: int=300, num_layers: int=1, dropout_p: float=0.2, rnn: str='GRU', n_mixture: int=1, seq2seq_model: str='NQG', task: str='QG', threshold: float=0.15, feature_rich: bool=False):
+    def __init__(self, word_embed_size: 'int'=300, answer_position_embed_size: 'int'=16, ner_embed_size: 'int'=16, pos_embed_size: 'int'=16, case_embed_size: 'int'=16, focus_embed_size: 'int'=16, enc_hidden_size: 'int'=300, dec_hidden_size: 'int'=300, num_layers: 'int'=1, dropout_p: 'float'=0.2, rnn: 'str'='GRU', n_mixture: 'int'=1, seq2seq_model: 'str'='NQG', task: 'str'='QG', threshold: 'float'=0.15, feature_rich: 'bool'=False):
         super().__init__()
         self.task = task
         self.seq2seq_model = seq2seq_model
@@ -944,7 +946,7 @@ class FocusSelector(nn.Module):
 
 class Seq2Seq(nn.Module):
 
-    def __init__(self, vocab_size: int=20000, word_embed_size: int=300, answer_position_embed_size: int=16, ner_embed_size: int=16, pos_embed_size: int=16, case_embed_size: int=16, position_embed_size: int=16, focus_embed_size: int=16, enc_hidden_size: int=512, dec_hidden_size: int=256, num_layers: int=1, dropout_p: float=0.5, tie: bool=False, rnn: str='GRU', use_focus: bool=False, task: str='QG', model: str='NQG', feature_rich: bool=False, n_mixture=None):
+    def __init__(self, vocab_size: 'int'=20000, word_embed_size: 'int'=300, answer_position_embed_size: 'int'=16, ner_embed_size: 'int'=16, pos_embed_size: 'int'=16, case_embed_size: 'int'=16, position_embed_size: 'int'=16, focus_embed_size: 'int'=16, enc_hidden_size: 'int'=512, dec_hidden_size: 'int'=256, num_layers: 'int'=1, dropout_p: 'float'=0.5, tie: 'bool'=False, rnn: 'str'='GRU', use_focus: 'bool'=False, task: 'str'='QG', model: 'str'='NQG', feature_rich: 'bool'=False, n_mixture=None):
         """Neural Question Generation from Text: A Preliminary Study (Zhou et al. NLPCC 2017)
         Get To The Point: Summarization with Pointer-Generator Networks (See et al. ACL 2017)
         """

@@ -17,7 +17,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -129,7 +131,7 @@ class EnergyNet(nn.Module):
         n_cls (int): The number of classes.
     """
 
-    def __init__(self, n_fc_hidden: int=500, n_cls: int=10):
+    def __init__(self, n_fc_hidden: 'int'=500, n_cls: 'int'=10):
         super(EnergyNet, self).__init__()
         self.conv1 = nn.Conv2d(1, 20, 5, 1)
         self.conv2 = nn.Conv2d(20, 50, 5, 1)
@@ -169,7 +171,7 @@ class UnrollEnergy(nn.Module):
         n_inner_iter (int): The number of optimization steps to take.
     """
 
-    def __init__(self, Enet: EnergyNet, n_cls: int=10, n_inner_iter: int=5):
+    def __init__(self, Enet: 'EnergyNet', n_cls: 'int'=10, n_inner_iter: 'int'=5):
         super(UnrollEnergy, self).__init__()
         self.Enet = Enet
         self.n_cls = n_cls
@@ -196,14 +198,14 @@ class _MonkeyPatchBase(_abc.ABC, _torch.nn.Module):
 
     @_abc.abstractmethod
     def __init__(self) ->None:
-        self._param_mapping: _typing.List[int] = []
-        self._being_modified_internally: bool = True
-        self._track_higher_grads: bool = True
+        self._param_mapping: '_typing.List[int]' = []
+        self._being_modified_internally: 'bool' = True
+        self._track_higher_grads: 'bool' = True
 
     def forward(self):
         raise NotImplementedError("The monkey-patching logic has failed to override self.forward on the new module, or you tried calling forward on a patched version of a module which doesn't have forward (e.g. ModuleList).")
 
-    def _expand_params(self, params: _typing.List[_torch.Tensor]) ->_typing.List[_torch.Tensor]:
+    def _expand_params(self, params: '_typing.List[_torch.Tensor]') ->_typing.List[_torch.Tensor]:
         expanded = []
         for index in self._param_mapping:
             expanded.append(params[index])

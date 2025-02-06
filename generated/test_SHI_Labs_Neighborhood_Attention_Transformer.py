@@ -80,7 +80,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -169,7 +171,8 @@ class NATransformerLayer(nn.Module):
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
         self.norm1 = norm_layer(dim)
-        self.attn = NeighborhoodAttention(dim, kernel_size=kernel_size, dilation=dilation, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+        extra_args = {'rel_pos_bias': True} if is_natten_post_017 else {'bias': True}
+        self.attn = NeighborhoodAttention(dim, kernel_size=kernel_size, dilation=dilation, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, **extra_args)
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
@@ -207,7 +210,7 @@ class PatchMerging(nn.Module):
         x2 = x[:, 0::2, 1::2, :]
         x3 = x[:, 1::2, 1::2, :]
         x = torch.cat([x0, x1, x2, x3], -1)
-        x = x.view(B, -1, 4 * C)
+        x = x.view(B, (H + 1) // 2, (W + 1) // 2, 4 * C)
         x = self.norm(x)
         x = self.reduction(x)
         return x
@@ -505,7 +508,8 @@ class NATLayer(nn.Module):
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
         self.norm1 = norm_layer(dim)
-        self.attn = NeighborhoodAttention(dim, kernel_size=kernel_size, dilation=dilation, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+        extra_args = {'rel_pos_bias': True} if is_natten_post_017 else {'bias': True}
+        self.attn = NeighborhoodAttention(dim, kernel_size=kernel_size, dilation=dilation, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, **extra_args)
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)

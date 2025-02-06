@@ -1,24 +1,32 @@
 import sys
 _module = sys.modules[__name__]
 del sys
+evaluate = _module
 sample = _module
 src = _module
 composenW = _module
 compress = _module
+convert = _module
 custom_modules = _module
-diffuser_training = _module
+diffusers_composenW = _module
+diffusers_data_pipeline = _module
+diffusers_model_pipeline = _module
+diffusers_sample = _module
+diffusers_training = _module
+diffusers_training_sdxl = _module
 finetune_data = _module
 get_deltas = _module
 model = _module
 retrieve = _module
-sample_diffuser = _module
 train = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -34,10 +42,34 @@ xrange = range
 wraps = functools.wraps
 
 
-import torch
+import warnings
 
 
 import numpy as np
+
+
+import pandas as pd
+
+
+import sklearn.preprocessing
+
+
+import torch
+
+
+from torchvision.transforms import CenterCrop
+
+
+from torchvision.transforms import Compose
+
+
+from torchvision.transforms import Normalize
+
+
+from torchvision.transforms import Resize
+
+
+from torchvision.transforms import ToTensor
 
 
 from torchvision.utils import make_grid
@@ -61,13 +93,25 @@ from scipy.linalg import lu_solve
 import torch.nn as nn
 
 
-import itertools
+from torch.utils.data import Dataset
 
 
-import math
+from torchvision import transforms
+
+
+from typing import Callable
 
 
 from typing import Optional
+
+
+import itertools
+
+
+import logging
+
+
+import math
 
 
 import torch.nn.functional as F
@@ -76,19 +120,10 @@ import torch.nn.functional as F
 import torch.utils.checkpoint
 
 
-from torch.utils.data import Dataset
-
-
-from torchvision import transforms
-
-
 from torch import nn
 
 
 from torch import einsum
-
-
-import matplotlib.pyplot as plt
 
 
 import time
@@ -168,13 +203,10 @@ class FrozenCLIPEmbedderWrapper(AbstractEncoder):
     def forward(self, text):
         batch_encoding = self.tokenizer(text, truncation=True, max_length=self.max_length, return_length=True, return_overflowing_tokens=False, padding='max_length', return_tensors='pt')
         tokens = batch_encoding['input_ids']
-        if len(self.modifier_token) == 3:
-            indices = ((tokens == self.modifier_token_id[-1]) | (tokens == self.modifier_token_id[-2]) | (tokens == self.modifier_token_id[-3])) * 1
-        elif len(self.modifier_token) == 2:
-            indices = ((tokens == self.modifier_token_id[-1]) | (tokens == self.modifier_token_id[-2])) * 1
-        else:
-            indices = (tokens == self.modifier_token_id[-1]) * 1
-        indices = indices.unsqueeze(-1)
+        indices = tokens == self.modifier_token_id[-1]
+        for token_id in self.modifier_token_id:
+            indices |= tokens == token_id
+        indices = (indices * 1).unsqueeze(-1)
         input_shape = tokens.size()
         tokens = tokens.view(-1, input_shape[-1])
         hidden_states = self.transformer.text_model.embeddings(input_ids=tokens)

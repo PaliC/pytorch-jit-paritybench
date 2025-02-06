@@ -114,7 +114,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -207,7 +209,7 @@ class BackboneBase(nn.Module):
     def __init__(self):
         super(BackboneBase, self).__init__()
 
-    def _forward(self, x: torch.tensor) ->torch.tensor:
+    def _forward(self, x: 'torch.tensor') ->torch.tensor:
         pass
 
 
@@ -264,27 +266,6 @@ class ClassBlock(nn.Module):
         else:
             x = self.classifier(x)
             return x
-
-
-def _register_generic(module_dict, module_name, module):
-    assert module_name not in module_dict
-    module_dict[module_name] = module
-
-
-class Registry(dict):
-    """
-    A helper class to register class.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(Registry, self).__init__(*args, **kwargs)
-
-    def register(self, module):
-        _register_generic(self, module.__name__, module)
-        return module
-
-
-BACKBONES = Registry()
 
 
 class ft_net(BackboneBase):

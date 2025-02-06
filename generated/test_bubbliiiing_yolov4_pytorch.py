@@ -13,6 +13,7 @@ train = _module
 utils = _module
 callbacks = _module
 dataloader = _module
+utils = _module
 utils_bbox = _module
 utils_fit = _module
 utils_map = _module
@@ -25,7 +26,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -96,6 +99,9 @@ from random import shuffle
 
 
 from torch.utils.data.dataset import Dataset
+
+
+import random
 
 
 from torchvision.ops import nms
@@ -413,7 +419,10 @@ class YOLOLoss(nn.Module):
         n = torch.sum(obj_mask)
         if n != 0:
             iou = self.box_iou(pred_boxes, y_true[..., :4]).type_as(x)
-            obj_mask = obj_mask & torch.logical_not(torch.isnan(iou))
+            try:
+                obj_mask = obj_mask & torch.logical_not(torch.isnan(iou))
+            except:
+                obj_mask = obj_mask & ~torch.isnan(iou)
             loss_loc = torch.mean((1 - iou)[obj_mask])
             loss_cls = torch.mean(self.BCELoss(pred_cls[obj_mask], y_true[..., 5:][obj_mask]))
             loss += loss_loc * self.box_ratio + loss_cls * self.cls_ratio

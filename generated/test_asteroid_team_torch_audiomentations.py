@@ -74,7 +74,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -213,7 +215,7 @@ class RandomCrop(torch.nn.Module):
     """Crop the audio to predefined length in max_length."""
     supports_multichannel = True
 
-    def __init__(self, max_length: float, sampling_rate: int, max_length_unit: str='seconds'):
+    def __init__(self, max_length: 'float', sampling_rate: 'int', max_length_unit: 'str'='seconds'):
         """
         :param max_length: length to which samples are to be cropped.
         :sampling_rate: sampling rate of input samples.
@@ -230,7 +232,7 @@ class RandomCrop(torch.nn.Module):
         else:
             raise ValueError('max_length_unit must be "samples" or "seconds"')
 
-    def forward(self, samples, sampling_rate: typing.Optional[int]=None):
+    def forward(self, samples, sampling_rate: 'typing.Optional[int]'=None):
         sample_rate = sampling_rate or self.sampling_rate
         if sample_rate is None:
             raise RuntimeError('sample_rate is required')
@@ -257,7 +259,7 @@ class RandomCrop(torch.nn.Module):
 class BaseCompose(torch.nn.Module):
     """This class can apply a sequence of transforms to waveforms."""
 
-    def __init__(self, transforms: List[torch.nn.Module], shuffle: bool=False, p: float=1.0, p_mode='per_batch', output_type: Optional[str]=None):
+    def __init__(self, transforms: 'List[torch.nn.Module]', shuffle: 'bool'=False, p: 'float'=1.0, p_mode='per_batch', output_type: 'Optional[str]'=None):
         """
         :param transforms: List of waveform transform instances
         :param shuffle: Should the order of transforms be shuffled?
@@ -350,7 +352,7 @@ class BaseWaveformTransform(torch.nn.Module):
     supports_target = True
     requires_target = False
 
-    def __init__(self, mode: str='per_example', p: float=0.5, p_mode: Optional[str]=None, sample_rate: Optional[int]=None, target_rate: Optional[int]=None, output_type: Optional[str]=None):
+    def __init__(self, mode: 'str'='per_example', p: 'float'=0.5, p_mode: 'Optional[str]'=None, sample_rate: 'Optional[int]'=None, target_rate: 'Optional[int]'=None, output_type: 'Optional[str]'=None):
         """
 
         :param mode:
@@ -412,7 +414,7 @@ class BaseWaveformTransform(torch.nn.Module):
         self._p = p
         self.bernoulli_distribution = Bernoulli(self._p)
 
-    def forward(self, samples: Tensor=None, sample_rate: Optional[int]=None, targets: Optional[Tensor]=None, target_rate: Optional[int]=None) ->ObjectDict:
+    def forward(self, samples: 'Tensor'=None, sample_rate: 'Optional[int]'=None, targets: 'Optional[Tensor]'=None, target_rate: 'Optional[int]'=None) ->ObjectDict:
         if not self.training:
             output = ObjectDict(samples=samples, sample_rate=sample_rate, targets=targets, target_rate=target_rate)
             return output.samples if self.output_type == 'tensor' else output
@@ -476,7 +478,7 @@ class BaseWaveformTransform(torch.nn.Module):
                     selected_targets = cloned_targets[self.transform_parameters['should_apply']]
                 if not self.are_parameters_frozen:
                     self.randomize_parameters(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
-                perturbed: ObjectDict = self.apply_transform(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
+                perturbed: 'ObjectDict' = self.apply_transform(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
                 cloned_samples[self.transform_parameters['should_apply']] = perturbed.samples
                 cloned_samples = cloned_samples.reshape(batch_size, num_channels, num_samples)
                 if has_targets:
@@ -491,7 +493,7 @@ class BaseWaveformTransform(torch.nn.Module):
                 if self.mode == 'per_example':
                     if not self.are_parameters_frozen:
                         self.randomize_parameters(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
-                    perturbed: ObjectDict = self.apply_transform(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
+                    perturbed: 'ObjectDict' = self.apply_transform(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
                     cloned_samples[self.transform_parameters['should_apply']] = perturbed.samples
                     if has_targets:
                         cloned_targets[self.transform_parameters['should_apply']] = perturbed.targets
@@ -505,7 +507,7 @@ class BaseWaveformTransform(torch.nn.Module):
                         selected_targets = selected_targets.reshape(selected_batch_size * selected_num_channels, 1, num_frames, num_classes)
                     if not self.are_parameters_frozen:
                         self.randomize_parameters(samples=selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
-                    perturbed: ObjectDict = self.apply_transform(selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
+                    perturbed: 'ObjectDict' = self.apply_transform(selected_samples, sample_rate=sample_rate, targets=selected_targets, target_rate=target_rate)
                     perturbed.samples = perturbed.samples.reshape(selected_batch_size, selected_num_channels, selected_num_samples)
                     cloned_samples[self.transform_parameters['should_apply']] = perturbed.samples
                     if has_targets:
@@ -522,7 +524,7 @@ class BaseWaveformTransform(torch.nn.Module):
                         cloned_targets = cloned_targets.reshape(1, batch_size * num_channels, num_frames, num_classes)
                     if not self.are_parameters_frozen:
                         self.randomize_parameters(samples=cloned_samples, sample_rate=sample_rate, targets=cloned_targets, target_rate=target_rate)
-                    perturbed: ObjectDict = self.apply_transform(samples=cloned_samples, sample_rate=sample_rate, targets=cloned_targets, target_rate=target_rate)
+                    perturbed: 'ObjectDict' = self.apply_transform(samples=cloned_samples, sample_rate=sample_rate, targets=cloned_targets, target_rate=target_rate)
                     perturbed.samples = perturbed.samples.reshape(batch_size, num_channels, num_samples)
                     if has_targets:
                         perturbed.targets = perturbed.targets.reshape(batch_size, num_channels, num_frames, num_classes)
@@ -538,7 +540,7 @@ class BaseWaveformTransform(torch.nn.Module):
                         cloned_targets = cloned_targets.reshape(batch_size * num_channels, 1, num_frames, num_classes)
                     if not self.are_parameters_frozen:
                         self.randomize_parameters(samples=cloned_samples, sample_rate=sample_rate, targets=cloned_targets, target_rate=target_rate)
-                    perturbed: ObjectDict = self.apply_transform(cloned_samples, sample_rate, targets=cloned_targets, target_rate=target_rate)
+                    perturbed: 'ObjectDict' = self.apply_transform(cloned_samples, sample_rate, targets=cloned_targets, target_rate=target_rate)
                     perturbed.samples = perturbed.samples.reshape(batch_size, num_channels, num_samples)
                     if has_targets:
                         perturbed.targets = perturbed.targets.reshape(batch_size, num_channels, num_frames, num_classes)
@@ -553,10 +555,10 @@ class BaseWaveformTransform(torch.nn.Module):
     def _forward_unimplemented(self, *inputs) ->None:
         pass
 
-    def randomize_parameters(self, samples: Tensor=None, sample_rate: Optional[int]=None, targets: Optional[Tensor]=None, target_rate: Optional[int]=None):
+    def randomize_parameters(self, samples: 'Tensor'=None, sample_rate: 'Optional[int]'=None, targets: 'Optional[Tensor]'=None, target_rate: 'Optional[int]'=None):
         pass
 
-    def apply_transform(self, samples: Tensor=None, sample_rate: Optional[int]=None, targets: Optional[Tensor]=None, target_rate: Optional[int]=None) ->ObjectDict:
+    def apply_transform(self, samples: 'Tensor'=None, sample_rate: 'Optional[int]'=None, targets: 'Optional[Tensor]'=None, target_rate: 'Optional[int]'=None) ->ObjectDict:
         raise NotImplementedError()
 
     def serialize_parameters(self):
@@ -585,7 +587,7 @@ class BaseWaveformTransform(torch.nn.Module):
 
 class Compose(BaseCompose):
 
-    def forward(self, samples: Tensor=None, sample_rate: Optional[int]=None, targets: Optional[Tensor]=None, target_rate: Optional[int]=None) ->ObjectDict:
+    def forward(self, samples: 'Tensor'=None, sample_rate: 'Optional[int]'=None, targets: 'Optional[Tensor]'=None, target_rate: 'Optional[int]'=None) ->ObjectDict:
         inputs = ObjectDict(samples=samples, sample_rate=sample_rate, targets=targets, target_rate=target_rate)
         if random.random() < self.p:
             transform_indexes = list(range(len(self.transforms)))
@@ -618,7 +620,7 @@ class SomeOf(BaseCompose):
                  `SomeOf((2, None), [transform1, transform2, transform3])`
     """
 
-    def __init__(self, num_transforms: Union[int, Tuple[int, int]], transforms: List[torch.nn.Module], p: float=1.0, p_mode='per_batch', output_type: Optional[str]=None):
+    def __init__(self, num_transforms: 'Union[int, Tuple[int, int]]', transforms: 'List[torch.nn.Module]', p: 'float'=1.0, p_mode='per_batch', output_type: 'Optional[str]'=None):
         super().__init__(transforms=transforms, p=p, p_mode=p_mode, output_type=output_type)
         self.transform_indexes = []
         self.num_transforms = num_transforms
@@ -636,7 +638,7 @@ class SomeOf(BaseCompose):
         num_transforms_to_apply = random.randint(self.min_num_transforms, self.max_num_transforms)
         self.transform_indexes = sorted(random.sample(self.all_transforms_indexes, num_transforms_to_apply))
 
-    def forward(self, samples: Tensor=None, sample_rate: Optional[int]=None, targets: Optional[Tensor]=None, target_rate: Optional[int]=None) ->ObjectDict:
+    def forward(self, samples: 'Tensor'=None, sample_rate: 'Optional[int]'=None, targets: 'Optional[Tensor]'=None, target_rate: 'Optional[int]'=None) ->ObjectDict:
         inputs = ObjectDict(samples=samples, sample_rate=sample_rate, targets=targets, target_rate=target_rate)
         if random.random() < self.p:
             if not self.are_parameters_frozen:
@@ -656,7 +658,7 @@ class OneOf(SomeOf):
     OneOf randomly picks one of the given transforms and applies it.
     """
 
-    def __init__(self, transforms: List[torch.nn.Module], p: float=1.0, p_mode='per_batch', output_type: Optional[str]=None):
+    def __init__(self, transforms: 'List[torch.nn.Module]', p: 'float'=1.0, p_mode='per_batch', output_type: 'Optional[str]'=None):
         super().__init__(num_transforms=1, transforms=transforms, p=p, p_mode=p_mode, output_type=output_type)
 
 

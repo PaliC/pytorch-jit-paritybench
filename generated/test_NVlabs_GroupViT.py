@@ -38,7 +38,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -140,7 +142,7 @@ class MixerMlp(Mlp):
         return super().forward(x.transpose(1, 2)).transpose(1, 2)
 
 
-def gumbel_softmax(logits: torch.Tensor, tau: float=1, hard: bool=False, dim: int=-1) ->torch.Tensor:
+def gumbel_softmax(logits: 'torch.Tensor', tau: 'float'=1, hard: 'bool'=False, dim: 'int'=-1) ->torch.Tensor:
     gumbel_dist = torch.distributions.gumbel.Gumbel(torch.tensor(0.0, device=logits.device, dtype=logits.dtype), torch.tensor(1.0, device=logits.device, dtype=logits.dtype))
     gumbels = gumbel_dist.sample(logits.shape)
     gumbels = (logits + gumbels) / tau
@@ -671,7 +673,7 @@ class GroupViT(nn.Module):
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
         self.apply(self._init_weights)
 
-    def load_state_dict(self, state_dict: 'OrderedDict[str, torch.Tensor]', strict: bool=True):
+    def load_state_dict(self, state_dict: "'OrderedDict[str, torch.Tensor]'", strict: 'bool'=True):
         if self.pos_embed_type == 'simple' and 'pos_embed' in state_dict:
             load_pos_embed = state_dict['pos_embed']
             pos_embed = self.pos_embed
@@ -971,13 +973,13 @@ class MultiLabelContrastive(nn.Module):
 
 class QuickGELU(nn.Module):
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return x * torch.sigmoid(1.702 * x)
 
 
 class ResidualAttentionBlock(nn.Module):
 
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor=None):
+    def __init__(self, d_model: 'int', n_head: 'int', attn_mask: 'torch.Tensor'=None):
         super().__init__()
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = nn.LayerNorm(d_model)
@@ -985,11 +987,11 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_2 = nn.LayerNorm(d_model)
         self.attn_mask = attn_mask
 
-    def attention(self, x: torch.Tensor, key_padding_mask: torch.Tensor):
+    def attention(self, x: 'torch.Tensor', key_padding_mask: 'torch.Tensor'):
         self.attn_mask = self.attn_mask if self.attn_mask is not None else None
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask, key_padding_mask=key_padding_mask)[0]
 
-    def forward(self, x: torch.Tensor, key_padding_mask=None):
+    def forward(self, x: 'torch.Tensor', key_padding_mask=None):
         x = x + self.attention(self.ln_1(x), key_padding_mask=key_padding_mask)
         x = x + self.mlp(self.ln_2(x))
         return x
@@ -997,7 +999,7 @@ class ResidualAttentionBlock(nn.Module):
 
 class Transformer(nn.Module):
 
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor=None, use_checkpoint=False):
+    def __init__(self, width: 'int', layers: 'int', heads: 'int', attn_mask: 'torch.Tensor'=None, use_checkpoint=False):
         super().__init__()
         self.width = width
         self.layers = layers
@@ -1012,7 +1014,7 @@ class Transformer(nn.Module):
             nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
         self.use_checkpoint = use_checkpoint
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         for resblock in self.resblocks:
             if self.use_checkpoint:
                 x = checkpoint.checkpoint(resblock, x)
@@ -1023,7 +1025,7 @@ class Transformer(nn.Module):
 
 class TextTransformer(nn.Module):
 
-    def __init__(self, context_length: int, width: int, layers: int, vocab_size, use_checkpoint=False):
+    def __init__(self, context_length: 'int', width: 'int', layers: 'int', vocab_size, use_checkpoint=False):
         super().__init__()
         heads = width // 64
         self.context_length = context_length

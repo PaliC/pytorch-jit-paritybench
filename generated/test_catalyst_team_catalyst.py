@@ -314,7 +314,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -682,7 +684,7 @@ class AMSoftmax(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, s: float=64.0, m: float=0.5, eps: float=1e-06):
+    def __init__(self, in_features: 'int', out_features: 'int', s: 'float'=64.0, m: 'float'=0.5, eps: 'float'=1e-06):
         super(AMSoftmax, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -697,7 +699,7 @@ class AMSoftmax(nn.Module):
         rep = f'ArcFace(in_features={self.in_features},out_features={self.out_features},s={self.s},m={self.m},eps={self.eps})'
         return rep
 
-    def forward(self, input: torch.Tensor, target: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -761,7 +763,7 @@ class ArcFace(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, s: float=64.0, m: float=0.5, eps: float=1e-06):
+    def __init__(self, in_features: 'int', out_features: 'int', s: 'float'=64.0, m: 'float'=0.5, eps: 'float'=1e-06):
         super(ArcFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -777,7 +779,7 @@ class ArcFace(nn.Module):
         rep = f'ArcFace(in_features={self.in_features},out_features={self.out_features},s={self.s},m={self.m},eps={self.eps})'
         return rep
 
-    def forward(self, input: torch.Tensor, target: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -845,7 +847,7 @@ class SubCenterArcFace(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, s: float=64.0, m: float=0.5, k: int=3, eps: float=1e-06):
+    def __init__(self, in_features: 'int', out_features: 'int', s: 'float'=64.0, m: 'float'=0.5, k: 'int'=3, eps: 'float'=1e-06):
         super(SubCenterArcFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -862,7 +864,7 @@ class SubCenterArcFace(nn.Module):
         rep = f'SubCenterArcFace(in_features={self.in_features},out_features={self.out_features},s={self.s},m={self.m},k={self.k},eps={self.eps})'
         return rep
 
-    def forward(self, input: torch.Tensor, target: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -919,7 +921,7 @@ class ArcMarginProduct(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int):
+    def __init__(self, in_features: 'int', out_features: 'int'):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -931,7 +933,7 @@ class ArcMarginProduct(nn.Module):
         rep = f'ArcMarginProduct(in_features={self.in_features},out_features={self.out_features})'
         return rep
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -1005,7 +1007,7 @@ class GaussianNoise(nn.Module):
     - Output: (batch, \\*) (same shape as input)
     """
 
-    def __init__(self, stddev: float=0.1):
+    def __init__(self, stddev: 'float'=0.1):
         """
         Args:
             stddev: The standard deviation of the normal distribution.
@@ -1014,7 +1016,7 @@ class GaussianNoise(nn.Module):
         super().__init__()
         self.stddev = stddev
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         noise = torch.empty_like(x)
         noise.normal_(0, self.stddev)
@@ -1028,7 +1030,7 @@ class ResidualBlock(nn.Module):
         super().__init__()
         self.block = block
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         return self.block(x) + x
 
@@ -1065,7 +1067,7 @@ class CosFace(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, s: float=64.0, m: float=0.35):
+    def __init__(self, in_features: 'int', out_features: 'int', s: 'float'=64.0, m: 'float'=0.35):
         super(CosFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -1079,7 +1081,7 @@ class CosFace(nn.Module):
         rep = f'CosFace(in_features={self.in_features},out_features={self.out_features},s={self.s},m={self.m})'
         return rep
 
-    def forward(self, input: torch.Tensor, target: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -1142,7 +1144,7 @@ class AdaCos(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, dynamical_s: bool=True, eps: float=1e-06):
+    def __init__(self, in_features: 'int', out_features: 'int', dynamical_s: 'bool'=True, eps: 'float'=1e-06):
         super(AdaCos, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -1156,7 +1158,7 @@ class AdaCos(nn.Module):
         rep = f'AdaCos(in_features={self.in_features},out_features={self.out_features},s={self.s},eps={self.eps})'
         return rep
 
-    def forward(self, input: torch.Tensor, target: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -1228,7 +1230,7 @@ class CurricularFace(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, out_features: int, s: float=64.0, m: float=0.5):
+    def __init__(self, in_features: 'int', out_features: 'int', s: 'float'=64.0, m: 'float'=0.5):
         super(CurricularFace, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -1246,7 +1248,7 @@ class CurricularFace(nn.Module):
         rep = f'CurricularFace(in_features={self.in_features},out_features={self.out_features},m={self.m},s={self.s})'
         return rep
 
-    def forward(self, input: torch.Tensor, label: torch.LongTensor=None) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', label: 'torch.LongTensor'=None) ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -1290,7 +1292,7 @@ class FactorizedLinear(nn.Module):
         dim_ratio: dimension ration to use after weights SVD
     """
 
-    def __init__(self, nn_linear: nn.Linear, dim_ratio: Union[int, float]=1.0):
+    def __init__(self, nn_linear: 'nn.Linear', dim_ratio: 'Union[int, float]'=1.0):
         super().__init__()
         self.bias = nn.parameter.Parameter(nn_linear.bias.data, requires_grad=True)
         u, vh = self._spectral_init(nn_linear.weight.data, dim_ratio=dim_ratio)
@@ -1301,7 +1303,7 @@ class FactorizedLinear(nn.Module):
         self.out_features = vh.size(1)
 
     @staticmethod
-    def _spectral_init(m, dim_ratio: Union[int, float]=1):
+    def _spectral_init(m, dim_ratio: 'Union[int, float]'=1):
         u, s, vh = torch.linalg.svd(m, full_matrices=False)
         u = u @ torch.diag(torch.sqrt(s))
         vh = torch.diag(torch.sqrt(s)) @ vh
@@ -1315,7 +1317,7 @@ class FactorizedLinear(nn.Module):
         """Extra representation log."""
         return f'in_features={self.in_features}, out_features={self.out_features}, bias=True, dim_ratio={self.dim_ratio}'
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         return x @ (self.u @ self.vh).transpose(0, 1) + self.bias
 
@@ -1323,7 +1325,7 @@ class FactorizedLinear(nn.Module):
 class TemporalLastPooling(nn.Module):
     """@TODO: Docs. Contribution is welcome."""
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """Forward call."""
         x_out = x[:, -1:, :]
         return x_out
@@ -1332,7 +1334,7 @@ class TemporalLastPooling(nn.Module):
 class TemporalAvgPooling(nn.Module):
     """@TODO: Docs. Contribution is welcome."""
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """Forward call."""
         if mask is None:
             x_out = x.mean(1, keepdim=True)
@@ -1346,7 +1348,7 @@ class TemporalAvgPooling(nn.Module):
 class TemporalMaxPooling(nn.Module):
     """@TODO: Docs. Contribution is welcome."""
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """Forward call."""
         if mask is not None:
             x_mask = (~mask.bool()).float() * (-x.max()).float()
@@ -1355,7 +1357,7 @@ class TemporalMaxPooling(nn.Module):
         return x_out
 
 
-def outer_init(layer: nn.Module) ->None:
+def outer_init(layer: 'nn.Module') ->None:
     """
     Initialization for output layers of policy and value networks typically
     used in deep reinforcement learning literature.
@@ -1382,7 +1384,7 @@ class TemporalAttentionPooling(nn.Module):
         self.attention_pooling = nn.Sequential(nn.Conv1d(in_channels=in_features, out_channels=1, kernel_size=kernel_size, **params), TemporalAttentionPooling.name2activation[activation])
         self.attention_pooling.apply(outer_init)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """
         Forward call.
 
@@ -1411,7 +1413,7 @@ class TemporalConcatPooling(nn.Module):
         self.in_features = in_features
         self.out_features = in_features * history_len
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """
         Concat pooling forward.
 
@@ -1435,7 +1437,7 @@ class TemporalDropLastWrapper(nn.Module):
         super().__init__()
         self.net = net
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None):
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None):
         """@TODO: Docs. Contribution is welcome."""
         x = x[:, :-1, :]
         x_out = self.net(x)
@@ -1481,7 +1483,7 @@ class LamaPooling(nn.Module):
                 raise NotImplementedError()
         self.groups = nn.ModuleDict(groups)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None) ->torch.Tensor:
         """
         Forward method of the LAMA.
 
@@ -1514,7 +1516,7 @@ class GlobalAvgPool2d(nn.Module):
         """Constructor method for the ``GlobalAvgPool2d`` class."""
         super().__init__()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         h, w = x.shape[2:]
         return F.avg_pool2d(input=x, kernel_size=(h, w))
@@ -1543,7 +1545,7 @@ class GlobalMaxPool2d(nn.Module):
         """Constructor method for the ``GlobalMaxPool2d`` class."""
         super().__init__()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         h, w = x.shape[2:]
         return F.max_pool2d(input=x, kernel_size=(h, w))
@@ -1570,7 +1572,7 @@ class GlobalConcatPool2d(nn.Module):
         self.avg = GlobalAvgPool2d()
         self.max = GlobalMaxPool2d()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         return torch.cat([self.avg(x), self.max(x)], 1)
 
@@ -1596,7 +1598,7 @@ class GlobalAttnPool2d(nn.Module):
         activation_fn = REGISTRY.get_if_str(activation_fn)
         self.attn = nn.Sequential(nn.Conv2d(in_features, 1, kernel_size=1, stride=1, padding=0, bias=False), activation_fn())
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         x_a = self.attn(x)
         x = x * x_a
@@ -1625,7 +1627,7 @@ class GlobalAvgAttnPool2d(nn.Module):
         self.avg = GlobalAvgPool2d()
         self.attn = GlobalAttnPool2d(in_features, activation_fn)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         return torch.cat([self.avg(x), self.attn(x)], 1)
 
@@ -1651,7 +1653,7 @@ class GlobalMaxAttnPool2d(nn.Module):
         self.max = GlobalMaxPool2d()
         self.attn = GlobalAttnPool2d(in_features, activation_fn)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         return torch.cat([self.max(x), self.attn(x)], 1)
 
@@ -1678,7 +1680,7 @@ class GlobalConcatAttnPool2d(nn.Module):
         self.max = GlobalMaxPool2d()
         self.attn = GlobalAttnPool2d(in_features, activation_fn)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         return torch.cat([self.avg(x), self.max(x), self.attn(x)], 1)
 
@@ -1713,7 +1715,7 @@ class GeM2d(nn.Module):
              [[0.9717]]]], grad_fn=<PowBackward0>)
     """
 
-    def __init__(self, p: float=3.0, p_trainable: bool=False, eps: float=1e-07):
+    def __init__(self, p: 'float'=3.0, p_trainable: 'bool'=False, eps: 'float'=1e-07):
         """
         Args:
             p: The pooling parameter.
@@ -1732,7 +1734,7 @@ class GeM2d(nn.Module):
             self.p = p
         self.eps = eps
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """Forward call."""
         h, w = x.shape[2:]
         if self.p in [math.inf, float('inf')]:
@@ -1760,7 +1762,7 @@ class RMSNorm(nn.Module):
     @TODO: Docs (link to paper). Contribution is welcome.
     """
 
-    def __init__(self, dimension: int, epsilon: float=1e-08, is_bias: bool=False):
+    def __init__(self, dimension: 'int', epsilon: 'float'=1e-08, is_bias: 'bool'=False):
         """
         Args:
             dimension: the dimension of the layer output to normalize
@@ -1777,7 +1779,7 @@ class RMSNorm(nn.Module):
         if self.is_bias:
             self.bias = nn.Parameter(torch.zeros(self.dimension))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """@TODO: Docs. Contribution is welcome."""
         x_std = torch.sqrt(torch.mean(x ** 2, -1, keepdim=True))
         x_norm = x / (x_std + self.epsilon)
@@ -1804,7 +1806,7 @@ class cSE(nn.Module):
     __ https://arxiv.org/abs/1709.01507
     """
 
-    def __init__(self, in_channels: int, r: int=16):
+    def __init__(self, in_channels: 'int', r: 'int'=16):
         """
         Args:
             in_channels: The number of channels
@@ -1816,7 +1818,7 @@ class cSE(nn.Module):
         self.linear1 = nn.Linear(in_channels, in_channels // r)
         self.linear2 = nn.Linear(in_channels // r, in_channels)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         input_x = x
         x = x.view(*x.shape[:-2], -1).mean(-1)
@@ -1845,7 +1847,7 @@ class sSE(nn.Module):
     __ https://arxiv.org/abs/1803.02579
     """
 
-    def __init__(self, in_channels: int):
+    def __init__(self, in_channels: 'int'):
         """
         Args:
             in_channels: The number of channels
@@ -1854,7 +1856,7 @@ class sSE(nn.Module):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, 1, kernel_size=1, stride=1)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         input_x = x
         x = self.conv(x)
@@ -1880,7 +1882,7 @@ class scSE(nn.Module):
     __ https://arxiv.org/abs/1803.02579
     """
 
-    def __init__(self, in_channels: int, r: int=16):
+    def __init__(self, in_channels: 'int', r: 'int'=16):
         """
         Args:
             in_channels: The number of channels
@@ -1892,7 +1894,7 @@ class scSE(nn.Module):
         self.cse_block = cSE(in_channels, r)
         self.sse_block = sSE(in_channels)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """Forward call."""
         cse = self.cse_block(x)
         sse = self.sse_block(x)
@@ -1929,7 +1931,7 @@ class SoftMax(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, num_classes: int):
+    def __init__(self, in_features: 'int', num_classes: 'int'):
         super(SoftMax, self).__init__()
         self.in_features = in_features
         self.out_features = num_classes
@@ -1943,7 +1945,7 @@ class SoftMax(nn.Module):
         rep = f'SoftMax(in_features={self.in_features},out_features={self.out_features})'
         return rep
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             input: input features,
@@ -1967,7 +1969,7 @@ class NaiveCrossEntropyLoss(nn.Module):
         super().__init__()
         self.size_average = size_average
 
-    def forward(self, input_: torch.Tensor, target: torch.Tensor) ->torch.Tensor:
+    def forward(self, input_: 'torch.Tensor', target: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``input_`` and ``target`` tensors.
 
         Args:
@@ -1993,7 +1995,7 @@ class SymmetricCrossEntropyLoss(nn.Module):
         https://arxiv.org/abs/1908.06112
     """
 
-    def __init__(self, alpha: float=1.0, beta: float=1.0):
+    def __init__(self, alpha: 'float'=1.0, beta: 'float'=1.0):
         """
         Args:
             alpha(float):
@@ -2005,7 +2007,7 @@ class SymmetricCrossEntropyLoss(nn.Module):
         self.alpha = alpha
         self.beta = beta
 
-    def forward(self, input_: torch.Tensor, target: torch.Tensor) ->torch.Tensor:
+    def forward(self, input_: 'torch.Tensor', target: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``input_`` and ``target`` tensors.
 
         Args:
@@ -2036,7 +2038,7 @@ class MaskCrossEntropyLoss(nn.Module):
         super().__init__()
         self.ce_loss = nn.CrossEntropyLoss(*args, **kwargs, reduction='none')
 
-    def forward(self, logits: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) ->torch.Tensor:
+    def forward(self, logits: 'torch.Tensor', target: 'torch.Tensor', mask: 'torch.Tensor') ->torch.Tensor:
         """
         Calculates loss between ``logits`` and ``target`` tensors.
 
@@ -2053,7 +2055,7 @@ class MaskCrossEntropyLoss(nn.Module):
         return loss
 
 
-def _convert_label_to_similarity(normed_features: Tensor, labels: Tensor) ->Tuple[Tensor, Tensor]:
+def _convert_label_to_similarity(normed_features: 'Tensor', labels: 'Tensor') ->Tuple[Tensor, Tensor]:
     similarity_matrix = normed_features @ normed_features.transpose(1, 0)
     label_matrix = labels.unsqueeze(1) == labels.unsqueeze(0)
     positive_matrix = label_matrix.triu(diagonal=1)
@@ -2087,7 +2089,7 @@ class CircleLoss(nn.Module):
         https://arxiv.org/abs/2002.10857
     """
 
-    def __init__(self, margin: float, gamma: float) ->None:
+    def __init__(self, margin: 'float', gamma: 'float') ->None:
         """
 
         Args:
@@ -2099,7 +2101,7 @@ class CircleLoss(nn.Module):
         self.gamma = gamma
         self.soft_plus = nn.Softplus()
 
-    def forward(self, normed_features: Tensor, labels: Tensor) ->Tensor:
+    def forward(self, normed_features: 'Tensor', labels: 'Tensor') ->Tensor:
         """
 
         Args:
@@ -2141,7 +2143,7 @@ class ContrastiveEmbeddingLoss(nn.Module):
         self.margin = margin
         self.reduction = reduction or 'none'
 
-    def forward(self, embeddings_left: torch.Tensor, embeddings_right: torch.Tensor, distance_true) ->torch.Tensor:
+    def forward(self, embeddings_left: 'torch.Tensor', embeddings_right: 'torch.Tensor', distance_true) ->torch.Tensor:
         """Forward propagation method for the contrastive loss.
 
         Args:
@@ -2273,7 +2275,7 @@ class BarlowTwinsLoss(nn.Module):
         self.offdiag_lambda = offdiag_lambda
         self.eps = eps
 
-    def forward(self, embeddings_left: torch.Tensor, embeddings_right: torch.Tensor) ->torch.Tensor:
+    def forward(self, embeddings_left: 'torch.Tensor', embeddings_right: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the contrastive loss.
 
         Args:
@@ -2309,13 +2311,13 @@ class BarlowTwinsLoss(nn.Module):
         return loss
 
 
-def _dice(tp: torch.Tensor, fp: torch.Tensor, fn: torch.Tensor, eps: float=1e-07) ->torch.Tensor:
+def _dice(tp: 'torch.Tensor', fp: 'torch.Tensor', fn: 'torch.Tensor', eps: 'float'=1e-07) ->torch.Tensor:
     union = tp + fp + fn
     score = (2 * tp + eps * (union == 0).float()) / (2 * tp + fp + fn + eps)
     return score
 
 
-def get_segmentation_statistics(outputs: torch.Tensor, targets: torch.Tensor, class_dim: int=1, threshold: float=None) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def get_segmentation_statistics(outputs: 'torch.Tensor', targets: 'torch.Tensor', class_dim: 'int'=1, threshold: 'float'=None) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Computes true positive, false positive, false negative
     for a multilabel segmentation problem.
@@ -2383,7 +2385,7 @@ def get_segmentation_statistics(outputs: torch.Tensor, targets: torch.Tensor, cl
     return tp, fp, fn
 
 
-def _get_region_based_metrics(outputs: torch.Tensor, targets: torch.Tensor, metric_fn: Callable, class_dim=None, threshold: float=None, mode: str='per-class', weights: Optional[List[float]]=None) ->torch.Tensor:
+def _get_region_based_metrics(outputs: 'torch.Tensor', targets: 'torch.Tensor', metric_fn: 'Callable', class_dim=None, threshold: 'float'=None, mode: 'str'='per-class', weights: 'Optional[List[float]]'=None) ->torch.Tensor:
     """
     Get aggregated metric
 
@@ -2428,7 +2430,7 @@ def _get_region_based_metrics(outputs: torch.Tensor, targets: torch.Tensor, metr
     return metric
 
 
-def dice(outputs: torch.Tensor, targets: torch.Tensor, class_dim: int=1, threshold: float=None, mode: str='per-class', weights: Optional[List[float]]=None, eps: float=1e-07) ->torch.Tensor:
+def dice(outputs: 'torch.Tensor', targets: 'torch.Tensor', class_dim: 'int'=1, threshold: 'float'=None, mode: 'str'='per-class', weights: 'Optional[List[float]]'=None, eps: 'float'=1e-07) ->torch.Tensor:
     """
     Computes the dice score,
     dice score = 2 * intersection / (intersection + union)) =     = 2 * tp / (2 * tp + fp + fn)
@@ -2515,7 +2517,7 @@ class DiceLoss(nn.Module):
     dice score = 2 * intersection / (intersection + union)) =     = 2 * tp / (2 * tp + fp + fn)
     """
 
-    def __init__(self, class_dim: int=1, mode: str='macro', weights: List[float]=None, eps: float=1e-07):
+    def __init__(self, class_dim: 'int'=1, mode: 'str'='macro', weights: 'List[float]'=None, eps: 'float'=1e-07):
         """
         Args:
             class_dim: indicates class dimention (K) for
@@ -2533,7 +2535,7 @@ class DiceLoss(nn.Module):
         assert mode in ['micro', 'macro', 'weighted']
         self.loss_fn = partial(dice, eps=eps, class_dim=class_dim, threshold=None, mode=mode, weights=weights)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``logits`` and ``target`` tensors."""
         dice_score = self.loss_fn(outputs, targets)
         return 1 - dice_score
@@ -2547,7 +2549,7 @@ class FocalLossBinary(_Loss):
     .. _Focal Loss for Dense Object Detection: https://arxiv.org/abs/1708.02002
     """
 
-    def __init__(self, ignore: int=None, reduced: bool=False, gamma: float=2.0, alpha: float=0.25, threshold: float=0.5, reduction: str='mean'):
+    def __init__(self, ignore: 'int'=None, reduced: 'bool'=False, gamma: 'float'=2.0, alpha: 'float'=0.25, threshold: 'float'=0.5, reduction: 'str'='mean'):
         """@TODO: Docs. Contribution is welcome."""
         super().__init__()
         self.ignore = ignore
@@ -2645,13 +2647,13 @@ class GradientPenaltyLoss(nn.Module):
         return gradient_penalty
 
 
-def _iou(tp: torch.Tensor, fp: torch.Tensor, fn: torch.Tensor, eps: float=1e-07) ->torch.Tensor:
+def _iou(tp: 'torch.Tensor', fp: 'torch.Tensor', fn: 'torch.Tensor', eps: 'float'=1e-07) ->torch.Tensor:
     union = tp + fp + fn
     score = (tp + eps * (union == 0).float()) / (tp + fp + fn + eps)
     return score
 
 
-def iou(outputs: torch.Tensor, targets: torch.Tensor, class_dim: int=1, threshold: float=None, mode: str='per-class', weights: Optional[List[float]]=None, eps: float=1e-07) ->torch.Tensor:
+def iou(outputs: 'torch.Tensor', targets: 'torch.Tensor', class_dim: 'int'=1, threshold: 'float'=None, mode: 'str'='per-class', weights: 'Optional[List[float]]'=None, eps: 'float'=1e-07) ->torch.Tensor:
     """
     Computes the iou/jaccard score,
     iou score = intersection / union = tp / (tp + fp + fn)
@@ -2738,7 +2740,7 @@ class IoULoss(nn.Module):
     iou score = intersection / union = tp / (tp + fp + fn)
     """
 
-    def __init__(self, class_dim: int=1, mode: str='macro', weights: List[float]=None, eps: float=1e-07):
+    def __init__(self, class_dim: 'int'=1, mode: 'str'='macro', weights: 'List[float]'=None, eps: 'float'=1e-07):
         """
         Args:
             class_dim: indicates class dimention (K) for
@@ -2756,7 +2758,7 @@ class IoULoss(nn.Module):
         assert mode in ['micro', 'macro', 'weighted']
         self.loss_fn = partial(iou, eps=eps, class_dim=class_dim, threshold=None, mode=mode, weights=weights)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``logits`` and ``target`` tensors."""
         iou_score = self.loss_fn(outputs, targets)
         return 1 - iou_score
@@ -3025,20 +3027,20 @@ class LovaszLossMultiLabel(_Loss):
 _EPS = 1e-08
 
 
-def _create_margin_mask(labels: torch.Tensor) ->torch.Tensor:
+def _create_margin_mask(labels: 'torch.Tensor') ->torch.Tensor:
     equal_labels_mask = torch.eq(labels.unsqueeze(0), labels.unsqueeze(1))
     marign_mask = 2 * equal_labels_mask.float() - 1
     return marign_mask
 
 
-def _skip_labels_mask(labels: torch.Tensor, skip_labels: Union[int, List[int]]) ->torch.Tensor:
+def _skip_labels_mask(labels: 'torch.Tensor', skip_labels: 'Union[int, List[int]]') ->torch.Tensor:
     skip_labels = torch.tensor(skip_labels, dtype=labels.dtype, device=labels.device).reshape(-1)
     skip_condition = (labels.unsqueeze(-1) == skip_labels).any(-1)
     skip_mask = ~(skip_condition.unsqueeze(-1) & skip_condition.unsqueeze(0))
     return skip_mask
 
 
-def euclidean_distance(x: torch.Tensor, y: torch.Tensor=None) ->torch.Tensor:
+def euclidean_distance(x: 'torch.Tensor', y: 'torch.Tensor'=None) ->torch.Tensor:
     """@TODO: Docs. Contribution is welcome."""
     x_norm = (x ** 2).sum(1).unsqueeze(1)
     if y is not None:
@@ -3051,7 +3053,7 @@ def euclidean_distance(x: torch.Tensor, y: torch.Tensor=None) ->torch.Tensor:
     return dist
 
 
-def margin_loss(embeddings: torch.Tensor, labels: torch.Tensor, alpha: float=0.2, beta: float=1.0, skip_labels: Union[int, List[int]]=-1) ->torch.Tensor:
+def margin_loss(embeddings: 'torch.Tensor', labels: 'torch.Tensor', alpha: 'float'=0.2, beta: 'float'=1.0, skip_labels: 'Union[int, List[int]]'=-1) ->torch.Tensor:
     """@TODO: Docs. Contribution is welcome."""
     embeddings = F.normalize(embeddings, p=2.0, dim=1)
     distances = euclidean_distance(embeddings, embeddings)
@@ -3064,7 +3066,7 @@ def margin_loss(embeddings: torch.Tensor, labels: torch.Tensor, alpha: float=0.2
 class MarginLoss(nn.Module):
     """Margin loss criterion"""
 
-    def __init__(self, alpha: float=0.2, beta: float=1.0, skip_labels: Union[int, List[int]]=-1):
+    def __init__(self, alpha: 'float'=0.2, beta: 'float'=1.0, skip_labels: 'Union[int, List[int]]'=-1):
         """
         Margin loss constructor.
 
@@ -3078,7 +3080,7 @@ class MarginLoss(nn.Module):
         self.beta = beta
         self.skip_labels = skip_labels
 
-    def forward(self, embeddings: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, embeddings: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """
         Forward method for the margin loss.
 
@@ -3115,7 +3117,7 @@ class NTXentLoss(nn.Module):
         https://arxiv.org/abs/2002.05709
     """
 
-    def __init__(self, tau: float, reduction: str='mean') ->None:
+    def __init__(self, tau: 'float', reduction: 'str'='mean') ->None:
         """
 
         Args:
@@ -3137,7 +3139,7 @@ class NTXentLoss(nn.Module):
         if self.reduction not in ['none', 'mean', 'sum']:
             raise ValueError(f'Reduction should be: mean, sum, none. But got - {self.reduction}!')
 
-    def forward(self, features1: torch.Tensor, features2: torch.Tensor) ->torch.Tensor:
+    def forward(self, features1: 'torch.Tensor', features2: 'torch.Tensor') ->torch.Tensor:
         """
 
         Args:
@@ -3177,7 +3179,7 @@ class Pointwise(nn.Module):
     Output space: scores or relevant classes
     """
 
-    def forward(self, score: torch.Tensor):
+    def forward(self, score: 'torch.Tensor'):
         raise NotImplementedError()
 
 
@@ -3194,11 +3196,11 @@ class PairwiseLoss(nn.Module):
     """
 
     @staticmethod
-    def _assert_equal_size(positive_score: torch.Tensor, negative_score: torch.Tensor) ->None:
+    def _assert_equal_size(positive_score: 'torch.Tensor', negative_score: 'torch.Tensor') ->None:
         if positive_score.size() != negative_score.size():
             raise ValueError(f'Shape mismatch: {positive_score.size()}, {negative_score.size()}')
 
-    def forward(self, positive_score: torch.Tensor, negative_score: torch.Tensor):
+    def forward(self, positive_score: 'torch.Tensor', negative_score: 'torch.Tensor'):
         raise NotImplementedError()
 
 
@@ -3213,11 +3215,11 @@ class ListwiseLoss(nn.Module):
     """
 
     @staticmethod
-    def _assert_equal_size(outputs: torch.Tensor, targets: torch.Tensor) ->None:
+    def _assert_equal_size(outputs: 'torch.Tensor', targets: 'torch.Tensor') ->None:
         if outputs.size() != targets.size():
             raise ValueError(f'Shape mismatch: {outputs.size()}, {targets.size()}')
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor):
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor'):
         raise NotImplementedError()
 
 
@@ -3250,7 +3252,7 @@ class BPRLoss(PairwiseLoss):
         super().__init__()
         self.gamma = gamma
 
-    def forward(self, positive_score: torch.Tensor, negative_score: torch.Tensor) ->torch.Tensor:
+    def forward(self, positive_score: 'torch.Tensor', negative_score: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the BPR loss.
 
         Args:
@@ -3285,7 +3287,7 @@ class LogisticLoss(PairwiseLoss):
     def __init__(self) ->None:
         super().__init__()
 
-    def forward(self, positive_score: torch.Tensor, negative_score: torch.Tensor) ->torch.Tensor:
+    def forward(self, positive_score: 'torch.Tensor', negative_score: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the logistic loss.
 
         Args:
@@ -3322,7 +3324,7 @@ class HingeLoss(PairwiseLoss):
     def __init__(self) ->None:
         super().__init__()
 
-    def forward(self, positive_score: torch.Tensor, negative_score: torch.Tensor) ->torch.Tensor:
+    def forward(self, positive_score: 'torch.Tensor', negative_score: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the hinge loss.
 
         Args:
@@ -3362,7 +3364,7 @@ class AdaptiveHingeLoss(PairwiseLoss):
         super().__init__()
         self._hingeloss = HingeLoss()
 
-    def forward(self, positive_score: torch.Tensor, negative_scores: torch.Tensor) ->torch.Tensor:
+    def forward(self, positive_score: 'torch.Tensor', negative_scores: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the adaptive hinge loss.
 
         Args:
@@ -3383,7 +3385,7 @@ class WARP(Function):
     """Autograd function of WARP loss."""
 
     @staticmethod
-    def forward(ctx: nn.Module, outputs: torch.Tensor, targets: torch.Tensor, max_num_trials: Optional[int]=None):
+    def forward(ctx: 'nn.Module', outputs: 'torch.Tensor', targets: 'torch.Tensor', max_num_trials: 'Optional[int]'=None):
         batch_size = targets.size()[0]
         if max_num_trials is None:
             max_num_trials = targets.size()[1] - 1
@@ -3463,11 +3465,11 @@ class WARPLoss(ListwiseLoss):
         output.backward()
     """
 
-    def __init__(self, max_num_trials: Optional[int]=None):
+    def __init__(self, max_num_trials: 'Optional[int]'=None):
         super().__init__()
         self.max_num_trials = max_num_trials
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the WARP loss.
 
         Args:
@@ -3515,7 +3517,7 @@ class RocStarLoss(PairwiseLoss):
             output.backward()
     """
 
-    def __init__(self, delta: float=1.0, sample_size: int=100, sample_size_gamma: int=1000, update_gamma_each: int=50):
+    def __init__(self, delta: 'float'=1.0, sample_size: 'int'=100, sample_size_gamma: 'int'=1000, update_gamma_each: 'int'=50):
         super().__init__()
         self.delta = delta
         self.sample_size = sample_size
@@ -3527,7 +3529,7 @@ class RocStarLoss(PairwiseLoss):
         self.outputs_history = torch.rand((size + 2, 1))
         self.targets_history = torch.cat((torch.randint(2, (size, 1)), torch.LongTensor([[0], [1]])))
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Forward propagation method for the roc-star loss.
 
         Args:
@@ -3588,7 +3590,7 @@ class HuberLossV0(nn.Module):
         self.clip_delta = clip_delta
         self.reduction = reduction or 'none'
 
-    def forward(self, output: torch.Tensor, target: torch.Tensor, weights=None) ->torch.Tensor:
+    def forward(self, output: 'torch.Tensor', target: 'torch.Tensor', weights=None) ->torch.Tensor:
         """@TODO: Docs. Contribution is welcome."""
         diff = target - output
         diff_abs = torch.abs(diff)
@@ -3614,7 +3616,7 @@ def _ce_with_logits(logits, target):
 class CategoricalRegressionLoss(nn.Module):
     """CategoricalRegressionLoss"""
 
-    def __init__(self, num_atoms: int, v_min: int, v_max: int):
+    def __init__(self, num_atoms: 'int', v_min: 'int', v_max: 'int'):
         super().__init__()
         self.num_atoms = num_atoms
         self.v_min = v_min
@@ -3622,7 +3624,7 @@ class CategoricalRegressionLoss(nn.Module):
         self.delta_z = (self.v_max - self.v_min) / (self.num_atoms - 1)
         self.z = torch.linspace(start=self.v_min, end=self.v_max, steps=self.num_atoms)
 
-    def forward(self, logits_t: torch.Tensor, logits_tp1: torch.Tensor, atoms_target_t: torch.Tensor) ->torch.Tensor:
+    def forward(self, logits_t: 'torch.Tensor', logits_tp1: 'torch.Tensor', atoms_target_t: 'torch.Tensor') ->torch.Tensor:
         """Compute the loss
 
         Args:
@@ -3648,7 +3650,7 @@ class CategoricalRegressionLoss(nn.Module):
 class QuantileRegressionLoss(nn.Module):
     """QuantileRegressionLoss"""
 
-    def __init__(self, num_atoms: int=51, clip_delta: float=1.0):
+    def __init__(self, num_atoms: 'int'=51, clip_delta: 'float'=1.0):
         """Init."""
         super().__init__()
         self.num_atoms = num_atoms
@@ -3657,7 +3659,7 @@ class QuantileRegressionLoss(nn.Module):
         self.tau = torch.linspace(start=tau_min, end=tau_max, steps=self.num_atoms)
         self.criterion = HuberLossV0(clip_delta=clip_delta)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Compute the loss.
 
         Args:
@@ -3677,7 +3679,7 @@ class QuantileRegressionLoss(nn.Module):
 class RSquareLoss(nn.Module):
     """RSquareLoss"""
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Compute the loss.
 
         Args:
@@ -3708,7 +3710,7 @@ class SmoothingDiceLoss(nn.Module):
         >>> print(loss)
     """
 
-    def __init__(self, class_dim: int=1, mode: str='macro', weights: List[float]=None, eps: float=1e-07):
+    def __init__(self, class_dim: 'int'=1, mode: 'str'='macro', weights: 'List[float]'=None, eps: 'float'=1e-07):
         """
         Args:
             class_dim: indicates class dimention (K) for
@@ -3730,7 +3732,7 @@ class SmoothingDiceLoss(nn.Module):
             self.weights = torch.Tensor(weights)
         self.eps = eps
 
-    def _get_sum_per_class(self, outputs_shape: List[int]) ->Callable[[torch.Tensor], torch.Tensor]:
+    def _get_sum_per_class(self, outputs_shape: 'List[int]') ->Callable[[torch.Tensor], torch.Tensor]:
         """
         Creates a channel summing function
 
@@ -3750,7 +3752,7 @@ class SmoothingDiceLoss(nn.Module):
         sum_per_class = partial(torch.sum, dim=dims)
         return sum_per_class
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``logits`` and ``target`` tensors."""
         sum_per_class = self._get_sum_per_class(outputs.shape)
         outputs_2 = outputs ** 2
@@ -3780,7 +3782,7 @@ class SupervisedContrastiveLoss(nn.Module):
         https://arxiv.org/pdf/2004.11362.pdf
     """
 
-    def __init__(self, tau: float, reduction: str='mean', pos_aggregation='in') ->None:
+    def __init__(self, tau: 'float', reduction: 'str'='mean', pos_aggregation='in') ->None:
         """
         Args:
             tau: temperature
@@ -3810,7 +3812,7 @@ class SupervisedContrastiveLoss(nn.Module):
         if self.pos_aggregation not in ['in', 'out']:
             raise ValueError(f'Positive aggregation should be: in or out.But got - {self.pos_aggregation}!')
 
-    def forward(self, features: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, features: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             features: [bs; feature_len]
@@ -3840,13 +3842,13 @@ class SupervisedContrastiveLoss(nn.Module):
         return loss
 
 
-def _trevsky(tp: torch.Tensor, fp: torch.Tensor, fn: torch.Tensor, alpha: float, beta: float, eps: float=1e-07) ->torch.Tensor:
+def _trevsky(tp: 'torch.Tensor', fp: 'torch.Tensor', fn: 'torch.Tensor', alpha: 'float', beta: 'float', eps: 'float'=1e-07) ->torch.Tensor:
     union = tp + fp + fn
     score = (tp + eps * (union == 0).float()) / (tp + fp * beta + fn * alpha + eps)
     return score
 
 
-def trevsky(outputs: torch.Tensor, targets: torch.Tensor, alpha: float, beta: Optional[float]=None, class_dim: int=1, threshold: float=None, mode: str='per-class', weights: Optional[List[float]]=None, eps: float=1e-07) ->torch.Tensor:
+def trevsky(outputs: 'torch.Tensor', targets: 'torch.Tensor', alpha: 'float', beta: 'Optional[float]'=None, class_dim: 'int'=1, threshold: 'float'=None, mode: 'str'='per-class', weights: 'Optional[List[float]]'=None, eps: 'float'=1e-07) ->torch.Tensor:
     """
     Computes the trevsky score,
     trevsky score = tp / (tp + fp * beta + fn * alpha)
@@ -3942,7 +3944,7 @@ class TrevskyLoss(nn.Module):
     TrevskyLoss = 1 - TrevskyIndex
     """
 
-    def __init__(self, alpha: float, beta: Optional[float]=None, class_dim: int=1, mode: str='macro', weights: List[float]=None, eps: float=1e-07):
+    def __init__(self, alpha: 'float', beta: 'Optional[float]'=None, class_dim: 'int'=1, mode: 'str'='macro', weights: 'List[float]'=None, eps: 'float'=1e-07):
         """
         Args:
             alpha: false negative coefficient, bigger alpha bigger penalty for
@@ -3964,7 +3966,7 @@ class TrevskyLoss(nn.Module):
         assert mode in ['micro', 'macro', 'weighted']
         self.loss_fn = partial(trevsky, eps=eps, alpha=alpha, beta=beta, class_dim=class_dim, threshold=None, mode=mode, weights=weights)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``logits`` and ``target`` tensors."""
         trevsky_score = self.loss_fn(outputs, targets)
         return 1 - trevsky_score
@@ -3977,7 +3979,7 @@ class FocalTrevskyLoss(nn.Module):
     Node: focal will use per image, so loss will pay more attention on complicated images
     """
 
-    def __init__(self, alpha: float, beta: Optional[float]=None, gamma: float=4 / 3, class_dim: int=1, mode: str='macro', weights: List[float]=None, eps: float=1e-07):
+    def __init__(self, alpha: 'float', beta: 'Optional[float]'=None, gamma: 'float'=4 / 3, class_dim: 'int'=1, mode: 'str'='macro', weights: 'List[float]'=None, eps: 'float'=1e-07):
         """
         Args:
             alpha: false negative coefficient, bigger alpha bigger penalty for
@@ -4001,7 +4003,7 @@ class FocalTrevskyLoss(nn.Module):
         self.gamma = gamma
         self.trevsky_loss = TrevskyLoss(alpha=alpha, beta=beta, class_dim=class_dim, mode=mode, weights=weights, eps=eps)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """Calculates loss between ``logits`` and ``target`` tensors."""
         loss = 0
         batch_size = len(outputs)
@@ -4023,7 +4025,7 @@ class TripletLoss(nn.Module):
     Adapted from: https://github.com/NegatioN/OnlineMiningTripletLoss
     """
 
-    def __init__(self, margin: float=0.3):
+    def __init__(self, margin: 'float'=0.3):
         """
         Args:
             margin: margin for triplet
@@ -4126,7 +4128,7 @@ class TripletLoss(nn.Module):
         return self._batch_hard_triplet_loss(embeddings, targets, self.margin)
 
 
-def create_negative_mask(labels: torch.Tensor, neg_label: int=-1) ->torch.Tensor:
+def create_negative_mask(labels: 'torch.Tensor', neg_label: 'int'=-1) ->torch.Tensor:
     """@TODO: Docs. Contribution is welcome."""
     neg_labels = torch.ge(labels, neg_label)
     pos_labels = ~neg_labels
@@ -4141,7 +4143,7 @@ def create_negative_mask(labels: torch.Tensor, neg_label: int=-1) ->torch.Tensor
     return mask
 
 
-def batch_all(labels: torch.Tensor, exclude_negatives: bool=True) ->torch.Tensor:
+def batch_all(labels: 'torch.Tensor', exclude_negatives: 'bool'=True) ->torch.Tensor:
     """Create a 3D mask of all possible triplets.
     @TODO: Docs. Contribution is welcome.
     """
@@ -4163,7 +4165,7 @@ def batch_all(labels: torch.Tensor, exclude_negatives: bool=True) ->torch.Tensor
     return mask.float()
 
 
-def cosine_distance(x: torch.Tensor, z: Optional[torch.Tensor]=None) ->torch.Tensor:
+def cosine_distance(x: 'torch.Tensor', z: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
     """Calculate cosine distance between x and z.
     @TODO: Docs. Contribution is welcome.
     """
@@ -4175,7 +4177,7 @@ def cosine_distance(x: torch.Tensor, z: Optional[torch.Tensor]=None) ->torch.Ten
     return torch.sub(1, torch.mm(x, z.transpose(0, 1)))
 
 
-def triplet_loss(embeddings: torch.Tensor, labels: torch.Tensor, margin: float=0.3) ->torch.Tensor:
+def triplet_loss(embeddings: 'torch.Tensor', labels: 'torch.Tensor', margin: 'float'=0.3) ->torch.Tensor:
     """@TODO: Docs. Contribution is welcome."""
     cosine_dists = cosine_distance(embeddings)
     mask = batch_all(labels)
@@ -4212,7 +4214,7 @@ class TripletPairwiseEmbeddingLoss(nn.Module):
     @TODO: Docs. Contribution is welcome.
     """
 
-    def __init__(self, margin: float=0.3, reduction: str='mean'):
+    def __init__(self, margin: 'float'=0.3, reduction: 'str'='mean'):
         """
         Args:
             margin: margin parameter
@@ -4251,7 +4253,7 @@ class TripletPairwiseEmbeddingLoss(nn.Module):
         return loss
 
 
-def convert_labels2list(labels: Union[Tensor, List[int]]) ->List[int]:
+def convert_labels2list(labels: 'Union[Tensor, List[int]]') ->List[int]:
     """
     This function allows to work with 2 types of indexing:
     using a integer tensor and a list of indices.
@@ -4282,7 +4284,7 @@ class TripletMarginLossWithSampler(nn.Module):
     default TripletMargingLoss from PyTorch.
     """
 
-    def __init__(self, margin: float, sampler_inbatch: 'IInbatchTripletSampler'):
+    def __init__(self, margin: 'float', sampler_inbatch: "'IInbatchTripletSampler'"):
         """
         Args:
             margin: margin value
@@ -4292,7 +4294,7 @@ class TripletMarginLossWithSampler(nn.Module):
         self._sampler_inbatch = sampler_inbatch
         self._triplet_margin_loss = TripletMarginLoss(margin=margin)
 
-    def forward(self, features: Tensor, labels: Union[Tensor, List[int]]) ->Tensor:
+    def forward(self, features: 'Tensor', labels: 'Union[Tensor, List[int]]') ->Tensor:
         """
         Args:
             features: features with shape [batch_size, features_dim]
@@ -4307,7 +4309,7 @@ class TripletMarginLossWithSampler(nn.Module):
         return loss
 
 
-def wing_loss(outputs: torch.Tensor, targets: torch.Tensor, width: int=5, curvature: float=0.5, reduction: str='mean') ->torch.Tensor:
+def wing_loss(outputs: 'torch.Tensor', targets: 'torch.Tensor', width: 'int'=5, curvature: 'float'=0.5, reduction: 'str'='mean') ->torch.Tensor:
     """The Wing loss.
 
     It has been proposed in `Wing Loss for Robust Facial Landmark Localisation
@@ -4349,7 +4351,7 @@ class WingLoss(nn.Module):
         Neural Networks: https://arxiv.org/abs/1711.06753
     """
 
-    def __init__(self, width: int=5, curvature: float=0.5, reduction: str='mean'):
+    def __init__(self, width: 'int'=5, curvature: 'float'=0.5, reduction: 'str'='mean'):
         """
         Args:
             @TODO: Docs. Contribution is welcome.
@@ -4357,7 +4359,7 @@ class WingLoss(nn.Module):
         super().__init__()
         self.loss_fn = partial(wing_loss, width=width, curvature=curvature, reduction=reduction)
 
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) ->torch.Tensor:
+    def forward(self, outputs: 'torch.Tensor', targets: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             @TODO: Docs. Contribution is welcome.
@@ -4369,7 +4371,7 @@ class WingLoss(nn.Module):
 class MnistSimpleNet(nn.Module):
     """Simple MNIST convolutional network for test purposes."""
 
-    def __init__(self, out_features: int, normalize: bool=True):
+    def __init__(self, out_features: 'int', normalize: 'bool'=True):
         """
         Args:
             out_features: size of the output tensor
@@ -4381,7 +4383,7 @@ class MnistSimpleNet(nn.Module):
             layers.append(Normalize())
         self._net = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x: input 1d image tensor with the size of [28 x 28]
@@ -4395,7 +4397,7 @@ class MnistSimpleNet(nn.Module):
 class MnistBatchNormNet(nn.Module):
     """Simple MNIST convolutional network with batch norm layers for test purposes."""
 
-    def __init__(self, out_features: int):
+    def __init__(self, out_features: 'int'):
         """
         Args:
             out_features: size of the output tensor
@@ -4404,7 +4406,7 @@ class MnistBatchNormNet(nn.Module):
         layers = [nn.Conv2d(1, 32, 3, 1), nn.LeakyReLU(), nn.BatchNorm2d(32), nn.Conv2d(32, 64, 3, 1), nn.LeakyReLU(), nn.MaxPool2d(2), Flatten(), nn.BatchNorm1d(9216), nn.Linear(9216, 128), nn.LeakyReLU(), nn.Linear(128, out_features), nn.BatchNorm1d(out_features)]
         self._net = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x: input 1d image tensor with the size of [28 x 28]
@@ -4413,6 +4415,60 @@ class MnistBatchNormNet(nn.Module):
             extracted features
         """
         return self._net(x)
+
+
+class ResnetEncoder(nn.Module):
+    """Specifies ResNet encoders for classification network.
+
+    Examples:
+        >>> encoders = ResnetEncoder(
+        >>>    arch="resnet18",
+        >>>    pretrained=False,
+        >>>    state_dict="/model/path/resnet18-5c106cde.pth"
+        >>> )
+    """
+
+    def __init__(self, arch: 'str'='resnet18', pretrained: 'bool'=True, frozen: 'bool'=True, pooling: 'str'=None, pooling_kwargs: 'dict'=None, cut_layers: 'int'=2, state_dict: 'Union[dict, str, Path]'=None):
+        """
+        Args:
+            arch: Name for resnet. Have to be one of
+                resnet18, resnet34, resnet50, resnet101, resnet152
+            pretrained: If True, returns a model pre-trained on ImageNet
+            frozen: If frozen, sets requires_grad to False
+            pooling: pooling
+            pooling_kwargs: params for pooling
+            state_dict (Union[dict, str, Path]): Path to ``torch.Model``
+                or a dict containing parameters and persistent buffers.
+        """
+        super().__init__()
+        resnet = torchvision.models.__dict__[arch](pretrained=pretrained)
+        if state_dict is not None:
+            if isinstance(state_dict, (Path, str)):
+                state_dict = torch.load(str(state_dict))
+            resnet.load_state_dict(state_dict)
+        modules = list(resnet.children())[:-cut_layers]
+        if frozen:
+            for module in modules:
+                utils.set_requires_grad(module, requires_grad=False)
+        if pooling is not None:
+            pooling_kwargs = pooling_kwargs or {}
+            pooling_layer_fn = REGISTRY.get(pooling)
+            pooling_layer = pooling_layer_fn(in_features=resnet.fc.in_features, **pooling_kwargs) if 'attn' in pooling.lower() else pooling_layer_fn(**pooling_kwargs)
+            modules += [pooling_layer]
+            if hasattr(pooling_layer, 'out_features'):
+                out_features = pooling_layer.out_features(in_features=resnet.fc.in_features)
+            else:
+                out_features = None
+        else:
+            out_features = resnet.fc.in_features
+        modules += [Flatten()]
+        self.out_features = out_features
+        self.encoder = nn.Sequential(*modules)
+
+    def forward(self, image):
+        """Extract the image feature vectors."""
+        features = self.encoder(image)
+        return features
 
 
 class ModelForwardWrapper(nn.Module):
@@ -4843,7 +4899,7 @@ class Bottleneck(nn.Module):
 class ResLayer(nn.Module):
     """Residual layer with `in_channels` inputs."""
 
-    def __init__(self, in_channels: int):
+    def __init__(self, in_channels: 'int'):
         super().__init__()
         mid_channels = in_channels // 2
         self.layer1 = BaseConv(in_channels, mid_channels, ksize=1, stride=1, act='lrelu')
@@ -4940,7 +4996,7 @@ class Darknet(nn.Module):
         in_channels *= 2
         self.dark5 = nn.Sequential(*self.make_group_layer(in_channels, num_blocks[3], stride=2), *self.make_spp_block([in_channels, in_channels * 2], in_channels * 2))
 
-    def make_group_layer(self, in_channels: int, num_blocks: int, stride: int=1):
+    def make_group_layer(self, in_channels: 'int', num_blocks: 'int', stride: 'int'=1):
         """starts with conv layer then has `num_blocks` `ResLayer`"""
         return [BaseConv(in_channels, in_channels * 2, ksize=3, stride=stride, act='lrelu'), *[ResLayer(in_channels * 2) for _ in range(num_blocks)]]
 
@@ -5593,11 +5649,11 @@ class ContrastiveModel(torch.nn.Module):
 class DummyModel(nn.Module):
     """Dummy model"""
 
-    def __init__(self, num_features: int, num_classes: int) ->None:
+    def __init__(self, num_features: 'int', num_classes: 'int') ->None:
         super().__init__()
         self.model = nn.Sequential(nn.Flatten(), nn.Linear(in_features=num_features, out_features=num_classes))
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Forward
 
@@ -5612,7 +5668,7 @@ class DummyModel(nn.Module):
 
 class CustomModule(nn.Module):
 
-    def __init__(self, in_features: int, out_features1: int, out_features2: int):
+    def __init__(self, in_features: 'int', out_features1: 'int', out_features2: 'int'):
         super().__init__()
         self.shared = nn.Linear(in_features, 128)
         self.head1 = nn.Linear(128, out_features1)

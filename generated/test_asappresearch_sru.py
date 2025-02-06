@@ -36,7 +36,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -446,8 +448,52 @@ class Model(nn.Module):
         return out[-1:]
 
 
+class ElementwiseRecurrence(Function):
+
+    @staticmethod
+    def forward(ctx, u, x, weight_c, bias, init, activation_type, d_out, bidirectional, has_skip_term, scale_x, mask_c=None, mask_pad=None):
+        ctx.activation_type = activation_type
+        ctx.d_out = d_out
+        ctx.bidirectional = bidirectional
+        ctx.has_skip_term = has_skip_term
+        mask_pad = mask_pad.bool().contiguous() if mask_pad is not None else None
+        h, last_hidden, c = elementwise_recurrence_forward(u, x, weight_c, bias, init, activation_type, d_out, bidirectional, has_skip_term, scale_x, mask_c, mask_pad)
+        ctx.save_for_backward(u, x, weight_c, bias, init, mask_c, c, mask_pad, scale_x)
+        return h, last_hidden
+
+    @staticmethod
+    def backward(ctx, grad_h, grad_last):
+        u, x, weight_c, bias, init, mask_c, c, mask_pad, scale_x = ctx.saved_tensors
+        length = x.size(0) if x.dim() == 3 else 1
+        batch = x.size(-2)
+        d = ctx.d_out
+        k = u.size(-1) // d
+        k_ = k // 2 if ctx.bidirectional else k
+        skip_type = 0 if not ctx.has_skip_term else 1 if k_ == 3 else 2
+        is_custom = len(weight_c.size()) > 1
+        if skip_type > 0 and k_ == 3:
+            x_ = x.contiguous() * scale_x if scale_x is not None else x.contiguous()
+        else:
+            x_ = None
+        is_simple_version = k_ == 3 and ctx.has_skip_term and not is_custom and ctx.activation_type == 0
+        if is_simple_version:
+            backward_func = torch.ops.sru_cuda.sru_bi_backward_simple if ctx.bidirectional else torch.ops.sru_cuda.sru_backward_simple
+            grad_u, grad_x, grad_wc, grad_bias, grad_init = backward_func(u.contiguous(), x_, weight_c.contiguous(), bias, init.contiguous(), mask_c, mask_pad.contiguous() if mask_pad is not None else None, c, grad_h.contiguous(), grad_last.contiguous(), length, batch, d)
+        else:
+            backward_func = torch.ops.sru_cuda.sru_bi_backward if ctx.bidirectional else torch.ops.sru_cuda.sru_backward
+            grad_u, grad_x, grad_wc, grad_bias, grad_init = backward_func(u.contiguous(), x_, weight_c.contiguous(), bias, init.contiguous(), mask_c, mask_pad.contiguous() if mask_pad is not None else None, c, grad_h.contiguous(), grad_last.contiguous(), length, batch, d, k_, ctx.activation_type, skip_type, is_custom)
+        if skip_type > 0 and k_ == 3:
+            if scale_x is not None:
+                grad_x.mul_(scale_x)
+        else:
+            grad_x = None
+        if not is_custom:
+            grad_wc = grad_wc.sum(1).view(-1)
+        return grad_u, grad_x, grad_wc, grad_bias.sum(1).view(-1), grad_init, None, None, None, None, None, None, None
+
+
 @torch.jit.unused
-def elementwise_recurrence_gpu(U: Tensor, x: Tensor, weight_c: Tensor, bias: Tensor, c_init: Tensor, activation_type: int, hidden_size: int, bidirectional: bool, has_skip_term: bool, scale_x: Optional[Tensor]=None, dropout_mask_c: Optional[Tensor]=None, mask_pad: Optional[Tensor]=None, amp_recurrence_fp16: bool=False) ->List[Tensor]:
+def elementwise_recurrence_gpu(U: 'Tensor', x: 'Tensor', weight_c: 'Tensor', bias: 'Tensor', c_init: 'Tensor', activation_type: 'int', hidden_size: 'int', bidirectional: 'bool', has_skip_term: 'bool', scale_x: 'Optional[Tensor]'=None, dropout_mask_c: 'Optional[Tensor]'=None, mask_pad: 'Optional[Tensor]'=None, amp_recurrence_fp16: 'bool'=False) ->List[Tensor]:
     """Elementwise forward operation of SRU on GPU.
 
     """
@@ -466,7 +512,7 @@ def elementwise_recurrence_gpu(U: Tensor, x: Tensor, weight_c: Tensor, bias: Ten
 
 
 @torch.jit.unused
-def elementwise_recurrence_naive(U: Tensor, x: Tensor, weight_c: Tensor, bias: Tensor, c_init: Tensor, activation_type: int, hidden_size: int, bidirectional: bool, has_skip_term: bool, scale_x: Optional[Tensor]=None, dropout_mask_c: Optional[Tensor]=None, mask_pad: Optional[Tensor]=None) ->List[Tensor]:
+def elementwise_recurrence_naive(U: 'Tensor', x: 'Tensor', weight_c: 'Tensor', bias: 'Tensor', c_init: 'Tensor', activation_type: 'int', hidden_size: 'int', bidirectional: 'bool', has_skip_term: 'bool', scale_x: 'Optional[Tensor]'=None, dropout_mask_c: 'Optional[Tensor]'=None, mask_pad: 'Optional[Tensor]'=None) ->List[Tensor]:
     """Elementwise forward operation of SRU in pure Python.
 
     """
@@ -552,10 +598,10 @@ class SRUCell(nn.Module):
     A single SRU layer as per `LSTMCell`, `GRUCell` in Pytorch.
     """
     __constants__ = ['input_size', 'hidden_size', 'output_size', 'rnn_dropout', 'dropout', 'bidirectional', 'has_skip_term', 'highway_bias', 'v1', 'rescale', 'activation_type', 'activation', 'custom_m', 'projection_size', 'num_matrices', 'layer_norm', 'weight_proj', 'scale_x', 'normalize_after', 'weight_c_init']
-    scale_x: Tensor
-    weight_proj: Optional[Tensor]
+    scale_x: 'Tensor'
+    weight_proj: 'Optional[Tensor]'
 
-    def __init__(self, input_size: int, hidden_size: int, dropout: float=0.0, rnn_dropout: float=0.0, bidirectional: bool=False, n_proj: int=0, use_tanh: bool=False, highway_bias: float=0.0, has_skip_term: bool=True, layer_norm: bool=False, rescale: bool=True, v1: bool=False, custom_m: Optional[nn.Module]=None, amp_recurrence_fp16: bool=False, normalize_after: bool=False, weight_c_init: Optional[float]=None):
+    def __init__(self, input_size: 'int', hidden_size: 'int', dropout: 'float'=0.0, rnn_dropout: 'float'=0.0, bidirectional: 'bool'=False, n_proj: 'int'=0, use_tanh: 'bool'=False, highway_bias: 'float'=0.0, has_skip_term: 'bool'=True, layer_norm: 'bool'=False, rescale: 'bool'=True, v1: 'bool'=False, custom_m: 'Optional[nn.Module]'=None, amp_recurrence_fp16: 'bool'=False, normalize_after: 'bool'=False, weight_c_init: 'Optional[float]'=None):
         """Initialize the SRUCell module.
 
         Parameters
@@ -626,7 +672,7 @@ class SRUCell(nn.Module):
         self.rescale = rescale
         self.activation_type = 0
         self.activation = 'none'
-        self.custom_m: Optional[nn.Module] = custom_m
+        self.custom_m: 'Optional[nn.Module]' = custom_m
         if use_tanh:
             self.activation_type = 1
             self.activation = 'tanh'
@@ -649,7 +695,7 @@ class SRUCell(nn.Module):
         self.weight_c = nn.Parameter(torch.Tensor(2 * self.output_size))
         self.bias = nn.Parameter(torch.Tensor(2 * self.output_size))
         self.register_buffer('scale_x', torch.FloatTensor([0]))
-        self.layer_norm: Optional[nn.Module] = None
+        self.layer_norm: 'Optional[nn.Module]' = None
         if layer_norm:
             if normalize_after:
                 self.layer_norm = nn.LayerNorm(self.output_size)
@@ -707,7 +753,7 @@ class SRUCell(nn.Module):
             self.weight_c.data.zero_()
             self.weight_c.requires_grad = False
 
-    def forward(self, input: Tensor, c0: Optional[Tensor]=None, mask_pad: Optional[Tensor]=None) ->Tuple[Tensor, Tensor]:
+    def forward(self, input: 'Tensor', c0: 'Optional[Tensor]'=None, mask_pad: 'Optional[Tensor]'=None) ->Tuple[Tensor, Tensor]:
         """The forward method of the SRU layer.
         """
         if input.dim() != 2 and input.dim() != 3:
@@ -721,9 +767,9 @@ class SRUCell(nn.Module):
         if self.training and self.rnn_dropout > 0:
             mask = self.get_dropout_mask_((batch_size, input.size(-1)), self.rnn_dropout)
             input = input * mask.expand_as(input)
-        scale_val: Optional[Tensor] = None
+        scale_val: 'Optional[Tensor]' = None
         scale_val = self.scale_x if self.rescale else None
-        mask_c: Optional[Tensor] = None
+        mask_c: 'Optional[Tensor]' = None
         if self.training and self.dropout > 0:
             mask_c = self.get_dropout_mask_((batch_size, self.output_size), self.dropout)
         U, V = self.compute_UV(input, c0, mask_pad)
@@ -732,7 +778,7 @@ class SRUCell(nn.Module):
             h = self.layer_norm(h)
         return h, c
 
-    def apply_recurrence(self, U: Tensor, V: Tensor, residual: Tensor, c0: Tensor, scale_val: Optional[Tensor], mask_c: Optional[Tensor], mask_pad: Optional[Tensor]) ->List[Tensor]:
+    def apply_recurrence(self, U: 'Tensor', V: 'Tensor', residual: 'Tensor', c0: 'Tensor', scale_val: 'Optional[Tensor]', mask_c: 'Optional[Tensor]', mask_pad: 'Optional[Tensor]') ->List[Tensor]:
         """
         Apply the elementwise recurrence computation on given input
         tensors
@@ -746,7 +792,7 @@ class SRUCell(nn.Module):
         else:
             return elementwise_recurrence_inference(U, residual, V, self.bias, c0, self.activation_type, self.hidden_size, self.bidirectional, self.has_skip_term, scale_val, mask_c, mask_pad)
 
-    def compute_UV(self, input: Tensor, c0: Optional[Tensor], mask_pad: Optional[Tensor]) ->Tuple[Tensor, Tensor]:
+    def compute_UV(self, input: 'Tensor', c0: 'Optional[Tensor]', mask_pad: 'Optional[Tensor]') ->Tuple[Tensor, Tensor]:
         """
         SRU performs grouped matrix multiplication to transform the
         input (length, batch_size, input_size) into a tensor U of size
@@ -776,7 +822,7 @@ class SRUCell(nn.Module):
                 raise ValueError('V must have a last dimension of {} but got {}.'.format(self.output_size * 2, V.size(-1)))
         return U, V
 
-    def compute_U(self, input: Tensor) ->Tensor:
+    def compute_U(self, input: 'Tensor') ->Tensor:
         """
         SRU performs grouped matrix multiplication to transform the
         input (length, batch_size, input_size) into a tensor U of size
@@ -791,7 +837,7 @@ class SRUCell(nn.Module):
             U = x.mm(self.weight)
         return U
 
-    def get_dropout_mask_(self, size: Tuple[int, int], p: float) ->Tensor:
+    def get_dropout_mask_(self, size: 'Tuple[int, int]', p: 'float') ->Tensor:
         """
         Composes the dropout mask for the `SRUCell`.
         """
@@ -837,7 +883,7 @@ class SRU(nn.Module):
     """
     __constants__ = ['input_size', 'hidden_size', 'output_size', 'num_layers', 'dropout', 'rnn_dropout', 'projection_size', 'rnn_lst', 'bidirectional', 'use_layer_norm', 'has_skip_term', 'num_directions', 'nn_rnn_compatible_return', 'input_to_hidden']
 
-    def __init__(self, input_size: int, hidden_size: int, num_layers: int=2, dropout: float=0.0, rnn_dropout: float=0.0, bidirectional: bool=False, projection_size: int=0, use_tanh: bool=False, layer_norm: bool=False, highway_bias: float=0.0, has_skip_term: bool=True, rescale: bool=False, v1: bool=False, nn_rnn_compatible_return: bool=False, custom_m: Optional[Union[nn.Module, List[nn.Module]]]=None, proj_input_to_hidden_first: bool=False, amp_recurrence_fp16: bool=False, normalize_after: bool=False, weight_c_init: Optional[float]=None):
+    def __init__(self, input_size: 'int', hidden_size: 'int', num_layers: 'int'=2, dropout: 'float'=0.0, rnn_dropout: 'float'=0.0, bidirectional: 'bool'=False, projection_size: 'int'=0, use_tanh: 'bool'=False, layer_norm: 'bool'=False, highway_bias: 'float'=0.0, has_skip_term: 'bool'=True, rescale: 'bool'=False, v1: 'bool'=False, nn_rnn_compatible_return: 'bool'=False, custom_m: 'Optional[Union[nn.Module, List[nn.Module]]]'=None, proj_input_to_hidden_first: 'bool'=False, amp_recurrence_fp16: 'bool'=False, normalize_after: 'bool'=False, weight_c_init: 'Optional[float]'=None):
         """Initialize the SRU module.
 
         Parameters
@@ -934,7 +980,7 @@ class SRU(nn.Module):
             rnn_lst.append(layer_i)
         self.rnn_lst = rnn_lst
 
-    def forward(self, input: Tensor, c0: Optional[Tensor]=None, mask_pad: Optional[Tensor]=None) ->Tuple[Tensor, Tensor]:
+    def forward(self, input: 'Tensor', c0: 'Optional[Tensor]'=None, mask_pad: 'Optional[Tensor]'=None) ->Tuple[Tensor, Tensor]:
         """The forward method of SRU module
 
         Parameters

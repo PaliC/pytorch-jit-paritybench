@@ -17,6 +17,7 @@ utils = _module
 anchors = _module
 callbacks = _module
 dataloader = _module
+utils = _module
 utils_bbox = _module
 utils_fit = _module
 utils_map = _module
@@ -26,7 +27,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -100,6 +103,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 from torch.utils.data.dataset import Dataset
+
+
+import random
 
 
 def normal_init(m, mean, stddev, truncated=False):
@@ -699,4 +705,22 @@ class FasterRCNNTrainer(nn.Module):
             scaler.step(self.optimizer)
             scaler.update()
         return losses
+
+
+import torch
+from torch.nn import MSELoss, ReLU
+from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
+
+
+TESTCASES = [
+    # (nn.Module, init_args, forward_args, jit_compiles)
+    (FasterRCNN,
+     lambda: ([], {'num_classes': 4}),
+     lambda: ([torch.rand([4, 512, 64, 64])], {}),
+     False),
+]
+
+class Test_bubbliiiing_faster_rcnn_pytorch(_paritybench_base):
+    def test_000(self):
+        self._check(*TESTCASES[0])
 

@@ -131,6 +131,7 @@ gloo_exec_fn = _module
 mpirun_exec_fn = _module
 task_info = _module
 compute_worker = _module
+datamodule = _module
 estimator = _module
 remote = _module
 util = _module
@@ -209,7 +210,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -358,14 +361,6 @@ class HorovodInternalError(RuntimeError):
     pass
 
 
-def is_iterable(x):
-    try:
-        _ = iter(x)
-    except TypeError:
-        return False
-    return True
-
-
 _NULL = ''
 
 
@@ -383,6 +378,31 @@ def _check_function(function_factory, tensor):
 
 
 _handle_map = {}
+
+
+def _allgather_async(tensor, output, name, process_set: 'ProcessSet'):
+    function = _check_function(_allgather_function_factory, tensor)
+    try:
+        handle = getattr(mpi_lib, function)(tensor, output, name.encode() if name is not None else _NULL, process_set.process_set_id)
+    except RuntimeError as e:
+        raise HorovodInternalError(e)
+    _handle_map[handle] = tensor, output
+    return handle
+
+
+class MPI:
+
+
+    class Comm:
+        ...
+
+
+def is_iterable(x):
+    try:
+        _ = iter(x)
+    except TypeError:
+        return False
+    return True
 
 
 def _allreduce_function_factory(tensor):
@@ -446,6 +466,44 @@ def num_rank_is_power_2(num_rank):
     TODO support non-power of 2 ranks.
     """
     return num_rank != 0 and num_rank & num_rank - 1 == 0
+
+
+def _allreduce_async(tensor, output, name, op, prescale_factor, postscale_factor, process_set: 'ProcessSet'):
+    if op == Average:
+        if rocm_built():
+            divisor = process_set.size()
+            op = Sum
+        else:
+            divisor = 1
+    elif op == Adasum:
+        if process_set != global_process_set:
+            raise NotImplementedError('Adasum does not support non-global process sets yet.')
+        if tensor.device.type != 'cpu' and gpu_available('torch'):
+            if nccl_built():
+                if not is_homogeneous():
+                    raise NotImplementedError('Running GPU Adasum on heterogeneous cluster is not supported yet.')
+                elif not num_rank_is_power_2(int(size() / local_size())):
+                    raise NotImplementedError('Running GPU Adasum with non-power of 2 nodes is not supported yet.')
+                if rocm_built():
+                    divisor = local_size()
+                else:
+                    divisor = 1
+            else:
+                warnings.warn('Adasum reduction does not currently support GPU reduction using MPI. Tensors are copied to CPU memory instead. To use Adasum for GPU reduction, please compile Horovod with HOROVOD_GPU_OPERATIONS=NCCL.')
+                divisor = 1
+        else:
+            if not num_rank_is_power_2(size()):
+                raise NotImplementedError('Running Adasum with non-power of 2 ranks is not supported yet.')
+            divisor = 1
+    else:
+        divisor = 1
+    function = _check_function(_allreduce_function_factory, tensor)
+    try:
+        handle = getattr(mpi_lib, function)(tensor, output, divisor, name.encode() if name is not None else _NULL, op, prescale_factor, postscale_factor, process_set.process_set_id)
+    except RuntimeError as e:
+        raise HorovodInternalError(e)
+    _handle_map[handle] = tensor, output
+    return handle
 
 
 def get_average_backwards_compatibility_fun(reduce_ops):

@@ -206,7 +206,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -250,12 +252,6 @@ from typing import List
 
 
 from typing import Tuple
-
-
-from torch._six import string_classes
-
-
-from collections import Mapping
 
 
 from torch.utils.data import Dataset
@@ -786,7 +782,7 @@ class ContextBlock(nn.Module):
         return out
 
 
-def drop_block_2d(x, drop_prob: float=0.1, block_size: int=7, gamma_scale: float=1.0, with_noise: bool=False, inplace: bool=False, batchwise: bool=False):
+def drop_block_2d(x, drop_prob: 'float'=0.1, block_size: 'int'=7, gamma_scale: 'float'=1.0, with_noise: 'bool'=False, inplace: 'bool'=False, batchwise: 'bool'=False):
     """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. This layer has been tested on a few training
     runs with success, but needs further validation and possibly optimization for lower runtime impact.
@@ -819,7 +815,7 @@ def drop_block_2d(x, drop_prob: float=0.1, block_size: int=7, gamma_scale: float
     return x
 
 
-def drop_block_fast_2d(x: torch.Tensor, drop_prob: float=0.1, block_size: int=7, gamma_scale: float=1.0, with_noise: bool=False, inplace: bool=False, batchwise: bool=False):
+def drop_block_fast_2d(x: 'torch.Tensor', drop_prob: 'float'=0.1, block_size: 'int'=7, gamma_scale: 'float'=1.0, with_noise: 'bool'=False, inplace: 'bool'=False, batchwise: 'bool'=False):
     """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. Simplied from above without concern for valid
     block mask at edges.
@@ -872,7 +868,7 @@ class DropBlock2d(nn.Module):
             return drop_block_2d(x, self.drop_prob, self.block_size, self.gamma_scale, self.with_noise, self.inplace, self.batchwise)
 
 
-def drop_path(x, drop_prob: float=0.0, training: bool=False):
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
     This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
     the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
@@ -1212,7 +1208,7 @@ class SplAtConv2d(nn.Module):
 
 class ConvBNActivation(nn.Sequential):
 
-    def __init__(self, in_planes: int, out_planes: int, kernel_size: int=3, stride: int=1, groups: int=1, bn_norm=None, activation_layer: Optional[Callable[..., nn.Module]]=None, dilation: int=1) ->None:
+    def __init__(self, in_planes: 'int', out_planes: 'int', kernel_size: 'int'=3, stride: 'int'=1, groups: 'int'=1, bn_norm=None, activation_layer: 'Optional[Callable[..., nn.Module]]'=None, dilation: 'int'=1) ->None:
         padding = (kernel_size - 1) // 2 * dilation
         if activation_layer is None:
             activation_layer = nn.ReLU6
@@ -1239,52 +1235,35 @@ def _make_divisible(v, divisor, min_value=None):
     return new_v
 
 
-class InvertedResidualConfig:
-
-    def __init__(self, input_channels: int, kernel: int, expanded_channels: int, out_channels: int, use_se: bool, activation: str, stride: int, dilation: int, width_mult: float):
-        self.input_channels = self.adjust_channels(input_channels, width_mult)
-        self.kernel = kernel
-        self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)
-        self.out_channels = self.adjust_channels(out_channels, width_mult)
-        self.use_se = use_se
-        self.use_hs = activation == 'HS'
-        self.stride = stride
-        self.dilation = dilation
-
-    @staticmethod
-    def adjust_channels(channels: int, width_mult: float):
-        return _make_divisible(channels * width_mult, 8)
-
-
 class SqueezeExcitation(nn.Module):
 
-    def __init__(self, input_channels: int, squeeze_factor: int=4):
+    def __init__(self, input_channels: 'int', squeeze_factor: 'int'=4):
         super().__init__()
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
         self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
         self.relu = nn.ReLU(inplace=True)
         self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
 
-    def _scale(self, input: Tensor, inplace: bool) ->Tensor:
+    def _scale(self, input: 'Tensor', inplace: 'bool') ->Tensor:
         scale = F.adaptive_avg_pool2d(input, 1)
         scale = self.fc1(scale)
         scale = self.relu(scale)
         scale = self.fc2(scale)
         return F.hardsigmoid(scale, inplace=inplace)
 
-    def forward(self, input: Tensor) ->Tensor:
+    def forward(self, input: 'Tensor') ->Tensor:
         scale = self._scale(input, True)
         return scale * input
 
 
 class InvertedResidual(nn.Module):
 
-    def __init__(self, cnf: InvertedResidualConfig, bn_norm, se_layer: Callable[..., nn.Module]=SqueezeExcitation):
+    def __init__(self, cnf: 'InvertedResidualConfig', bn_norm, se_layer: 'Callable[..., nn.Module]'=SqueezeExcitation):
         super().__init__()
         if not 1 <= cnf.stride <= 2:
             raise ValueError('illegal stride value')
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.out_channels
-        layers: List[nn.Module] = []
+        layers: 'List[nn.Module]' = []
         activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
         if cnf.expanded_channels != cnf.input_channels:
             layers.append(ConvBNActivation(cnf.input_channels, cnf.expanded_channels, kernel_size=1, bn_norm=bn_norm, activation_layer=activation_layer))
@@ -1297,7 +1276,7 @@ class InvertedResidual(nn.Module):
         self.out_channels = cnf.out_channels
         self._is_cn = cnf.stride > 1
 
-    def forward(self, input: Tensor) ->Tensor:
+    def forward(self, input: 'Tensor') ->Tensor:
         result = self.block(input)
         if self.use_res_connect:
             result += input
@@ -1350,9 +1329,26 @@ class MobileNetV2(nn.Module):
                 m.bias.data.zero_()
 
 
+class InvertedResidualConfig:
+
+    def __init__(self, input_channels: 'int', kernel: 'int', expanded_channels: 'int', out_channels: 'int', use_se: 'bool', activation: 'str', stride: 'int', dilation: 'int', width_mult: 'float'):
+        self.input_channels = self.adjust_channels(input_channels, width_mult)
+        self.kernel = kernel
+        self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)
+        self.out_channels = self.adjust_channels(out_channels, width_mult)
+        self.use_se = use_se
+        self.use_hs = activation == 'HS'
+        self.stride = stride
+        self.dilation = dilation
+
+    @staticmethod
+    def adjust_channels(channels: 'int', width_mult: 'float'):
+        return _make_divisible(channels * width_mult, 8)
+
+
 class MobileNetV3(nn.Module):
 
-    def __init__(self, bn_norm, inverted_residual_setting: List[InvertedResidualConfig], last_channel: int, block: Optional[Callable[..., nn.Module]]=None) ->None:
+    def __init__(self, bn_norm, inverted_residual_setting: 'List[InvertedResidualConfig]', last_channel: 'int', block: 'Optional[Callable[..., nn.Module]]'=None) ->None:
         """
         MobileNet V3 main class
         Args:
@@ -1367,7 +1363,7 @@ class MobileNetV3(nn.Module):
             raise TypeError('The inverted_residual_setting should be List[InvertedResidualConfig]')
         if block is None:
             block = InvertedResidual
-        layers: List[nn.Module] = []
+        layers: 'List[nn.Module]' = []
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, bn_norm=bn_norm, activation_layer=nn.Hardswish))
         for cnf in inverted_residual_setting:
@@ -1389,12 +1385,12 @@ class MobileNetV3(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
 
-    def _forward_impl(self, x: Tensor) ->Tensor:
+    def _forward_impl(self, x: 'Tensor') ->Tensor:
         x = self.features(x)
         x = self.conv(x)
         return x
 
-    def forward(self, x: Tensor) ->Tensor:
+    def forward(self, x: 'Tensor') ->Tensor:
         return self._forward_impl(x)
 
 
@@ -2969,60 +2965,6 @@ class VisionTransformer(nn.Module):
         return x[:, 0].reshape(x.shape[0], -1, 1, 1)
 
 
-class Registry(object):
-    """
-    The registry that provides name -> object mapping, to support third-party
-    users' custom modules.
-    To create a registry (e.g. a backbone registry):
-    .. code-block:: python
-        BACKBONE_REGISTRY = Registry('BACKBONE')
-    To register an object:
-    .. code-block:: python
-        @BACKBONE_REGISTRY.register()
-        class MyBackbone():
-            ...
-    Or:
-    .. code-block:: python
-        BACKBONE_REGISTRY.register(MyBackbone)
-    """
-
-    def __init__(self, name: str) ->None:
-        """
-        Args:
-            name (str): the name of this registry
-        """
-        self._name: str = name
-        self._obj_map: Dict[str, object] = {}
-
-    def _do_register(self, name: str, obj: object) ->None:
-        assert name not in self._obj_map, "An object named '{}' was already registered in '{}' registry!".format(name, self._name)
-        self._obj_map[name] = obj
-
-    def register(self, obj: object=None) ->Optional[object]:
-        """
-        Register the given object under the the name `obj.__name__`.
-        Can be used as either a decorator or not. See docstring of this class for usage.
-        """
-        if obj is None:
-
-            def deco(func_or_class: object) ->object:
-                name = func_or_class.__name__
-                self._do_register(name, func_or_class)
-                return func_or_class
-            return deco
-        name = obj.__name__
-        self._do_register(name, obj)
-
-    def get(self, name: str) ->object:
-        ret = self._obj_map.get(name)
-        if ret is None:
-            raise KeyError("No object named '{}' found in '{}' registry!".format(name, self._name))
-        return ret
-
-
-REID_HEADS_REGISTRY = Registry('HEADS')
-
-
 def _called_with_cfg(*args, **kwargs):
     """
     Returns:
@@ -3239,7 +3181,55 @@ class EmbeddingHead(nn.Module):
         return {'cls_outputs': cls_outputs, 'pred_class_logits': logits.mul(self.cls_layer.s), 'features': feat}
 
 
-META_ARCH_REGISTRY = Registry('META_ARCH')
+class Registry(object):
+    """
+    The registry that provides name -> object mapping, to support third-party
+    users' custom modules.
+    To create a registry (e.g. a backbone registry):
+    .. code-block:: python
+        BACKBONE_REGISTRY = Registry('BACKBONE')
+    To register an object:
+    .. code-block:: python
+        @BACKBONE_REGISTRY.register()
+        class MyBackbone():
+            ...
+    Or:
+    .. code-block:: python
+        BACKBONE_REGISTRY.register(MyBackbone)
+    """
+
+    def __init__(self, name: 'str') ->None:
+        """
+        Args:
+            name (str): the name of this registry
+        """
+        self._name: 'str' = name
+        self._obj_map: 'Dict[str, object]' = {}
+
+    def _do_register(self, name: 'str', obj: 'object') ->None:
+        assert name not in self._obj_map, "An object named '{}' was already registered in '{}' registry!".format(name, self._name)
+        self._obj_map[name] = obj
+
+    def register(self, obj: 'object'=None) ->Optional[object]:
+        """
+        Register the given object under the the name `obj.__name__`.
+        Can be used as either a decorator or not. See docstring of this class for usage.
+        """
+        if obj is None:
+
+            def deco(func_or_class: 'object') ->object:
+                name = func_or_class.__name__
+                self._do_register(name, func_or_class)
+                return func_or_class
+            return deco
+        name = obj.__name__
+        self._do_register(name, obj)
+
+    def get(self, name: 'str') ->object:
+        ret = self._obj_map.get(name)
+        if ret is None:
+            raise KeyError("No object named '{}' found in '{}' registry!".format(name, self._name))
+        return ret
 
 
 BACKBONE_REGISTRY = Registry('BACKBONE')
@@ -3254,6 +3244,9 @@ def build_backbone(cfg):
     backbone_name = cfg.MODEL.BACKBONE.NAME
     backbone = BACKBONE_REGISTRY.get(backbone_name)(cfg)
     return backbone
+
+
+REID_HEADS_REGISTRY = Registry('HEADS')
 
 
 def build_heads(cfg):
@@ -3313,7 +3306,7 @@ def log_accuracy(pred_class_logits, gt_classes, topk=(1,)):
     storage.put_scalar('cls_accuracy', ret[0])
 
 
-def pairwise_circleloss(embedding: torch.Tensor, targets: torch.Tensor, margin: float, gamma: float) ->torch.Tensor:
+def pairwise_circleloss(embedding: 'torch.Tensor', targets: 'torch.Tensor', margin: 'float', gamma: 'float') ->torch.Tensor:
     embedding = F.normalize(embedding, dim=1)
     dist_mat = torch.matmul(embedding, embedding.t())
     N = dist_mat.size(0)
@@ -3332,7 +3325,7 @@ def pairwise_circleloss(embedding: torch.Tensor, targets: torch.Tensor, margin: 
     return loss
 
 
-def pairwise_cosface(embedding: torch.Tensor, targets: torch.Tensor, margin: float, gamma: float) ->torch.Tensor:
+def pairwise_cosface(embedding: 'torch.Tensor', targets: 'torch.Tensor', margin: 'float', gamma: 'float') ->torch.Tensor:
     embedding = F.normalize(embedding, dim=1)
     dist_mat = torch.matmul(embedding, embedding.t())
     N = dist_mat.size(0)
@@ -3537,7 +3530,7 @@ class PathHandler:
     """
     _strict_kwargs_check = True
 
-    def _check_kwargs(self, kwargs: Dict[str, Any]) ->None:
+    def _check_kwargs(self, kwargs: 'Dict[str, Any]') ->None:
         """
         Checks if the given arguments are empty. Throws a ValueError if strict
         kwargs checking is enabled and args are non-empty. If strict kwargs
@@ -3560,7 +3553,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _get_local_path(self, path: str, **kwargs: Any) ->str:
+    def _get_local_path(self, path: 'str', **kwargs: Any) ->str:
         """
         Get a filepath which is compatible with native Python I/O such as `open`
         and `os.path`.
@@ -3574,7 +3567,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _open(self, path: str, mode: str='r', buffering: int=-1, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
+    def _open(self, path: 'str', mode: 'str'='r', buffering: 'int'=-1, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
         """
         Open a stream to a URI, similar to the built-in `open`.
         Args:
@@ -3591,7 +3584,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _copy(self, src_path: str, dst_path: str, overwrite: bool=False, **kwargs: Any) ->bool:
+    def _copy(self, src_path: 'str', dst_path: 'str', overwrite: 'bool'=False, **kwargs: Any) ->bool:
         """
         Copies a source path to a destination path.
         Args:
@@ -3603,7 +3596,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _exists(self, path: str, **kwargs: Any) ->bool:
+    def _exists(self, path: 'str', **kwargs: Any) ->bool:
         """
         Checks if there is a resource at the given URI.
         Args:
@@ -3613,7 +3606,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _isfile(self, path: str, **kwargs: Any) ->bool:
+    def _isfile(self, path: 'str', **kwargs: Any) ->bool:
         """
         Checks if the resource at the given URI is a file.
         Args:
@@ -3623,7 +3616,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _isdir(self, path: str, **kwargs: Any) ->bool:
+    def _isdir(self, path: 'str', **kwargs: Any) ->bool:
         """
         Checks if the resource at the given URI is a directory.
         Args:
@@ -3633,7 +3626,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _ls(self, path: str, **kwargs: Any) ->List[str]:
+    def _ls(self, path: 'str', **kwargs: Any) ->List[str]:
         """
         List the contents of the directory at the provided URI.
         Args:
@@ -3643,7 +3636,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _mkdirs(self, path: str, **kwargs: Any) ->None:
+    def _mkdirs(self, path: 'str', **kwargs: Any) ->None:
         """
         Recursive directory creation function. Like mkdir(), but makes all
         intermediate-level directories needed to contain the leaf directory.
@@ -3653,7 +3646,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _rm(self, path: str, **kwargs: Any) ->None:
+    def _rm(self, path: 'str', **kwargs: Any) ->None:
         """
         Remove the file (not directory) at the provided URI.
         Args:
@@ -3668,16 +3661,16 @@ class NativePathHandler(PathHandler):
     handler uses `open()` and `os.*` calls on the given path.
     """
 
-    def _get_local_path(self, path: str, **kwargs: Any) ->str:
+    def _get_local_path(self, path: 'str', **kwargs: Any) ->str:
         self._check_kwargs(kwargs)
         return path
 
-    def _open(self, path: str, mode: str='r', buffering: int=-1, encoding: Optional[str]=None, errors: Optional[str]=None, newline: Optional[str]=None, closefd: bool=True, opener: Optional[Callable]=None, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
+    def _open(self, path: 'str', mode: 'str'='r', buffering: 'int'=-1, encoding: 'Optional[str]'=None, errors: 'Optional[str]'=None, newline: 'Optional[str]'=None, closefd: 'bool'=True, opener: 'Optional[Callable]'=None, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
         "\n        Open a path.\n        Args:\n            path (str): A URI supported by this PathHandler\n            mode (str): Specifies the mode in which the file is opened. It defaults\n                to 'r'.\n            buffering (int): An optional integer used to set the buffering policy.\n                Pass 0 to switch buffering off and an integer >= 1 to indicate the\n                size in bytes of a fixed-size chunk buffer. When no buffering\n                argument is given, the default buffering policy works as follows:\n                    * Binary files are buffered in fixed-size chunks; the size of\n                    the buffer is chosen using a heuristic trying to determine the\n                    underlying device’s “block size” and falling back on\n                    io.DEFAULT_BUFFER_SIZE. On many systems, the buffer will\n                    typically be 4096 or 8192 bytes long.\n            encoding (Optional[str]): the name of the encoding used to decode or\n                encode the file. This should only be used in text mode.\n            errors (Optional[str]): an optional string that specifies how encoding\n                and decoding errors are to be handled. This cannot be used in binary\n                mode.\n            newline (Optional[str]): controls how universal newlines mode works\n                (it only applies to text mode). It can be None, '', '\n', '\r',\n                and '\r\n'.\n            closefd (bool): If closefd is False and a file descriptor rather than\n                a filename was given, the underlying file descriptor will be kept\n                open when the file is closed. If a filename is given closefd must\n                be True (the default) otherwise an error will be raised.\n            opener (Optional[Callable]): A custom opener can be used by passing\n                a callable as opener. The underlying file descriptor for the file\n                object is then obtained by calling opener with (file, flags).\n                opener must return an open file descriptor (passing os.open as opener\n                results in functionality similar to passing None).\n            See https://docs.python.org/3/library/functions.html#open for details.\n        Returns:\n            file: a file-like object.\n        "
         self._check_kwargs(kwargs)
         return open(path, mode, buffering=buffering, encoding=encoding, errors=errors, newline=newline, closefd=closefd, opener=opener)
 
-    def _copy(self, src_path: str, dst_path: str, overwrite: bool=False, **kwargs: Any) ->bool:
+    def _copy(self, src_path: 'str', dst_path: 'str', overwrite: 'bool'=False, **kwargs: Any) ->bool:
         """
         Copies a source path to a destination path.
         Args:
@@ -3700,23 +3693,23 @@ class NativePathHandler(PathHandler):
             logger.error('Error in file copy - {}'.format(str(e)))
             return False
 
-    def _exists(self, path: str, **kwargs: Any) ->bool:
+    def _exists(self, path: 'str', **kwargs: Any) ->bool:
         self._check_kwargs(kwargs)
         return os.path.exists(path)
 
-    def _isfile(self, path: str, **kwargs: Any) ->bool:
+    def _isfile(self, path: 'str', **kwargs: Any) ->bool:
         self._check_kwargs(kwargs)
         return os.path.isfile(path)
 
-    def _isdir(self, path: str, **kwargs: Any) ->bool:
+    def _isdir(self, path: 'str', **kwargs: Any) ->bool:
         self._check_kwargs(kwargs)
         return os.path.isdir(path)
 
-    def _ls(self, path: str, **kwargs: Any) ->List[str]:
+    def _ls(self, path: 'str', **kwargs: Any) ->List[str]:
         self._check_kwargs(kwargs)
         return os.listdir(path)
 
-    def _mkdirs(self, path: str, **kwargs: Any) ->None:
+    def _mkdirs(self, path: 'str', **kwargs: Any) ->None:
         self._check_kwargs(kwargs)
         try:
             os.makedirs(path, exist_ok=True)
@@ -3724,7 +3717,7 @@ class NativePathHandler(PathHandler):
             if e.errno != errno.EEXIST:
                 raise
 
-    def _rm(self, path: str, **kwargs: Any) ->None:
+    def _rm(self, path: 'str', **kwargs: Any) ->None:
         self._check_kwargs(kwargs)
         os.remove(path)
 
@@ -3733,11 +3726,11 @@ class PathManager:
     """
     A class for users to open generic paths or translate generic paths to file names.
     """
-    _PATH_HANDLERS: MutableMapping[str, PathHandler] = OrderedDict()
+    _PATH_HANDLERS: 'MutableMapping[str, PathHandler]' = OrderedDict()
     _NATIVE_PATH_HANDLER = NativePathHandler()
 
     @staticmethod
-    def __get_path_handler(path: str) ->PathHandler:
+    def __get_path_handler(path: 'str') ->PathHandler:
         """
         Finds a PathHandler that supports the given path. Falls back to the native
         PathHandler if no other handler is found.
@@ -3752,7 +3745,7 @@ class PathManager:
         return PathManager._NATIVE_PATH_HANDLER
 
     @staticmethod
-    def open(path: str, mode: str='r', buffering: int=-1, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
+    def open(path: 'str', mode: 'str'='r', buffering: 'int'=-1, **kwargs: Any) ->Union[IO[str], IO[bytes]]:
         """
         Open a stream to a URI, similar to the built-in `open`.
         Args:
@@ -3770,7 +3763,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._open(path, mode, buffering=buffering, **kwargs)
 
     @staticmethod
-    def copy(src_path: str, dst_path: str, overwrite: bool=False, **kwargs: Any) ->bool:
+    def copy(src_path: 'str', dst_path: 'str', overwrite: 'bool'=False, **kwargs: Any) ->bool:
         """
         Copies a source path to a destination path.
         Args:
@@ -3784,7 +3777,7 @@ class PathManager:
         return PathManager.__get_path_handler(src_path)._copy(src_path, dst_path, overwrite, **kwargs)
 
     @staticmethod
-    def get_local_path(path: str, **kwargs: Any) ->str:
+    def get_local_path(path: 'str', **kwargs: Any) ->str:
         """
         Get a filepath which is compatible with native Python I/O such as `open`
         and `os.path`.
@@ -3798,7 +3791,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._get_local_path(path, **kwargs)
 
     @staticmethod
-    def exists(path: str, **kwargs: Any) ->bool:
+    def exists(path: 'str', **kwargs: Any) ->bool:
         """
         Checks if there is a resource at the given URI.
         Args:
@@ -3809,7 +3802,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._exists(path, **kwargs)
 
     @staticmethod
-    def isfile(path: str, **kwargs: Any) ->bool:
+    def isfile(path: 'str', **kwargs: Any) ->bool:
         """
         Checks if there the resource at the given URI is a file.
         Args:
@@ -3820,7 +3813,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._isfile(path, **kwargs)
 
     @staticmethod
-    def isdir(path: str, **kwargs: Any) ->bool:
+    def isdir(path: 'str', **kwargs: Any) ->bool:
         """
         Checks if the resource at the given URI is a directory.
         Args:
@@ -3831,7 +3824,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._isdir(path, **kwargs)
 
     @staticmethod
-    def ls(path: str, **kwargs: Any) ->List[str]:
+    def ls(path: 'str', **kwargs: Any) ->List[str]:
         """
         List the contents of the directory at the provided URI.
         Args:
@@ -3842,7 +3835,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._ls(path, **kwargs)
 
     @staticmethod
-    def mkdirs(path: str, **kwargs: Any) ->None:
+    def mkdirs(path: 'str', **kwargs: Any) ->None:
         """
         Recursive directory creation function. Like mkdir(), but makes all
         intermediate-level directories needed to contain the leaf directory.
@@ -3853,7 +3846,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._mkdirs(path, **kwargs)
 
     @staticmethod
-    def rm(path: str, **kwargs: Any) ->None:
+    def rm(path: 'str', **kwargs: Any) ->None:
         """
         Remove the file (not directory) at the provided URI.
         Args:
@@ -3862,7 +3855,7 @@ class PathManager:
         return PathManager.__get_path_handler(path)._rm(path, **kwargs)
 
     @staticmethod
-    def register_handler(handler: PathHandler) ->None:
+    def register_handler(handler: 'PathHandler') ->None:
         """
         Register a path handler associated with `handler._get_supported_prefixes`
         URI prefixes.
@@ -3876,7 +3869,7 @@ class PathManager:
         PathManager._PATH_HANDLERS = OrderedDict(sorted(PathManager._PATH_HANDLERS.items(), key=lambda t: t[0], reverse=True))
 
     @staticmethod
-    def set_strict_kwargs_checking(enable: bool) ->None:
+    def set_strict_kwargs_checking(enable: 'bool') ->None:
         """
         Toggles strict kwargs checking. If enabled, a ValueError is thrown if any
         unused parameters are passed to a PathHandler function. If disabled, only
@@ -3905,7 +3898,7 @@ class _IncompatibleKeys(NamedTuple('IncompatibleKeys', [('missing_keys', List[st
     pass
 
 
-def _named_modules_with_dup(model: nn.Module, prefix: str='') ->Iterable[Tuple[str, nn.Module]]:
+def _named_modules_with_dup(model: 'nn.Module', prefix: 'str'='') ->Iterable[Tuple[str, nn.Module]]:
     """
     The same as `model.named_modules()`, except that it includes
     duplicated modules that have more than one name.
@@ -3918,7 +3911,7 @@ def _named_modules_with_dup(model: nn.Module, prefix: str='') ->Iterable[Tuple[s
         yield from _named_modules_with_dup(module, submodule_prefix)
 
 
-def _filter_reused_missing_keys(model: nn.Module, keys: List[str]) ->List[str]:
+def _filter_reused_missing_keys(model: 'nn.Module', keys: 'List[str]') ->List[str]:
     """
     Filter "missing keys" to not include keys that have been loaded with another name.
     """
@@ -3934,7 +3927,7 @@ def _filter_reused_missing_keys(model: nn.Module, keys: List[str]) ->List[str]:
     return list(keyset)
 
 
-def _strip_prefix_if_present(state_dict: Dict[str, Any], prefix: str) ->None:
+def _strip_prefix_if_present(state_dict: 'Dict[str, Any]', prefix: 'str') ->None:
     """
     Strip the prefix in metadata, if any.
 
@@ -3960,7 +3953,7 @@ def _strip_prefix_if_present(state_dict: Dict[str, Any], prefix: str) ->None:
             metadata[newkey] = metadata.pop(key)
 
 
-def _group_checkpoint_keys(keys: List[str]) ->Dict[str, List[str]]:
+def _group_checkpoint_keys(keys: 'List[str]') ->Dict[str, List[str]]:
     """
     Group keys based on common prefixes. A prefix is the string up to the final
     "." in each key.
@@ -3982,7 +3975,7 @@ def _group_checkpoint_keys(keys: List[str]) ->Dict[str, List[str]]:
     return groups
 
 
-def _group_to_str(group: List[str]) ->str:
+def _group_to_str(group: 'List[str]') ->str:
     """
     Format a group of parameter name suffixes into a loggable string.
 
@@ -3998,7 +3991,7 @@ def _group_to_str(group: List[str]) ->str:
     return '.{' + ', '.join(group) + '}'
 
 
-def get_missing_parameters_message(keys: List[str]) ->str:
+def get_missing_parameters_message(keys: 'List[str]') ->str:
     """
     Get a logging-friendly message to report parameter names (keys) that are in
     the model but not found in a checkpoint.
@@ -4014,7 +4007,7 @@ def get_missing_parameters_message(keys: List[str]) ->str:
     return msg
 
 
-def get_unexpected_parameters_message(keys: List[str]) ->str:
+def get_unexpected_parameters_message(keys: 'List[str]') ->str:
     """
     Get a logging-friendly message to report parameter names (keys) that are in
     the checkpoint but not found in the model.
@@ -4036,7 +4029,7 @@ class Checkpointer(object):
     objects.
     """
 
-    def __init__(self, model: nn.Module, save_dir: str='', *, save_to_disk: bool=True, **checkpointables: object):
+    def __init__(self, model: 'nn.Module', save_dir: 'str'='', *, save_to_disk: bool=True, **checkpointables: object):
         """
         Args:
             model (nn.Module): model.
@@ -4057,7 +4050,7 @@ class Checkpointer(object):
         self.save_to_disk = save_to_disk
         self.path_manager = PathManager
 
-    def save(self, name: str, **kwargs: Dict[str, str]):
+    def save(self, name: 'str', **kwargs: Dict[str, str]):
         """
         Dump model and checkpointables to a file.
 
@@ -4080,7 +4073,7 @@ class Checkpointer(object):
             torch.save(data, f)
         self.tag_last_checkpoint(basename)
 
-    def load(self, path: str, checkpointables: Optional[List[str]]=None) ->object:
+    def load(self, path: 'str', checkpointables: 'Optional[List[str]]'=None) ->object:
         """
         Load from the given checkpoint. When path points to network file, this
         function has to be called on all ranks.
@@ -4144,7 +4137,7 @@ class Checkpointer(object):
         all_model_checkpoints = [os.path.join(self.save_dir, file) for file in PathManager.ls(self.save_dir) if PathManager.isfile(os.path.join(self.save_dir, file)) and file.endswith('.pth')]
         return all_model_checkpoints
 
-    def resume_or_load(self, path: str, *, resume: bool=True):
+    def resume_or_load(self, path: 'str', *, resume: bool=True):
         """
         If `resume` is True, this method attempts to resume from the last
         checkpoint, if exists. Otherwise, load checkpoint from the given path.
@@ -4162,7 +4155,7 @@ class Checkpointer(object):
         else:
             return self.load(path, checkpointables=[])
 
-    def tag_last_checkpoint(self, last_filename_basename: str):
+    def tag_last_checkpoint(self, last_filename_basename: 'str'):
         """
         Tag the last checkpoint.
 
@@ -4173,7 +4166,7 @@ class Checkpointer(object):
         with PathManager.open(save_file, 'w') as f:
             f.write(last_filename_basename)
 
-    def _load_file(self, f: str):
+    def _load_file(self, f: 'str'):
         """
         Load a checkpoint file. Can be overwritten by subclasses to support
         different formats.
@@ -4187,7 +4180,7 @@ class Checkpointer(object):
         """
         return torch.load(f, map_location=torch.device('cpu'))
 
-    def _load_model(self, checkpoint: Any):
+    def _load_model(self, checkpoint: 'Any'):
         """
         Load weights from a checkpoint.
 
@@ -4209,7 +4202,7 @@ class Checkpointer(object):
         incompatible = self.model.load_state_dict(checkpoint_state_dict, strict=False)
         return _IncompatibleKeys(missing_keys=incompatible.missing_keys, unexpected_keys=incompatible.unexpected_keys, incorrect_shapes=incorrect_shapes)
 
-    def _log_incompatible_keys(self, incompatible: _IncompatibleKeys) ->None:
+    def _log_incompatible_keys(self, incompatible: '_IncompatibleKeys') ->None:
         """
         Log information about the incompatible keys returned by ``_load_model``.
         """
@@ -4222,7 +4215,7 @@ class Checkpointer(object):
         if incompatible.unexpected_keys:
             self.logger.info(get_unexpected_parameters_message(incompatible.unexpected_keys))
 
-    def _convert_ndarray_to_tensor(self, state_dict: dict):
+    def _convert_ndarray_to_tensor(self, state_dict: 'dict'):
         """
         In-place convert all numpy arrays in the state_dict to torch tensor.
 
@@ -4237,6 +4230,9 @@ class Checkpointer(object):
                 state_dict[k] = torch.from_numpy(v)
 
 
+META_ARCH_REGISTRY = Registry('META_ARCH')
+
+
 def build_model(cfg):
     """
     Build the whole model architecture, defined by ``cfg.MODEL.META_ARCHITECTURE``.
@@ -4249,9 +4245,6 @@ def build_model(cfg):
 
 
 BASE_KEY = '_BASE_'
-
-
-GPU_ID = 0
 
 
 class DataLoaderX(DataLoader):
@@ -5028,1175 +5021,4 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     all_cmc = np.asarray(all_cmc).astype(np.float32)
     all_cmc = all_cmc.sum(0) / num_valid_q
     return all_cmc, all_AP, all_INP
-
-
-def map(wrapper):
-    model = wrapper
-    cfg = get_cfg()
-    test_loader, num_query = build_reid_test_loader(cfg, 'Market1501', T.Compose([]))
-    feats = []
-    pids = []
-    camids = []
-    for batch in test_loader:
-        for image_path in batch['img_paths']:
-            t = torch.Tensor(np.array([model.infer(cv2.imread(image_path))]))
-            t
-            feats.append(t)
-        pids.extend(batch['targets'].numpy())
-        camids.extend(batch['camids'].numpy())
-    feats = torch.cat(feats, dim=0)
-    q_feat = feats[:num_query]
-    g_feat = feats[num_query:]
-    q_pids = np.asarray(pids[:num_query])
-    g_pids = np.asarray(pids[num_query:])
-    q_camids = np.asarray(camids[:num_query])
-    g_camids = np.asarray(camids[num_query:])
-    distmat = 1 - torch.mm(q_feat, g_feat.t())
-    distmat = distmat.numpy()
-    all_cmc, all_AP, all_INP = eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, 5)
-    mAP = np.mean(all_AP)
-    None
-
-
-class Distiller(Baseline):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        model_ts = []
-        for i in range(len(cfg.KD.MODEL_CONFIG)):
-            cfg_t = get_cfg()
-            cfg_t.merge_from_file(cfg.KD.MODEL_CONFIG[i])
-            cfg_t.defrost()
-            cfg_t.MODEL.META_ARCHITECTURE = 'Baseline'
-            if cfg_t.MODEL.BACKBONE.NORM == 'syncBN':
-                cfg_t.MODEL.BACKBONE.NORM = 'BN'
-            if cfg_t.MODEL.HEADS.NORM == 'syncBN':
-                cfg_t.MODEL.HEADS.NORM = 'BN'
-            model_t = build_model(cfg_t)
-            for param in model_t.parameters():
-                param.requires_grad_(False)
-            logger.info('Loading teacher model weights ...')
-            Checkpointer(model_t).load(cfg.KD.MODEL_WEIGHTS[i])
-            model_ts.append(model_t)
-        self.ema_enabled = cfg.KD.EMA.ENABLED
-        self.ema_momentum = cfg.KD.EMA.MOMENTUM
-        if self.ema_enabled:
-            cfg_self = cfg.clone()
-            cfg_self.defrost()
-            cfg_self.MODEL.META_ARCHITECTURE = 'Baseline'
-            if cfg_self.MODEL.BACKBONE.NORM == 'syncBN':
-                cfg_self.MODEL.BACKBONE.NORM = 'BN'
-            if cfg_self.MODEL.HEADS.NORM == 'syncBN':
-                cfg_self.MODEL.HEADS.NORM = 'BN'
-            model_self = build_model(cfg_self)
-            for param in model_self.parameters():
-                param.requires_grad_(False)
-            if cfg_self.MODEL.WEIGHTS != '':
-                logger.info('Loading self distillation model weights ...')
-                Checkpointer(model_self).load(cfg_self.MODEL.WEIGHTS)
-            else:
-                for param_q, param_k in zip(self.parameters(), model_self.parameters()):
-                    param_k.data.copy_(param_q.data)
-            model_ts.insert(0, model_self)
-        self.model_ts = model_ts
-
-    @torch.no_grad()
-    def _momentum_update_key_encoder(self, m=0.999):
-        """
-        Momentum update of the key encoder
-        """
-        for param_q, param_k in zip(self.parameters(), self.model_ts[0].parameters()):
-            param_k.data = param_k.data * m + param_q.data * (1.0 - m)
-
-    def forward(self, batched_inputs):
-        if self.training:
-            images = self.preprocess_image(batched_inputs)
-            s_feat = self.backbone(images)
-            assert 'targets' in batched_inputs, 'Labels are missing in training!'
-            targets = batched_inputs['targets']
-            if targets.sum() < 0:
-                targets.zero_()
-            s_outputs = self.heads(s_feat, targets)
-            t_outputs = []
-            with torch.no_grad():
-                if self.ema_enabled:
-                    self._momentum_update_key_encoder(self.ema_momentum)
-                for model_t in self.model_ts:
-                    t_feat = model_t.backbone(images)
-                    t_output = model_t.heads(t_feat, targets)
-                    t_outputs.append(t_output)
-            losses = self.losses(s_outputs, t_outputs, targets)
-            return losses
-        else:
-            return super().forward(batched_inputs)
-
-    def losses(self, s_outputs, t_outputs, gt_labels):
-        """
-        Compute loss from modeling's outputs, the loss function input arguments
-        must be the same as the outputs of the model forwarding.
-        """
-        loss_dict = super().losses(s_outputs, gt_labels)
-        s_logits = s_outputs['pred_class_logits']
-        loss_jsdiv = 0.0
-        for t_output in t_outputs:
-            t_logits = t_output['pred_class_logits'].detach()
-            loss_jsdiv += self.jsdiv_loss(s_logits, t_logits)
-        loss_dict['loss_jsdiv'] = loss_jsdiv / len(t_outputs)
-        return loss_dict
-
-    @staticmethod
-    def _kldiv(y_s, y_t, t):
-        p_s = F.log_softmax(y_s / t, dim=1)
-        p_t = F.softmax(y_t / t, dim=1)
-        loss = F.kl_div(p_s, p_t, reduction='sum') * t ** 2 / y_s.shape[0]
-        return loss
-
-    def jsdiv_loss(self, y_s, y_t, t=16):
-        loss = (self._kldiv(y_s, y_t, t) + self._kldiv(y_t, y_s, t)) / 2
-        return loss
-
-
-class MGN(nn.Module):
-    """
-    Multiple Granularities Network architecture, which contains the following two components:
-    1. Per-image feature extraction (aka backbone)
-    2. Multi-branch feature aggregation
-    """
-
-    @configurable
-    def __init__(self, *, backbone, neck1, neck2, neck3, b1_head, b2_head, b21_head, b22_head, b3_head, b31_head, b32_head, b33_head, pixel_mean, pixel_std, loss_kwargs=None):
-        """
-        NOTE: this interface is experimental.
-
-        Args:
-            backbone:
-            neck1:
-            neck2:
-            neck3:
-            b1_head:
-            b2_head:
-            b21_head:
-            b22_head:
-            b3_head:
-            b31_head:
-            b32_head:
-            b33_head:
-            pixel_mean:
-            pixel_std:
-            loss_kwargs:
-        """
-        super().__init__()
-        self.backbone = backbone
-        self.b1 = neck1
-        self.b1_head = b1_head
-        self.b2 = neck2
-        self.b2_head = b2_head
-        self.b21_head = b21_head
-        self.b22_head = b22_head
-        self.b3 = neck3
-        self.b3_head = b3_head
-        self.b31_head = b31_head
-        self.b32_head = b32_head
-        self.b33_head = b33_head
-        self.loss_kwargs = loss_kwargs
-        self.register_buffer('pixel_mean', torch.Tensor(pixel_mean).view(1, -1, 1, 1), False)
-        self.register_buffer('pixel_std', torch.Tensor(pixel_std).view(1, -1, 1, 1), False)
-
-    @classmethod
-    def from_config(cls, cfg):
-        bn_norm = cfg.MODEL.BACKBONE.NORM
-        with_se = cfg.MODEL.BACKBONE.WITH_SE
-        all_blocks = build_backbone(cfg)
-        backbone = nn.Sequential(all_blocks.conv1, all_blocks.bn1, all_blocks.relu, all_blocks.maxpool, all_blocks.layer1, all_blocks.layer2, all_blocks.layer3[0])
-        res_conv4 = nn.Sequential(*all_blocks.layer3[1:])
-        res_g_conv5 = all_blocks.layer4
-        res_p_conv5 = nn.Sequential(Bottleneck(1024, 512, bn_norm, False, with_se, downsample=nn.Sequential(nn.Conv2d(1024, 2048, 1, bias=False), get_norm(bn_norm, 2048))), Bottleneck(2048, 512, bn_norm, False, with_se), Bottleneck(2048, 512, bn_norm, False, with_se))
-        res_p_conv5.load_state_dict(all_blocks.layer4.state_dict())
-        neck1 = nn.Sequential(copy.deepcopy(res_conv4), copy.deepcopy(res_g_conv5))
-        b1_head = build_heads(cfg)
-        neck2 = nn.Sequential(copy.deepcopy(res_conv4), copy.deepcopy(res_p_conv5))
-        b2_head = build_heads(cfg)
-        b21_head = build_heads(cfg)
-        b22_head = build_heads(cfg)
-        neck3 = nn.Sequential(copy.deepcopy(res_conv4), copy.deepcopy(res_p_conv5))
-        b3_head = build_heads(cfg)
-        b31_head = build_heads(cfg)
-        b32_head = build_heads(cfg)
-        b33_head = build_heads(cfg)
-        return {'backbone': backbone, 'neck1': neck1, 'neck2': neck2, 'neck3': neck3, 'b1_head': b1_head, 'b2_head': b2_head, 'b21_head': b21_head, 'b22_head': b22_head, 'b3_head': b3_head, 'b31_head': b31_head, 'b32_head': b32_head, 'b33_head': b33_head, 'pixel_mean': cfg.MODEL.PIXEL_MEAN, 'pixel_std': cfg.MODEL.PIXEL_STD, 'loss_kwargs': {'loss_names': cfg.MODEL.LOSSES.NAME, 'ce': {'eps': cfg.MODEL.LOSSES.CE.EPSILON, 'alpha': cfg.MODEL.LOSSES.CE.ALPHA, 'scale': cfg.MODEL.LOSSES.CE.SCALE}, 'tri': {'margin': cfg.MODEL.LOSSES.TRI.MARGIN, 'norm_feat': cfg.MODEL.LOSSES.TRI.NORM_FEAT, 'hard_mining': cfg.MODEL.LOSSES.TRI.HARD_MINING, 'scale': cfg.MODEL.LOSSES.TRI.SCALE}, 'circle': {'margin': cfg.MODEL.LOSSES.CIRCLE.MARGIN, 'gamma': cfg.MODEL.LOSSES.CIRCLE.GAMMA, 'scale': cfg.MODEL.LOSSES.CIRCLE.SCALE}, 'cosface': {'margin': cfg.MODEL.LOSSES.COSFACE.MARGIN, 'gamma': cfg.MODEL.LOSSES.COSFACE.GAMMA, 'scale': cfg.MODEL.LOSSES.COSFACE.SCALE}}}
-
-    @property
-    def device(self):
-        return self.pixel_mean.device
-
-    def forward(self, batched_inputs):
-        images = self.preprocess_image(batched_inputs)
-        features = self.backbone(images)
-        b1_feat = self.b1(features)
-        b2_feat = self.b2(features)
-        b21_feat, b22_feat = torch.chunk(b2_feat, 2, dim=2)
-        b3_feat = self.b3(features)
-        b31_feat, b32_feat, b33_feat = torch.chunk(b3_feat, 3, dim=2)
-        if self.training:
-            assert 'targets' in batched_inputs, 'Person ID annotation are missing in training!'
-            targets = batched_inputs['targets']
-            if targets.sum() < 0:
-                targets.zero_()
-            b1_outputs = self.b1_head(b1_feat, targets)
-            b2_outputs = self.b2_head(b2_feat, targets)
-            b21_outputs = self.b21_head(b21_feat, targets)
-            b22_outputs = self.b22_head(b22_feat, targets)
-            b3_outputs = self.b3_head(b3_feat, targets)
-            b31_outputs = self.b31_head(b31_feat, targets)
-            b32_outputs = self.b32_head(b32_feat, targets)
-            b33_outputs = self.b33_head(b33_feat, targets)
-            losses = self.losses(b1_outputs, b2_outputs, b21_outputs, b22_outputs, b3_outputs, b31_outputs, b32_outputs, b33_outputs, targets)
-            return losses
-        else:
-            b1_pool_feat = self.b1_head(b1_feat)
-            b2_pool_feat = self.b2_head(b2_feat)
-            b21_pool_feat = self.b21_head(b21_feat)
-            b22_pool_feat = self.b22_head(b22_feat)
-            b3_pool_feat = self.b3_head(b3_feat)
-            b31_pool_feat = self.b31_head(b31_feat)
-            b32_pool_feat = self.b32_head(b32_feat)
-            b33_pool_feat = self.b33_head(b33_feat)
-            pred_feat = torch.cat([b1_pool_feat, b2_pool_feat, b3_pool_feat, b21_pool_feat, b22_pool_feat, b31_pool_feat, b32_pool_feat, b33_pool_feat], dim=1)
-            return pred_feat
-
-    def preprocess_image(self, batched_inputs):
-        """
-        Normalize and batch the input images.
-        """
-        if isinstance(batched_inputs, dict):
-            images = batched_inputs['images']
-        elif isinstance(batched_inputs, torch.Tensor):
-            images = batched_inputs
-        else:
-            raise TypeError('batched_inputs must be dict or torch.Tensor, but get {}'.format(type(batched_inputs)))
-        images.sub_(self.pixel_mean).div_(self.pixel_std)
-        return images
-
-    def losses(self, b1_outputs, b2_outputs, b21_outputs, b22_outputs, b3_outputs, b31_outputs, b32_outputs, b33_outputs, gt_labels):
-        pred_class_logits = b1_outputs['pred_class_logits'].detach()
-        b1_logits = b1_outputs['cls_outputs']
-        b2_logits = b2_outputs['cls_outputs']
-        b21_logits = b21_outputs['cls_outputs']
-        b22_logits = b22_outputs['cls_outputs']
-        b3_logits = b3_outputs['cls_outputs']
-        b31_logits = b31_outputs['cls_outputs']
-        b32_logits = b32_outputs['cls_outputs']
-        b33_logits = b33_outputs['cls_outputs']
-        b1_pool_feat = b1_outputs['features']
-        b2_pool_feat = b2_outputs['features']
-        b3_pool_feat = b3_outputs['features']
-        b21_pool_feat = b21_outputs['features']
-        b22_pool_feat = b22_outputs['features']
-        b31_pool_feat = b31_outputs['features']
-        b32_pool_feat = b32_outputs['features']
-        b33_pool_feat = b33_outputs['features']
-        log_accuracy(pred_class_logits, gt_labels)
-        b22_pool_feat = torch.cat((b21_pool_feat, b22_pool_feat), dim=1)
-        b33_pool_feat = torch.cat((b31_pool_feat, b32_pool_feat, b33_pool_feat), dim=1)
-        loss_dict = {}
-        loss_names = self.loss_kwargs['loss_names']
-        if 'CrossEntropyLoss' in loss_names:
-            ce_kwargs = self.loss_kwargs.get('ce')
-            loss_dict['loss_cls_b1'] = cross_entropy_loss(b1_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b2'] = cross_entropy_loss(b2_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b21'] = cross_entropy_loss(b21_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b22'] = cross_entropy_loss(b22_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b3'] = cross_entropy_loss(b3_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b31'] = cross_entropy_loss(b31_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b32'] = cross_entropy_loss(b32_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-            loss_dict['loss_cls_b33'] = cross_entropy_loss(b33_logits, gt_labels, ce_kwargs.get('eps'), ce_kwargs.get('alpha')) * ce_kwargs.get('scale') * 0.125
-        if 'TripletLoss' in loss_names:
-            tri_kwargs = self.loss_kwargs.get('tri')
-            loss_dict['loss_triplet_b1'] = triplet_loss(b1_pool_feat, gt_labels, tri_kwargs.get('margin'), tri_kwargs.get('norm_feat'), tri_kwargs.get('hard_mining')) * tri_kwargs.get('scale') * 0.2
-            loss_dict['loss_triplet_b2'] = triplet_loss(b2_pool_feat, gt_labels, tri_kwargs.get('margin'), tri_kwargs.get('norm_feat'), tri_kwargs.get('hard_mining')) * tri_kwargs.get('scale') * 0.2
-            loss_dict['loss_triplet_b3'] = triplet_loss(b3_pool_feat, gt_labels, tri_kwargs.get('margin'), tri_kwargs.get('norm_feat'), tri_kwargs.get('hard_mining')) * tri_kwargs.get('scale') * 0.2
-            loss_dict['loss_triplet_b22'] = triplet_loss(b22_pool_feat, gt_labels, tri_kwargs.get('margin'), tri_kwargs.get('norm_feat'), tri_kwargs.get('hard_mining')) * tri_kwargs.get('scale') * 0.2
-            loss_dict['loss_triplet_b33'] = triplet_loss(b33_pool_feat, gt_labels, tri_kwargs.get('margin'), tri_kwargs.get('norm_feat'), tri_kwargs.get('hard_mining')) * tri_kwargs.get('scale') * 0.2
-        return loss_dict
-
-
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor) for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-    output = torch.cat(tensors_gather, dim=0)
-    return output
-
-
-class Memory(nn.Module):
-    """
-    Build a MoCo memory with a queue
-    https://arxiv.org/abs/1911.05722
-    """
-
-    def __init__(self, dim=512, K=65536):
-        """
-        dim: feature dimension (default: 128)
-        K: queue size; number of negative keys (default: 65536)
-        """
-        super().__init__()
-        self.K = K
-        self.margin = 0.25
-        self.gamma = 32
-        self.register_buffer('queue', torch.randn(dim, K))
-        self.queue = F.normalize(self.queue, dim=0)
-        self.register_buffer('queue_label', torch.zeros((1, K), dtype=torch.long))
-        self.register_buffer('queue_ptr', torch.zeros(1, dtype=torch.long))
-
-    @torch.no_grad()
-    def _dequeue_and_enqueue(self, keys, targets):
-        if comm.get_world_size() > 1:
-            keys = concat_all_gather(keys)
-            targets = concat_all_gather(targets)
-        else:
-            keys = keys.detach()
-            targets = targets.detach()
-        batch_size = keys.shape[0]
-        ptr = int(self.queue_ptr)
-        assert self.K % batch_size == 0
-        self.queue[:, ptr:ptr + batch_size] = keys.T
-        self.queue_label[:, ptr:ptr + batch_size] = targets
-        ptr = (ptr + batch_size) % self.K
-        self.queue_ptr[0] = ptr
-
-    def forward(self, feat_q, targets):
-        """
-        Memory bank enqueue and compute metric loss
-        Args:
-            feat_q: model features
-            targets: gt labels
-
-        Returns:
-        """
-        feat_q = F.normalize(feat_q, p=2, dim=1)
-        self._dequeue_and_enqueue(feat_q.detach(), targets)
-        loss = self._pairwise_cosface(feat_q, targets)
-        return loss
-
-    def _pairwise_cosface(self, feat_q, targets):
-        dist_mat = torch.matmul(feat_q, self.queue)
-        N, M = dist_mat.size()
-        is_pos = targets.view(N, 1).expand(N, M).eq(self.queue_label.expand(N, M)).float()
-        is_neg = targets.view(N, 1).expand(N, M).ne(self.queue_label.expand(N, M)).float()
-        same_indx = torch.eye(N, N, device=is_pos.device)
-        other_indx = torch.zeros(N, M - N, device=is_pos.device)
-        same_indx = torch.cat((same_indx, other_indx), dim=1)
-        is_pos = is_pos - same_indx
-        s_p = dist_mat * is_pos
-        s_n = dist_mat * is_neg
-        logit_p = -self.gamma * s_p + -99999999.0 * (1 - is_pos)
-        logit_n = self.gamma * (s_n + self.margin) + -99999999.0 * (1 - is_neg)
-        loss = F.softplus(torch.logsumexp(logit_p, dim=1) + torch.logsumexp(logit_n, dim=1)).mean()
-        return loss
-
-
-class MoCo(Baseline):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        dim = cfg.MODEL.HEADS.EMBEDDING_DIM if cfg.MODEL.HEADS.EMBEDDING_DIM else cfg.MODEL.BACKBONE.FEAT_DIM
-        size = cfg.MODEL.QUEUE_SIZE
-        self.memory = Memory(dim, size)
-
-    def losses(self, outputs, gt_labels):
-        """
-        Compute loss from modeling's outputs, the loss function input arguments
-        must be the same as the outputs of the model forwarding.
-        """
-        loss_dict = super().losses(outputs, gt_labels)
-        pred_features = outputs['features']
-        loss_mb = self.memory(pred_features, gt_labels)
-        loss_dict['loss_mb'] = loss_mb
-        return loss_dict
-
-
-class AttrHead(EmbeddingHead):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        num_classes = cfg.MODEL.HEADS.NUM_CLASSES
-        self.bnneck = nn.BatchNorm1d(num_classes)
-        self.bnneck.apply(weights_init_kaiming)
-
-    def forward(self, features, targets=None):
-        """
-        See :class:`ReIDHeads.forward`.
-        """
-        pool_feat = self.pool_layer(features)
-        neck_feat = self.bottleneck(pool_feat)
-        neck_feat = neck_feat.view(neck_feat.size(0), -1)
-        logits = F.linear(neck_feat, self.weight)
-        logits = self.bnneck(logits)
-        if not self.training:
-            cls_outptus = torch.sigmoid(logits)
-            return cls_outptus
-        return {'cls_outputs': logits}
-
-
-def build_feature_connector(t_channel, s_channel):
-    C = [nn.Conv2d(s_channel, t_channel, kernel_size=1, stride=1, padding=0, bias=False), nn.BatchNorm2d(t_channel)]
-    for m in C:
-        if isinstance(m, nn.Conv2d):
-            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-            m.weight.data.normal_(0, math.sqrt(2.0 / n))
-        elif isinstance(m, nn.BatchNorm2d):
-            m.weight.data.fill_(1)
-            m.bias.data.zero_()
-    return nn.Sequential(*C)
-
-
-def distillation_loss(source, target, margin):
-    target = torch.max(target, margin)
-    loss = F.mse_loss(source, target, reduction='none')
-    loss = loss * ((source > target) | (target > 0)).float()
-    return loss.sum()
-
-
-def get_margin_from_BN(bn):
-    margin = []
-    std = bn.weight.data
-    mean = bn.bias.data
-    for s, m in zip(std, mean):
-        s = abs(s.item())
-        m = m.item()
-        if norm.cdf(-m / s) > 0.001:
-            margin.append(-s * math.exp(-(m / s) ** 2 / 2) / math.sqrt(2 * math.pi) / norm.cdf(-m / s) + m)
-        else:
-            margin.append(-3 * s)
-    return torch.tensor(margin, dtype=torch.float32, device=mean.device)
-
-
-class DistillerOverhaul(Distiller):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        s_channels = self.backbone.get_channel_nums()
-        for i in range(len(self.model_ts)):
-            t_channels = self.model_ts[i].backbone.get_channel_nums()
-            setattr(self, 'connectors_{}'.format(i), nn.ModuleList([build_feature_connector(t, s) for t, s in zip(t_channels, s_channels)]))
-            teacher_bns = self.model_ts[i].backbone.get_bn_before_relu()
-            margins = [get_margin_from_BN(bn) for bn in teacher_bns]
-            for j, margin in enumerate(margins):
-                self.register_buffer('margin{}_{}'.format(i, j + 1), margin.unsqueeze(1).unsqueeze(2).unsqueeze(0).detach())
-
-    def forward(self, batched_inputs):
-        if self.training:
-            images = self.preprocess_image(batched_inputs)
-            s_feats, s_feat = self.backbone.extract_feature(images, preReLU=True)
-            assert 'targets' in batched_inputs, 'Labels are missing in training!'
-            targets = batched_inputs['targets']
-            if targets.sum() < 0:
-                targets.zero_()
-            s_outputs = self.heads(s_feat, targets)
-            t_feats_list = []
-            t_outputs = []
-            with torch.no_grad():
-                if self.ema_enabled:
-                    self._momentum_update_key_encoder(self.ema_momentum)
-                for model_t in self.model_ts:
-                    t_feats, t_feat = model_t.backbone.extract_feature(images, preReLU=True)
-                    t_output = model_t.heads(t_feat, targets)
-                    t_feats_list.append(t_feats)
-                    t_outputs.append(t_output)
-            losses = self.losses(s_outputs, s_feats, t_outputs, t_feats_list, targets)
-            return losses
-        else:
-            outputs = super(DistillerOverhaul, self).forward(batched_inputs)
-            return outputs
-
-    def losses(self, s_outputs, s_feats, t_outputs, t_feats_list, gt_labels):
-        """
-        Compute loss from modeling's outputs, the loss function input arguments
-        must be the same as the outputs of the model forwarding.
-        """
-        loss_dict = super().losses(s_outputs, t_outputs, gt_labels)
-        feat_num = len(s_feats)
-        loss_distill = 0
-        for i in range(len(t_feats_list)):
-            for j in range(feat_num):
-                s_feats_connect = getattr(self, 'connectors_{}'.format(i))[j](s_feats[j])
-                loss_distill += distillation_loss(s_feats_connect, t_feats_list[i][j].detach(), getattr(self, 'margin{}_{}'.format(i, j + 1))) / 2 ** (feat_num - j - 1)
-        loss_dict['loss_overhaul'] = loss_distill / len(t_feats_list) / len(gt_labels) / 10000
-        return loss_dict
-
-
-class FaceBaseline(Baseline):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        self.pfc_enabled = cfg.MODEL.HEADS.PFC.ENABLED
-        self.amp_enabled = cfg.SOLVER.AMP.ENABLED
-
-    def forward(self, batched_inputs):
-        if not self.pfc_enabled:
-            return super().forward(batched_inputs)
-        images = self.preprocess_image(batched_inputs)
-        with torch.amp.autocast(self.amp_enabled):
-            features = self.backbone(images)
-        features = features.float() if self.amp_enabled else features
-        if self.training:
-            assert 'targets' in batched_inputs, 'Person ID annotation are missing in training!'
-            targets = batched_inputs['targets']
-            if targets.sum() < 0:
-                targets.zero_()
-            outputs = self.heads(features, targets)
-            return outputs, targets
-        else:
-            outputs = self.heads(features)
-            return outputs
-
-
-def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=dilation, groups=groups, bias=False, dilation=dilation)
-
-
-class IBasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, inplanes, planes, bn_norm, stride=1, downsample=None, groups=1, base_width=64, dilation=1):
-        super().__init__()
-        if groups != 1 or base_width != 64:
-            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
-        if dilation > 1:
-            raise NotImplementedError('Dilation > 1 not supported in BasicBlock')
-        self.bn1 = get_norm(bn_norm, inplanes)
-        self.conv1 = conv3x3(inplanes, planes)
-        self.bn2 = get_norm(bn_norm, planes)
-        self.prelu = nn.PReLU(planes)
-        self.conv2 = conv3x3(planes, planes, stride)
-        self.bn3 = get_norm(bn_norm, planes)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x):
-        identity = x
-        out = self.bn1(x)
-        out = self.conv1(out)
-        out = self.bn2(out)
-        out = self.prelu(out)
-        out = self.conv2(out)
-        out = self.bn3(out)
-        if self.downsample is not None:
-            identity = self.downsample(x)
-        out += identity
-        return out
-
-
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-
-class IResNet(nn.Module):
-    fc_scale = 7 * 7
-
-    def __init__(self, block, layers, bn_norm, dropout=0, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None, fp16=False):
-        super().__init__()
-        self.inplanes = 64
-        self.dilation = 1
-        self.fp16 = fp16
-        if replace_stride_with_dilation is None:
-            replace_stride_with_dilation = [False, False, False]
-        if len(replace_stride_with_dilation) != 3:
-            raise ValueError('replace_stride_with_dilation should be None or a 3-element tuple, got {}'.format(replace_stride_with_dilation))
-        self.groups = groups
-        self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = get_norm(bn_norm, self.inplanes)
-        self.prelu = nn.PReLU(self.inplanes)
-        self.layer1 = self._make_layer(block, 64, layers[0], bn_norm, stride=2)
-        self.layer2 = self._make_layer(block, 128, layers[1], bn_norm, stride=2, dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256, layers[2], bn_norm, stride=2, dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 512, layers[3], bn_norm, stride=2, dilate=replace_stride_with_dilation[2])
-        self.bn2 = get_norm(bn_norm, 512 * block.expansion)
-        self.dropout = nn.Dropout(p=dropout, inplace=True)
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, 0, 0.1)
-            elif m.__class__.__name__.find('Norm') != -1:
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, IBasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
-
-    def _make_layer(self, block, planes, blocks, bn_norm, stride=1, dilate=False):
-        downsample = None
-        previous_dilation = self.dilation
-        if dilate:
-            self.dilation *= stride
-            stride = 1
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(conv1x1(self.inplanes, planes * block.expansion, stride), get_norm(bn_norm, planes * block.expansion))
-        layers = []
-        layers.append(block(self.inplanes, planes, bn_norm, stride, downsample, self.groups, self.base_width, previous_dilation))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, bn_norm, groups=self.groups, base_width=self.base_width, dilation=self.dilation))
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.prelu(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = self.bn2(x)
-        x = self.dropout(x)
-        return x
-
-
-class PartialFC(nn.Module):
-    """
-    Author: {Xiang An, Yang Xiao, XuHan Zhu} in DeepGlint,
-    Partial FC: Training 10 Million Identities on a Single Machine
-    See the original paper:
-    https://arxiv.org/abs/2010.05222
-    """
-
-    def __init__(self, embedding_size, num_classes, sample_rate, cls_type, scale, margin):
-        super().__init__()
-        self.embedding_size = embedding_size
-        self.num_classes = num_classes
-        self.sample_rate = sample_rate
-        self.world_size = comm.get_world_size()
-        self.rank = comm.get_rank()
-        self.local_rank = comm.get_local_rank()
-        self.device = torch.device(f'cuda:{self.local_rank}')
-        self.num_local: int = self.num_classes // self.world_size + int(self.rank < self.num_classes % self.world_size)
-        self.class_start: int = self.num_classes // self.world_size * self.rank + min(self.rank, self.num_classes % self.world_size)
-        self.num_sample: int = int(self.sample_rate * self.num_local)
-        self.cls_layer = getattr(any_softmax, cls_type)(num_classes, scale, margin)
-        self.weight = torch.normal(0, 0.01, (self.num_local, self.embedding_size), device=self.device)
-        self.weight_mom: torch.Tensor = torch.zeros_like(self.weight)
-        logger.info('softmax weight init successfully!')
-        logger.info('softmax weight mom init successfully!')
-        self.stream: torch.Stream = torch.Stream(self.local_rank)
-        self.index = None
-        if int(self.sample_rate) == 1:
-            self.update = lambda : 0
-            self.sub_weight = nn.Parameter(self.weight)
-            self.sub_weight_mom = self.weight_mom
-        else:
-            self.sub_weight = nn.Parameter(torch.empty((0, 0), device=self.device))
-
-    def forward(self, total_features):
-        torch.cuda.current_stream().wait_stream(self.stream)
-        if self.cls_layer.__class__.__name__ == 'Linear':
-            logits = F.linear(total_features, self.sub_weight)
-        else:
-            logits = F.linear(F.normalize(total_features), F.normalize(self.sub_weight))
-        return logits
-
-    def forward_backward(self, features, targets, optimizer):
-        """
-        Partial FC forward, which will sample positive weights and part of negative weights,
-        then compute logits and get the grad of features.
-        """
-        total_targets = self.prepare(targets, optimizer)
-        if self.world_size > 1:
-            total_features = concat_all_gather(features)
-        else:
-            total_features = features.detach()
-        total_features.requires_grad_(True)
-        logits = self.forward(total_features)
-        logits = self.cls_layer(logits, total_targets)
-        with torch.no_grad():
-            max_fc = torch.max(logits, dim=1, keepdim=True)[0]
-            if self.world_size > 1:
-                dist.all_reduce(max_fc, dist.ReduceOp.MAX)
-            logits_exp = torch.exp(logits - max_fc)
-            logits_sum_exp = logits_exp.sum(dim=1, keepdim=True)
-            if self.world_size > 1:
-                dist.all_reduce(logits_sum_exp, dist.ReduceOp.SUM)
-            logits_exp.div_(logits_sum_exp)
-            grad = logits_exp
-            index = torch.where(total_targets != -1)[0]
-            one_hot = torch.zeros(size=[index.size()[0], grad.size()[1]], device=grad.device)
-            one_hot.scatter_(1, total_targets[index, None], 1)
-            loss = torch.zeros(grad.size()[0], 1, device=grad.device)
-            loss[index] = grad[index].gather(1, total_targets[index, None])
-            if self.world_size > 1:
-                dist.all_reduce(loss, dist.ReduceOp.SUM)
-            loss_v = loss.clamp_min_(1e-30).log_().mean() * -1
-            grad[index] -= one_hot
-            grad.div_(logits.size(0))
-        logits.backward(grad)
-        if total_features.grad is not None:
-            total_features.grad.detach_()
-        x_grad: torch.Tensor = torch.zeros_like(features)
-        if self.world_size > 1:
-            dist.reduce_scatter(x_grad, list(total_features.grad.chunk(self.world_size, dim=0)))
-        else:
-            x_grad = total_features.grad
-        x_grad = x_grad * self.world_size
-        return x_grad, loss_v
-
-    @torch.no_grad()
-    def sample(self, total_targets):
-        """
-        Get sub_weights according to total targets gathered from all GPUs, due to each weights in different
-        GPU contains different class centers.
-        """
-        index_positive = (self.class_start <= total_targets) & (total_targets < self.class_start + self.num_local)
-        total_targets[~index_positive] = -1
-        total_targets[index_positive] -= self.class_start
-        if int(self.sample_rate) != 1:
-            positive = torch.unique(total_targets[index_positive], sorted=True)
-            if self.num_sample - positive.size(0) >= 0:
-                perm = torch.rand(size=[self.num_local], device=self.weight.device)
-                perm[positive] = 2.0
-                index = torch.topk(perm, k=self.num_sample)[1]
-                index = index.sort()[0]
-            else:
-                index = positive
-            self.index = index
-            total_targets[index_positive] = torch.searchsorted(index, total_targets[index_positive])
-            self.sub_weight = nn.Parameter(self.weight[index])
-            self.sub_weight_mom = self.weight_mom[index]
-
-    @torch.no_grad()
-    def update(self):
-        self.weight_mom[self.index] = self.sub_weight_mom
-        self.weight[self.index] = self.sub_weight
-
-    def prepare(self, targets, optimizer):
-        with torch.cuda.stream(self.stream):
-            if self.world_size > 1:
-                total_targets = concat_all_gather(targets)
-            else:
-                total_targets = targets
-            self.sample(total_targets)
-            optimizer.state.pop(optimizer.param_groups[-1]['params'][0], None)
-            optimizer.param_groups[-1]['params'][0] = self.sub_weight
-            optimizer.state[self.sub_weight]['momentum_buffer'] = self.sub_weight_mom
-            return total_targets
-
-
-class OcclusionUnit(nn.Module):
-
-    def __init__(self, in_planes=2048):
-        super(OcclusionUnit, self).__init__()
-        self.MaxPool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.MaxPool2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=0)
-        self.MaxPool3 = nn.MaxPool2d(kernel_size=6, stride=2, padding=0)
-        self.MaxPool4 = nn.MaxPool2d(kernel_size=8, stride=2, padding=0)
-        self.mask_layer = nn.Linear(in_planes, 1, bias=True)
-
-    def forward(self, x):
-        SpaFeat1 = self.MaxPool1(x)
-        SpaFeat2 = self.MaxPool2(x)
-        SpaFeat3 = self.MaxPool3(x)
-        SpaFeat4 = self.MaxPool4(x)
-        Feat1 = SpaFeat1.view(SpaFeat1.size(0), SpaFeat1.size(1), SpaFeat1.size(2) * SpaFeat1.size(3))
-        Feat2 = SpaFeat2.view(SpaFeat2.size(0), SpaFeat2.size(1), SpaFeat2.size(2) * SpaFeat2.size(3))
-        Feat3 = SpaFeat3.view(SpaFeat3.size(0), SpaFeat3.size(1), SpaFeat3.size(2) * SpaFeat3.size(3))
-        Feat4 = SpaFeat4.view(SpaFeat4.size(0), SpaFeat4.size(1), SpaFeat4.size(2) * SpaFeat4.size(3))
-        SpatialFeatAll = torch.cat((Feat1, Feat2, Feat3, Feat4), 2)
-        SpatialFeatAll = SpatialFeatAll.transpose(1, 2)
-        y = self.mask_layer(SpatialFeatAll)
-        mask_weight = torch.sigmoid(y[:, :, 0])
-        feat_dim = SpaFeat1.size(2) * SpaFeat1.size(3)
-        mask_score = F.normalize(mask_weight[:, :feat_dim], p=1, dim=1)
-        mask_weight_norm = F.normalize(mask_weight, p=1, dim=1)
-        mask_score = mask_score.unsqueeze(1)
-        SpaFeat1 = SpaFeat1.transpose(1, 2)
-        SpaFeat1 = SpaFeat1.transpose(2, 3)
-        SpaFeat1 = SpaFeat1.view((SpaFeat1.size(0), SpaFeat1.size(1) * SpaFeat1.size(2), -1))
-        global_feats = mask_score.matmul(SpaFeat1).view(SpaFeat1.shape[0], -1, 1, 1)
-        return global_feats, mask_weight, mask_weight_norm
-
-
-class DSRHead(EmbeddingHead):
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        feat_dim = cfg.MODEL.BACKBONE.FEAT_DIM
-        with_bnneck = cfg.MODEL.HEADS.WITH_BNNECK
-        norm_type = cfg.MODEL.HEADS.NORM
-        num_classes = cfg.MODEL.HEADS.NUM_CLASSES
-        embedding_dim = cfg.MODEL.HEADS.EMBEDDING_DIM
-        self.occ_unit = OcclusionUnit(in_planes=feat_dim)
-        self.MaxPool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.MaxPool2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=0)
-        self.MaxPool3 = nn.MaxPool2d(kernel_size=6, stride=2, padding=0)
-        self.MaxPool4 = nn.MaxPool2d(kernel_size=8, stride=2, padding=0)
-        occ_neck = []
-        if embedding_dim > 0:
-            occ_neck.append(nn.Conv2d(feat_dim, embedding_dim, 1, 1, bias=False))
-            feat_dim = embedding_dim
-        if with_bnneck:
-            occ_neck.append(get_norm(norm_type, feat_dim, bias_freeze=True))
-        self.bnneck_occ = nn.Sequential(*occ_neck)
-        self.bnneck_occ.apply(weights_init_kaiming)
-        self.weight_occ = nn.Parameter(torch.normal(0, 0.01, (num_classes, feat_dim)))
-
-    def forward(self, features, targets=None):
-        """
-        See :class:`ReIDHeads.forward`.
-        """
-        SpaFeat1 = self.MaxPool1(features)
-        SpaFeat2 = self.MaxPool2(features)
-        SpaFeat3 = self.MaxPool3(features)
-        SpaFeat4 = self.MaxPool4(features)
-        Feat1 = SpaFeat1.view(SpaFeat1.size(0), SpaFeat1.size(1), SpaFeat1.size(2) * SpaFeat1.size(3))
-        Feat2 = SpaFeat2.view(SpaFeat2.size(0), SpaFeat2.size(1), SpaFeat2.size(2) * SpaFeat2.size(3))
-        Feat3 = SpaFeat3.view(SpaFeat3.size(0), SpaFeat3.size(1), SpaFeat3.size(2) * SpaFeat3.size(3))
-        Feat4 = SpaFeat4.view(SpaFeat4.size(0), SpaFeat4.size(1), SpaFeat4.size(2) * SpaFeat4.size(3))
-        SpatialFeatAll = torch.cat((Feat1, Feat2, Feat3, Feat4), dim=2)
-        foreground_feat, mask_weight, mask_weight_norm = self.occ_unit(features)
-        bn_foreground_feat = self.bnneck_occ(foreground_feat)
-        bn_foreground_feat = bn_foreground_feat[..., 0, 0]
-        if not self.training:
-            return bn_foreground_feat, SpatialFeatAll, mask_weight_norm
-        global_feat = self.pool_layer(features)
-        bn_feat = self.bottleneck(global_feat)
-        bn_feat = bn_feat[..., 0, 0]
-        if self.cls_layer.__class__.__name__ == 'Linear':
-            pred_class_logits = F.linear(bn_feat, self.weight)
-            fore_pred_class_logits = F.linear(bn_foreground_feat, self.weight_occ)
-        else:
-            pred_class_logits = F.linear(F.normalize(bn_feat), F.normalize(self.weight))
-            fore_pred_class_logits = F.linear(F.normalize(bn_foreground_feat), F.normalize(self.weight_occ))
-        cls_outputs = self.cls_layer(pred_class_logits, targets)
-        fore_cls_outputs = self.cls_layer(fore_pred_class_logits, targets)
-        return {'cls_outputs': cls_outputs, 'fore_cls_outputs': fore_cls_outputs, 'pred_class_logits': pred_class_logits * self.cls_layer.s, 'features': global_feat[..., 0, 0], 'foreground_features': foreground_feat[..., 0, 0]}
-
-
-import torch
-from torch.nn import MSELoss, ReLU
-from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
-
-
-TESTCASES = [
-    # (nn.Module, init_args, forward_args, jit_compiles)
-    (AdaptiveAvgMaxPool,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (AnyHead,
-     lambda: ([], {'w_in': 4, 'nc': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (AnyStage,
-     lambda: ([], {'w_in': 4, 'w_out': 4, 'stride': 1, 'bn_norm': _mock_layer, 'd': 4, 'block_fun': _mock_layer, 'bm': 4, 'gw': 4, 'se_r': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ArcSoftmax,
-     lambda: ([], {'num_classes': 4, 'scale': 1.0, 'margin': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.ones([4], dtype=torch.int64)], {}),
-     True),
-    (BasicBlock,
-     lambda: ([], {'inplanes': 4, 'planes': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (BatchNorm,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Block,
-     lambda: ([], {'dim': 4, 'num_heads': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
-    (CircleSoftmax,
-     lambda: ([], {'num_classes': 4, 'scale': 1.0, 'margin': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.ones([4], dtype=torch.int64)], {}),
-     True),
-    (ClipGlobalAvgPool,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ContextBlock,
-     lambda: ([], {'inplanes': 4, 'ratio': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (Conv1x1,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Conv1x1Linear,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Conv3x3,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ConvLayer,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (CosSoftmax,
-     lambda: ([], {'num_classes': 4, 'scale': 1.0, 'margin': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.ones([4], dtype=torch.int64)], {}),
-     True),
-    (DropBlock2d,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (DropPath,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (EffHead,
-     lambda: ([], {'w_in': 4, 'w_out': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (FRN,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (FastGlobalAvgPool,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Flatten,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (FrozenBatchNorm,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GELU,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GeneralizedMeanPooling,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GeneralizedMeanPoolingP,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GhostBatchNorm,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GlobalAvgPool,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GlobalMaxPool,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (IBN,
-     lambda: ([], {'planes': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (IBasicBlock,
-     lambda: ([], {'inplanes': 4, 'planes': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Identity,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (LightConv3x3,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Linear,
-     lambda: ([], {'num_classes': 4, 'scale': 1.0, 'margin': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (MemoryEfficientSwish,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (Mish,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Mlp,
-     lambda: ([], {'in_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (SELayer,
-     lambda: ([], {'channel': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (ShuffleNetV2,
-     lambda: ([], {'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 3, 64, 64])], {}),
-     False),
-    (SplAtConv2d,
-     lambda: ([], {'in_channels': 4, 'channels': 4, 'kernel_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (SqueezeExcitation,
-     lambda: ([], {'input_channels': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (StemIN,
-     lambda: ([], {'w_in': 4, 'w_out': 4, 'bn_norm': _mock_layer}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Swish,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (SyncBatchNorm,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (TLU,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (rSoftMax,
-     lambda: ([], {'radix': 4, 'cardinality': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-]
-
-class Test_JDAI_CV_fast_reid(_paritybench_base):
-    def test_000(self):
-        self._check(*TESTCASES[0])
-
-    def test_001(self):
-        self._check(*TESTCASES[1])
-
-    def test_002(self):
-        self._check(*TESTCASES[2])
-
-    def test_003(self):
-        self._check(*TESTCASES[3])
-
-    def test_004(self):
-        self._check(*TESTCASES[4])
-
-    def test_005(self):
-        self._check(*TESTCASES[5])
-
-    def test_006(self):
-        self._check(*TESTCASES[6])
-
-    def test_007(self):
-        self._check(*TESTCASES[7])
-
-    def test_008(self):
-        self._check(*TESTCASES[8])
-
-    def test_009(self):
-        self._check(*TESTCASES[9])
-
-    def test_010(self):
-        self._check(*TESTCASES[10])
-
-    def test_011(self):
-        self._check(*TESTCASES[11])
-
-    def test_012(self):
-        self._check(*TESTCASES[12])
-
-    def test_013(self):
-        self._check(*TESTCASES[13])
-
-    def test_014(self):
-        self._check(*TESTCASES[14])
-
-    def test_015(self):
-        self._check(*TESTCASES[15])
-
-    def test_016(self):
-        self._check(*TESTCASES[16])
-
-    def test_017(self):
-        self._check(*TESTCASES[17])
-
-    def test_018(self):
-        self._check(*TESTCASES[18])
-
-    def test_019(self):
-        self._check(*TESTCASES[19])
-
-    def test_020(self):
-        self._check(*TESTCASES[20])
-
-    def test_021(self):
-        self._check(*TESTCASES[21])
-
-    def test_022(self):
-        self._check(*TESTCASES[22])
-
-    def test_023(self):
-        self._check(*TESTCASES[23])
-
-    def test_024(self):
-        self._check(*TESTCASES[24])
-
-    def test_025(self):
-        self._check(*TESTCASES[25])
-
-    def test_026(self):
-        self._check(*TESTCASES[26])
-
-    def test_027(self):
-        self._check(*TESTCASES[27])
-
-    def test_028(self):
-        self._check(*TESTCASES[28])
-
-    def test_029(self):
-        self._check(*TESTCASES[29])
-
-    def test_030(self):
-        self._check(*TESTCASES[30])
-
-    def test_031(self):
-        self._check(*TESTCASES[31])
-
-    def test_032(self):
-        self._check(*TESTCASES[32])
-
-    def test_033(self):
-        self._check(*TESTCASES[33])
-
-    def test_034(self):
-        self._check(*TESTCASES[34])
-
-    def test_035(self):
-        self._check(*TESTCASES[35])
-
-    def test_036(self):
-        self._check(*TESTCASES[36])
-
-    def test_037(self):
-        self._check(*TESTCASES[37])
-
-    def test_038(self):
-        self._check(*TESTCASES[38])
-
-    def test_039(self):
-        self._check(*TESTCASES[39])
-
-    def test_040(self):
-        self._check(*TESTCASES[40])
-
-    def test_041(self):
-        self._check(*TESTCASES[41])
-
-    def test_042(self):
-        self._check(*TESTCASES[42])
-
-    def test_043(self):
-        self._check(*TESTCASES[43])
-
-    def test_044(self):
-        self._check(*TESTCASES[44])
 

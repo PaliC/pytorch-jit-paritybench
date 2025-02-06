@@ -13,7 +13,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -56,10 +58,7 @@ from torch import nn
 TENSOR_OR_LIST = typing.Union[typing.List[torch.Tensor], torch.Tensor]
 
 
-COUPLING = typing.Callable[[torch.Tensor, TENSOR_OR_LIST], TENSOR_OR_LIST]
-
-
-def split_tensor_list(inp: typing.Union[typing.Iterable[torch.Tensor], torch.Tensor]) ->typing.Union[typing.Tuple[torch.Tensor, typing.List[torch.Tensor]], torch.Tensor]:
+def split_tensor_list(inp: 'typing.Union[typing.Iterable[torch.Tensor], torch.Tensor]') ->typing.Union[typing.Tuple[torch.Tensor, typing.List[torch.Tensor]], torch.Tensor]:
     if isinstance(inp, torch.Tensor):
         return inp
     if isinstance(inp, typing.Iterable):
@@ -68,14 +67,14 @@ def split_tensor_list(inp: typing.Union[typing.Iterable[torch.Tensor], torch.Ten
     raise ValueError(f'Unsupported Type {type(inp)}')
 
 
-def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) ->TENSOR_OR_LIST:
+def additive_coupling_forward(other_stream: 'torch.Tensor', fn_out: 'torch.Tensor') ->TENSOR_OR_LIST:
     fn_out = split_tensor_list(fn_out)
     if isinstance(fn_out, torch.Tensor):
         return other_stream + fn_out
     return [other_stream + fn_out[0]] + fn_out[1]
 
 
-def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) ->TENSOR_OR_LIST:
+def additive_coupling_inverse(output: 'torch.Tensor', fn_out: 'torch.Tensor') ->TENSOR_OR_LIST:
     fn_out = split_tensor_list(fn_out)
     if isinstance(fn_out, torch.Tensor):
         return output - fn_out
@@ -84,7 +83,7 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) ->TENS
 
 class ReversibleWrapper(torch.nn.Module):
 
-    def __init__(self, wrapped_module: torch.nn.Module, coupling_forward: typing.Optional[COUPLING]=None, coupling_inverse: typing.Optional[COUPLING]=None):
+    def __init__(self, wrapped_module: 'torch.nn.Module', coupling_forward: 'typing.Optional[COUPLING]'=None, coupling_inverse: 'typing.Optional[COUPLING]'=None):
         """
         A handy utility-module that allows accessing inverses without rewriting significant amounts of code. This module
         does not do reversibility by itself. It's mostly used as a storage object.
@@ -101,44 +100,32 @@ class ReversibleWrapper(torch.nn.Module):
         self.coupling_forward = coupling_forward or additive_coupling_forward
         self.coupling_inverse = coupling_inverse or additive_coupling_inverse
 
-    def forward(self, x0: torch.Tensor, x1: torch.Tensor, *args, **kwargs) ->TENSOR_OR_LIST:
+    def forward(self, x0: 'torch.Tensor', x1: 'torch.Tensor', *args, **kwargs) ->TENSOR_OR_LIST:
         return self.coupling_forward(x0, self.wrapped_module(x1, *args, **kwargs))
 
-    def inverse(self, y0: torch.Tensor, y1: torch.Tensor, *args, **kwargs) ->TENSOR_OR_LIST:
+    def inverse(self, y0: 'torch.Tensor', y1: 'torch.Tensor', *args, **kwargs) ->TENSOR_OR_LIST:
         return self.coupling_inverse(y1, self.wrapped_module(y0, *args, **kwargs))
 
 
 DUAL_OR_QUAD_TENSOR = typing.Union[typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], typing.Tuple[torch.Tensor, torch.Tensor]]
 
 
-FUSED_OPTIMIZER = typing.Optional[typing.Callable[[typing.Iterable], torch.optim.Optimizer]]
-
-
-class ReversibleModuleCache:
-    x0: torch.Tensor
-    x1: torch.Tensor
-
-    def __call__(self, x0: torch.Tensor, x1: torch.Tensor):
-        self.x0 = x0.detach()
-        self.x1 = x1.detach()
-
-
-def get_key(idx: int, inp: torch.Tensor):
+def get_key(idx: 'int', inp: 'torch.Tensor'):
     return f'Index: {idx}\nSize: {inp.size()}\nDevice: {inp.device}\nDataType: {inp.dtype}'
 
 
-def _optimizer_step(optimizer_step: typing.Optional[typing.Callable[[], None]], module: torch.nn.Module):
+def _optimizer_step(optimizer_step: 'typing.Optional[typing.Callable[[], None]]', module: 'torch.nn.Module'):
     optimizer_step()
     module.zero_grad(set_to_none=True)
 
 
-def _set_device(mod: torch.nn.Module, device: str) ->torch.nn.Module:
+def _set_device(mod: 'torch.nn.Module', device: 'str') ->torch.nn.Module:
     if not device:
         return mod
     return copy.deepcopy(mod)
 
 
-def take_0th_tensor(inp: typing.Union[typing.Iterable[torch.Tensor], torch.Tensor]) ->torch.Tensor:
+def take_0th_tensor(inp: 'typing.Union[typing.Iterable[torch.Tensor], torch.Tensor]') ->torch.Tensor:
     out = split_tensor_list(inp)
     if not isinstance(out, torch.Tensor):
         return out[0]
@@ -148,7 +135,7 @@ def take_0th_tensor(inp: typing.Union[typing.Iterable[torch.Tensor], torch.Tenso
 class _ReversibleHalfResidualSwapFn(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x0: torch.Tensor, x1: torch.Tensor, back_x0: torch.Tensor, back_x1: torch.Tensor, mod: ReversibleWrapper, target_device: str, cuda: bool, optimizer_step: typing.Optional[typing.Callable[[], None]], args: typing.Iterable, kwargs: dict):
+    def forward(ctx, x0: 'torch.Tensor', x1: 'torch.Tensor', back_x0: 'torch.Tensor', back_x1: 'torch.Tensor', mod: 'ReversibleWrapper', target_device: 'str', cuda: 'bool', optimizer_step: 'typing.Optional[typing.Callable[[], None]]', args: 'typing.Iterable', kwargs: 'dict'):
         ctx.mod = mod
         ctx.target_device = target_device
         ctx.forward_rng_state = torch.get_rng_state()
@@ -168,7 +155,7 @@ class _ReversibleHalfResidualSwapFn(torch.autograd.Function):
         return x1, out, back_x0, back_x1, residual
 
     @staticmethod
-    def backward(ctx, dy0: torch.Tensor, dy1: torch.Tensor, y0: torch.Tensor, y1: torch.Tensor, _unused) ->typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, None, None, None, None, None, None]:
+    def backward(ctx, dy0: 'torch.Tensor', dy1: 'torch.Tensor', y0: 'torch.Tensor', y1: 'torch.Tensor', _unused) ->typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, None, None, None, None, None, None]:
         original_rng_state = torch.get_rng_state()
         torch.set_rng_state(ctx.forward_rng_state)
         if dy0 is None:
@@ -215,10 +202,10 @@ reverse_and_swap = _ReversibleHalfResidualSwapFn.apply
 
 
 class ReversibleModule(torch.nn.Module):
-    cpu_state: torch.Tensor
-    cuda_states: typing.List[torch.Tensor]
+    cpu_state: 'torch.Tensor'
+    cuda_states: 'typing.List[torch.Tensor]'
 
-    def __init__(self, wrapped_module: torch.nn.Module, coupling_forward: typing.Optional[COUPLING]=None, coupling_inverse: typing.Optional[COUPLING]=None, memory_savings: bool=True, cache: typing.Optional[ReversibleModuleCache]=None, target_device: str='', fused_optimizer: FUSED_OPTIMIZER=None):
+    def __init__(self, wrapped_module: 'torch.nn.Module', coupling_forward: 'typing.Optional[COUPLING]'=None, coupling_inverse: 'typing.Optional[COUPLING]'=None, memory_savings: 'bool'=True, cache: 'typing.Optional[ReversibleModuleCache]'=None, target_device: 'str'='', fused_optimizer: 'FUSED_OPTIMIZER'=None):
         """
         A `ReversibleModule` that does the heavy lifting of dispatching to various backends in an effort to avoid
         storing all intermediate buffers at the same time. It can wrap any module.
@@ -248,10 +235,10 @@ class ReversibleModule(torch.nn.Module):
         self.memory_savings = memory_savings
         self.cache = cache
         self.cuda_devices = []
-        self.cuda: bool = torch.cuda._initialized
-        self.autocast: bool = torch.is_autocast_enabled()
-        self.counter: int = 0
-        self.storage: typing.Dict[str, torch.Tensor] = {}
+        self.cuda: 'bool' = torch.cuda._initialized
+        self.autocast: 'bool' = torch.is_autocast_enabled()
+        self.counter: 'int' = 0
+        self.storage: 'typing.Dict[str, torch.Tensor]' = {}
         self.input_args = []
         self.input_kwargs = {}
         parameters = list(self.wrapped_module.parameters())
@@ -266,18 +253,18 @@ class ReversibleModule(torch.nn.Module):
         if self.fused_optimizer is not None and self.cache is not None:
             raise ValueError('Fused optimizer is not currently supported with checkpointing and autograd-graph.')
 
-    def pack(self, inp: torch.Tensor) ->str:
+    def pack(self, inp: 'torch.Tensor') ->str:
         self.counter += 1
         return get_key(self.counter - 1, inp)
 
-    def inner_pack(self, inp: torch.Tensor):
+    def inner_pack(self, inp: 'torch.Tensor'):
         self.storage[get_key(len(self.storage), inp)] = inp
 
     @staticmethod
-    def inner_unpack(key: str):
+    def inner_unpack(key: 'str'):
         raise RuntimeError(f'Tensor not found.\nSpec:\n{key}')
 
-    def unpack(self, key: str) ->torch.Tensor:
+    def unpack(self, key: 'str') ->torch.Tensor:
         if self.storage:
             if key not in self.storage:
                 self.inner_unpack(key)
@@ -297,7 +284,7 @@ class ReversibleModule(torch.nn.Module):
                     _unused = self.wrapped_module.coupling_forward(x0, out)
         return self.unpack(key)
 
-    def forward(self, inp: DUAL_OR_QUAD_TENSOR, *args, **kwargs) ->DUAL_OR_QUAD_TENSOR:
+    def forward(self, inp: 'DUAL_OR_QUAD_TENSOR', *args, **kwargs) ->DUAL_OR_QUAD_TENSOR:
         self.input_args = args
         self.input_kwargs = kwargs
         x0, x1, *back = inp
@@ -328,12 +315,12 @@ class ReversibleModule(torch.nn.Module):
 class _ReplaceGrad(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, inp0: torch.Tensor, inp1: torch.Tensor, tmp_inp0: torch.Tensor, tmp_inp1: torch.Tensor):
+    def forward(ctx, inp0: 'torch.Tensor', inp1: 'torch.Tensor', tmp_inp0: 'torch.Tensor', tmp_inp1: 'torch.Tensor'):
         ctx.save_for_backward(inp0.detach(), inp1.detach())
         return inp0, inp1
 
     @staticmethod
-    def backward(ctx, grad0: torch.Tensor, grad1: torch.Tensor):
+    def backward(ctx, grad0: 'torch.Tensor', grad1: 'torch.Tensor'):
         tmp_inp0, tmp_inp1 = ctx.saved_tensors
         return grad0, grad1, tmp_inp0, tmp_inp1
 
@@ -343,7 +330,7 @@ replace_grad = _ReplaceGrad.apply
 
 class SingleBranchReversibleModule(ReversibleModule):
 
-    def __init__(self, secondary_branch_buffer: typing.List[torch.Tensor], wrapped_module: torch.nn.Module, coupling_forward: typing.Optional[COUPLING]=None, coupling_inverse: typing.Optional[COUPLING]=None, memory_savings: bool=True, cache: typing.Optional[ReversibleModuleCache]=None, target_device: str='', fused_optimizer: FUSED_OPTIMIZER=None, first: bool=False, last: bool=False):
+    def __init__(self, secondary_branch_buffer: 'typing.List[torch.Tensor]', wrapped_module: 'torch.nn.Module', coupling_forward: 'typing.Optional[COUPLING]'=None, coupling_inverse: 'typing.Optional[COUPLING]'=None, memory_savings: 'bool'=True, cache: 'typing.Optional[ReversibleModuleCache]'=None, target_device: 'str'='', fused_optimizer: 'FUSED_OPTIMIZER'=None, first: 'bool'=False, last: 'bool'=False):
         """
         A wrapper around `ReversibleModule` that hides all additional outputs and pretends the model is still acting
         the same way it used to.
@@ -380,7 +367,7 @@ class SingleBranchReversibleModule(ReversibleModule):
         self.first = first
         self.last = last
 
-    def forward(self, x1: torch.Tensor, *args, **kwargs) ->torch.Tensor:
+    def forward(self, x1: 'torch.Tensor', *args, **kwargs) ->torch.Tensor:
         if self.first:
             self.secondary_branch_buffer.clear()
             x0 = back0 = torch.zeros_like(x1)
@@ -419,7 +406,7 @@ class MergeCalls(torch.nn.Module):
         self.wrapped_modules = torch.nn.ModuleList(modules)
         self.collate_fn = collate_fn
 
-    def forward(self, inp: torch.Tensor, *args, **kwargs) ->typing.Union[torch.Tensor, typing.List[torch.Tensor]]:
+    def forward(self, inp: 'torch.Tensor', *args, **kwargs) ->typing.Union[torch.Tensor, typing.List[torch.Tensor]]:
         out = []
         for mod in self.wrapped_modules:
             inp = mod(inp, *args, **kwargs)
@@ -432,11 +419,26 @@ class MergeCalls(torch.nn.Module):
         return self.collate_fn(inp, out)
 
 
+COUPLING = typing.Callable[[torch.Tensor, TENSOR_OR_LIST], TENSOR_OR_LIST]
+
+
+FUSED_OPTIMIZER = typing.Optional[typing.Callable[[typing.Iterable], torch.optim.Optimizer]]
+
+
 class MemoryModes(enum.IntEnum):
     no_savings = 0
     checkpoint = 1
     autograd_graph = 2
     autograd_function = 3
+
+
+class ReversibleModuleCache:
+    x0: 'torch.Tensor'
+    x1: 'torch.Tensor'
+
+    def __call__(self, x0: 'torch.Tensor', x1: 'torch.Tensor'):
+        self.x0 = x0.detach()
+        self.x1 = x1.detach()
 
 
 class ReversibleSequential(torch.nn.Sequential):
@@ -479,7 +481,7 @@ class ReversibleSequential(torch.nn.Sequential):
         self.split_dim = split_dim
         self.m = memory_mode
 
-    def forward(self, inp: torch.Tensor, *args, layerwise_args_kwargs: typing.Optional[typing.List[typing.Tuple[typing.List[typing.Any], typing.Dict[str, typing.Any]]]]=None, **kwargs) ->torch.Tensor:
+    def forward(self, inp: 'torch.Tensor', *args, layerwise_args_kwargs: typing.Optional[typing.List[typing.Tuple[typing.List[typing.Any], typing.Dict[str, typing.Any]]]]=None, **kwargs) ->torch.Tensor:
         if self.split_dim is None:
             inp0 = inp1 = inp
         else:
@@ -503,7 +505,7 @@ class ReversibleSequential(torch.nn.Sequential):
 
 class MomentumNetSide(torch.nn.Module):
 
-    def __init__(self, alpha: float):
+    def __init__(self, alpha: 'float'):
         """
         Side-network of a MomentumNet. This part adds the current residual stream to the "velocity" stream.
         :param alpha: Scale for the residual stream. In the simplest case, it'd be (1 - beta), but it gets more
@@ -512,13 +514,13 @@ class MomentumNetSide(torch.nn.Module):
         super(MomentumNetSide, self).__init__()
         self.alpha = alpha
 
-    def forward(self, inp: torch.Tensor, *args, **kwargs) ->torch.Tensor:
+    def forward(self, inp: 'torch.Tensor', *args, **kwargs) ->torch.Tensor:
         return inp * self.alpha
 
 
 class MomentumNetStem(torch.nn.Module):
 
-    def __init__(self, wrapped_module: torch.nn.Module, gamma: float):
+    def __init__(self, wrapped_module: 'torch.nn.Module', gamma: 'float'):
         """
         Main/Stem network for a MomentumNet. It calls the wrapped_module with its respective input and ensures that the
         input scale is correct by multiplying it with gamma.
@@ -529,13 +531,13 @@ class MomentumNetStem(torch.nn.Module):
         self.wrapped_module = wrapped_module
         self.gamma = gamma
 
-    def forward(self, inp: torch.Tensor, *args, **kwargs) ->torch.Tensor:
+    def forward(self, inp: 'torch.Tensor', *args, **kwargs) ->torch.Tensor:
         return self.wrapped_module(inp * self.gamma, *args, **kwargs)
 
 
 class ResidualToPlain(torch.nn.Module):
 
-    def __init__(self, wrapped_module: torch.nn.Module):
+    def __init__(self, wrapped_module: 'torch.nn.Module'):
         """
         A simple module that subtracts the input value from the output of `f(x)`. This is useful when replacing
         an existig residual stream with a reversible residual stream without touching the model itself.
@@ -544,7 +546,7 @@ class ResidualToPlain(torch.nn.Module):
         super(ResidualToPlain, self).__init__()
         self.wrapped_module = wrapped_module
 
-    def forward(self, inp: torch.Tensor, *args, **kwargs) ->typing.Union[typing.List[torch.Tensor], torch.Tensor]:
+    def forward(self, inp: 'torch.Tensor', *args, **kwargs) ->typing.Union[typing.List[torch.Tensor], torch.Tensor]:
         out = split_tensor_list(self.wrapped_module(inp, *args, **kwargs))
         if isinstance(out, torch.Tensor):
             return out - inp

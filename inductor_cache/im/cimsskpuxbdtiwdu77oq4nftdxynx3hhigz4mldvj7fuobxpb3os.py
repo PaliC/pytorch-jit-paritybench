@@ -1,0 +1,58 @@
+
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'y': 64, 'x': 4}, tile_hint=TileHint.DEFAULT,
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'in_ptr2': '*fp32', 'in_ptr3': '*fp32', 'out_ptr0': '*fp32', 'ynumel': 'i32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3, 4, 5), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_add_clone_mul_6', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 6, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_add_clone_mul_6(in_ptr0, in_ptr1, in_ptr2, in_ptr3, out_ptr0, ynumel, xnumel, YBLOCK : tl.constexpr, XBLOCK : tl.constexpr):
+    ynumel = 64
+    xnumel = 4
+    yoffset = tl.program_id(1) * YBLOCK
+    yindex = yoffset + tl.arange(0, YBLOCK)[None, :]
+    ymask = yindex < ynumel
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+    xmask = xindex < xnumel
+    x3 = xindex
+    y0 = (yindex % 4)
+    y1 = ((yindex // 4) % 4)
+    y2 = yindex // 16
+    y5 = yindex // 4
+    y6 = yindex
+    tmp0 = tl.load(in_ptr0 + (y1 + 4*y0 + 16*x3 + 64*y2), xmask & ymask, eviction_policy='evict_last')
+    tmp1 = tl.load(in_ptr1 + (3*x3 + 12*y2), xmask & ymask, eviction_policy='evict_last')
+    tmp2 = tl.load(in_ptr1 + (1 + 3*x3 + 12*y2), xmask & ymask, eviction_policy='evict_last')
+    tmp4 = tl.load(in_ptr1 + (2 + 3*x3 + 12*y2), xmask & ymask, eviction_policy='evict_last')
+    tmp16 = tl.load(in_ptr2 + (y0 + 4*x3 + 16*y5), xmask & ymask, eviction_policy='evict_last')
+    tmp20 = tl.load(in_ptr3 + (x3 + 4*y6), xmask & ymask, eviction_policy='evict_last')
+    tmp3 = triton_helpers.maximum(tmp1, tmp2)
+    tmp5 = triton_helpers.maximum(tmp3, tmp4)
+    tmp6 = tmp1 - tmp5
+    tmp7 = tl_math.exp(tmp6)
+    tmp8 = tmp2 - tmp5
+    tmp9 = tl_math.exp(tmp8)
+    tmp10 = tmp7 + tmp9
+    tmp11 = tmp4 - tmp5
+    tmp12 = tl_math.exp(tmp11)
+    tmp13 = tmp10 + tmp12
+    tmp14 = tmp7 / tmp13
+    tmp15 = tmp0 * tmp14
+    tmp17 = tmp9 / tmp13
+    tmp18 = tmp16 * tmp17
+    tmp19 = tmp15 + tmp18
+    tmp21 = tmp12 / tmp13
+    tmp22 = tmp20 * tmp21
+    tmp23 = tmp19 + tmp22
+    tl.store(out_ptr0 + (x3 + 4*y6), tmp23, xmask & ymask)

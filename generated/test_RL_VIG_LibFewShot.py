@@ -17,25 +17,36 @@ model = _module
 abstract_model = _module
 backbone = _module
 conv_four = _module
+conv_four_mcl = _module
 resnet_12 = _module
+resnet_12_mcl = _module
 resnet_12_mtl_offcial = _module
 resnet_18 = _module
+resnet_bdc = _module
 swin_transformer = _module
 utils = _module
+bdc_pool = _module
 dropblock = _module
 maml_module = _module
 mtl_module = _module
 vit = _module
+vit_class_aware = _module
 wrn = _module
 finetuning = _module
 baseline = _module
 baseline_plus = _module
+deepbdc_pretrain = _module
 feat_pretrain = _module
 finetuning_model = _module
+frn_pretrain = _module
+matchingnetifsl_pretrain = _module
+metabaseline_pretrain = _module
+metabaselinekendall_pretrain = _module
 mtl_pretrain = _module
 negative_margin = _module
 renet = _module
 rfs_model = _module
+s2m2 = _module
 skd_model = _module
 init = _module
 loss = _module
@@ -44,9 +55,12 @@ anil = _module
 boil = _module
 leo = _module
 maml = _module
+matchingnet_ifsl = _module
 meta_model = _module
+metal = _module
 mtl = _module
 r2d2 = _module
+r2d2_mcl = _module
 versa = _module
 metric = _module
 adm = _module
@@ -54,9 +68,15 @@ adm_kl = _module
 atl_net = _module
 can = _module
 convm_net = _module
+cpea_net = _module
+deepbdc = _module
 dn4 = _module
 dsn = _module
 feat = _module
+frn = _module
+mcl = _module
+meta_baseline = _module
+meta_baseline_kendall = _module
 metric_model = _module
 proto_net = _module
 relation_net = _module
@@ -74,7 +94,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -91,9 +113,6 @@ wraps = functools.wraps
 
 
 import itertools
-
-
-from collections import Iterable
 
 
 import torch
@@ -138,6 +157,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+from torch.distributions import Bernoulli
+
+
 import math
 
 
@@ -150,19 +172,22 @@ from torch.nn.modules.module import Module
 from torch.nn.modules.utils import _pair
 
 
+from torch.autograd import Variable
+
+
+from torch.nn.utils.weight_norm import WeightNorm
+
+
 from torch import einsum
 
 
-from torch.distributions import Bernoulli
+from functools import partial
+
+
+import warnings
 
 
 from torch.nn.utils import weight_norm
-
-
-from torch.nn import Parameter
-
-
-from torch.optim.lr_scheduler import _LRScheduler
 
 
 import copy
@@ -174,7 +199,19 @@ from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 
 
+from itertools import combinations
+
+
+from torch.nn import Parameter
+
+
+from torch.optim.lr_scheduler import _LRScheduler
+
+
 from torch.nn import functional as F
+
+
+from re import T
 
 
 from torch.nn import init
@@ -381,6 +418,34 @@ class R2D2Embedding(nn.Module):
         return torch.cat((b3.view(b3.size(0), -1), b4.view(b4.size(0), -1)), 1)
 
 
+class Conv64F_MCL(nn.Module):
+    """docstring for ClassName"""
+
+    def __init__(self):
+        super(Conv64F_MCL, self).__init__()
+        self.layer1 = nn.Sequential(nn.Conv2d(3, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.LeakyReLU(0.2, True), nn.MaxPool2d(kernel_size=2, stride=2))
+        self.layer2 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.LeakyReLU(0.2, True), nn.MaxPool2d(kernel_size=2, stride=2))
+        self.layer3 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.LeakyReLU(0.2, True), nn.MaxPool2d(kernel_size=2, stride=2))
+        self.layer4 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.LeakyReLU(0.2, True), nn.MaxPool2d(kernel_size=2, stride=2))
+        self.out_channels = 64
+        for l in self.modules():
+            if isinstance(l, nn.Conv2d):
+                torch.nn.init.xavier_uniform_(l.weight)
+                if l.bias is not None:
+                    torch.nn.init.constant_(l.bias, 0)
+            elif isinstance(l, nn.Linear):
+                torch.nn.init.normal_(l.weight, 0, 0.01)
+                if l.bias is not None:
+                    torch.nn.init.constant(l.bias, 0)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        return out
+
+
 class BasicBlock(nn.Module):
 
     def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
@@ -501,98 +566,140 @@ class BasicBlockWithoutResidual(nn.Module):
         return out
 
 
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+def BDCovpool(x, t):
+    batchSize, dim, h, w = x.data.shape
+    M = h * w
+    x = x.reshape(batchSize, dim, M)
+    I = torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, 1, 1).type(x.dtype)
+    I_M = torch.ones(batchSize, dim, dim, device=x.device).type(x.dtype)
+    x_pow2 = x.bmm(x.transpose(1, 2))
+    dcov = I_M.bmm(x_pow2 * I) + (x_pow2 * I).bmm(I_M) - 2 * x_pow2
+    dcov = torch.clamp(dcov, min=0.0)
+    dcov = torch.exp(t) * dcov
+    dcov = torch.sqrt(dcov + 1e-05)
+    t = dcov - 1.0 / dim * dcov.bmm(I_M) - 1.0 / dim * I_M.bmm(dcov) + 1.0 / (dim * dim) * I_M.bmm(dcov).bmm(I_M)
+    return t
 
 
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = conv1x1(inplanes, planes)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = conv3x3(planes, planes, stride)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = conv1x1(planes, planes * self.expansion)
-        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x):
-        identity = x
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv3(out)
-        out = self.bn3(out)
-        if self.downsample is not None:
-            identity = self.downsample(x)
-        out += identity
-        out = self.relu(out)
-        return out
+def Triuvec(x):
+    batchSize, dim, dim = x.shape
+    r = x.reshape(batchSize, dim * dim)
+    I = torch.ones(dim, dim).triu().reshape(dim * dim)
+    index = I.nonzero(as_tuple=False)
+    y = torch.zeros(batchSize, int(dim * (dim + 1) / 2), device=x.device).type(x.dtype)
+    y = r[:, index].squeeze()
+    return y
 
 
-class ResNet(nn.Module):
+class BdcPool(nn.Module):
+    """ https://github.com/Fei-Long121/DeepBDC/blob/main/methods/bdc_module.py """
 
-    def __init__(self, block=BasicBlock, layers=[2, 2, 2, 2], zero_init_residual=False, is_feature=False, avg_pool=True, is_flatten=True, last_block_stride=2):
-        super(ResNet, self).__init__()
-        self.is_feature = is_feature
-        self.avg_pool = avg_pool
-        self.is_flatten = is_flatten
-        self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=last_block_stride)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+    def __init__(self, is_vec=True, input_dim=640, dimension_reduction=None, activate='relu'):
+        super(BdcPool, self).__init__()
+        self.is_vec = is_vec
+        self.dr = dimension_reduction
+        self.activate = activate
+        self.input_dim = input_dim[0]
+        if self.dr is not None and self.dr != self.input_dim:
+            if activate == 'relu':
+                self.act = nn.ReLU(inplace=True)
+            elif activate == 'leaky_relu':
+                self.act = nn.LeakyReLU(0.1)
+            else:
+                self.act = nn.ReLU(inplace=True)
+            self.conv_dr_block = nn.Sequential(nn.Conv2d(self.input_dim, self.dr, kernel_size=1, stride=1, bias=False), nn.BatchNorm2d(self.dr), self.act)
+        output_dim = self.dr if self.dr else self.input_dim
+        if self.is_vec:
+            self.output_dim = int(output_dim * (output_dim + 1) / 2)
+        else:
+            self.output_dim = int(output_dim * output_dim)
+        self.temperature = nn.Parameter(torch.log(1.0 / (2 * input_dim[1] * input_dim[2]) * torch.ones(1, 1)), requires_grad=True)
+        self._init_weight()
+
+    def _init_weight(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, a=0, mode='fan_out', nonlinearity='leaky_relu')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
-
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(conv1x1(self.inplanes, planes * block.expansion, stride), nn.BatchNorm2d(planes * block.expansion))
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-        return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        out1 = self.layer1(x)
-        out2 = self.layer2(out1)
-        out3 = self.layer3(out2)
-        out4 = self.layer4(out3)
-        if self.avg_pool:
-            out4 = self.avgpool(out4)
-        if self.is_flatten:
-            out4 = out4.view(out4.size(0), -1)
-        if self.is_feature:
-            return out1, out2, out3, out4
-        return out4
+        if self.dr is not None and self.dr != self.input_dim:
+            x = self.conv_dr_block(x)
+        x = BDCovpool(x, self.temperature)
+        if self.is_vec:
+            x = Triuvec(x)
+        else:
+            x = x.reshape(x.shape[0], -1)
+        return x
+
+
+class Flatten(nn.Module):
+
+    def __init__(self):
+        super(Flatten, self).__init__()
+
+    def forward(self, x):
+        return x.view(x.size(0), -1)
+
+
+def init_layer(L):
+    if isinstance(L, nn.Conv2d):
+        n = L.kernel_size[0] * L.kernel_size[1] * L.out_channels
+        L.weight.data.normal_(0, math.sqrt(2.0 / float(n)))
+    elif isinstance(L, nn.BatchNorm2d):
+        L.weight.data.fill_(1)
+        L.bias.data.fill_(0)
+
+
+class ResNet(nn.Module):
+    maml = False
+
+    def __init__(self, block, list_of_num_layers, list_of_out_dims, flatten=False, reduce_dim=640):
+        super(ResNet, self).__init__()
+        assert len(list_of_num_layers) == 4, 'Can have only four stages'
+        conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        bn1 = nn.BatchNorm2d(64)
+        relu = nn.ReLU()
+        pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        init_layer(conv1)
+        init_layer(bn1)
+        trunk = [conv1, bn1, relu, pool1]
+        indim = 64
+        for i in range(4):
+            for j in range(list_of_num_layers[i]):
+                half_res = i >= 1 and j == 0 and i != 3
+                B = block(indim, list_of_out_dims[i], half_res)
+                trunk.append(B)
+                indim = list_of_out_dims[i]
+        if flatten:
+            avgpool = nn.AvgPool2d(7)
+            trunk.append(avgpool)
+            trunk.append(Flatten())
+        self.feat_dim = [512, 14, 14]
+        self.trunk = nn.Sequential(*trunk)
+        self.bdc_pool = BdcPool(is_vec=True, input_dim=self.feat_dim, dimension_reduction=reduce_dim)
+
+    def forward(self, x):
+        out = self.trunk(x)
+        out = self.bdc_pool(out)
+        return out
+
+
+class ResNet_r2d2(ResNet):
+
+    def __init__(self, block=BasicBlock, drop_rate=0.0, dropblock_size=3):
+        super(ResNet_r2d2, self).__init__(block, drop_rate, dropblock_size)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        n, c, h, w = x.shape
+        x = F.adaptive_avg_pool2d(x, 1).view(n, c)
+        return x
 
 
 class _ConvNdMtl(nn.Module):
@@ -762,6 +869,243 @@ class ResNetMTLOfficial(nn.Module):
         x = self.layer3(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
+        return x
+
+
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+
+class Bottleneck(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = conv1x1(inplanes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = conv3x3(planes, planes, stride)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv1x1(planes, planes * self.expansion)
+        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        identity = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv3(out)
+        out = self.bn3(out)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
+        out = self.relu(out)
+        return out
+
+
+class SimpleBlock(nn.Module):
+    maml = False
+
+    def __init__(self, indim, outdim, half_res):
+        super(SimpleBlock, self).__init__()
+        self.indim = indim
+        self.outdim = outdim
+        self.C1 = nn.Conv2d(indim, outdim, kernel_size=3, stride=2 if half_res else 1, padding=1, bias=False)
+        self.BN1 = nn.BatchNorm2d(outdim)
+        self.C2 = nn.Conv2d(outdim, outdim, kernel_size=3, padding=1, bias=False)
+        self.BN2 = nn.BatchNorm2d(outdim)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.parametrized_layers = [self.C1, self.C2, self.BN1, self.BN2]
+        self.half_res = half_res
+        if indim != outdim:
+            self.shortcut = nn.Conv2d(indim, outdim, 1, 2 if half_res else 1, bias=False)
+            self.BNshortcut = nn.BatchNorm2d(outdim)
+            self.parametrized_layers.append(self.shortcut)
+            self.parametrized_layers.append(self.BNshortcut)
+            self.shortcut_type = '1x1'
+        else:
+            self.shortcut_type = 'identity'
+        for layer in self.parametrized_layers:
+            init_layer(layer)
+
+    def forward(self, x):
+        out = self.C1(x)
+        out = self.BN1(out)
+        out = self.relu1(out)
+        out = self.C2(out)
+        out = self.BN2(out)
+        short_out = x if self.shortcut_type == 'identity' else self.BNshortcut(self.shortcut(x))
+        out = out + short_out
+        out = self.relu2(out)
+        return out
+
+
+class BottleneckBlock(nn.Module):
+    maml = False
+
+    def __init__(self, indim, outdim, half_res):
+        super(BottleneckBlock, self).__init__()
+        bottleneckdim = int(outdim / 4)
+        self.indim = indim
+        self.outdim = outdim
+        self.C1 = nn.Conv2d(indim, bottleneckdim, kernel_size=1, bias=False)
+        self.BN1 = nn.BatchNorm2d(bottleneckdim)
+        self.C2 = nn.Conv2d(bottleneckdim, bottleneckdim, kernel_size=3, stride=2 if half_res else 1, padding=1)
+        self.BN2 = nn.BatchNorm2d(bottleneckdim)
+        self.C3 = nn.Conv2d(bottleneckdim, outdim, kernel_size=1, bias=False)
+        self.BN3 = nn.BatchNorm2d(outdim)
+        self.relu = nn.ReLU()
+        self.parametrized_layers = [self.C1, self.BN1, self.C2, self.BN2, self.C3, self.BN3]
+        self.half_res = half_res
+        if indim != outdim:
+            self.shortcut = nn.Conv2d(indim, outdim, 1, stride=2 if half_res else 1, bias=False)
+            self.parametrized_layers.append(self.shortcut)
+            self.shortcut_type = '1x1'
+        else:
+            self.shortcut_type = 'identity'
+        for layer in self.parametrized_layers:
+            init_layer(layer)
+
+    def forward(self, x):
+        short_out = x if self.shortcut_type == 'identity' else self.shortcut(x)
+        out = self.C1(x)
+        out = self.BN1(out)
+        out = self.relu(out)
+        out = self.C2(out)
+        out = self.BN2(out)
+        out = self.relu(out)
+        out = self.C3(out)
+        out = self.BN3(out)
+        out = out + short_out
+        out = self.relu(out)
+        return out
+
+
+class SELayer(nn.Module):
+
+    def __init__(self, channel, reduction=16):
+        super(SELayer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(nn.Linear(channel, channel // reduction), nn.ReLU(inplace=True), nn.Linear(channel // reduction, channel), nn.Sigmoid())
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y
+
+
+class BasicBlockVariant(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, drop_rate=0.0, drop_block=False, block_size=1, use_se=False):
+        super(BasicBlockVariant, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.LeakyReLU(0.1)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv3x3(planes, planes)
+        self.bn3 = nn.BatchNorm2d(planes)
+        self.maxpool = nn.MaxPool2d(stride)
+        self.downsample = downsample
+        self.stride = stride
+        self.drop_rate = drop_rate
+        self.num_batches_tracked = 0
+        self.drop_block = drop_block
+        self.block_size = block_size
+        self.DropBlock = DropBlock(block_size=self.block_size)
+        self.use_se = use_se
+        if self.use_se:
+            self.se = SELayer(planes, 4)
+
+    def forward(self, x):
+        self.num_batches_tracked += 1
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv3(out)
+        out = self.bn3(out)
+        if self.use_se:
+            out = self.se(out)
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
+        out = self.maxpool(out)
+        if self.drop_rate > 0:
+            if self.drop_block == True:
+                feat_size = out.size()[2]
+                keep_rate = max(1.0 - self.drop_rate / (20 * 2000) * self.num_batches_tracked, 1.0 - self.drop_rate)
+                gamma = (1 - keep_rate) / self.block_size ** 2 * feat_size ** 2 / (feat_size - self.block_size + 1) ** 2
+                out = self.DropBlock(out, gamma=gamma)
+            else:
+                out = F.dropout(out, p=self.drop_rate, training=self.training, inplace=True)
+        return out
+
+
+class resnet(nn.Module):
+
+    def __init__(self, block, n_blocks, keep_prob=1.0, avg_pool=False, drop_rate=0.0, dropblock_size=5, num_classes=-1, use_se=False, reduce_dim=640):
+        super(resnet, self).__init__()
+        self.inplanes = 3
+        self.use_se = use_se
+        self.layer1 = self._make_layer(block, n_blocks[0], 64, stride=2, drop_rate=drop_rate)
+        self.layer2 = self._make_layer(block, n_blocks[1], 160, stride=2, drop_rate=drop_rate)
+        self.layer3 = self._make_layer(block, n_blocks[2], 320, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
+        self.layer4 = self._make_layer(block, n_blocks[3], 640, stride=1, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
+        self.keep_prob = keep_prob
+        self.keep_avg_pool = avg_pool
+        self.dropout = nn.Dropout(p=1 - self.keep_prob, inplace=False)
+        self.drop_rate = drop_rate
+        self.feat_dim = [640, 10, 10]
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+        self.bdc_pool = BdcPool(is_vec=True, input_dim=self.feat_dim, dimension_reduction=reduce_dim)
+        self.num_classes = num_classes
+        if self.num_classes > 0:
+            self.classifier = nn.Linear(640, self.num_classes)
+
+    def _make_layer(self, block, n_block, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=1, bias=False), nn.BatchNorm2d(planes * block.expansion))
+        layers = []
+        if n_block == 1:
+            layer = block(self.inplanes, planes, stride, downsample, drop_rate, drop_block, block_size, self.use_se)
+        else:
+            layer = block(self.inplanes, planes, stride, downsample, drop_rate, self.use_se)
+        layers.append(layer)
+        self.inplanes = planes * block.expansion
+        for i in range(1, n_block):
+            if i == n_block - 1:
+                layer = block(self.inplanes, planes, drop_rate=drop_rate, drop_block=drop_block, block_size=block_size, use_se=self.use_se)
+            else:
+                layer = block(self.inplanes, planes, drop_rate=drop_rate, use_se=self.use_se)
+            layers.append(layer)
+        return nn.Sequential(*layers)
+
+    def forward(self, x, is_feat=False):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.bdc_pool(x)
         return x
 
 
@@ -998,24 +1342,27 @@ class BatchNorm2d_fw(nn.BatchNorm2d):
 
 class Attention(nn.Module):
 
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0.0):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0.0, proj_drop=0.0):
         super().__init__()
-        inner_dim = dim_head * heads
-        project_out = not (heads == 1 and dim_head == dim)
-        self.heads = heads
-        self.scale = dim_head ** -0.5
-        self.attend = nn.Softmax(dim=-1)
-        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
-        self.to_out = nn.Sequential(nn.Linear(inner_dim, dim), nn.Dropout(dropout)) if project_out else nn.Identity()
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x):
-        qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
-        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
-        attn = self.attend(dots)
-        out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out)
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        attn = q @ k.transpose(-2, -1) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x, attn
 
 
 class Transformer(nn.Module):
@@ -1063,6 +1410,198 @@ class ViT(nn.Module):
         x = self.dropout(x)
         x = self.transformer(x)
         x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
+        return x
+
+
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
+    if drop_prob == 0.0 or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+
+class DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks)."""
+
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
+
+
+class Mlp(nn.Module):
+
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.1):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+
+class Block(nn.Module):
+
+    def __init__(self, dim, num_heads, mlp_ratio=4.0, qkv_bias=False, qk_scale=None, drop=0.0, attn_drop=0.0, drop_path=0.0, act_layer=nn.GELU, norm_layer=nn.LayerNorm, init_values=0):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        if init_values > 0:
+            self.gamma_1 = nn.Parameter(init_values * torch.ones(dim), requires_grad=True)
+            self.gamma_2 = nn.Parameter(init_values * torch.ones(dim), requires_grad=True)
+        else:
+            self.gamma_1, self.gamma_2 = None, None
+
+    def forward(self, x, return_attention=False):
+        y, attn = self.attn(self.norm1(x))
+        if return_attention:
+            return attn
+        if self.gamma_1 is None:
+            x = x + self.drop_path(y)
+            x = x + self.drop_path(self.mlp(self.norm2(x)))
+        else:
+            x = x + self.drop_path(self.gamma_1 * y)
+            x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
+        return x
+
+
+class PatchEmbed(nn.Module):
+    """Image to Patch Embedding"""
+
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
+        super().__init__()
+        num_patches = img_size // patch_size * (img_size // patch_size)
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.num_patches = num_patches
+        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        return self.proj(x)
+
+
+def _no_grad_trunc_normal_(tensor, mean, std, a, b):
+
+    def norm_cdf(x):
+        return (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
+    if mean < a - 2 * std or mean > b + 2 * std:
+        warnings.warn('mean is more than 2 std from [a, b] in nn.init.trunc_normal_. The distribution of values may be incorrect.', stacklevel=2)
+    with torch.no_grad():
+        L = norm_cdf((a - mean) / std)
+        U = norm_cdf((b - mean) / std)
+        tensor.uniform_(2 * L - 1, 2 * U - 1)
+        tensor.erfinv_()
+        tensor.mul_(std * math.sqrt(2.0))
+        tensor.add_(mean)
+        tensor.clamp_(min=a, max=b)
+        return tensor
+
+
+def trunc_normal_(tensor, mean=0.0, std=1.0, a=-2.0, b=2.0):
+    return _no_grad_trunc_normal_(tensor, mean, std, a, b)
+
+
+class VisionTransformer(nn.Module):
+    """Vision Transformer"""
+
+    def __init__(self, img_size=[224], patch_size=16, in_chans=3, num_classes=0, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.0, qkv_bias=False, qk_scale=None, drop_rate=0.0, attn_drop_rate=0.0, drop_path_rate=0.5, norm_layer=partial(nn.LayerNorm, eps=1e-06), return_all_tokens=True, init_values=0, use_mean_pooling=False, masked_im_modeling=False):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.return_all_tokens = return_all_tokens
+        self.patch_embed = PatchEmbed(img_size=img_size[0], patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=drop_rate)
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        self.blocks = nn.ModuleList([Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale, drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer, init_values=init_values) for i in range(depth)])
+        self.norm = nn.Identity() if use_mean_pooling else norm_layer(embed_dim)
+        self.fc_norm = norm_layer(embed_dim) if use_mean_pooling else None
+        self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        trunc_normal_(self.pos_embed, std=0.02)
+        trunc_normal_(self.cls_token, std=0.02)
+        self.apply(self._init_weights)
+        self.masked_im_modeling = masked_im_modeling
+        if masked_im_modeling:
+            self.masked_embed = nn.Parameter(torch.zeros(1, embed_dim))
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=0.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def interpolate_pos_encoding(self, x, w, h):
+        npatch = x.shape[1] - 1
+        N = self.pos_embed.shape[1] - 1
+        if npatch == N and w == h:
+            return self.pos_embed
+        class_pos_embed = self.pos_embed[:, 0]
+        patch_pos_embed = self.pos_embed[:, 1:]
+        dim = x.shape[-1]
+        w0 = w // self.patch_embed.patch_size
+        h0 = h // self.patch_embed.patch_size
+        w0, h0 = w0 + 0.1, h0 + 0.1
+        patch_pos_embed = nn.functional.interpolate(patch_pos_embed.reshape(1, int(math.sqrt(N)), int(math.sqrt(N)), dim).permute(0, 3, 1, 2), scale_factor=(w0 / math.sqrt(N), h0 / math.sqrt(N)), mode='bicubic')
+        assert int(w0) == patch_pos_embed.shape[-2] and int(h0) == patch_pos_embed.shape[-1]
+        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, dim)
+        return torch.cat((class_pos_embed.unsqueeze(0), patch_pos_embed), dim=1)
+
+    def prepare_tokens(self, x, mask=None):
+        B, nc, w, h = x.shape
+        x = self.patch_embed(x)
+        if mask is not None:
+            x = self.mask_model(x, mask)
+        x = x.flatten(2).transpose(1, 2)
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.interpolate_pos_encoding(x, w, h)
+        return self.pos_drop(x)
+
+    def forward(self, x, return_all_tokens=None, mask=None):
+        if self.masked_im_modeling:
+            assert mask is not None
+            x = self.prepare_tokens(x, mask=mask)
+        else:
+            x = self.prepare_tokens(x)
+        for blk in self.blocks:
+            x = blk(x)
+        x = self.norm(x)
+        if self.fc_norm is not None:
+            x[:, 0] = self.fc_norm(x[:, 1:, :].mean(1))
+        return_all_tokens = self.return_all_tokens if return_all_tokens is None else return_all_tokens
+        if return_all_tokens:
+            return x
+        return x[:, 0]
+
+    def get_num_layers(self):
+        return len(self.blocks)
+
+    def mask_model(self, x, mask):
+        x.permute(0, 2, 3, 1)[mask, :] = self.masked_embed
         return x
 
 
@@ -1150,30 +1689,70 @@ class DistLinear(nn.Module):
         return score
 
 
-class MTLBaseLearner(nn.Module):
-    """The class for inner loop."""
+class DistillLayer(nn.Module):
 
-    def __init__(self, ways, z_dim):
+    def __init__(self, emb_func, cls_classifier, is_distill, emb_func_path=None, cls_classifier_path=None):
+        super(DistillLayer, self).__init__()
+        self.emb_func = self._load_state_dict(emb_func, emb_func_path, is_distill)
+        self.cls_classifier = self._load_state_dict(cls_classifier, cls_classifier_path, is_distill)
+
+    def _load_state_dict(self, model, state_dict_path, is_distill):
+        new_model = None
+        if is_distill and state_dict_path is not None:
+            model_state_dict = torch.load(state_dict_path, map_location='cpu')
+            model.load_state_dict(model_state_dict)
+            new_model = copy.deepcopy(model)
+        return new_model
+
+    @torch.no_grad()
+    def forward(self, x):
+        output = None
+        if self.emb_func is not None and self.cls_classifier is not None:
+            output = self.emb_func(x)
+            output = self.cls_classifier(output)
+        return output
+
+
+class FRNLayer(nn.Module):
+
+    def __init__(self, num_cat=None, num_channel=640):
         super().__init__()
-        self.ways = ways
-        self.z_dim = z_dim
-        self.vars = nn.ParameterList()
-        self.fc1_w = nn.Parameter(torch.ones([self.ways, self.z_dim]))
-        torch.nn.init.kaiming_normal_(self.fc1_w)
-        self.vars.append(self.fc1_w)
-        self.fc1_b = nn.Parameter(torch.zeros(self.ways))
-        self.vars.append(self.fc1_b)
+        self.resolution = 25
+        self.d = num_channel
+        self.scale = nn.Parameter(torch.FloatTensor([1.0]), requires_grad=True)
+        self.r = nn.Parameter(torch.zeros(2), requires_grad=True)
 
-    def forward(self, input_x, the_vars=None):
-        if the_vars is None:
-            the_vars = self.vars
-        fc1_w = the_vars[0]
-        fc1_b = the_vars[1]
-        net = F.linear(input_x, fc1_w, fc1_b)
-        return net
+    def forward(self, support, query, way_num, shot_num, query_num):
+        n2g_l2_dist = self.get_neg_l2_dist(support, query, way_num, shot_num, query_num)
+        logits = n2g_l2_dist * self.scale
+        log_prediction = F.log_softmax(logits, dim=2)
+        return log_prediction
 
-    def parameters(self):
-        return self.vars
+    def get_recon_dist(self, query, support, alpha, beta, Woodbury=True):
+        reg = support.size(2) / support.size(3)
+        lam = reg * alpha.exp() + 1e-06
+        rho = beta.exp()
+        st = support.permute(0, 1, 3, 2)
+        if Woodbury:
+            sts = st.matmul(support)
+            m_inv = (sts + torch.eye(sts.size(-1)).unsqueeze(0).unsqueeze(0).mul(lam)).inverse()
+            hat = m_inv.matmul(sts)
+        else:
+            sst = support.matmul(st)
+            m_inv = (sst + torch.eye(sst.size(-1)).unsqueeze(0).unsqueeze(0).mul(lam)).inverse()
+            hat = st.matmul(m_inv).matmul(support)
+        Q_bar = query.unsqueeze(1).matmul(hat).mul(rho)
+        dist = (Q_bar - query.unsqueeze(1)).pow(2).sum(3).permute(0, 2, 1)
+        return dist
+
+    def get_neg_l2_dist(self, support, query, way, shot, query_shot):
+        resolution = self.resolution
+        d = self.d
+        alpha = self.r[0]
+        beta = self.r[1]
+        recon_dist = self.get_recon_dist(query=query, support=support, alpha=alpha, beta=beta)
+        neg_l2_dist = recon_dist.neg().view(-1, way * query_shot, resolution, way).mean(2)
+        return neg_l2_dist
 
 
 def topk_(matrix, K, axis):
@@ -1225,6 +1804,46 @@ def accuracy(output, target, topk=1):
             batch_size *= dist.get_world_size()
         res = correct_k.mul_(100.0 / batch_size).item()
         return res
+
+
+class ProtoLayer(nn.Module):
+
+    def __init__(self):
+        super(ProtoLayer, self).__init__()
+
+    def forward(self, query_feat, support_feat, way_num, shot_num, query_num, mode='euclidean'):
+        t, wq, c = query_feat.size()
+        _, ws, _ = support_feat.size()
+        query_feat = query_feat.reshape(t, way_num * query_num, c)
+        support_feat = support_feat.reshape(t, way_num, shot_num, c)
+        proto_feat = torch.mean(support_feat, dim=2)
+        return {'euclidean': lambda x, y: -torch.sum(torch.pow(x.unsqueeze(2) - y.unsqueeze(1), 2), dim=3), 'cos_sim': lambda x, y: torch.matmul(F.normalize(x, p=2, dim=-1), torch.transpose(F.normalize(y, p=2, dim=-1), -1, -2))}[mode](query_feat, proto_feat)
+
+
+class MTLBaseLearner(nn.Module):
+    """The class for inner loop."""
+
+    def __init__(self, ways, z_dim):
+        super().__init__()
+        self.ways = ways
+        self.z_dim = z_dim
+        self.vars = nn.ParameterList()
+        self.fc1_w = nn.Parameter(torch.ones([self.ways, self.z_dim]))
+        torch.nn.init.kaiming_normal_(self.fc1_w)
+        self.vars.append(self.fc1_w)
+        self.fc1_b = nn.Parameter(torch.zeros(self.ways))
+        self.vars.append(self.fc1_b)
+
+    def forward(self, input_x, the_vars=None):
+        if the_vars is None:
+            the_vars = self.vars
+        fc1_w = the_vars[0]
+        fc1_b = the_vars[1]
+        net = F.linear(input_x, fc1_w, fc1_b)
+        return net
+
+    def parameters(self):
+        return self.vars
 
 
 class NegLayer(nn.Module):
@@ -1426,30 +2045,6 @@ class CCALayer(nn.Module):
         return similarity_matrix / self.temperature, qry_pooled
 
 
-class DistillLayer(nn.Module):
-
-    def __init__(self, emb_func, cls_classifier, is_distill, emb_func_path=None, cls_classifier_path=None):
-        super(DistillLayer, self).__init__()
-        self.emb_func = self._load_state_dict(emb_func, emb_func_path, is_distill)
-        self.cls_classifier = self._load_state_dict(cls_classifier, cls_classifier_path, is_distill)
-
-    def _load_state_dict(self, model, state_dict_path, is_distill):
-        new_model = None
-        if is_distill and state_dict_path is not None:
-            model_state_dict = torch.load(state_dict_path, map_location='cpu')
-            model.load_state_dict(model_state_dict)
-            new_model = copy.deepcopy(model)
-        return new_model
-
-    @torch.no_grad()
-    def forward(self, x):
-        output = None
-        if self.emb_func is not None and self.cls_classifier is not None:
-            output = self.emb_func(x)
-            output = self.cls_classifier(output)
-        return output
-
-
 class DistillKLLoss(nn.Module):
 
     def __init__(self, T):
@@ -1463,6 +2058,30 @@ class DistillKLLoss(nn.Module):
         p_t = F.softmax(y_t / self.T, dim=1)
         loss = F.kl_div(p_s, p_t, size_average=False) * self.T ** 2 / y_s.size(0)
         return loss
+
+
+class distLinear(nn.Module):
+
+    def __init__(self, indim, outdim):
+        super(distLinear, self).__init__()
+        self.L = nn.Linear(indim, outdim, bias=False)
+        self.class_wise_learnable_norm = True
+        if self.class_wise_learnable_norm:
+            WeightNorm.apply(self.L, 'weight', dim=0)
+        if outdim <= 200:
+            self.scale_factor = 2
+        else:
+            self.scale_factor = 10
+
+    def forward(self, x):
+        x_norm = torch.norm(x, p=2, dim=1).unsqueeze(1).expand_as(x)
+        x_normalized = x.div(x_norm + 1e-05)
+        if not self.class_wise_learnable_norm:
+            L_norm = torch.norm(self.L.weight.data, p=2, dim=1).unsqueeze(1).expand_as(self.L.weight.data)
+            self.L.weight.data = self.L.weight.data.div(L_norm + 1e-05)
+        cos_dist = self.L(x_normalized)
+        scores = self.scale_factor * cos_dist
+        return scores
 
 
 class L2DistLoss(nn.Module):
@@ -1579,6 +2198,384 @@ class MAMLLayer(nn.Module):
         return self.layers(x)
 
 
+class IFSLUtils(nn.Module):
+
+    def __init__(self, embed_func, feat_dim, ifsl_param, device):
+        super(IFSLUtils, self).__init__()
+        self.embed_func = embed_func
+        self.feat_dim = feat_dim
+        self.device = device
+        for key, value in ifsl_param.items():
+            setattr(self, key, value)
+        self.linear = nn.Linear(feat_dim, self.class_num)
+        self.linear = self._load_state_dict(self.linear, self.cls_path)
+        self.softmax = nn.Softmax(dim=1)
+        self.features = torch.from_numpy(self.get_pretrain_features()).float()
+        if self.normalize_d:
+            self.features = self.normalize(self.features)
+        self.mean_features = self.features.mean(dim=0)
+
+    def classify(self, x, is_feature=False):
+        if is_feature is True:
+            return self.softmax(self.linear(x))
+        return self.softmax(self.linear(self(x)))
+
+    def _load_state_dict(self, model, state_dict_path):
+        if state_dict_path is not None:
+            model_state_dict = torch.load(state_dict_path, map_location='cpu')
+            model.load_state_dict(model_state_dict)
+        return model
+
+    def get_pretrain_features(self):
+        if self.feature_path is not None:
+            return np.load(self.feature_path)
+        None
+        return np.zeros((self.class_num, self.feat_dim))
+
+    def normalize(self, x, dim=1):
+        x_norm = torch.norm(x, p=2, dim=dim).unsqueeze(dim).expand_as(x).detach()
+        x_normalized = x.div(x_norm + 1e-05)
+        return x_normalized
+
+    def fuse_proba(self, p1, p2):
+        sigmoid = torch.nn.Sigmoid()
+        if self.logit_fusion == 'linear_sum':
+            return p1 + p2
+        elif self.logit_fusion == 'product':
+            return torch.log(sigmoid(p1) * sigmoid(p2))
+        elif self.logit_fusion == 'sum':
+            return torch.log(sigmoid(p1 + p2))
+        elif self.logit_fusion == 'harmonic':
+            p = sigmoid(p1) * sigmoid(p2)
+            return torch.log(p / (1 + p))
+
+    def fuse_features(self, x1, x2):
+        if self.fusion == 'concat':
+            return torch.cat((x1, x2), dim=2)
+        elif self.fusion == '+':
+            return x1 + x2
+        elif self.fusion == '-':
+            return x1 - x2
+
+    def get_feat_dim(self):
+        split_feat_dim = int(self.feat_dim / self.n_splits)
+        if self.d_feature == 'pd':
+            return split_feat_dim + self.num_classes
+        elif self.fusion == 'concat':
+            return split_feat_dim * 2
+        else:
+            return split_feat_dim
+
+    def fusing(self, support, query):
+        support = self.embed_func(support)
+        query = self.embed_func(query)
+        split_support, support_d = self.get_feature(support)
+        split_query, query_d = self.get_feature(query)
+        fused_support = self.fuse_features(split_support, support_d)
+        fused_query = self.fuse_features(split_query, query_d)
+        if self.x_zero:
+            c_split_query = torch.zeros_like(split_query)
+        else:
+            c_split_query = split_support.mean(dim=1).unsqueeze(1).expand(split_query.shape)
+        c_fused_query = self.fuse_features(c_split_query, query_d)
+        if self.single is True:
+            return fused_support, fused_query, c_fused_query
+        else:
+            return split_support, support_d, split_query, query_d
+
+    def get_split_features(self, x, preprocess=False, center=None, preprocess_method='l2n'):
+        split_dim = int(self.feat_dim / self.n_splits)
+        split_features = torch.zeros(self.n_splits, x.shape[0], split_dim)
+        for i in range(self.n_splits):
+            start_idx = split_dim * i
+            end_idx = split_dim * i + split_dim
+            split_features[i] = x[:, start_idx:end_idx]
+            if preprocess:
+                if preprocess_method != 'dl2n':
+                    split_features[i] = self.nn_preprocess(split_features[i], center[:, start_idx:end_idx], preprocessing=preprocess_method)
+                else:
+                    if self.normalize_before_center:
+                        split_features[i] = self.normalize(split_features[i])
+                    centered_data = split_features[i] - center[i]
+                    split_features[i] = self.normalize(centered_data)
+        return split_features
+
+    def nn_preprocess(self, data, center=None, preprocessing='l2n'):
+        if preprocessing == 'none':
+            return data
+        elif preprocessing == 'l2n':
+            return self.normalize(data)
+        elif preprocessing == 'cl2n':
+            if self.normalize_before_center:
+                data = self.normalize(data)
+            centered_data = data - center
+            return self.normalize(centered_data)
+
+    def calc_pd(self, x):
+        with torch.no_grad():
+            proba = self.classify(x, True)
+        return proba
+
+    def get_d_feature(self, x):
+        feat_dim = int(self.feat_dim / self.n_splits)
+        if self.d_feature == 'ed':
+            d_feat_dim = int(self.feat_dim / self.n_splits)
+        else:
+            d_feat_dim = self.num_classes
+        d_feature = torch.zeros(self.n_splits, x.shape[0], d_feat_dim)
+        for i in range(self.n_splits):
+            start = i * feat_dim
+            stop = start + feat_dim
+            pd = self.calc_pd(x)
+            if self.d_feature == 'pd':
+                d_feature[i] = pd
+            else:
+                d_feature[i] = torch.mm(pd, self.features)[:, start:stop]
+        return d_feature
+
+    def get_feature(self, x):
+        x_d = self.get_d_feature(x)
+        if self.normalize_ed:
+            x_d = self.normalize(x_d, dim=2)
+        x_size = x.shape[0]
+        pmean_x = self.mean_features.expand((x_size, self.feat_dim))
+        x = self.nn_preprocess(x, pmean_x, preprocessing=self.preprocess_before_split)
+        split_x = self.get_split_features(x, preprocess=True, center=pmean_x, preprocess_method=self.preprocess_after_split)
+        return split_x, x_d
+
+    def one_hot(self, y, num_class):
+        return torch.zeros((len(y), num_class)).scatter_(1, y.unsqueeze(1), 1)
+
+
+class FullyContextualEmbedding(nn.Module):
+
+    def __init__(self, feat_dim):
+        super(FullyContextualEmbedding, self).__init__()
+        self.lstmcell = nn.LSTMCell(feat_dim * 2, feat_dim)
+        self.softmax = nn.Softmax(dim=1)
+        self.c_0 = Variable(torch.zeros(1, feat_dim))
+        self.feat_dim = feat_dim
+
+    def forward(self, f, G):
+        h = f
+        c = self.c_0.expand_as(f)
+        G_T = G.transpose(0, 1)
+        K = G.size(0)
+        for k in range(K):
+            logit_a = h.mm(G_T)
+            a = self.softmax(logit_a)
+            r = a.mm(G)
+            x = torch.cat((f, r), 1)
+            h, c = self.lstmcell(x, (h, c))
+            h = h + f
+        return h
+
+    def cuda(self):
+        super(FullyContextualEmbedding, self)
+        self.c_0 = self.c_0
+        self.lstmcell = self.lstmcell
+        return self
+
+
+class MatchingNetLayer(nn.Module):
+
+    def __init__(self, feat_dim):
+        super(MatchingNetLayer, self).__init__()
+        self.feat_dim = feat_dim
+        self.FCE = FullyContextualEmbedding(self.feat_dim)
+        self.G_encoder = nn.LSTM(self.feat_dim, self.feat_dim, 1, batch_first=True, bidirectional=True)
+
+    def forward(self, support, query):
+        G_encoder = self.G_encoder
+        FCE = self.FCE
+        out_G = G_encoder(support.unsqueeze(0))[0]
+        out_G = out_G.squeeze(0)
+        G = support + out_G[:, :support.size(1)] + out_G[:, support.size(1):]
+        F = FCE(query, G)
+        return G, F
+
+    def cuda(self):
+        super(MatchingNetLayer, self)
+        self.FCE = self.FCE
+        self.G_encoder = self.G_encoder
+        return self
+
+
+class StepLossAdapter(nn.Module):
+
+    def __init__(self, input_dim, num_loss_net_layers, args):
+        super(StepLossAdapter, self).__init__()
+        self.args = args
+        output_dim = num_loss_net_layers * 2 * 2
+        self.linear1 = nn.Linear(input_dim, input_dim)
+        self.activation = nn.ReLU(inplace=True)
+        self.linear2 = nn.Linear(input_dim, output_dim)
+        self.multiplier_bias = nn.Parameter(torch.zeros(output_dim // 2))
+        self.offset_bias = nn.Parameter(torch.zeros(output_dim // 2))
+
+    def forward(self, task_state, num_step, loss_params):
+        out = self.linear1(task_state)
+        out = F.relu_(out)
+        out = self.linear2(out)
+        generated_multiplier, generated_offset = torch.chunk(out, chunks=2, dim=-1)
+        i = 0
+        updated_loss_weights = dict()
+        for key, val in loss_params.items():
+            if 'step{}'.format(num_step) in key:
+                updated_loss_weights[key] = (1 + self.multiplier_bias[i] * generated_multiplier[i]) * val + self.offset_bias[i] * generated_offset[i]
+                i += 1
+        return updated_loss_weights
+
+
+class LossAdapter(nn.Module):
+
+    def __init__(self, input_dim, num_loss_net_layers, args):
+        super(LossAdapter, self).__init__()
+        self.args = args
+        self.num_steps = args['test_iter']
+        self.loss_adapter = nn.ModuleList()
+        for _ in range(self.num_steps):
+            self.loss_adapter.append(StepLossAdapter(input_dim, num_loss_net_layers, args))
+
+    def forward(self, task_state, num_step, loss_params):
+        return self.loss_adapter[num_step](task_state, num_step, loss_params)
+
+
+def extract_top_level_dict(current_dict):
+    output_dict = {}
+    for key, value in current_dict.items():
+        name = key.replace('layer_dict.', '').replace('block_dict.', '').replace('module-', '')
+        parts = name.split('.', 1)
+        top_level = parts[0]
+        sub_level = parts[1] if len(parts) > 1 else ''
+        if top_level not in output_dict:
+            output_dict[top_level] = value if sub_level == '' else {sub_level: value}
+        elif isinstance(output_dict[top_level], dict):
+            output_dict[top_level][sub_level] = value
+        else:
+            output_dict[top_level] = {sub_level: value}
+    return output_dict
+
+
+class MetaLinearLayer(nn.Module):
+
+    def __init__(self, input_shape, num_filters, use_bias):
+        super(MetaLinearLayer, self).__init__()
+        b, c = input_shape
+        self.use_bias = use_bias
+        self.weights = nn.Parameter(torch.ones(num_filters, c))
+        nn.init.xavier_uniform_(self.weights)
+        if self.use_bias:
+            self.bias = nn.Parameter(torch.zeros(num_filters))
+
+    def forward(self, x, params=None):
+        weight = self.weights
+        bias = self.bias if self.use_bias else None
+        if params is not None:
+            params = extract_top_level_dict(current_dict=params)
+            weight = params['weights']
+            if self.use_bias:
+                bias = params['bias']
+        out = F.linear(input=x, weight=weight, bias=bias)
+        return out
+
+
+class MetaStepLossNetwork(nn.Module):
+
+    def __init__(self, input_dim, args):
+        super(MetaStepLossNetwork, self).__init__()
+        self.args = args
+        self.input_dim = input_dim
+        self.input_shape = 1, input_dim
+        self.build_network()
+
+    def build_network(self):
+        x = torch.zeros(self.input_shape)
+        out = x
+        self.linear1 = MetaLinearLayer(input_shape=self.input_shape, num_filters=self.input_dim, use_bias=True)
+        self.linear2 = MetaLinearLayer(input_shape=(1, self.input_dim), num_filters=1, use_bias=True)
+        out = self.linear1(out)
+        out = F.relu_(out)
+        out = self.linear2(out)
+
+    def forward(self, x, params=None):
+        linear1_params = None
+        linear2_params = None
+        if params is not None:
+            params = extract_top_level_dict(current_dict=params)
+            linear1_params = params['linear1']
+            linear2_params = params['linear2']
+        out = x
+        out = self.linear1(out, linear1_params)
+        out = F.relu_(out)
+        out = self.linear2(out, linear2_params)
+        return out
+
+    def restore_backup_stats(self):
+        for i in range(self.num_stages):
+            self.layer_dict['conv{}'.format(i)].restore_backup_stats()
+
+
+class MetaLossNetwork(nn.Module):
+
+    def __init__(self, input_dim, args):
+        super(MetaLossNetwork, self).__init__()
+        self.args = args
+        self.input_dim = input_dim
+        self.input_shape = 1, input_dim
+        self.num_steps = args['test_iter']
+        self.build_network()
+
+    def build_network(self):
+        x = torch.zeros(self.input_shape)
+        self.layer_dict = nn.ModuleDict()
+        for i in range(self.num_steps):
+            self.layer_dict['step{}'.format(i)] = MetaStepLossNetwork(self.input_dim, args=self.args)
+            out = self.layer_dict['step{}'.format(i)](x)
+
+    def forward(self, x, num_step, params=None):
+        param_dict = dict()
+        if params is not None:
+            params = {key: value for key, value in params.items()}
+            param_dict = extract_top_level_dict(current_dict=params)
+        for name, _ in self.layer_dict.named_parameters():
+            path_bits = name.split('.')
+            layer_name = path_bits[0]
+            if layer_name not in param_dict:
+                param_dict[layer_name] = None
+        out = x
+        out = self.layer_dict['step{}'.format(num_step)](out, param_dict['step{}'.format(num_step)])
+        return out
+
+    def restore_backup_stats(self):
+        for i in range(self.num_stages):
+            self.layer_dict['conv{}'.format(i)].restore_backup_stats()
+
+
+def convert_maml_module(module):
+    """Convert a normal model to MAML model.
+
+    Replace nn.Linear with Linear_fw, nn.Conv2d with Conv2d_fw.
+
+    Args:
+        module: The module (model component) to be converted.
+
+    Returns: A MAML model.
+
+    """
+    module_output = module
+    if isinstance(module, torch.nn.modules.Linear):
+        module_output = Linear_fw(module.in_features, module.out_features, False if module.bias is None else True)
+    elif isinstance(module, torch.nn.modules.Conv2d):
+        module_output = Conv2d_fw(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, False if module.bias is None else True)
+    elif isinstance(module, torch.nn.modules.batchnorm.BatchNorm2d):
+        module_output = BatchNorm2d_fw(module.num_features)
+    for name, child in module.named_children():
+        module_output.add_module(name, convert_maml_module(child))
+    del module
+    return module_output
+
+
 def convert_mtl_module(module, MTL=False):
     """Convert a normal model to MTL model.
 
@@ -1610,7 +2607,7 @@ def binv(b_mat):
     Returns: a (n_batch, n, n) Tensor.
     """
     id_matrix = b_mat.new_ones(b_mat.size(-1)).diag().expand_as(b_mat)
-    b_inv, _ = torch.solve(id_matrix, b_mat)
+    b_inv = torch.linalg.solve(b_mat, id_matrix)
     return b_inv
 
 
@@ -1666,6 +2663,95 @@ class R2D2Layer(nn.Module):
         logit = torch.bmm(query, ridge_sol)
         logit = self.alpha * logit + self.beta
         return logit, ridge_sol
+
+
+def _l2norm(x, dim=1, keepdim=True):
+    return x / (1e-16 + torch.norm(x, 2, dim, keepdim))
+
+
+def l2distance(x, y):
+    assert x.shape[:-2] == y.shape[:-2]
+    prefix_shape = x.shape[:-2]
+    c, M_x = x.shape[-2:]
+    M_y = y.shape[-1]
+    x = x.view(-1, c, M_x)
+    y = y.view(-1, c, M_y)
+    x_t = x.transpose(1, 2)
+    x_t2 = x_t.pow(2.0).sum(-1, keepdim=True)
+    y2 = y.pow(2.0).sum(1, keepdim=True)
+    ret = x_t2 + y2 - 2.0 * x_t @ y
+    ret = ret.view(prefix_shape + (M_x, M_y))
+    return ret
+
+
+class Similarity(nn.Module):
+
+    def __init__(self, metric='cosine'):
+        super().__init__()
+        self.metric = metric
+
+    def forward(self, support_xf, query_xf):
+        if query_xf.dim() == 5:
+            b, q, c, h, w = query_xf.shape
+            query_xf = query_xf.view(b, q, c, h * w)
+        else:
+            b, q = query_xf.shape[:2]
+        s = support_xf.shape[1]
+        support_xf = support_xf.unsqueeze(1).expand(-1, q, -1, -1, -1)
+        query_xf = query_xf.unsqueeze(2).expand(-1, -1, s, -1, -1)
+        M_q = query_xf.shape[-1]
+        M_s = support_xf.shape[-1]
+        if self.metric == 'cosine':
+            support_xf = _l2norm(support_xf, dim=-2)
+            query_xf = _l2norm(query_xf, dim=-2)
+            query_xf = torch.transpose(query_xf, 3, 4)
+            return query_xf @ support_xf
+        elif self.metric == 'innerproduct':
+            query_xf = torch.transpose(query_xf, 3, 4)
+            return query_xf @ support_xf
+        elif self.metric == 'euclidean':
+            return 1 - l2distance(query_xf, support_xf)
+        elif self.metric == 'neg_ed':
+            query_xf = query_xf.contiguous().view(-1, c, M_q).transpose(-2, -1).contiguous()
+            support_xf = support_xf.contiguous().view(-1, c, M_s).transpose(-2, -1).contiguous()
+            dist = torch.cdist(query_xf, support_xf)
+            return -dist.view(b, q, s, M_q, M_s) / 2.0
+        else:
+            raise NotImplementedError
+
+
+class MCLMask(nn.Module):
+
+    def __init__(self, katz_factor, gamma, gamma2):
+        super().__init__()
+        self.inner_simi = Similarity(metric='cosine')
+        self.gamma = gamma
+        self.gamma2 = gamma2
+        self.katz_factor = katz_factor
+
+    def forward(self, support_xf, query_xf, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+        b, s, c, h, w = support_xf.shape
+        q = query_xf.shape[1]
+        support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
+        support_xf = support_xf.view(b, self.n_way, c, h * w)
+        S = self.inner_simi(support_xf, query_xf)
+        M_q = S.shape[-2]
+        M_s = S.shape[2] * S.shape[-1]
+        S = S.permute(0, 1, 3, 2, 4).contiguous().view(b * q, M_q, M_s)
+        N_examples = b * q
+        St = S.transpose(-2, -1)
+        device = S.device
+        T_sq = torch.exp(self.gamma * (S - S.max(-1, keepdim=True)[0]))
+        T_sq = T_sq / T_sq.sum(-1, keepdim=True)
+        T_qs = torch.exp(self.gamma2 * (St - St.max(-1, keepdim=True)[0]))
+        T_qs = T_qs / T_qs.sum(-1, keepdim=True)
+        T = torch.cat([torch.cat([torch.zeros((N_examples, M_s, M_s), device=device), T_sq.transpose(-2, -1)], dim=-1), torch.cat([T_qs.transpose(-2, -1), torch.zeros((N_examples, M_q, M_q), device=device)], dim=-1)], dim=-2)
+        katz = (torch.inverse(torch.eye(M_s + M_q, device=device)[None].repeat(N_examples, 1, 1) - self.katz_factor * T) - torch.eye(M_s + M_q, device=S.device)[None].repeat(N_examples, 1, 1)) @ torch.ones((N_examples, M_s + M_q, 1), device=device)
+        katz_query = katz.squeeze(-1)[:, M_s:] / katz.squeeze(-1)[:, M_s:].sum(-1, keepdim=True)
+        katz_query = katz_query.view(b, q, h, w).unsqueeze(2)
+        return katz_query
 
 
 class Predictor(nn.Module):
@@ -2117,6 +3203,59 @@ class ConvMLayer(nn.Module):
         return score
 
 
+class SmoothCELoss(nn.Module):
+
+    def __init__(self, eps=0.1, way=5):
+        super(SmoothCELoss, self).__init__()
+        self.eps = eps
+
+    def forward(self, results, label, way=5):
+        one_hot = torch.zeros_like(results).scatter(1, label.view(-1, 1), 1)
+        one_hot = one_hot * (1 - self.eps) + (1 - one_hot) * self.eps / (way - 1)
+        log_prb = F.log_softmax(results, dim=1)
+        loss = -(one_hot * log_prb).sum(dim=1)
+        loss = loss.mean()
+        return loss
+
+
+class CPEALayer(nn.Module):
+
+    def __init__(self, in_dim=384):
+        super(CPEALayer, self).__init__()
+        self.fc1 = Mlp(in_features=in_dim, hidden_features=int(in_dim / 4), out_features=in_dim)
+        self.fc_norm1 = nn.LayerNorm(in_dim)
+        self.fc2 = Mlp(in_features=196 ** 2, hidden_features=256, out_features=1)
+
+    def forward(self, feat_query, feat_shot, shot):
+        _, n, c = feat_query.size()
+        feat_query = self.fc1(torch.mean(feat_query, dim=1, keepdim=True)) + feat_query
+        feat_shot = self.fc1(torch.mean(feat_shot, dim=1, keepdim=True)) + feat_shot
+        feat_query = self.fc_norm1(feat_query)
+        feat_shot = self.fc_norm1(feat_shot)
+        query_class = feat_query[:, 0, :].unsqueeze(1)
+        query_image = feat_query[:, 1:, :]
+        support_class = feat_shot[:, 0, :].unsqueeze(1)
+        support_image = feat_shot[:, 1:, :]
+        feat_query = query_image + 2.0 * query_class
+        feat_shot = support_image + 2.0 * support_class
+        feat_query = F.normalize(feat_query, p=2, dim=2)
+        feat_query = feat_query - torch.mean(feat_query, dim=2, keepdim=True)
+        feat_shot = feat_shot.contiguous().reshape(shot, -1, n - 1, c)
+        feat_shot = feat_shot.mean(dim=0)
+        feat_shot = F.normalize(feat_shot, p=2, dim=2)
+        feat_shot = feat_shot - torch.mean(feat_shot, dim=2, keepdim=True)
+        results = []
+        for idx in range(feat_query.size(0)):
+            tmp_query = feat_query[idx]
+            tmp_query = tmp_query.unsqueeze(0)
+            out = torch.matmul(feat_shot, tmp_query.transpose(1, 2))
+            out = out.flatten(1)
+            out = self.fc2(out.pow(2))
+            out = out.transpose(0, 1)
+            results.append(out)
+        return results
+
+
 class DN4Layer(nn.Module):
 
     def __init__(self, n_k):
@@ -2163,20 +3302,6 @@ class DSNLayer(nn.Module):
             subspace_metric = subspace_metric[:, ~mask]
             disc_loss = torch.sum(subspace_metric ** 2)
         return logits, disc_loss
-
-
-class ProtoLayer(nn.Module):
-
-    def __init__(self):
-        super(ProtoLayer, self).__init__()
-
-    def forward(self, query_feat, support_feat, way_num, shot_num, query_num, mode='euclidean'):
-        t, wq, c = query_feat.size()
-        _, ws, _ = support_feat.size()
-        query_feat = query_feat.reshape(t, way_num * query_num, c)
-        support_feat = support_feat.reshape(t, way_num, shot_num, c)
-        proto_feat = torch.mean(support_feat, dim=2)
-        return {'euclidean': lambda x, y: -torch.sum(torch.pow(x.unsqueeze(2) - y.unsqueeze(1), 2), dim=3), 'cos_sim': lambda x, y: torch.matmul(F.normalize(x, p=2, dim=-1), torch.transpose(F.normalize(y, p=2, dim=-1), -1, -2))}[mode](query_feat, proto_feat)
 
 
 class ScaledDotProductAttention(nn.Module):
@@ -2236,6 +3361,64 @@ class MultiHeadAttention(nn.Module):
         output = self.dropout(self.fc(output))
         output = self.layer_norm(output + residual)
         return output
+
+
+class MCLLayer(nn.Module):
+
+    def __init__(self, n_k, katz_factor, gamma, gamma2):
+        super(MCLLayer, self).__init__()
+        self.n_k = n_k
+        self.gamma = gamma
+        self.gamma2 = gamma2
+        self.katz_factor = katz_factor
+        self.inner_simi = Similarity(metric='cosine')
+        self.criterion = nn.NLLLoss()
+
+    def averaging_based_similarities(self, support_xf, support_y, query_xf, query_y):
+        b, s, c, h, w = support_xf.shape
+        q = query_xf.shape[1]
+        support_xf = support_xf.view(b, self.n_way, self.k_shot, c, h, w).mean(2)
+        support_xf = support_xf.view(b, self.n_way, c, h * w)
+        S = self.inner_simi(support_xf, query_xf)
+        M_q = S.shape[-2]
+        M_s = S.shape[2] * S.shape[-1]
+        S = S.permute(0, 1, 3, 2, 4).contiguous().view(b * q, M_q, M_s)
+        return S
+
+    def bipartite_katz_forward(self, support_xf, support_y, query_xf, query_y, similarity_f):
+        katz_factor = self.katz_factor
+        S = similarity_f(support_xf, support_y, query_xf, query_y)
+        N_examples, M_q, M_s = S.shape
+        St = S.transpose(-2, -1)
+        device = S.device
+        T_sq = torch.exp(self.gamma * (S - S.max(-1, keepdim=True)[0]))
+        T_sq = T_sq / T_sq.sum(-1, keepdim=True)
+        T_qs = torch.exp(self.gamma2 * (St - St.max(-1, keepdim=True)[0]))
+        T_qs = T_qs / T_qs.sum(-1, keepdim=True)
+        T = torch.cat([torch.cat([torch.zeros((N_examples, M_s, M_s), device=device), T_sq.transpose(-2, -1)], dim=-1), torch.cat([T_qs.transpose(-2, -1), torch.zeros((N_examples, M_q, M_q), device=device)], dim=-1)], dim=-2)
+        katz = (torch.inverse(torch.eye(M_s + M_q, device=device)[None].repeat(N_examples, 1, 1) - katz_factor * T) - torch.eye(M_s + M_q, device=S.device)[None].repeat(N_examples, 1, 1)) @ torch.ones((N_examples, M_s + M_q, 1), device=device)
+        partial_katz = katz.squeeze(-1)[:, :M_s] / katz.squeeze(-1)[:, :M_s].sum(-1, keepdim=True)
+        predicts = partial_katz.view(N_examples, self.n_way, -1).sum(-1)
+        return predicts
+
+    def forward(self, support_xf, support_y, query_xf, query_y, n_way, k_shot):
+        self.n_way = n_way
+        self.k_shot = k_shot
+        return self.bipartite_katz_forward(support_xf, support_y, query_xf, query_y, self.averaging_based_similarities)
+
+
+class ProtoLayer_temperature(nn.Module):
+
+    def __init__(self):
+        super(ProtoLayer_temperature, self).__init__()
+
+    def forward(self, query_feat, support_feat, way_num, shot_num, query_num, mode='cos_sim'):
+        t, wq, c = query_feat.size()
+        _, ws, _ = support_feat.size()
+        query_feat = query_feat.reshape(t, way_num * query_num, c)
+        support_feat = support_feat.reshape(t, way_num, shot_num, c)
+        proto_feat = torch.mean(support_feat, dim=2)
+        return {'euclidean': lambda x, y: -torch.sum(torch.pow(x.unsqueeze(2) - y.unsqueeze(1), 2), dim=3), 'cos_sim': lambda x, y: torch.matmul(F.normalize(x, p=2, dim=-1), torch.transpose(F.normalize(y, p=2, dim=-1), -1, -2))}[mode](query_feat, proto_feat)
 
 
 class RelationLayer(nn.Module):

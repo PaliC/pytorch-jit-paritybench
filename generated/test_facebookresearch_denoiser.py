@@ -25,7 +25,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -502,7 +504,7 @@ class LowPassFilters(torch.nn.Module):
         - Output: `(F, *, T` with `F` the len of `cutoffs`.
     """
 
-    def __init__(self, cutoffs: list, width: int=None):
+    def __init__(self, cutoffs: 'list', width: 'int'=None):
         super().__init__()
         self.cutoffs = cutoffs
         if width is None:
@@ -677,7 +679,7 @@ TESTCASES = [
      False),
     (RevEcho,
      lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     lambda: ([(torch.rand([4, 4, 4, 32]), torch.rand([4, 4, 4, 4]))], {}),
      False),
     (Shift,
      lambda: ([], {}),

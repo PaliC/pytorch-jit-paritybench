@@ -1,6 +1,7 @@
 import sys
 _module = sys.modules[__name__]
 del sys
+stylegan2_demo512 = _module
 stylegan_demo = _module
 stylegan_ffhq1024 = _module
 stylegan_ffhq1024_val = _module
@@ -105,6 +106,8 @@ pggan_discriminator = _module
 pggan_generator = _module
 stylegan2_discriminator = _module
 stylegan2_generator = _module
+stylegan2ada_discriminator = _module
+stylegan2ada_generator = _module
 stylegan_discriminator = _module
 stylegan_generator = _module
 sync_op = _module
@@ -142,7 +145,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -2724,6 +2729,254 @@ class InputBlock(nn.Module):
     def forward(self, w):
         x = self.const.repeat(w.shape[0], 1, 1, 1)
         return x
+
+
+class StyleGAN2ADADiscriminator(nn.Module):
+    """Defines the discriminator network in StyleGAN2.
+
+    NOTE: The discriminator takes images with `RGB` channel order and pixel
+    range [-1, 1] as inputs.
+
+    Settings for the network:
+
+    (1) resolution: The resolution of the input image.
+    (2) image_channels: Number of channels of the input image. (default: 3)
+    (3) label_size: Size of the additional label for conditional generation.
+        (default: 0)
+    (4) architecture: Type of architecture. Support `origin`, `skip`, and
+        `resnet`. (default: `resnet`)
+    (5) use_wscale: Whether to use weight scaling. (default: True)
+    (6) minibatch_std_group_size: Group size for the minibatch standard
+        deviation layer. 0 means disable. (default: 4)
+    (7) minibatch_std_channels: Number of new channels after the minibatch
+        standard deviation layer. (default: 1)
+    (8) fmaps_base: Factor to control number of feature maps for each layer.
+        (default: 32 << 10)
+    (9) fmaps_max: Maximum number of feature maps in each layer. (default: 512)
+    """
+
+    def __init__(self, resolution, image_channels=3, label_size=0, architecture='resnet', use_wscale=True, minibatch_std_group_size=4, minibatch_std_channels=1, fmaps_base=32 << 10, fmaps_max=512, mapping_fmaps=None):
+        """Initializes with basic settings.
+
+        Raises:
+            ValueError: If the `resolution` is not supported, or `architecture`
+                is not supported.
+        """
+        super().__init__()
+        if resolution not in _RESOLUTIONS_ALLOWED:
+            raise ValueError(f'Invalid resolution: `{resolution}`!\nResolutions allowed: {_RESOLUTIONS_ALLOWED}.')
+        if architecture not in _ARCHITECTURES_ALLOWED:
+            raise ValueError(f'Invalid architecture: `{architecture}`!\nArchitectures allowed: {_ARCHITECTURES_ALLOWED}.')
+        self.init_res = _INIT_RES
+        self.init_res_log2 = int(np.log2(self.init_res))
+        self.resolution = resolution
+        self.final_res_log2 = int(np.log2(self.resolution))
+        self.image_channels = image_channels
+        self.label_size = label_size
+        self.architecture = architecture
+        self.use_wscale = use_wscale
+        self.minibatch_std_group_size = minibatch_std_group_size
+        self.minibatch_std_channels = minibatch_std_channels
+        self.fmaps_base = fmaps_base
+        self.fmaps_max = fmaps_max
+        self.mapping_fmaps = mapping_fmaps
+        if self.mapping_fmaps is None:
+            self.mapping_fmaps = self.get_nf(1)
+        self.pth_to_tf_var_mapping = {}
+        for res_log2 in range(self.final_res_log2, self.init_res_log2 - 1, -1):
+            res = 2 ** res_log2
+            block_idx = self.final_res_log2 - res_log2
+            if res_log2 == self.final_res_log2 or self.architecture == 'skip':
+                self.add_module(f'input{block_idx}', ConvBlock(in_channels=self.image_channels, out_channels=self.get_nf(res), kernel_size=1, use_wscale=self.use_wscale))
+                self.pth_to_tf_var_mapping[f'input{block_idx}.weight'] = f'{res}x{res}/FromRGB/weight'
+                self.pth_to_tf_var_mapping[f'input{block_idx}.bias'] = f'{res}x{res}/FromRGB/bias'
+            if res != self.init_res:
+                self.add_module(f'layer{2 * block_idx}', ConvBlock(in_channels=self.get_nf(res), out_channels=self.get_nf(res), use_wscale=self.use_wscale))
+                tf_layer0_name = 'Conv0'
+                self.add_module(f'layer{2 * block_idx + 1}', ConvBlock(in_channels=self.get_nf(res), out_channels=self.get_nf(res // 2), scale_factor=2, use_wscale=self.use_wscale))
+                tf_layer1_name = 'Conv1_down'
+                if self.architecture == 'resnet':
+                    layer_name = f'skip_layer{block_idx}'
+                    self.add_module(layer_name, ConvBlock(in_channels=self.get_nf(res), out_channels=self.get_nf(res // 2), kernel_size=1, add_bias=False, scale_factor=2, use_wscale=self.use_wscale, activation_type='linear'))
+                    self.pth_to_tf_var_mapping[f'{layer_name}.weight'] = f'{res}x{res}/Skip/weight'
+            else:
+                self.add_module(f'layer{2 * block_idx}', ConvBlock(in_channels=self.get_nf(res), out_channels=self.get_nf(res), use_wscale=self.use_wscale, minibatch_std_group_size=minibatch_std_group_size, minibatch_std_channels=minibatch_std_channels))
+                tf_layer0_name = 'Conv'
+                self.add_module(f'layer{2 * block_idx + 1}', DenseBlock(in_channels=self.get_nf(res) * res * res, out_channels=self.get_nf(res // 2), use_wscale=self.use_wscale))
+                tf_layer1_name = 'Dense0'
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx}.weight'] = f'{res}x{res}/{tf_layer0_name}/weight'
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx}.bias'] = f'{res}x{res}/{tf_layer0_name}/bias'
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx + 1}.weight'] = f'{res}x{res}/{tf_layer1_name}/weight'
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx + 1}.bias'] = f'{res}x{res}/{tf_layer1_name}/bias'
+            self.add_module(f'layer{2 * block_idx + 2}', DenseBlock(in_channels=self.get_nf(res // 2), out_channels=self.mapping_fmaps if self.label_size else 1, use_wscale=self.use_wscale, activation_type='linear'))
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx + 2}.weight'] = 'Output/weight'
+            self.pth_to_tf_var_mapping[f'layer{2 * block_idx + 2}.bias'] = 'Output/bias'
+        if self.architecture == 'skip':
+            self.downsample = DownsamplingLayer()
+        if self.label_size:
+            self.add_module('LabelEmbed', DenseBlock(in_channels=label_size, out_channels=self.mapping_fmaps, use_wscale=self.use_wscale, activation_type='linear'))
+            self.pth_to_tf_var_mapping['LabelEmbed.weight'] = 'LabelEmbed/weight'
+            self.pth_to_tf_var_mapping['LabelEmbed.bias'] = 'LabelEmbed/bias'
+        self.norm = PixelNormLayer()
+
+    def get_nf(self, res):
+        """Gets number of feature maps according to current resolution."""
+        return min(self.fmaps_base // res, self.fmaps_max)
+
+    def forward(self, image, label=None, **_unused_kwargs):
+        expected_shape = self.image_channels, self.resolution, self.resolution
+        if image.ndim != 4 or image.shape[1:] != expected_shape:
+            raise ValueError(f'The input tensor should be with shape [batch_size, channel, height, width], where `channel` equals to {self.image_channels}, `height`, `width` equal to {self.resolution}!\nBut `{image.shape}` is received!')
+        if self.label_size:
+            if label is None:
+                raise ValueError(f'Model requires an additional label (with size {self.label_size}) as inputs, but no label is received!')
+            batch_size = image.shape[0]
+            if label.ndim != 2 or label.shape != (batch_size, self.label_size):
+                raise ValueError(f'Input label should be with shape [batch_size, label_size], where `batch_size` equals to that of images ({image.shape[0]}) and `label_size` equals to {self.label_size}!\nBut `{label.shape}` is received!')
+            embedding = self.__getattr__('LabelEmbed')(label)
+            embedding = self.norm(embedding)
+        x = self.input0(image)
+        for res_log2 in range(self.final_res_log2, self.init_res_log2 - 1, -1):
+            block_idx = self.final_res_log2 - res_log2
+            if self.architecture == 'skip' and block_idx > 0:
+                image = self.downsample(image)
+                x = x + self.__getattr__(f'input{block_idx}')(image)
+            if self.architecture == 'resnet' and res_log2 != self.init_res_log2:
+                residual = self.__getattr__(f'skip_layer{block_idx}')(x)
+            x = self.__getattr__(f'layer{2 * block_idx}')(x)
+            x = self.__getattr__(f'layer{2 * block_idx + 1}')(x)
+            if self.architecture == 'resnet' and res_log2 != self.init_res_log2:
+                x = (x + residual) / np.sqrt(2.0)
+        x = self.__getattr__(f'layer{2 * block_idx + 2}')(x)
+        if self.label_size:
+            x = torch.sum(x * embedding, dim=1, keepdim=True) / np.sqrt(self.mapping_fmaps)
+        return x
+
+
+class StyleGAN2ADAGenerator(nn.Module):
+    """Defines the generator network in StyleGAN2.
+
+    NOTE: The synthesized images are with `RGB` channel order and pixel range
+    [-1, 1].
+
+    Settings for the mapping network:
+
+    (1) z_space_dim: Dimension of the input latent space, Z. (default: 512)
+    (2) w_space_dim: Dimension of the outout latent space, W. (default: 512)
+    (3) label_size: Size of the additional label for conditional generation.
+        (default: 0)
+    (4）mapping_layers: Number of layers of the mapping network. (default: 8)
+    (5) mapping_fmaps: Number of hidden channels of the mapping network.
+        (default: 512)
+    (6) mapping_lr_mul: Learning rate multiplier for the mapping network.
+        (default: 0.01)
+    (7) repeat_w: Repeat w-code for different layers.
+
+    Settings for the synthesis network:
+
+    (1) resolution: The resolution of the output image.
+    (2) image_channels: Number of channels of the output image. (default: 3)
+    (3) final_tanh: Whether to use `tanh` to control the final pixel range.
+        (default: False)
+    (4) const_input: Whether to use a constant in the first convolutional layer.
+        (default: True)
+    (5) architecture: Type of architecture. Support `origin`, `skip`, and
+        `resnet`. (default: `resnet`)
+    (6) fused_modulate: Whether to fuse `style_modulate` and `conv2d` together.
+        (default: True)
+    (7) demodulate: Whether to perform style demodulation. (default: True)
+    (8) use_wscale: Whether to use weight scaling. (default: True)
+    (9) noise_type: Type of noise added to the convolutional results at each
+        layer. (default: `spatial`)
+    (10) fmaps_base: Factor to control number of feature maps for each layer.
+        (default: 32 << 10)
+    (11) fmaps_max: Maximum number of feature maps in each layer. (default: 512)
+    """
+
+    def __init__(self, resolution, z_space_dim=512, w_space_dim=512, label_size=0, mapping_layers=8, mapping_fmaps=512, mapping_lr_mul=0.01, repeat_w=True, image_channels=3, final_tanh=False, const_input=True, architecture='skip', fused_modulate=True, demodulate=True, use_wscale=True, noise_type='spatial', fmaps_base=32 << 10, fmaps_max=512):
+        """Initializes with basic settings.
+
+        Raises:
+            ValueError: If the `resolution` is not supported, or `architecture`
+                is not supported.
+        """
+        super().__init__()
+        if resolution not in _RESOLUTIONS_ALLOWED:
+            raise ValueError(f'Invalid resolution: `{resolution}`!\nResolutions allowed: {_RESOLUTIONS_ALLOWED}.')
+        if architecture not in _ARCHITECTURES_ALLOWED:
+            raise ValueError(f'Invalid architecture: `{architecture}`!\nArchitectures allowed: {_ARCHITECTURES_ALLOWED}.')
+        self.init_res = _INIT_RES
+        self.resolution = resolution
+        self.z_space_dim = z_space_dim
+        self.w_space_dim = w_space_dim
+        self.label_size = label_size
+        self.mapping_layers = mapping_layers
+        self.mapping_fmaps = mapping_fmaps
+        self.mapping_lr_mul = mapping_lr_mul
+        self.repeat_w = repeat_w
+        self.image_channels = image_channels
+        self.final_tanh = final_tanh
+        self.const_input = const_input
+        self.architecture = architecture
+        self.fused_modulate = fused_modulate
+        self.demodulate = demodulate
+        self.use_wscale = use_wscale
+        self.noise_type = noise_type
+        self.fmaps_base = fmaps_base
+        self.fmaps_max = fmaps_max
+        self.num_layers = int(np.log2(self.resolution // self.init_res * 2)) * 2
+        if self.repeat_w:
+            self.mapping_space_dim = self.w_space_dim
+        else:
+            self.mapping_space_dim = self.w_space_dim * self.num_layers
+        self.mapping = MappingModule(input_space_dim=self.z_space_dim, hidden_space_dim=self.mapping_fmaps, final_space_dim=self.mapping_space_dim, label_size=self.label_size, num_layers=self.mapping_layers, use_wscale=self.use_wscale, lr_mul=self.mapping_lr_mul)
+        self.truncation = TruncationModule(w_space_dim=self.w_space_dim, num_layers=self.num_layers, repeat_w=self.repeat_w)
+        self.synthesis = SynthesisModule(resolution=self.resolution, init_resolution=self.init_res, w_space_dim=self.w_space_dim, image_channels=self.image_channels, final_tanh=self.final_tanh, const_input=self.const_input, architecture=self.architecture, fused_modulate=self.fused_modulate, demodulate=self.demodulate, use_wscale=self.use_wscale, noise_type=self.noise_type, fmaps_base=self.fmaps_base, fmaps_max=self.fmaps_max)
+        self.pth_to_tf_var_mapping = {}
+        for key, val in self.mapping.pth_to_tf_var_mapping.items():
+            self.pth_to_tf_var_mapping[f'mapping.{key}'] = val
+        for key, val in self.truncation.pth_to_tf_var_mapping.items():
+            self.pth_to_tf_var_mapping[f'truncation.{key}'] = val
+        for key, val in self.synthesis.pth_to_tf_var_mapping.items():
+            self.pth_to_tf_var_mapping[f'synthesis.{key}'] = val
+
+    def set_space_of_latent(self, space_of_latent='w'):
+        """Sets the space to which the latent code belong.
+
+        This function is particually used for choosing how to inject the latent
+        code into the convolutional layers. The original generator will take a
+        W-Space code and apply it for style modulation after an affine
+        transformation. But, sometimes, it may need to directly feed an already
+        affine-transformed code into the convolutional layer, e.g., when
+        training an encoder for GAN inversion. We term the transformed space as
+        Style Space (or Y-Space). This function is designed to tell the
+        convolutional layers how to use the input code.
+
+        Args:
+            space_of_latent: The space to which the latent code belong. Case
+                insensitive. (default: 'w')
+        """
+        for module in self.modules():
+            if isinstance(module, ModulateConvBlock):
+                setattr(module, 'space_of_latent', space_of_latent)
+
+    def forward(self, z, label=None, w_moving_decay=0.995, style_mixing_prob=0.9, trunc_psi=None, trunc_layers=None, randomize_noise=False, **_unused_kwargs):
+        mapping_results = self.mapping(z, label)
+        w = mapping_results['w']
+        if self.training and w_moving_decay < 1:
+            batch_w_avg = all_gather(w).mean(dim=0)
+            self.truncation.w_avg.copy_(self.truncation.w_avg * w_moving_decay + batch_w_avg * (1 - w_moving_decay))
+        if self.training and style_mixing_prob > 0:
+            new_z = torch.randn_like(z)
+            new_w = self.mapping(new_z, label)['w']
+            if np.random.uniform() < style_mixing_prob:
+                mixing_cutoff = np.random.randint(1, self.num_layers)
+                w = self.truncation(w)
+                new_w = self.truncation(new_w)
+                w[:, :mixing_cutoff] = new_w[:, :mixing_cutoff]
+        wp = self.truncation(w, trunc_psi, trunc_layers)
+        synthesis_results = self.synthesis(wp, randomize_noise)
+        return {**mapping_results, **synthesis_results}
 
 
 _FUSED_SCALE_ALLOWED = [True, False, 'auto']

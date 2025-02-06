@@ -26,7 +26,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -342,9 +344,6 @@ class MultiModulator(Module):
         return tuple(res)
 
 
-WARN_TEMPLATE = '\x1b[38;5;1mWARNING: %s\x1b[0m\n'
-
-
 class EasyModule(Module):
 
     def save(self, save_dir, step=1):
@@ -502,6 +501,75 @@ class Veri2D(Module):
 
     def forward(self, x):
         return self.trns(x)
+
+
+def to_numpy(cand):
+    if isinstance(cand, Variable):
+        return cand.data.cpu().numpy()
+    elif isinstance(cand, torch._TensorBase):
+        return cand.cpu().numpy()
+    elif isinstance(cand, (list, tuple)):
+        return map(to_numpy, cand)
+    elif isinstance(cand, np.ndarray):
+        return cand
+    else:
+        return np.array([cand])
+
+
+class PTStore:
+
+    def __init__(self):
+        self.__dict__['vars'] = {}
+
+    def __call__(self, **kwargs):
+        assert len(kwargs) == 1, 'You must specify just 1 variable to add'
+        key, value = kwargs.items()[0]
+        setattr(self, key, value)
+        return value
+
+    def __setattr__(self, key, value):
+        self.__dict__['vars'][key] = value
+
+    def __getattr__(self, key):
+        if key == '_vars':
+            return self.__dict__['vars']
+        if key not in self.__dict__['vars']:
+            raise KeyError('Key %s was not found in the pt_store! Forgot to add it?' % key)
+        return self.__dict__['vars'][key]
+
+    def __getitem__(self, key):
+        if key not in self.__dict__['vars']:
+            raise KeyError('Key %s was not found in the pt_store! Forgot to add it?' % key)
+        cand = self.__dict__['vars'][key]
+        return to_numpy(cand)
+
+    def clear(self):
+        self.__dict__['vars'].clear()
+
+
+PT = PTStore()
+
+
+class BaseEvent:
+
+    def __init__(self):
+        self.func = None
+
+    def __call__(self, func_or_trainer):
+        if self.func is None:
+            self.func = func_or_trainer
+            return self
+        if self.should_run(func_or_trainer):
+            self.func(func_or_trainer)
+
+    def should_run(self, trainer):
+        raise NotImplementedError()
+
+
+class TrainStepEvent(BaseEvent):
+
+    def should_run(self, trainer):
+        return trainer.info_vars['is_training']
 
 
 class GanGroup(Module):

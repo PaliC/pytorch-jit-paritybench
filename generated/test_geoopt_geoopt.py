@@ -51,7 +51,6 @@ rsgld = _module
 sgrhmc = _module
 tensor = _module
 utils = _module
-setup = _module
 test_adam = _module
 test_birkhoff = _module
 test_cayley_transform = _module
@@ -80,7 +79,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -177,10 +178,10 @@ import warnings
 import torch.optim
 
 
-from scipy.optimize.linesearch import scalar_search_wolfe2
+from scipy.optimize._linesearch import scalar_search_wolfe2
 
 
-from scipy.optimize.linesearch import scalar_search_armijo
+from scipy.optimize._linesearch import scalar_search_armijo
 
 
 import torch.optim.optimizer
@@ -193,9 +194,6 @@ import copy
 
 
 from typing import Any
-
-
-import re
 
 
 import random
@@ -282,7 +280,7 @@ class Distance2StereographicHyperplanes(torch.nn.Module):
     torch.Size([100, 64, 8, 8])
     """
 
-    def __init__(self, plane_shape: int, num_planes: int, signed=True, squared=False, *, ball, init_std=1.0, ndim=0):
+    def __init__(self, plane_shape: 'int', num_planes: 'int', signed=True, squared=False, *, ball, init_std=1.0, ndim=0):
         super().__init__()
         self.ndim = ndim
         self.signed = signed
@@ -387,7 +385,7 @@ class ScalingStorage(dict):
                     return res
     """
 
-    def __call__(self, scaling_info: ScalingInfo, *aliases):
+    def __call__(self, scaling_info: 'ScalingInfo', *aliases):
 
         def register(fn):
             self[fn.__name__] = scaling_info
@@ -440,7 +438,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return None
 
-    def check_point(self, x: torch.Tensor, *, explain=False) ->Union[Tuple[bool, Optional[str]], bool]:
+    def check_point(self, x: 'torch.Tensor', *, explain=False) ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Check if point is valid to be used with the manifold.
 
@@ -466,7 +464,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return ok
 
-    def assert_check_point(self, x: torch.Tensor):
+    def assert_check_point(self, x: 'torch.Tensor'):
         """
         Check if point is valid to be used with the manifold and raise an error with informative message on failure.
 
@@ -483,7 +481,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         if not ok:
             raise ValueError('`x` seems to be not valid tensor for {} manifold.\nerror: {}'.format(self.name, reason))
 
-    def check_vector(self, u: torch.Tensor, *, explain=False):
+    def check_vector(self, u: 'torch.Tensor', *, explain=False):
         """
         Check if vector is valid to be used with the manifold.
 
@@ -509,7 +507,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return ok
 
-    def assert_check_vector(self, u: torch.Tensor):
+    def assert_check_vector(self, u: 'torch.Tensor'):
         """
         Check if vector is valid to be used with the manifold and raise an error with informative message on failure.
 
@@ -526,7 +524,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         if not ok:
             raise ValueError('`u` seems to be not valid tensor for {} manifold.\nerror: {}'.format(self.name, reason))
 
-    def check_point_on_manifold(self, x: torch.Tensor, *, explain=False, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def check_point_on_manifold(self, x: 'torch.Tensor', *, explain=False, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Check if point :math:`x` is lying on the manifold.
 
@@ -558,7 +556,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return ok
 
-    def assert_check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05):
+    def assert_check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05):
         """
         Check if point :math`x` is lying on the manifold and raise an error with informative message on failure.
 
@@ -576,7 +574,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         if not ok:
             raise ValueError('`x` seems to be a tensor not lying on {} manifold.\nerror: {}'.format(self.name, reason))
 
-    def check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, ok_point=False, explain=False, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, ok_point=False, explain=False, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Check if :math:`u` is lying on the tangent space to x.
 
@@ -616,7 +614,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return ok
 
-    def assert_check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, ok_point=False, atol=1e-05, rtol=1e-05):
+    def assert_check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, ok_point=False, atol=1e-05, rtol=1e-05):
         """
         Check if u :math:`u` is lying on the tangent space to x and raise an error on fail.
 
@@ -648,7 +646,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
             raise ValueError('`u` seems to be a tensor not lying on tangent space to `x` for {} manifold.\nerror: {}'.format(self.name, reason))
 
     @__scaling__(ScalingInfo(1))
-    def dist(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         """
         Compute distance between 2 points on the manifold that is the shortest path along geodesics.
 
@@ -669,7 +667,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @__scaling__(ScalingInfo(2))
-    def dist2(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist2(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         """
         Compute squared distance between 2 points on the manifold that is the shortest path along geodesics.
 
@@ -691,7 +689,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     @__scaling__(ScalingInfo(u=-1))
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         """
         Perform a retraction from point :math:`x` with given direction :math:`u`.
 
@@ -711,7 +709,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     @__scaling__(ScalingInfo(u=-1))
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         """
         Perform an exponential map :math:`\\operatorname{Exp}_x(u)`.
 
@@ -730,7 +728,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @__scaling__(ScalingInfo(1))
-    def logmap(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         """
         Perform an logarithmic map :math:`\\operatorname{Log}_{x}(y)`.
 
@@ -749,7 +747,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @__scaling__(ScalingInfo(u=-1))
-    def expmap_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
+    def expmap_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor]:
         """
         Perform an exponential map and vector transport from point :math:`x` with given direction :math:`u`.
 
@@ -772,7 +770,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         return y, v_transp
 
     @__scaling__(ScalingInfo(u=-1))
-    def retr_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
+    def retr_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor]:
         """
         Perform a retraction + vector transport at once.
 
@@ -799,7 +797,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         return y, v_transp
 
     @__scaling__(ScalingInfo(u=-1))
-    def transp_follow_retr(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp_follow_retr(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         """
         Perform vector transport following :math:`u`: :math:`\\mathfrak{T}_{x\\to\\operatorname{retr}(x, u)}(v)`.
 
@@ -823,7 +821,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         return self.transp(x, y, v)
 
     @__scaling__(ScalingInfo(u=-1))
-    def transp_follow_expmap(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp_follow_expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         """
         Perform vector transport following :math:`u`: :math:`\\mathfrak{T}_{x\\to\\operatorname{Exp}(x, u)}(v)`.
 
@@ -848,7 +846,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         y = self.expmap(x, u)
         return self.transp(x, y, v)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         """
         Perform vector transport :math:`\\mathfrak{T}_{x\\to y}(v)`.
 
@@ -869,7 +867,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False) ->torch.Tensor:
         """
         Inner product for tangent vectors at point :math:`x`.
 
@@ -891,7 +889,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def component_inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None) ->torch.Tensor:
+    def component_inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None) ->torch.Tensor:
         """
         Inner product for tangent vectors at point :math:`x` according to components of the manifold.
 
@@ -921,7 +919,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         """
         return self.inner(x, u, v, keepdim=True)
 
-    def norm(self, x: torch.Tensor, u: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def norm(self, x: 'torch.Tensor', u: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         """
         Norm of a tangent vector at point :math:`x`.
 
@@ -942,7 +940,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         return self.inner(x, u, keepdim=keepdim) ** 0.5
 
     @abc.abstractmethod
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         """
         Project vector :math:`u` on a tangent space for :math:`x`, usually is the same as :meth:`egrad2rgrad`.
 
@@ -961,7 +959,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         """
         Transform gradient computed using autodiff to the correct Riemannian gradient for the point :math:`x`.
 
@@ -980,7 +978,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Project point :math:`x` on the manifold.
 
@@ -996,7 +994,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def _check_shape(self, shape: Tuple[int], name: str) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_shape(self, shape: 'Tuple[int]', name: 'str') ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Util to check shape.
 
@@ -1024,7 +1022,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
             reason = None
         return ok, reason
 
-    def _assert_check_shape(self, shape: Tuple[int], name: str):
+    def _assert_check_shape(self, shape: 'Tuple[int]', name: 'str'):
         """
         Util to check shape and raise an error if needed.
 
@@ -1048,7 +1046,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
             raise ValueError(reason)
 
     @abc.abstractmethod
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Util to check point lies on the manifold.
 
@@ -1076,7 +1074,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         """
         Util to check a vector belongs to the tangent space of a point.
 
@@ -1114,7 +1112,7 @@ class Manifold(torch.nn.Module, metaclass=abc.ABCMeta):
         else:
             return self.name + ' manifold'
 
-    def unpack_tensor(self, tensor: torch.Tensor) ->torch.Tensor:
+    def unpack_tensor(self, tensor: 'torch.Tensor') ->torch.Tensor:
         """
         Construct a point on the manifold.
 
@@ -1200,7 +1198,7 @@ def broadcast_shapes(*shapes: Tuple[int]) ->Tuple[int]:
     """Apply numpy broadcasting rules to shapes."""
     result = []
     for dims in itertools.zip_longest(*map(reversed, shapes), fillvalue=1):
-        dim: int = 1
+        dim: 'int' = 1
         for d in dims:
             if dim != 1 and d != 1 and d != dim:
                 raise ValueError("Shapes can't be broadcasted")
@@ -1210,7 +1208,7 @@ def broadcast_shapes(*shapes: Tuple[int]) ->Tuple[int]:
     return tuple(reversed(result))
 
 
-def make_tuple(obj: Union[Tuple, List, Any]) ->Tuple:
+def make_tuple(obj: 'Union[Tuple, List, Any]') ->Tuple:
     if isinstance(obj, list):
         obj = tuple(obj)
     if not isinstance(obj, tuple):
@@ -1219,7 +1217,7 @@ def make_tuple(obj: Union[Tuple, List, Any]) ->Tuple:
         return obj
 
 
-def strip_tuple(tup: Tuple) ->Union[Tuple, Any]:
+def strip_tuple(tup: 'Tuple') ->Union[Tuple, Any]:
     if len(tup) == 1:
         return tup[0]
     else:
@@ -1249,16 +1247,16 @@ class Euclidean(Manifold):
         super().__init__()
         self.ndim = ndim
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         return True, None
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         return True, None
 
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         return x + u
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False) ->torch.Tensor:
         if v is None:
             inner = u.pow(2)
         else:
@@ -1272,7 +1270,7 @@ class Euclidean(Manifold):
         target_shape = broadcast_shapes(x_shape, i_shape)
         return inner.expand(target_shape)
 
-    def component_inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None) ->torch.Tensor:
+    def component_inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None) ->torch.Tensor:
         if v is None:
             inner = u.pow(2)
         else:
@@ -1280,42 +1278,42 @@ class Euclidean(Manifold):
         target_shape = broadcast_shapes(x.shape, inner.shape)
         return inner.expand(target_shape)
 
-    def norm(self, x: torch.Tensor, u: torch.Tensor, *, keepdim=False):
+    def norm(self, x: 'torch.Tensor', u: 'torch.Tensor', *, keepdim=False):
         if self.ndim > 0:
             return u.norm(dim=tuple(range(-self.ndim, 0)), keepdim=keepdim)
         else:
             return u.abs()
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         target_shape = broadcast_shapes(x.shape, u.shape)
         return u.expand(target_shape)
 
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor') ->torch.Tensor:
         return x
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         return y - x
 
-    def dist(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         if self.ndim > 0:
             return (x - y).norm(dim=tuple(range(-self.ndim, 0)), keepdim=keepdim)
         else:
             return (x - y).abs()
 
-    def dist2(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist2(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         if self.ndim > 0:
             return (x - y).pow(2).sum(dim=tuple(range(-self.ndim, 0)), keepdim=keepdim)
         else:
             return (x - y).pow(2)
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         target_shape = broadcast_shapes(x.shape, u.shape)
         return u.expand(target_shape)
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         return x + u
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         target_shape = broadcast_shapes(x.shape, y.shape, v.shape)
         return v.expand(target_shape)
 
@@ -1419,7 +1417,7 @@ class ManifoldTensor(torch.Tensor):
         instance = torch.Tensor._make_subclass(cls, data, requires_grad)
         instance.manifold = manifold
         return instance
-    manifold: Manifold
+    manifold: 'Manifold'
 
     def proj_(self) ->torch.Tensor:
         """
@@ -1433,42 +1431,42 @@ class ManifoldTensor(torch.Tensor):
         return self.copy_(self.manifold.projx(self))
 
     @insert_docs(Manifold.retr.__doc__, '\\s+x : .+\\n.+', '')
-    def retr(self, u: torch.Tensor, **kwargs) ->torch.Tensor:
+    def retr(self, u: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.retr(self, u=u, **kwargs)
 
     @insert_docs(Manifold.expmap.__doc__, '\\s+x : .+\\n.+', '')
-    def expmap(self, u: torch.Tensor, **kwargs) ->torch.Tensor:
+    def expmap(self, u: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.expmap(self, u=u, **kwargs)
 
     @insert_docs(Manifold.inner.__doc__, '\\s+x : .+\\n.+', '')
-    def inner(self, u: torch.Tensor, v: torch.Tensor=None, **kwargs) ->torch.Tensor:
+    def inner(self, u: 'torch.Tensor', v: 'torch.Tensor'=None, **kwargs) ->torch.Tensor:
         return self.manifold.inner(self, u=u, v=v, **kwargs)
 
     @insert_docs(Manifold.proju.__doc__, '\\s+x : .+\\n.+', '')
-    def proju(self, u: torch.Tensor, **kwargs) ->torch.Tensor:
+    def proju(self, u: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.proju(self, u, **kwargs)
 
     @insert_docs(Manifold.transp.__doc__, '\\s+x : .+\\n.+', '')
-    def transp(self, y: torch.Tensor, v: torch.Tensor, **kwargs) ->torch.Tensor:
+    def transp(self, y: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.transp(self, y, v, **kwargs)
 
     @insert_docs(Manifold.retr_transp.__doc__, '\\s+x : .+\\n.+', '')
-    def retr_transp(self, u: torch.Tensor, v: torch.Tensor, **kwargs) ->Tuple[torch.Tensor, torch.Tensor]:
+    def retr_transp(self, u: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->Tuple[torch.Tensor, torch.Tensor]:
         return self.manifold.retr_transp(self, u, v, **kwargs)
 
     @insert_docs(Manifold.expmap_transp.__doc__, '\\s+x : .+\\n.+', '')
-    def expmap_transp(self, u: torch.Tensor, v: torch.Tensor, **kwargs) ->torch.Tensor:
+    def expmap_transp(self, u: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.expmap_transp(self, u, v, **kwargs)
 
     @insert_docs(Manifold.transp_follow_expmap.__doc__, '\\s+x : .+\\n.+', '')
-    def transp_follow_expmap(self, u: torch.Tensor, v: torch.Tensor, **kwargs) ->torch.Tensor:
+    def transp_follow_expmap(self, u: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.transp_follow_expmap(self, u, v, **kwargs)
 
     @insert_docs(Manifold.transp_follow_retr.__doc__, '\\s+x : .+\\n.+', '')
-    def transp_follow_retr(self, u: torch.Tensor, v: torch.Tensor, **kwargs) ->torch.Tensor:
+    def transp_follow_retr(self, u: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.transp_follow_retr(self, u, v, **kwargs)
 
-    def dist(self, other: torch.Tensor, p: Union[int, float, bool, str]=2, **kwargs) ->torch.Tensor:
+    def dist(self, other: 'torch.Tensor', p: 'Union[int, float, bool, str]'=2, **kwargs) ->torch.Tensor:
         """
         Return euclidean  or geodesic distance between points on the manifold. Allows broadcasting.
 
@@ -1489,7 +1487,7 @@ class ManifoldTensor(torch.Tensor):
             return super().dist(other)
 
     @insert_docs(Manifold.logmap.__doc__, '\\s+x : .+\\n.+', '')
-    def logmap(self, y: torch.Tensor, **kwargs) ->torch.Tensor:
+    def logmap(self, y: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.manifold.logmap(self, y, **kwargs)
 
     def __repr__(self):
@@ -1515,7 +1513,7 @@ class ManifoldTensor(torch.Tensor):
 
 
 @torch.jit.script
-def proj_doubly_stochastic(x, max_iter: int=300, eps: float=1e-05, tol: float=1e-05):
+def proj_doubly_stochastic(x, max_iter: 'int'=300, eps: 'float'=1e-05, tol: 'float'=1e-05):
     it_num = 0
     c = 1.0 / (x.sum(dim=-2, keepdim=True) + eps)
     r = 1.0 / (x @ c.transpose(-1, -2) + eps)
@@ -1721,7 +1719,7 @@ class Lorentz(Manifold):
             k = k
         self.k = torch.nn.Parameter(k, requires_grad=learnable)
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
         dn = x.size(dim) - 1
         x = x ** 2
         quad_form = -x.narrow(dim, 0, 1) + x.narrow(dim, 1, dn).sum(dim=dim, keepdim=True)
@@ -1732,7 +1730,7 @@ class Lorentz(Manifold):
             reason = None
         return ok, reason
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
         inner_ = math.inner(u, x, dim=dim)
         ok = torch.allclose(inner_, torch.zeros(1), atol=atol, rtol=rtol)
         if not ok:
@@ -1741,27 +1739,27 @@ class Lorentz(Manifold):
             reason = None
         return ok, reason
 
-    def dist(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def dist(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.dist(x, y, k=self.k, keepdim=keepdim, dim=dim)
 
     @__scaling__(ScalingInfo(1))
-    def dist0(self, x: torch.Tensor, *, dim=-1, keepdim=False) ->torch.Tensor:
+    def dist0(self, x: 'torch.Tensor', *, dim=-1, keepdim=False) ->torch.Tensor:
         return math.dist0(x, k=self.k, dim=dim, keepdim=keepdim)
 
-    def norm(self, u: torch.Tensor, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def norm(self, u: 'torch.Tensor', *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.norm(u, keepdim=keepdim, dim=dim)
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.egrad2rgrad(x, u, dim=dim)
 
-    def projx(self, x: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.project(x, k=self.k, dim=dim)
 
-    def proju(self, x: torch.Tensor, v: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         v = math.project_u(x, v, k=self.k, dim=dim)
         return v
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor, *, norm_tan=True, project=True, dim=-1) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', *, norm_tan=True, project=True, dim=-1) ->torch.Tensor:
         if norm_tan is True:
             u = self.proju(x, u, dim=dim)
         res = math.expmap(x, u, k=self.k, dim=dim)
@@ -1771,49 +1769,49 @@ class Lorentz(Manifold):
             return res
 
     @__scaling__(ScalingInfo(u=-1))
-    def expmap0(self, u: torch.Tensor, *, project=True, dim=-1) ->torch.Tensor:
+    def expmap0(self, u: 'torch.Tensor', *, project=True, dim=-1) ->torch.Tensor:
         res = math.expmap0(u, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.logmap(x, y, k=self.k, dim=dim)
 
     @__scaling__(ScalingInfo(1))
-    def logmap0(self, y: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def logmap0(self, y: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.logmap0(y, k=self.k, dim=dim)
 
-    def logmap0back(self, x: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def logmap0back(self, x: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.logmap0back(x, k=self.k, dim=dim)
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False, dim=-1) ->torch.Tensor:
         if v is None:
             v = u
         return math.inner(u, v, dim=dim, keepdim=keepdim)
 
-    def inner0(self, v: torch.Tensor=None, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def inner0(self, v: 'torch.Tensor'=None, *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.inner0(v, k=self.k, dim=dim, keepdim=keepdim)
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.egrad2rgrad(x, u, k=self.k, dim=dim)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.parallel_transport(x, y, v, k=self.k, dim=dim)
 
-    def transp0(self, y: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp0(self, y: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.parallel_transport0(y, u, k=self.k, dim=dim)
 
-    def transp0back(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp0back(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.parallel_transport0back(x, u, k=self.k, dim=dim)
 
-    def transp_follow_expmap(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def transp_follow_expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         y = self.expmap(x, u, dim=dim, project=project)
         return self.transp(x, y, v, dim=dim)
 
     @__scaling__(ScalingInfo(t=-1))
-    def geodesic_unit(self, t: torch.Tensor, x: torch.Tensor, u: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def geodesic_unit(self, t: 'torch.Tensor', x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.geodesic_unit(t, x, u, k=self.k)
         if project:
             return math.project(res, k=self.k, dim=dim)
@@ -1890,7 +1888,7 @@ def _calculate_target_batch_dim(*dims: int):
     return max(dims) - 1
 
 
-def _shape2size(shape: Tuple[int]):
+def _shape2size(shape: 'Tuple[int]'):
     return functools.reduce(operator.mul, shape, 1)
 
 
@@ -1949,7 +1947,7 @@ class ProductManifold(Manifold):
     def reversible(self) ->bool:
         return all(m.reversible for m in self.manifolds)
 
-    def take_submanifold_value(self, x: torch.Tensor, i: int, reshape=True) ->torch.Tensor:
+    def take_submanifold_value(self, x: 'torch.Tensor', i: 'int', reshape=True) ->torch.Tensor:
         """
         Take i'th slice of the ambient tensor and possibly reshape.
 
@@ -1972,13 +1970,13 @@ class ProductManifold(Manifold):
             part = part.reshape((*part.shape[:-1], *self.shapes[i]))
         return part
 
-    def _check_shape(self, shape: Tuple[int], name: str) ->Tuple[bool, Optional[str]]:
+    def _check_shape(self, shape: 'Tuple[int]', name: 'str') ->Tuple[bool, Optional[str]]:
         ok = shape[-1] == self.n_elements
         if not ok:
             return ok, 'The last dimension should be equal to {}, but got {}'.format(self.n_elements, shape[-1])
         return ok, None
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
         ok, reason = True, None
         for i, manifold in enumerate(self.manifolds):
             point = self.take_submanifold_value(x, i)
@@ -1997,7 +1995,7 @@ class ProductManifold(Manifold):
                 break
         return ok, reason
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v=None, *, keepdim=False) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v=None, *, keepdim=False) ->torch.Tensor:
         if v is not None:
             target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim(), v.dim())
         else:
@@ -2018,7 +2016,7 @@ class ProductManifold(Manifold):
             result = torch.unsqueeze(result, -1)
         return result
 
-    def component_inner(self, x: torch.Tensor, u: torch.Tensor, v=None) ->torch.Tensor:
+    def component_inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v=None) ->torch.Tensor:
         products = []
         for i, manifold in enumerate(self.manifolds):
             point = self.take_submanifold_value(x, i)
@@ -2034,7 +2032,7 @@ class ProductManifold(Manifold):
         result = self.pack_point(*products)
         return result
 
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor') ->torch.Tensor:
         projected = []
         for i, manifold in enumerate(self.manifolds):
             point = self.take_submanifold_value(x, i)
@@ -2043,7 +2041,7 @@ class ProductManifold(Manifold):
             projected.append(proj)
         return torch.cat(projected, -1)
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim())
         projected = []
         for i, manifold in enumerate(self.manifolds):
@@ -2054,7 +2052,7 @@ class ProductManifold(Manifold):
             projected.append(proj)
         return torch.cat(projected, -1)
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim())
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2065,7 +2063,7 @@ class ProductManifold(Manifold):
             mapped_tensors.append(mapped)
         return torch.cat(mapped_tensors, -1)
 
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim())
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2076,7 +2074,7 @@ class ProductManifold(Manifold):
             mapped_tensors.append(mapped)
         return torch.cat(mapped_tensors, -1)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), y.dim(), v.dim())
         transported_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2088,7 +2086,7 @@ class ProductManifold(Manifold):
             transported_tensors.append(transported)
         return torch.cat(transported_tensors, -1)
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), y.dim())
         logmapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2099,7 +2097,7 @@ class ProductManifold(Manifold):
             logmapped_tensors.append(logmapped)
         return torch.cat(logmapped_tensors, -1)
 
-    def transp_follow_retr(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp_follow_retr(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim(), v.dim())
         results = []
         for i, manifold in enumerate(self.manifolds):
@@ -2111,7 +2109,7 @@ class ProductManifold(Manifold):
             results.append(transported)
         return torch.cat(results, -1)
 
-    def transp_follow_expmap(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp_follow_expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim(), v.dim())
         results = []
         for i, manifold in enumerate(self.manifolds):
@@ -2123,7 +2121,7 @@ class ProductManifold(Manifold):
             results.append(transported)
         return torch.cat(results, -1)
 
-    def expmap_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
+    def expmap_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor]:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim(), v.dim())
         results = []
         for i, manifold in enumerate(self.manifolds):
@@ -2137,7 +2135,7 @@ class ProductManifold(Manifold):
         points, vectors = zip(*results)
         return torch.cat(points, -1), torch.cat(vectors, -1)
 
-    def retr_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor):
+    def retr_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'):
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim(), v.dim())
         results = []
         for i, manifold in enumerate(self.manifolds):
@@ -2151,7 +2149,7 @@ class ProductManifold(Manifold):
         points, vectors = zip(*results)
         return torch.cat(points, -1), torch.cat(vectors, -1)
 
-    def dist2(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False):
+    def dist2(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False):
         target_batch_dim = _calculate_target_batch_dim(x.dim(), y.dim())
         mini_dists2 = []
         for i, manifold in enumerate(self.manifolds):
@@ -2168,7 +2166,7 @@ class ProductManifold(Manifold):
     def dist(self, x, y, *, keepdim=False):
         return self.dist2(x, y, keepdim=keepdim).clamp_min_(1e-15) ** 0.5
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor):
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor'):
         target_batch_dim = _calculate_target_batch_dim(x.dim(), u.dim())
         transformed_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2179,7 +2177,7 @@ class ProductManifold(Manifold):
             transformed_tensors.append(transformed)
         return torch.cat(transformed_tensors, -1)
 
-    def unpack_tensor(self, tensor: torch.Tensor) ->Tuple[torch.Tensor]:
+    def unpack_tensor(self, tensor: 'torch.Tensor') ->Tuple[torch.Tensor]:
         parts = []
         for i in range(self.n_manifolds):
             part = self.take_submanifold_value(tensor, i)
@@ -2323,7 +2321,7 @@ class Stereographic(Manifold):
             k = k
         self.k = torch.nn.Parameter(k, requires_grad=learnable)
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
         px = math.project(x, k=self.k, dim=dim)
         ok = torch.allclose(x, px, atol=atol, rtol=rtol)
         if not ok:
@@ -2332,137 +2330,137 @@ class Stereographic(Manifold):
             reason = None
         return ok, reason
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05, dim=-1) ->Tuple[bool, Optional[str]]:
         return True, None
 
-    def dist(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def dist(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.dist(x, y, k=self.k, keepdim=keepdim, dim=dim)
 
-    def dist2(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def dist2(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.dist(x, y, k=self.k, keepdim=keepdim, dim=dim) ** 2
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.egrad2rgrad(x, u, k=self.k, dim=dim)
 
-    def retr(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         approx = x + u
         return math.project(approx, k=self.k, dim=dim)
 
-    def projx(self, x: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.project(x, k=self.k, dim=dim)
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         target_shape = broadcast_shapes(x.shape, u.shape)
         return u.expand(target_shape)
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False, dim=-1) ->torch.Tensor:
         if v is None:
             v = u
         return math.inner(x, u, v, k=self.k, keepdim=keepdim, dim=dim)
 
-    def norm(self, x: torch.Tensor, u: torch.Tensor, *, keepdim=False, dim=-1) ->torch.Tensor:
+    def norm(self, x: 'torch.Tensor', u: 'torch.Tensor', *, keepdim=False, dim=-1) ->torch.Tensor:
         return math.norm(x, u, k=self.k, keepdim=keepdim, dim=dim)
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor, *, project=True, dim=-1) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', *, project=True, dim=-1) ->torch.Tensor:
         res = math.expmap(x, u, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.logmap(x, y, k=self.k, dim=dim)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor, *, dim=-1):
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1):
         return math.parallel_transport(x, y, v, k=self.k, dim=dim)
 
-    def transp_follow_retr(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp_follow_retr(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         y = self.retr(x, u, dim=dim)
         return self.transp(x, y, v, dim=dim)
 
-    def transp_follow_expmap(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def transp_follow_expmap(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         y = self.expmap(x, u, dim=dim, project=project)
         return self.transp(x, y, v, dim=dim)
 
-    def expmap_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, *, dim=-1, project=True) ->Tuple[torch.Tensor, torch.Tensor]:
+    def expmap_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1, project=True) ->Tuple[torch.Tensor, torch.Tensor]:
         y = self.expmap(x, u, dim=dim, project=project)
         v_transp = self.transp(x, y, v, dim=dim)
         return y, v_transp
 
-    def retr_transp(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, *, dim=-1) ->Tuple[torch.Tensor, torch.Tensor]:
+    def retr_transp(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor', *, dim=-1) ->Tuple[torch.Tensor, torch.Tensor]:
         y = self.retr(x, u, dim=dim)
         v_transp = self.transp(x, y, v, dim=dim)
         return y, v_transp
 
-    def mobius_add(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_add(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_add(x, y, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_sub(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_sub(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_sub(x, y, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_coadd(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_coadd(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_coadd(x, y, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_cosub(self, x: torch.Tensor, y: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_cosub(self, x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_cosub(x, y, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_scalar_mul(self, r: torch.Tensor, x: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_scalar_mul(self, r: 'torch.Tensor', x: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_scalar_mul(r, x, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_pointwise_mul(self, w: torch.Tensor, x: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_pointwise_mul(self, w: 'torch.Tensor', x: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_pointwise_mul(w, x, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def mobius_matvec(self, m: torch.Tensor, x: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def mobius_matvec(self, m: 'torch.Tensor', x: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.mobius_matvec(m, x, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def geodesic(self, t: torch.Tensor, x: torch.Tensor, y: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def geodesic(self, t: 'torch.Tensor', x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.geodesic(t, x, y, k=self.k, dim=dim)
 
     @__scaling__(ScalingInfo(t=-1))
-    def geodesic_unit(self, t: torch.Tensor, x: torch.Tensor, u: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def geodesic_unit(self, t: 'torch.Tensor', x: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.geodesic_unit(t, x, u, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
         else:
             return res
 
-    def lambda_x(self, x: torch.Tensor, *, dim=-1, keepdim=False) ->torch.Tensor:
+    def lambda_x(self, x: 'torch.Tensor', *, dim=-1, keepdim=False) ->torch.Tensor:
         return math.lambda_x(x, k=self.k, dim=dim, keepdim=keepdim)
 
     @__scaling__(ScalingInfo(1))
-    def dist0(self, x: torch.Tensor, *, dim=-1, keepdim=False) ->torch.Tensor:
+    def dist0(self, x: 'torch.Tensor', *, dim=-1, keepdim=False) ->torch.Tensor:
         return math.dist0(x, k=self.k, dim=dim, keepdim=keepdim)
 
     @__scaling__(ScalingInfo(u=-1))
-    def expmap0(self, u: torch.Tensor, *, dim=-1, project=True) ->torch.Tensor:
+    def expmap0(self, u: 'torch.Tensor', *, dim=-1, project=True) ->torch.Tensor:
         res = math.expmap0(u, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
@@ -2470,27 +2468,27 @@ class Stereographic(Manifold):
             return res
 
     @__scaling__(ScalingInfo(1))
-    def logmap0(self, x: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def logmap0(self, x: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.logmap0(x, k=self.k, dim=dim)
 
-    def transp0(self, y: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp0(self, y: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.parallel_transport0(y, u, k=self.k, dim=dim)
 
-    def transp0back(self, y: torch.Tensor, u: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def transp0back(self, y: 'torch.Tensor', u: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.parallel_transport0back(y, u, k=self.k, dim=dim)
 
-    def gyration(self, x: torch.Tensor, y: torch.Tensor, z: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def gyration(self, x: 'torch.Tensor', y: 'torch.Tensor', z: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.gyration(x, y, z, k=self.k, dim=dim)
 
-    def antipode(self, x: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def antipode(self, x: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         return math.antipode(x, k=self.k, dim=dim)
 
     @__scaling__(ScalingInfo(1))
-    def dist2plane(self, x: torch.Tensor, p: torch.Tensor, a: torch.Tensor, *, dim=-1, keepdim=False, signed=False, scaled=False) ->torch.Tensor:
+    def dist2plane(self, x: 'torch.Tensor', p: 'torch.Tensor', a: 'torch.Tensor', *, dim=-1, keepdim=False, signed=False, scaled=False) ->torch.Tensor:
         return math.dist2plane(x, p, a, dim=dim, k=self.k, keepdim=keepdim, signed=signed, scaled=scaled)
 
     @__scaling__(ScalingInfo.NotCompatible)
-    def mobius_fn_apply(self, fn: callable, x: torch.Tensor, *args, dim=-1, project=True, **kwargs) ->torch.Tensor:
+    def mobius_fn_apply(self, fn: 'callable', x: 'torch.Tensor', *args, dim=-1, project=True, **kwargs) ->torch.Tensor:
         res = math.mobius_fn_apply(fn, x, *args, k=self.k, dim=dim, **kwargs)
         if project:
             return math.project(res, k=self.k, dim=dim)
@@ -2498,7 +2496,7 @@ class Stereographic(Manifold):
             return res
 
     @__scaling__(ScalingInfo.NotCompatible)
-    def mobius_fn_apply_chain(self, x: torch.Tensor, *fns: callable, project=True, dim=-1) ->torch.Tensor:
+    def mobius_fn_apply_chain(self, x: 'torch.Tensor', *fns: callable, project=True, dim=-1) ->torch.Tensor:
         res = math.mobius_fn_apply_chain(x, *fns, k=self.k, dim=dim)
         if project:
             return math.project(res, k=self.k, dim=dim)
@@ -2606,17 +2604,17 @@ class Stereographic(Manifold):
         """
         return geoopt.ManifoldTensor(torch.zeros(*size, dtype=dtype, device=device), manifold=self)
 
-    def weighted_midpoint(self, xs: torch.Tensor, weights: Optional[torch.Tensor]=None, *, reducedim: Optional[List[int]]=None, dim: int=-1, keepdim: bool=False, lincomb: bool=False, posweight=False, project=True):
+    def weighted_midpoint(self, xs: 'torch.Tensor', weights: 'Optional[torch.Tensor]'=None, *, reducedim: Optional[List[int]]=None, dim: int=-1, keepdim: bool=False, lincomb: bool=False, posweight=False, project=True):
         mid = math.weighted_midpoint(xs=xs, weights=weights, k=self.k, reducedim=reducedim, dim=dim, keepdim=keepdim, lincomb=lincomb, posweight=posweight)
         if project:
             return math.project(mid, k=self.k, dim=dim)
         else:
             return mid
 
-    def sproj(self, x: torch.Tensor, *, dim: int=-1):
+    def sproj(self, x: 'torch.Tensor', *, dim: int=-1):
         return math.sproj(x, k=self.k, dim=dim)
 
-    def inv_sproj(self, x: torch.Tensor, *, dim: int=-1):
+    def inv_sproj(self, x: 'torch.Tensor', *, dim: int=-1):
         return math.inv_sproj(x, k=self.k, dim=dim)
 
 
@@ -2640,26 +2638,26 @@ class StereographicProductManifold(ProductManifold):
             if not geoopt.utils.ismanifold(man, Stereographic):
                 raise TypeError('Every submanifold has to be Stereographic manifold')
 
-    def dist2plane(self, x: torch.Tensor, p: torch.Tensor, a: torch.Tensor, *, keepdim=False, signed=False, scaled=False) ->torch.Tensor:
+    def dist2plane(self, x: 'torch.Tensor', p: 'torch.Tensor', a: 'torch.Tensor', *, keepdim=False, signed=False, scaled=False) ->torch.Tensor:
         dists = []
         for i, manifold in enumerate(self.manifolds):
             dists.append(manifold.dist2plane(self.take_submanifold_value(x, i), self.take_submanifold_value(p, i), self.take_submanifold_value(a, i), dim=-1, keepdim=keepdim, signed=signed, scaled=scaled))
         dists = torch.stack(dists, -1)
         return (dists ** 2).sum(axis=-1).sqrt()
 
-    def mobius_add(self, x: torch.Tensor, y: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_add(self, x: 'torch.Tensor', y: 'torch.Tensor', *, project=True) ->torch.Tensor:
         return self._mobius_2_manifold_args(x, y, 'mobius_add', project=project)
 
-    def mobius_coadd(self, x: torch.Tensor, y: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_coadd(self, x: 'torch.Tensor', y: 'torch.Tensor', *, project=True) ->torch.Tensor:
         return self._mobius_2_manifold_args(x, y, 'mobius_coadd', project=project)
 
-    def mobius_sub(self, x: torch.Tensor, y: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_sub(self, x: 'torch.Tensor', y: 'torch.Tensor', *, project=True) ->torch.Tensor:
         return self._mobius_2_manifold_args(x, y, 'mobius_sub', project=project)
 
-    def mobius_cosub(self, x: torch.Tensor, y: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_cosub(self, x: 'torch.Tensor', y: 'torch.Tensor', *, project=True) ->torch.Tensor:
         return self._mobius_2_manifold_args(x, y, 'mobius_cosub', project=project)
 
-    def _mobius_2_manifold_args(self, x: torch.Tensor, y: torch.Tensor, kind, *, project=True) ->torch.Tensor:
+    def _mobius_2_manifold_args(self, x: 'torch.Tensor', y: 'torch.Tensor', kind, *, project=True) ->torch.Tensor:
         target_batch_dim = _calculate_target_batch_dim(x.dim(), y.dim())
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
@@ -2670,14 +2668,14 @@ class StereographicProductManifold(ProductManifold):
             mapped_tensors.append(mapped)
         return self.pack_point(*mapped_tensors)
 
-    def mobius_scalar_mul(self, r: torch.Tensor, x: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_scalar_mul(self, r: 'torch.Tensor', x: 'torch.Tensor', *, project=True) ->torch.Tensor:
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
             mapped_tensors.append(manifold.mobius_scalar_mul(r, x_, project=project))
         return self.pack_point(*mapped_tensors)
 
-    def mobius_pointwise_mul(self, w: torch.Tensor, x: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_pointwise_mul(self, w: 'torch.Tensor', x: 'torch.Tensor', *, project=True) ->torch.Tensor:
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
             w_ = self.take_submanifold_value(w, i)
@@ -2685,7 +2683,7 @@ class StereographicProductManifold(ProductManifold):
             mapped_tensors.append(manifold.mobius_pointwise_mul(w_, x_, project=project))
         return self.pack_point(*mapped_tensors)
 
-    def take_submanifold_matrix(self, x: torch.Tensor, i: int, reshape=True) ->torch.Tensor:
+    def take_submanifold_matrix(self, x: 'torch.Tensor', i: 'int', reshape=True) ->torch.Tensor:
         """
         Take i'th slice of the ambient tensor and possibly reshape.
 
@@ -2708,7 +2706,7 @@ class StereographicProductManifold(ProductManifold):
             part = part.reshape((*part.shape[:-2], *self.shapes[i], *self.shapes[i]))
         return part
 
-    def mobius_matvec(self, m: torch.Tensor, x: torch.Tensor, *, project=True) ->torch.Tensor:
+    def mobius_matvec(self, m: 'torch.Tensor', x: 'torch.Tensor', *, project=True) ->torch.Tensor:
         mapped_tensors = []
         for i, manifold in enumerate(self.manifolds):
             m_ = self.take_submanifold_matrix(m, i)
@@ -2729,7 +2727,7 @@ class StereographicProductManifold(ProductManifold):
         tensor = self.pack_point(*points)
         return geoopt.ManifoldTensor(tensor, manifold=self)
 
-    def geodesic(self, t: torch.Tensor, x: torch.Tensor, y: torch.Tensor, *, dim=-1) ->torch.Tensor:
+    def geodesic(self, t: 'torch.Tensor', x: 'torch.Tensor', y: 'torch.Tensor', *, dim=-1) ->torch.Tensor:
         res_list = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2738,7 +2736,7 @@ class StereographicProductManifold(ProductManifold):
             res_list.append(res)
         return self.pack_point(*res_list)
 
-    def geodesic_unit(self, t: torch.Tensor, x: torch.Tensor, u: torch.Tensor, *, project=True) ->torch.Tensor:
+    def geodesic_unit(self, t: 'torch.Tensor', x: 'torch.Tensor', u: 'torch.Tensor', *, project=True) ->torch.Tensor:
         res_list = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2747,7 +2745,7 @@ class StereographicProductManifold(ProductManifold):
             res_list.append(res)
         return self.pack_point(*res_list)
 
-    def dist0(self, x: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist0(self, x: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2757,21 +2755,21 @@ class StereographicProductManifold(ProductManifold):
             res = torch.unsqueeze(res, -1)
         return res
 
-    def expmap0(self, u: torch.Tensor, *, project=True) ->torch.Tensor:
+    def expmap0(self, u: 'torch.Tensor', *, project=True) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             u_ = self.take_submanifold_value(u, i)
             res.append(manifold.expmap0(u_, dim=-1, project=project))
         return self.pack_point(*res)
 
-    def logmap0(self, x: torch.Tensor, *, project=True) ->torch.Tensor:
+    def logmap0(self, x: 'torch.Tensor', *, project=True) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
             res.append(manifold.logmap0(x_, dim=-1))
         return self.pack_point(*res)
 
-    def transp0(self, y: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def transp0(self, y: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             y_ = self.take_submanifold_value(y, i)
@@ -2779,7 +2777,7 @@ class StereographicProductManifold(ProductManifold):
             res.append(manifold.transp0(y_, u_, dim=-1))
         return self.pack_point(*res)
 
-    def transp0back(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def transp0back(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2787,7 +2785,7 @@ class StereographicProductManifold(ProductManifold):
             res.append(manifold.transp0back(x_, u_, dim=-1))
         return self.pack_point(*res)
 
-    def gyration(self, x: torch.Tensor, y: torch.Tensor, z: torch.Tensor, *, project=True) ->torch.Tensor:
+    def gyration(self, x: 'torch.Tensor', y: 'torch.Tensor', z: 'torch.Tensor', *, project=True) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2796,21 +2794,21 @@ class StereographicProductManifold(ProductManifold):
             res.append(manifold.gyration(x_, y_, z_, dim=-1))
         return self.pack_point(*res)
 
-    def antipode(self, x: torch.Tensor, *, project=True) ->torch.Tensor:
+    def antipode(self, x: 'torch.Tensor', *, project=True) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
             res.append(manifold.antipode(x_, dim=-1))
         return self.pack_point(*res)
 
-    def mobius_fn_apply(self, fn: callable, x: torch.Tensor, *args, project=True, **kwargs) ->torch.Tensor:
+    def mobius_fn_apply(self, fn: 'callable', x: 'torch.Tensor', *args, project=True, **kwargs) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
             res.append(manifold.mobius_fn_apply(fn, x_, *args, dim=-1, project=project, **kwargs))
         return self.pack_point(*res)
 
-    def mobius_fn_apply_chain(self, x: torch.Tensor, *fns: callable, project=True) ->torch.Tensor:
+    def mobius_fn_apply_chain(self, x: 'torch.Tensor', *fns: callable, project=True) ->torch.Tensor:
         res = []
         for i, manifold in enumerate(self.manifolds):
             x_ = self.take_submanifold_value(x, i)
@@ -2875,7 +2873,7 @@ class Scaled(Manifold):
     >>> np.testing.assert_allclose(radius_2_sphere.dist(p1, p2), np.pi)
     """
 
-    def __init__(self, manifold: Manifold, scale=1.0, learnable=False):
+    def __init__(self, manifold: 'Manifold', scale=1.0, learnable=False):
         super().__init__()
         self.base = manifold
         scale = torch.as_tensor(scale, dtype=torch.get_default_dtype())
@@ -2941,31 +2939,31 @@ class Scaled(Manifold):
         else:
             return self.name + '({}) manifold'.format(self.base.name)
 
-    def _check_shape(self, shape: Tuple[int], name: str) ->Tuple[bool, Optional[str]]:
+    def _check_shape(self, shape: 'Tuple[int]', name: 'str') ->Tuple[bool, Optional[str]]:
         return self.base._check_shape(shape, name)
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         return self.base._check_point_on_manifold(x, atol=atol, rtol=rtol)
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         return self.base._check_vector_on_tangent(x, u, atol=atol, rtol=rtol)
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False, **kwargs) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False, **kwargs) ->torch.Tensor:
         return self.base.inner(x, u, v, keepdim=keepdim, **kwargs)
 
-    def norm(self, x: torch.Tensor, u: torch.Tensor, *, keepdim=False, **kwargs) ->torch.Tensor:
+    def norm(self, x: 'torch.Tensor', u: 'torch.Tensor', *, keepdim=False, **kwargs) ->torch.Tensor:
         return self.base.norm(x, u, keepdim=keepdim, **kwargs)
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor, **kwargs) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.base.proju(x, u, **kwargs)
 
-    def projx(self, x: torch.Tensor, **kwargs) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.base.projx(x, **kwargs)
 
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor, **kwargs) ->torch.Tensor:
+    def egrad2rgrad(self, x: 'torch.Tensor', u: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.base.egrad2rgrad(x, u, **kwargs)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor, **kwargs) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor', **kwargs) ->torch.Tensor:
         return self.base.transp(x, y, v, **kwargs)
 
     def random(self, *size, dtype=None, device=None, **kwargs) ->torch.Tensor:
@@ -2989,17 +2987,17 @@ class SiegelMetric(ABC):
          Rank of the spaces. Only mandatory for Finsler distance of minimum entropy or weighted sum.
     """
 
-    def __init__(self, rank: int=None):
+    def __init__(self, rank: 'int'=None):
         self.rank = rank
 
     @abstractmethod
-    def compute_metric(self, v: torch.Tensor, keepdim=False) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=False) ->torch.Tensor:
         raise NotImplementedError
 
 
 class FinslerInfinityMetric(SiegelMetric):
 
-    def compute_metric(self, v: torch.Tensor, keepdim=True) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=True) ->torch.Tensor:
         """Finsler Infinity distance: :math:`d(Z_1, Z_2) = \\max \\{v_i\\}=v_n`.
 
         Parameters
@@ -3022,14 +3020,14 @@ class FinslerInfinityMetric(SiegelMetric):
 
 class FinslerMinimumEntropyMetric(SiegelMetric):
 
-    def __init__(self, rank: int):
+    def __init__(self, rank: 'int'):
         super().__init__(rank)
         if rank is None or rank < 2:
             raise ValueError('Parameter rank has to be >= 2')
         factor = 2
         self.weights = factor * (rank + 1 - torch.arange(start=rank + 1, end=1, step=-1).unsqueeze(0))
 
-    def compute_metric(self, v: torch.Tensor, keepdim=True) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=True) ->torch.Tensor:
         """Finsler distance of minimum entropy: :math:`d(Z_1, Z_2) = \\sum_{i=1}^n 2 * (n + 1 - i) * v_i`.
 
         Parameters
@@ -3050,7 +3048,7 @@ class FinslerMinimumEntropyMetric(SiegelMetric):
 
 class FinslerOneMetric(SiegelMetric):
 
-    def compute_metric(self, v: torch.Tensor, keepdim=True) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=True) ->torch.Tensor:
         """Finsler One distance: :math:`d(Z_1, Z_2) = \\sum_{i=1}^n v_i`.
 
         Parameters
@@ -3078,7 +3076,7 @@ class FinslerWeightedSumMetric(SiegelMetric, torch.nn.Module):
             raise ValueError("'rank' has to be >= 2")
         self.weights = torch.nn.parameter.Parameter(torch.ones((1, rank)))
 
-    def compute_metric(self, v: torch.Tensor, keepdim=True) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=True) ->torch.Tensor:
         """Weighted sum of vector-valued distance: :math:`d(Z_1, Z_2) = \\sum_{i=1}^n w_i * v_i`.
 
         :math:`w_i` is a learnable parameter.
@@ -3103,7 +3101,7 @@ class FinslerWeightedSumMetric(SiegelMetric, torch.nn.Module):
 
 class RiemannianMetric(SiegelMetric):
 
-    def compute_metric(self, v: torch.Tensor, keepdim=False) ->torch.Tensor:
+    def compute_metric(self, v: 'torch.Tensor', keepdim=False) ->torch.Tensor:
         """Riemannian distance: :math:`d(Z_1, Z_2) = \\sqrt{\\sum_{i=1}^n v_i^2}`.
 
         Parameters
@@ -3135,7 +3133,7 @@ class SiegelMetricFactory:
     metrics_map = {SiegelMetricType.RIEMANNIAN: RiemannianMetric, SiegelMetricType.FINSLER_ONE: FinslerOneMetric, SiegelMetricType.FINSLER_INFINITY: FinslerInfinityMetric, SiegelMetricType.FINSLER_MINIMUM: FinslerMinimumEntropyMetric, SiegelMetricType.WEIGHTED_SUM: FinslerWeightedSumMetric}
 
     @classmethod
-    def get(cls, metric_type: SiegelMetricType, rank: int):
+    def get(cls, metric_type: 'SiegelMetricType', rank: 'int'):
         return cls.metrics_map[metric_type](rank)
 
 
@@ -3162,11 +3160,11 @@ class SiegelManifold(Manifold, ABC):
     ndim = 2
     reversible = False
 
-    def __init__(self, metric: SiegelMetricType=SiegelMetricType.RIEMANNIAN, rank: int=None):
+    def __init__(self, metric: 'SiegelMetricType'=SiegelMetricType.RIEMANNIAN, rank: 'int'=None):
         super().__init__()
         self.metric = SiegelMetricFactory.get(metric, rank)
 
-    def dist(self, z1: torch.Tensor, z2: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist(self, z1: 'torch.Tensor', z2: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         """
         Compute distance between two points on the manifold according to the specified metric.
 
@@ -3201,11 +3199,11 @@ class SiegelManifold(Manifold, ABC):
         res = self.metric.compute_metric(vvd)
         return res
 
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         approx = x + u
         return self.projx(approx)
 
-    def _check_matrices_are_symmetric(self, x: torch.Tensor, *, atol: float=0.0001, rtol: float=1e-05):
+    def _check_matrices_are_symmetric(self, x: 'torch.Tensor', *, atol: float=0.0001, rtol: float=1e-05):
         """Check that matrices are symmetric.
 
         Parameters
@@ -3224,22 +3222,22 @@ class SiegelManifold(Manifold, ABC):
         """
         return sm.is_complex_symmetric(x, atol, rtol)
 
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor') ->torch.Tensor:
         return lalg.sym(x)
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         return self.egrad2rgrad(x, u)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         return v
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         raise NotImplementedError
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         raise NotImplementedError
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
         ok = torch.allclose(u, u.transpose(-1, -2), atol=atol, rtol=rtol)
         if not ok:
             return False, 'u is not symmetric (u != u.transpose) with atol={}, rtol={}'.format(atol, rtol)
@@ -3273,10 +3271,10 @@ class UpperHalf(SiegelManifold):
     """
     name = 'Upper Half Space'
 
-    def __init__(self, metric: SiegelMetricType=SiegelMetricType.RIEMANNIAN, rank: int=None):
+    def __init__(self, metric: 'SiegelMetricType'=SiegelMetricType.RIEMANNIAN, rank: 'int'=None):
         super().__init__(metric=metric, rank=rank)
 
-    def egrad2rgrad(self, z: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def egrad2rgrad(self, z: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         """
         Transform gradient computed using autodiff to the correct Riemannian gradient for the point :math:`Z`.
 
@@ -3306,7 +3304,7 @@ class UpperHalf(SiegelManifold):
         imag_grad = y @ imag_grad @ y
         return lalg.sym(sm.to_complex(real_grad, imag_grad))
 
-    def projx(self, z: torch.Tensor) ->torch.Tensor:
+    def projx(self, z: 'torch.Tensor') ->torch.Tensor:
         """
         Project point :math:`Z` on the manifold.
 
@@ -3331,7 +3329,7 @@ class UpperHalf(SiegelManifold):
         y = sm.positive_conjugate_projection(z.imag)
         return sm.to_complex(z.real, y)
 
-    def inner(self, z: torch.Tensor, u: torch.Tensor, v=None, *, keepdim=False) ->torch.Tensor:
+    def inner(self, z: 'torch.Tensor', u: 'torch.Tensor', v=None, *, keepdim=False) ->torch.Tensor:
         """
         Inner product for tangent vectors at point :math:`Z`.
 
@@ -3363,7 +3361,7 @@ class UpperHalf(SiegelManifold):
         res = inv_y @ u @ inv_y @ v.conj()
         return lalg.trace(res, keepdim=keepdim)
 
-    def _check_point_on_manifold(self, z: torch.Tensor, *, atol=1e-05, rtol=1e-05):
+    def _check_point_on_manifold(self, z: 'torch.Tensor', *, atol=1e-05, rtol=1e-05):
         if not self._check_matrices_are_symmetric(z, atol=atol, rtol=rtol):
             return False, 'Matrices are not symmetric'
         ok = torch.all(sm.eigvalsh(z.imag) > 0)
@@ -3445,7 +3443,7 @@ class Sphere(Manifold):
     name = 'Sphere'
     reversible = False
 
-    def __init__(self, intersection: torch.Tensor=None, complement: torch.Tensor=None):
+    def __init__(self, intersection: 'torch.Tensor'=None, complement: 'torch.Tensor'=None):
         super().__init__()
         if intersection is not None and complement is not None:
             raise TypeError("Can't initialize with both intersection and compliment arguments, please specify only one")
@@ -3458,7 +3456,7 @@ class Sphere(Manifold):
         if self.projector is not None and (linalg.matrix_rank(self.projector) == 1).any():
             raise ValueError('Manifold only consists of isolated points when subspace is 1-dimensional.')
 
-    def _check_shape(self, shape: Tuple[int], name: str) ->Union[Tuple[bool, Optional[str]], bool]:
+    def _check_shape(self, shape: 'Tuple[int]', name: 'str') ->Union[Tuple[bool, Optional[str]], bool]:
         ok, reason = super()._check_shape(shape, name)
         if ok and self.projector is not None:
             ok = len(shape) < self.projector.dim() - 1
@@ -3473,7 +3471,7 @@ class Sphere(Manifold):
                 reason = 'Manifold only consists of isolated points when subspace is 1-dimensional.'
         return ok, reason
 
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
+    def _check_point_on_manifold(self, x: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
         norm = x.norm(dim=-1)
         ok = torch.allclose(norm, norm.new((1,)).fill_(1), atol=atol, rtol=rtol)
         if not ok:
@@ -3483,67 +3481,67 @@ class Sphere(Manifold):
             return False, '`x` is not in the subspace of the manifold with atol={}, rtol={}'.format(atol, rtol)
         return True, None
 
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
+    def _check_vector_on_tangent(self, x: 'torch.Tensor', u: 'torch.Tensor', *, atol=1e-05, rtol=1e-05) ->Tuple[bool, Optional[str]]:
         inner = self.inner(x, x, u, keepdim=True)
         ok = torch.allclose(inner, inner.new_zeros((1,)), atol=atol, rtol=rtol)
         if not ok:
             return False, '`<x, u> != 0` with atol={}, rtol={}'.format(atol, rtol)
         return True, None
 
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: torch.Tensor=None, *, keepdim=False) ->torch.Tensor:
+    def inner(self, x: 'torch.Tensor', u: 'torch.Tensor', v: 'torch.Tensor'=None, *, keepdim=False) ->torch.Tensor:
         if v is None:
             v = u
         inner = (u * v).sum(-1, keepdim=keepdim)
         target_shape = broadcast_shapes(x.shape[:-1] + (1,) * keepdim, inner.shape)
         return inner.expand(target_shape)
 
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
+    def projx(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self._project_on_subspace(x)
         return x / x.norm(dim=-1, keepdim=True)
 
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def proju(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         u = u - (x * u).sum(dim=-1, keepdim=True) * x
         return self._project_on_subspace(u)
 
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def expmap(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         norm_u = u.norm(dim=-1, keepdim=True)
         exp = x * torch.cos(norm_u) + u * torch.sin(norm_u) / norm_u
         retr = self.projx(x + u)
         cond = norm_u > EPS[norm_u.dtype]
         return torch.where(cond, exp, retr)
 
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
+    def retr(self, x: 'torch.Tensor', u: 'torch.Tensor') ->torch.Tensor:
         return self.projx(x + u)
 
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
+    def transp(self, x: 'torch.Tensor', y: 'torch.Tensor', v: 'torch.Tensor') ->torch.Tensor:
         return self.proju(y, v)
 
-    def logmap(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def logmap(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         u = self.proju(x, y - x)
         dist = self.dist(x, y, keepdim=True)
         cond = dist.gt(EPS[x.dtype])
         result = torch.where(cond, u * dist / u.norm(dim=-1, keepdim=True).clamp_min(EPS[x.dtype]), u)
         return result
 
-    def dist(self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False) ->torch.Tensor:
+    def dist(self, x: 'torch.Tensor', y: 'torch.Tensor', *, keepdim=False) ->torch.Tensor:
         inner = self.inner(x, x, y, keepdim=keepdim).clamp(-1 + EPS[x.dtype], 1 - EPS[x.dtype])
         return torch.acos(inner)
     egrad2rgrad = proju
 
-    def _configure_manifold_complement(self, complement: torch.Tensor):
+    def _configure_manifold_complement(self, complement: 'torch.Tensor'):
         Q, _ = linalg.qr(complement)
         P = -Q @ Q.transpose(-1, -2)
         P[..., torch.arange(P.shape[-2]), torch.arange(P.shape[-2])] += 1
         self.register_buffer('projector', P)
 
-    def _configure_manifold_intersection(self, intersection: torch.Tensor):
+    def _configure_manifold_intersection(self, intersection: 'torch.Tensor'):
         Q, _ = linalg.qr(intersection)
         self.register_buffer('projector', Q @ Q.transpose(-1, -2))
 
     def _configure_manifold_no_constraints(self):
         self.register_buffer('projector', None)
 
-    def _project_on_subspace(self, x: torch.Tensor) ->torch.Tensor:
+    def _project_on_subspace(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.projector is not None:
             return x @ self.projector.transpose(-1, -2)
         else:
@@ -3738,326 +3736,4 @@ class SphereProjectionExact(SphereProjection, StereographicExact):
     :class:`SphereProjectionExact`
     :class:`Sphere`
     """.format(_sphere_projection_doc)
-
-
-_stiefel_doc = """
-    Manifold induced by the following matrix constraint:
-
-    .. math::
-
-        X^\\top X = I\\\\
-        X \\in \\mathrm{R}^{n\\times m}\\\\
-        n \\ge m
-"""
-
-
-class Stiefel(Manifold):
-    __doc__ = """
-    {}
-
-    Parameters
-    ----------
-    canonical : bool
-        Use canonical inner product instead of euclidean one (defaults to canonical)
-
-    See Also
-    --------
-    :class:`CanonicalStiefel`, :class:`EuclideanStiefel`, :class:`EuclideanStiefelExact`
-    """.format(_stiefel_doc)
-    ndim = 2
-
-    def __new__(cls, canonical=True):
-        if cls is Stiefel:
-            if canonical:
-                return super().__new__(CanonicalStiefel)
-            else:
-                return super().__new__(EuclideanStiefel)
-        else:
-            return super().__new__(cls)
-
-    def _check_shape(self, shape: Tuple[int], name: str) ->Union[Tuple[bool, Optional[str]], bool]:
-        ok, reason = super()._check_shape(shape, name)
-        if not ok:
-            return False, reason
-        shape_is_ok = shape[-1] <= shape[-2]
-        if not shape_is_ok:
-            return False, '`{}` should have shape[-1] <= shape[-2], got {} </= {}'.format(name, shape[-1], shape[-2])
-        return True, None
-
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
-        xtx = x.transpose(-1, -2) @ x
-        xtx[..., torch.arange(x.shape[-1]), torch.arange(x.shape[-1])] -= 1
-        ok = torch.allclose(xtx, xtx.new((1,)).fill_(0), atol=atol, rtol=rtol)
-        if not ok:
-            return False, '`X^T X != I` with atol={}, rtol={}'.format(atol, rtol)
-        return True, None
-
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
-        diff = u.transpose(-1, -2) @ x + x.transpose(-1, -2) @ u
-        ok = torch.allclose(diff, diff.new((1,)).fill_(0), atol=atol, rtol=rtol)
-        if not ok:
-            return False, '`u^T x + x^T u !=0` with atol={}, rtol={}'.format(atol, rtol)
-        return True, None
-
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
-        U, _, V = linalg.svd(x, full_matrices=False)
-        return torch.einsum('...ik,...kj->...ij', U, V)
-
-    def random_naive(self, *size, dtype=None, device=None) ->torch.Tensor:
-        """
-        Naive approach to get random matrix on Stiefel manifold.
-
-        A helper function to sample a random point on the Stiefel manifold.
-        The measure is non-uniform for this method, but fast to compute.
-
-        Parameters
-        ----------
-        size : shape
-            the desired output shape
-        dtype : torch.dtype
-            desired dtype
-        device : torch.device
-            desired device
-
-        Returns
-        -------
-        ManifoldTensor
-            random point on Stiefel manifold
-        """
-        self._assert_check_shape(size2shape(*size), 'x')
-        tens = torch.randn(*size, device=device, dtype=dtype)
-        return ManifoldTensor(linalg.qr(tens)[0], manifold=self)
-    random = random_naive
-
-    def origin(self, *size, dtype=None, device=None, seed=42) ->torch.Tensor:
-        """
-        Identity matrix point origin.
-
-        Parameters
-        ----------
-        size : shape
-            the desired shape
-        device : torch.device
-            the desired device
-        dtype : torch.dtype
-            the desired dtype
-        seed : int
-            ignored
-
-        Returns
-        -------
-        ManifoldTensor
-        """
-        self._assert_check_shape(size2shape(*size), 'x')
-        eye = torch.zeros(*size, dtype=dtype, device=device)
-        eye[..., torch.arange(eye.shape[-1]), torch.arange(eye.shape[-1])] += 1
-        return ManifoldTensor(eye, manifold=self)
-
-
-class SPDMetric(enum.Enum):
-    AIM = 'AIM'
-    SM = 'SM'
-    LEM = 'LEM'
-
-
-class SymmetricPositiveDefinite(Manifold):
-    """Manifold of symmetric positive definite matrices.
-
-    .. math::
-
-        A = A^T\\\\
-        \\langle x, A x \\rangle > 0 \\quad , \\forall x \\in \\mathrm{R}^{n}, x \\neq 0 \\\\
-        A \\in \\mathrm{R}^{n\\times m}
-
-
-    The tangent space of the manifold contains all symmetric matrices.
-
-    References
-    ----------
-    - https://github.com/pymanopt/pymanopt/blob/master/pymanopt/manifolds/psd.py
-    - https://github.com/dalab/matrix-manifolds/blob/master/graphembed/graphembed/manifolds/spd.py
-
-    Parameters
-    ----------
-    default_metric: Union[str, SPDMetric]
-        one of AIM, SM, LEM. So far only AIM is fully implemented.
-    """
-    __scaling__ = Manifold.__scaling__.copy()
-    name = 'SymmetricPositiveDefinite'
-    ndim = 2
-    reversible = False
-
-    def __init__(self, default_metric: Union[str, SPDMetric]='AIM'):
-        super().__init__()
-        self.default_metric = SPDMetric(default_metric)
-        if self.default_metric != SPDMetric.AIM:
-            warnings.warn('{} is not fully implemented and results may be not as you expect'.format(self.default_metric))
-    _dist_doc = """
-        Parameters
-        ----------
-        x : torch.Tensor
-            point on the manifold
-        y : torch.Tensor
-            point on the manifold
-        keepdim : bool
-            keep the last dim?
-
-        Returns
-        -------
-        torch.Tensor
-            distance between two points
-        """
-
-    def _affine_invariant_metric(self, x: torch.Tensor, y: torch.Tensor, keepdim=False) ->torch.Tensor:
-        """Affine Invariant Metric distance.
-
-        {}
-
-        References
-        ----------
-        A Riemannian framework for tensor computing. 2006.
-        """.format(self._dist_doc)
-        inv_sqrt_x = linalg.sym_inv_sqrtm1(x)
-        return torch.norm(linalg.sym_logm(inv_sqrt_x @ y @ inv_sqrt_x), dim=[-1, -2], keepdim=keepdim)
-
-    def _stein_metric(self, x: torch.Tensor, y: torch.Tensor, keepdim=False) ->torch.Tensor:
-        """Stein Metric distance.
-
-        {}
-
-        References
-        ----------
-        A new metric on the manifold of kernel matrices with application to matrix geometric means. 2012.
-        """.format(self._dist_doc)
-
-        def log_det(tensor: torch.Tensor) ->torch.Tensor:
-            return torch.log(torch.det(tensor))
-        ret = log_det((x + y) * 0.5) - 0.5 * log_det(x @ y)
-        if keepdim:
-            return torch.unsqueeze(torch.unsqueeze(ret, -1), -1)
-        return ret
-
-    def _log_eucliden_metric(self, x: torch.Tensor, y: torch.Tensor, keepdim=False) ->torch.Tensor:
-        """Log-Eucliden Metric distance.
-
-        {}
-
-        References
-        ----------
-        Log‐Euclidean metrics for fast and simple calculus on diffusion tensors. 2006.
-        """.format(self._dist_doc)
-        return torch.norm(linalg.sym_logm(x) - linalg.sym_logm(y), dim=[-1, -2], keepdim=keepdim)
-
-    def _check_point_on_manifold(self, x: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
-        ok = torch.allclose(x, x.transpose(-1, -2), atol=atol, rtol=rtol)
-        if not ok:
-            return False, '`x != x.transpose` with atol={}, rtol={}'.format(atol, rtol)
-        e, _ = torch.linalg.eigh(x, 'U')
-        ok = (e > -atol).min()
-        if not ok:
-            return False, 'eigenvalues of x are not all greater than 0.'
-        return True, None
-
-    def _check_vector_on_tangent(self, x: torch.Tensor, u: torch.Tensor, *, atol=1e-05, rtol=1e-05) ->Union[Tuple[bool, Optional[str]], bool]:
-        ok = torch.allclose(u, u.transpose(-1, -2), atol=atol, rtol=rtol)
-        if not ok:
-            return False, '`u != u.transpose` with atol={}, rtol={}'.format(atol, rtol)
-        return True, None
-
-    def projx(self, x: torch.Tensor) ->torch.Tensor:
-        symx = linalg.sym(x)
-        return linalg.sym_funcm(symx, torch.abs)
-
-    def proju(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
-        return linalg.sym(u)
-
-    def egrad2rgrad(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
-        return x @ self.proju(x, u) @ x.transpose(-1, -2)
-    _dist_metric = {SPDMetric.AIM: _affine_invariant_metric, SPDMetric.SM: _stein_metric, SPDMetric.LEM: _log_eucliden_metric}
-
-    def dist(self, x: torch.Tensor, y: torch.Tensor, keepdim=False) ->torch.Tensor:
-        """Compute distance between 2 points on the manifold that is the shortest path along geodesics.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            point on the manifold
-        y : torch.Tensor
-            point on the manifold
-        keepdim : bool, optional
-            keep the last dim?, by default False
-
-        Returns
-        -------
-        torch.Tensor
-            distance between two points
-
-        Raises
-        ------
-        ValueError
-            if `mode` isn't in `_dist_metric`
-        """
-        return self._dist_metric[self.default_metric](self, x, y, keepdim=keepdim)
-
-    def inner(self, x: torch.Tensor, u: torch.Tensor, v: Optional[torch.Tensor]=None, keepdim=False) ->torch.Tensor:
-        """
-        Inner product for tangent vectors at point :math:`x`.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            point on the manifold
-        u : torch.Tensor
-            tangent vector at point :math:`x`
-        v : Optional[torch.Tensor]
-            tangent vector at point :math:`x`
-        keepdim : bool
-            keep the last dim?
-
-        Returns
-        -------
-        torch.Tensor
-            inner product (broadcasted)
-
-        Raises
-        ------
-        ValueError
-            if `keepdim` sine `torch.trace` doesn't support keepdim
-        """
-        if v is None:
-            v = u
-        inv_x = linalg.sym_invm(x)
-        ret = linalg.trace(inv_x @ u @ inv_x @ v)
-        if keepdim:
-            return torch.unsqueeze(torch.unsqueeze(ret, -1), -1)
-        return ret
-
-    def retr(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
-        inv_x = linalg.sym_invm(x)
-        return linalg.sym(x + u + 0.5 * u @ inv_x @ u)
-
-    def expmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
-        inv_sqrt_x, sqrt_x = linalg.sym_inv_sqrtm2(x)
-        return sqrt_x @ linalg.sym_expm(inv_sqrt_x @ u @ inv_sqrt_x) @ sqrt_x
-
-    def logmap(self, x: torch.Tensor, u: torch.Tensor) ->torch.Tensor:
-        inv_sqrt_x, sqrt_x = linalg.sym_inv_sqrtm2(x)
-        return sqrt_x @ linalg.sym_logm(inv_sqrt_x @ u @ inv_sqrt_x) @ sqrt_x
-
-    def extra_repr(self) ->str:
-        return 'default_metric={}'.format(self.default_metric)
-
-    def transp(self, x: torch.Tensor, y: torch.Tensor, v: torch.Tensor) ->torch.Tensor:
-        inv_sqrt_x, sqrt_x = linalg.sym_inv_sqrtm2(x)
-        exp_x_y = linalg.sym_expm(0.5 * linalg.sym_logm(inv_sqrt_x @ y @ inv_sqrt_x))
-        return sqrt_x @ exp_x_y @ linalg.sym(inv_sqrt_x @ v @ inv_sqrt_x) @ exp_x_y @ sqrt_x
-
-    def random(self, *size, dtype=None, device=None, **kwargs) ->torch.Tensor:
-        tens = 0.5 * torch.randn(*size, dtype=dtype, device=device)
-        tens = linalg.sym(tens)
-        tens = linalg.sym_funcm(tens, torch.exp)
-        return tens
-
-    def origin(self, *size: Union[int, Tuple[int]], dtype=None, device=None, seed: Optional[int]=42) ->torch.Tensor:
-        return torch.diag_embed(torch.ones(*size[:-1], dtype=dtype, device=device))
 

@@ -1,0 +1,94 @@
+; ModuleID = 'LLVMDialectModule'
+source_filename = "LLVMDialectModule"
+target datalayout = "e-p3:32:32-p4:32:32-p5:32:32-i64:64-i128:128-v16:16-v32:32-n16:32:64"
+
+define void @triton_per_fused__to_copy_cumsum_ne_0(ptr addrspace(1) %0, ptr addrspace(1) %1, i32 %2, i32 %3) local_unnamed_addr !dbg !7 {
+  %5 = tail call i32 asm "mov.u32 $0, %ctaid.x;", "=r"() #2, !dbg !10
+  %6 = icmp slt i32 %5, 64, !dbg !11
+  %7 = tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg !12
+  %8 = and i32 %7, 31, !dbg !12
+  %.frozen = freeze i32 %5, !dbg !13
+  %9 = sdiv i32 %.frozen, 16, !dbg !13
+  %10 = mul i32 %9, 16, !dbg !14
+  %.decomposed = sub i32 %.frozen, %10, !dbg !14
+  %11 = shl i32 %7, 4, !dbg !15
+  %12 = and i32 %11, 48, !dbg !15
+  %13 = add nsw i32 %.decomposed, %12, !dbg !16
+  %14 = shl i32 %9, 6, !dbg !17
+  %15 = add i32 %13, %14, !dbg !18
+  %16 = sext i32 %15 to i64, !dbg !19
+  %17 = getelementptr float, ptr addrspace(1) %0, i64 %16, !dbg !19
+  %18 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %17, i1 %6, i32 0, i1 %6) #2, !dbg !20
+  %19 = bitcast i32 %18 to float, !dbg !20
+  %20 = fcmp une float %19, 4.000000e+00, !dbg !21
+  %21 = zext i1 %20 to i64, !dbg !22
+  %22 = zext i1 %20 to i32, !dbg !23
+  %23 = tail call i32 @llvm.nvvm.shfl.sync.up.i32(i32 -1, i32 %22, i32 1, i32 0), !dbg !23
+  %24 = tail call i32 @llvm.nvvm.shfl.sync.up.i32(i32 -1, i32 0, i32 1, i32 0), !dbg !23
+  %25 = insertelement <2 x i32> poison, i32 %23, i64 0, !dbg !23
+  %26 = insertelement <2 x i32> %25, i32 %24, i64 1, !dbg !23
+  %27 = bitcast <2 x i32> %26 to i64, !dbg !23
+  %.not = icmp eq i32 %8, 0, !dbg !23
+  %28 = select i1 %.not, i64 0, i64 %27, !dbg !23
+  %29 = add i64 %28, %21, !dbg !23
+  %extelt.offset = lshr i64 %29, 32, !dbg !23
+  %30 = trunc nuw i64 %extelt.offset to i32, !dbg !23
+  %31 = trunc i64 %29 to i32, !dbg !23
+  %32 = tail call i32 @llvm.nvvm.shfl.sync.up.i32(i32 -1, i32 %31, i32 2, i32 0), !dbg !23
+  %33 = tail call i32 @llvm.nvvm.shfl.sync.up.i32(i32 -1, i32 %30, i32 2, i32 0), !dbg !23
+  %34 = insertelement <2 x i32> poison, i32 %32, i64 0, !dbg !23
+  %35 = insertelement <2 x i32> %34, i32 %33, i64 1, !dbg !23
+  %36 = bitcast <2 x i32> %35 to i64, !dbg !23
+  %37 = icmp samesign ugt i32 %8, 1, !dbg !23
+  %38 = select i1 %37, i64 %36, i64 0, !dbg !23
+  %39 = add i64 %38, %29, !dbg !23
+  %40 = getelementptr i64, ptr addrspace(1) %1, i64 %16, !dbg !24
+  %41 = and i32 %7, 60, !dbg !25
+  %42 = icmp eq i32 %41, 0, !dbg !25
+  %43 = and i1 %42, %6, !dbg !25
+  tail call void asm sideeffect "@$2 st.global.b64 [ $1 + 0 ], { $0 };", "l,l,b"(i64 %39, ptr addrspace(1) %40, i1 %43) #2, !dbg !25
+  ret void, !dbg !26
+}
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0
+
+; Function Attrs: convergent nocallback nounwind memory(inaccessiblemem: readwrite)
+declare i32 @llvm.nvvm.shfl.sync.up.i32(i32, i32, i32, i32) #1
+
+attributes #0 = { mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { convergent nocallback nounwind memory(inaccessiblemem: readwrite) }
+attributes #2 = { nounwind }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+!nvvm.annotations = !{!4, !5}
+!llvm.ident = !{!6}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = !{i32 4, !"nvvm-reflect-ftz", i32 1}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "triton", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
+!3 = !DIFile(filename: "czg3472nvfdtl27bw4asweroz5xqbvp6fxtat6dtqtb4nftnhosd.py", directory: "inductor_cache/zg")
+!4 = !{ptr @triton_per_fused__to_copy_cumsum_ne_0, !"kernel", i32 1}
+!5 = !{ptr @triton_per_fused__to_copy_cumsum_ne_0, !"reqntidx", i32 64}
+!6 = !{!"clang version 3.8.0 (tags/RELEASE_380/final)"}
+!7 = distinct !DISubprogram(name: "triton_per_fused__to_copy_cumsum_ne_0", linkageName: "triton_per_fused__to_copy_cumsum_ne_0", scope: !3, file: !3, line: 24, type: !8, scopeLine: 24, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !2)
+!8 = !DISubroutineType(cc: DW_CC_normal, types: !9)
+!9 = !{}
+!10 = !DILocation(line: 28, column: 28, scope: !7)
+!11 = !DILocation(line: 30, column: 21, scope: !7)
+!12 = !DILocation(line: 31, column: 34, scope: !7)
+!13 = !DILocation(line: 36, column: 19, scope: !7)
+!14 = !DILocation(line: 35, column: 19, scope: !7)
+!15 = !DILocation(line: 37, column: 38, scope: !7)
+!16 = !DILocation(line: 37, column: 35, scope: !7)
+!17 = !DILocation(line: 37, column: 46, scope: !7)
+!18 = !DILocation(line: 37, column: 43, scope: !7)
+!19 = !DILocation(line: 37, column: 30, scope: !7)
+!20 = !DILocation(line: 37, column: 51, scope: !7)
+!21 = !DILocation(line: 39, column: 19, scope: !7)
+!22 = !DILocation(line: 0, scope: !7)
+!23 = !DILocation(line: 44, column: 44, scope: !7)
+!24 = !DILocation(line: 45, column: 25, scope: !7)
+!25 = !DILocation(line: 45, column: 52, scope: !7)
+!26 = !DILocation(line: 45, column: 4, scope: !7)

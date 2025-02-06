@@ -24,6 +24,7 @@ create_optimizer = _module
 metrics = _module
 semantic_loss = _module
 semantics = _module
+test_semantic_softmax_loss = _module
 train_semantic_softmax = _module
 train_single_label = _module
 train_single_label_from_scratch = _module
@@ -33,7 +34,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -111,7 +114,7 @@ import matplotlib.pyplot as plt
 
 class CrossEntropyLS(nn.Module):
 
-    def __init__(self, eps: float=0.2):
+    def __init__(self, eps: 'float'=0.2):
         super(CrossEntropyLS, self).__init__()
         self.eps = eps
         self.logsoftmax = nn.LogSoftmax(dim=-1)
@@ -336,7 +339,7 @@ class Downsample(nn.Module):
 
 class AntiAliasDownsampleLayer(nn.Module):
 
-    def __init__(self, remove_model_jit: bool=False, filt_size: int=3, stride: int=2, channels: int=0):
+    def __init__(self, remove_model_jit: 'bool'=False, filt_size: 'int'=3, stride: 'int'=2, channels: 'int'=0):
         super(AntiAliasDownsampleLayer, self).__init__()
         if not remove_model_jit:
             self.op = DownsampleJIT(filt_size, stride, channels)

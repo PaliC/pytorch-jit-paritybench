@@ -40,7 +40,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -111,9 +113,6 @@ import collections
 
 
 import re
-
-
-from torch._six import string_classes
 
 
 class SoftMaxwithLoss(Module):
@@ -289,7 +288,7 @@ class SingleTaskLoss(nn.Module):
 
 class MultiTaskLoss(nn.Module):
 
-    def __init__(self, tasks: list, loss_ft: nn.ModuleDict, loss_weights: dict):
+    def __init__(self, tasks: 'list', loss_ft: 'nn.ModuleDict', loss_weights: 'dict'):
         super(MultiTaskLoss, self).__init__()
         assert set(tasks) == set(loss_ft.keys())
         assert set(tasks) == set(loss_weights.keys())
@@ -305,7 +304,7 @@ class MultiTaskLoss(nn.Module):
 
 class PADNetLoss(nn.Module):
 
-    def __init__(self, tasks: list, auxilary_tasks: list, loss_ft: nn.ModuleDict, loss_weights: dict):
+    def __init__(self, tasks: 'list', auxilary_tasks: 'list', loss_ft: 'nn.ModuleDict', loss_weights: 'dict'):
         super(PADNetLoss, self).__init__()
         self.tasks = tasks
         self.auxilary_tasks = auxilary_tasks
@@ -333,7 +332,7 @@ class PADNetLoss(nn.Module):
 
 class MTINetLoss(nn.Module):
 
-    def __init__(self, tasks: list, auxilary_tasks: list, loss_ft: nn.ModuleDict, loss_weights: dict):
+    def __init__(self, tasks: 'list', auxilary_tasks: 'list', loss_ft: 'nn.ModuleDict', loss_weights: 'dict'):
         super(MTINetLoss, self).__init__()
         self.tasks = tasks
         self.auxilary_tasks = auxilary_tasks
@@ -468,7 +467,7 @@ class CrossStitchNetwork(nn.Module):
         
     """
 
-    def __init__(self, p, backbone: nn.ModuleDict, heads: nn.ModuleDict, stages: list, channels: dict, alpha: float, beta: float):
+    def __init__(self, p, backbone: 'nn.ModuleDict', heads: 'nn.ModuleDict', stages: 'list', channels: 'dict', alpha: 'float', beta: 'float'):
         super(CrossStitchNetwork, self).__init__()
         self.tasks = p.TASKS.NAMES
         self.backbone = backbone
@@ -519,7 +518,7 @@ class SABlock(nn.Module):
 class SingleTaskModel(nn.Module):
     """ Single-task baseline model with encoder + decoder """
 
-    def __init__(self, backbone: nn.Module, decoder: nn.Module, task: str):
+    def __init__(self, backbone: 'nn.Module', decoder: 'nn.Module', task: 'str'):
         super(SingleTaskModel, self).__init__()
         self.backbone = backbone
         self.decoder = decoder
@@ -534,7 +533,7 @@ class SingleTaskModel(nn.Module):
 class MultiTaskModel(nn.Module):
     """ Multi-task baseline model with shared encoder + task-specific decoders """
 
-    def __init__(self, backbone: nn.Module, decoders: nn.ModuleDict, tasks: list):
+    def __init__(self, backbone: 'nn.Module', decoders: 'nn.ModuleDict', tasks: 'list'):
         super(MultiTaskModel, self).__init__()
         assert set(decoders.keys()) == set(tasks)
         self.backbone = backbone
@@ -818,7 +817,7 @@ class MTAN(nn.Module):
 
     """
 
-    def __init__(self, p, backbone, heads: nn.ModuleDict, stages: list, channels: dict, downsample: dict):
+    def __init__(self, p, backbone, heads: 'nn.ModuleDict', stages: 'list', channels: 'dict', downsample: 'dict'):
         super(MTAN, self).__init__()
         self.tasks = p.TASKS.NAMES
         assert isinstance(backbone, ResNet) or isinstance(backbone, ResnetDilated)
@@ -1045,7 +1044,7 @@ class NDDRCNN(nn.Module):
         
     """
 
-    def __init__(self, p, backbone: nn.ModuleDict, heads: nn.ModuleDict, all_stages: list, nddr_stages: list, channels: dict, alpha: float, beta: float):
+    def __init__(self, p, backbone: 'nn.ModuleDict', heads: 'nn.ModuleDict', all_stages: 'list', nddr_stages: 'list', channels: 'dict', alpha: 'float', beta: 'float'):
         super(NDDRCNN, self).__init__()
         self.tasks = p.TASKS.NAMES
         self.backbone = backbone

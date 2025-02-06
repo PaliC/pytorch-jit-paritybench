@@ -20,7 +20,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -144,7 +146,7 @@ class MultiHeadSelection(nn.Module):
     def description(epoch, epoch_num, output):
         return 'L: {:.2f}, L_crf: {:.2f}, L_selection: {:.2f}, epoch: {}/{}:'.format(output['loss'].item(), output['crf_loss'].item(), output['selection_loss'].item(), epoch, epoch_num)
 
-    def forward(self, sample, is_train: bool) ->Dict[str, torch.Tensor]:
+    def forward(self, sample, is_train: 'bool') ->Dict[str, torch.Tensor]:
         tokens = sample.tokens_id
         selection_gold = sample.selection_id
         bio_gold = sample.bio_id
@@ -204,7 +206,7 @@ class MultiHeadSelection(nn.Module):
         output['description'] = partial(self.description, output=output)
         return output
 
-    def selection_decode(self, text_list, sequence_tags, selection_tags: torch.Tensor) ->List[List[Dict[str, str]]]:
+    def selection_decode(self, text_list, sequence_tags, selection_tags: 'torch.Tensor') ->List[List[Dict[str, str]]]:
         reversed_relation_vocab = {v: k for k, v in self.relation_vocab.items()}
         reversed_bio_vocab = {v: k for k, v in self.bio_vocab.items()}
         text_list = list(map(list, text_list))
@@ -241,6 +243,6 @@ class MultiHeadSelection(nn.Module):
             result[b].append(triplet)
         return result
 
-    def get_metrics(self, reset: bool=False) ->Dict[str, float]:
+    def get_metrics(self, reset: 'bool'=False) ->Dict[str, float]:
         pass
 

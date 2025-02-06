@@ -23,7 +23,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -184,7 +186,7 @@ def _get_activation_fn(activation):
 
 class RCNNHead(nn.Module):
 
-    def __init__(self, cfg, d_model, num_classes, dim_feedforward=2048, nhead=8, dropout=0.1, activation='relu', scale_clamp: float=_DEFAULT_SCALE_CLAMP, bbox_weights=(2.0, 2.0, 1.0, 1.0)):
+    def __init__(self, cfg, d_model, num_classes, dim_feedforward=2048, nhead=8, dropout=0.1, activation='relu', scale_clamp: 'float'=_DEFAULT_SCALE_CLAMP, bbox_weights=(2.0, 2.0, 1.0, 1.0)):
         super().__init__()
         self.d_model = d_model
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
@@ -439,7 +441,7 @@ class HungarianMatcherDynamicK(nn.Module):
     while the others are un-matched (and thus treated as non-objects).
     """
 
-    def __init__(self, cfg, cost_class: float=1, cost_bbox: float=1, cost_giou: float=1, cost_mask: float=1, use_focal: bool=False):
+    def __init__(self, cfg, cost_class: 'float'=1, cost_bbox: 'float'=1, cost_giou: 'float'=1, cost_mask: 'float'=1, use_focal: 'bool'=False):
         """Creates the matcher
         Params:
             cost_class: This is the relative weight of the classification error in the matching cost
@@ -817,7 +819,7 @@ def extract(a, t, x_shape):
 
 class NestedTensor(object):
 
-    def __init__(self, tensors, mask: Optional[Tensor]):
+    def __init__(self, tensors, mask: 'Optional[Tensor]'):
         self.tensors = tensors
         self.mask = mask
 
@@ -847,7 +849,7 @@ def _max_by_axis(the_list):
 
 
 @torch.jit.unused
-def _onnx_nested_tensor_from_tensor_list(tensor_list: List[Tensor]) ->NestedTensor:
+def _onnx_nested_tensor_from_tensor_list(tensor_list: 'List[Tensor]') ->NestedTensor:
     max_size = []
     for i in range(tensor_list[0].dim()):
         max_size_i = torch.max(torch.stack([img.shape[i] for img in tensor_list]).to(torch.float32))
@@ -867,7 +869,7 @@ def _onnx_nested_tensor_from_tensor_list(tensor_list: List[Tensor]) ->NestedTens
     return NestedTensor(tensor, mask=mask)
 
 
-def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
+def nested_tensor_from_tensor_list(tensor_list: 'List[Tensor]'):
     if tensor_list[0].ndim == 3:
         if torchvision._is_tracing():
             return _onnx_nested_tensor_from_tensor_list(tensor_list)

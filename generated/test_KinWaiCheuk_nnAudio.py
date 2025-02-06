@@ -26,7 +26,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -195,7 +197,7 @@ class Combined_Frequency_Periodicity(nn.Module):
         return spec, ceps
 
     def forward(self, x):
-        tfr0 = torch.stft(x, self.N, hop_length=self.hop_length, win_length=self.window_size, window=self.h, onesided=False, pad_mode='constant')
+        tfr0 = torch.stft(x, self.N, hop_length=self.hop_length, win_length=self.window_size, window=self.h, onesided=False, pad_mode='constant', return_complex=False)
         tfr0 = torch.sqrt(tfr0.pow(2).sum(-1)) / torch.norm(self.h)
         tfr0 = tfr0.transpose(1, 2)[:, 1:-1]
         tfr, ceps = self._CFP(tfr0)
@@ -237,7 +239,7 @@ class Combined_Frequency_Periodicity(nn.Module):
             else:
                 break
         Nest = len(central_freq)
-        freq_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.float)
+        freq_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.double)
         for i in range(1, Nest - 1):
             l = int(round(central_freq[i - 1] / fr))
             r = int(round(central_freq[i + 1] / fr) + 1)
@@ -250,7 +252,7 @@ class Combined_Frequency_Periodicity(nn.Module):
                     elif f[j] > central_freq[i] and f[j] < central_freq[i + 1]:
                         freq_band_transformation[i, j] = (central_freq[i + 1] - f[j]) / (central_freq[i + 1] - central_freq[i])
         f = 1 / q
-        quef_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.float)
+        quef_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.double)
         for i in range(1, Nest - 1):
             for j in range(int(round(fs / central_freq[i + 1])), int(round(fs / central_freq[i - 1]) + 1)):
                 if f[j] > central_freq[i - 1] and f[j] < central_freq[i]:
@@ -349,7 +351,7 @@ class CFP(nn.Module):
         return spec, ceps
 
     def forward(self, x):
-        tfr0 = torch.stft(x, self.N, hop_length=self.hop_length, win_length=self.window_size, window=self.h, onesided=False, pad_mode='constant')
+        tfr0 = torch.stft(x, self.N, hop_length=self.hop_length, win_length=self.window_size, window=self.h, onesided=False, pad_mode='constant', return_complex=False)
         tfr0 = torch.sqrt(tfr0.pow(2).sum(-1)) / torch.norm(self.h)
         tfr0 = tfr0.transpose(1, 2)
         tfr, ceps = self._CFP(tfr0)
@@ -391,7 +393,7 @@ class CFP(nn.Module):
             else:
                 break
         Nest = len(central_freq)
-        freq_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.float)
+        freq_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.double)
         for i in range(1, Nest - 1):
             l = int(round(central_freq[i - 1] / fr))
             r = int(round(central_freq[i + 1] / fr) + 1)
@@ -404,7 +406,7 @@ class CFP(nn.Module):
                     elif f[j] > central_freq[i] and f[j] < central_freq[i + 1]:
                         freq_band_transformation[i, j] = (central_freq[i + 1] - f[j]) / (central_freq[i + 1] - central_freq[i])
         f = 1 / q
-        quef_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.float)
+        quef_band_transformation = np.zeros((Nest - 1, len(f)), dtype=np.double)
         for i in range(1, Nest - 1):
             for j in range(int(round(fs / central_freq[i + 1])), int(round(fs / central_freq[i - 1]) + 1)):
                 if f[j] > central_freq[i - 1] and f[j] < central_freq[i]:
@@ -498,13 +500,13 @@ def create_cqt_kernels(Q, fs, fmin, n_bins=84, bins_per_octave=12, norm=1, windo
     fftLen = 2 ** nextpow2(np.ceil(Q * fs / fmin))
     if fmax != None and n_bins == None:
         n_bins = np.ceil(bins_per_octave * np.log2(fmax / fmin))
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
     elif fmax == None and n_bins != None:
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
     else:
         warnings.warn('If fmax is given, n_bins will be ignored', SyntaxWarning)
         n_bins = np.ceil(bins_per_octave * np.log2(fmax / fmin))
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
     if np.max(freqs) > fs / 2 and topbin_check == True:
         raise ValueError('The top bin {}Hz has exceeded the Nyquist frequency,                           please reduce the n_bins'.format(np.max(freqs)))
     alpha = 2.0 ** (1.0 / bins_per_octave) - 1.0
@@ -899,30 +901,6 @@ def create_lowpass_filter(band_center=0.5, kernelLength=256, transitionBandwidth
     return filterKernel.astype(np.float32)
 
 
-def downsampling_by_2(x, filterKernel):
-    """A helper function that downsamples the audio by half. It is used in CQT2010 and CQT2010v2
-
-    Parameters
-    ----------
-    x : torch.Tensor
-        The input waveform in ``torch.Tensor`` type with shape ``(batch, 1, len_audio)``
-
-    filterKernel : str
-        Filter kernel in ``torch.Tensor`` type with shape ``(1, 1, len_kernel)``
-
-    Returns
-    -------
-    torch.Tensor
-        The downsampled waveform
-
-    Examples
-    --------
-    >>> x_down = downsampling_by_2(x, filterKernel)
-    """
-    x = conv1d(x, filterKernel, stride=2, padding=(filterKernel.shape[-1] - 1) // 2)
-    return x
-
-
 def downsampling_by_n(x, filterKernel, n):
     """A helper function that downsamples the audio by a arbitary factor n.
     It is used in CQT2010 and CQT2010v2.
@@ -947,8 +925,32 @@ def downsampling_by_n(x, filterKernel, n):
     --------
     >>> x_down = downsampling_by_n(x, filterKernel)
     """
-    x = conv1d(x, filterKernel, stride=n, padding=(filterKernel.shape[-1] - 1) // 2)
+    padding = int((filterKernel.shape[-1] - 1) // 2)
+    x = conv1d(x, filterKernel, stride=(n,), padding=(padding,))
     return x
+
+
+def downsampling_by_2(x, filterKernel):
+    """A helper function that downsamples the audio by half. It is used in CQT2010 and CQT2010v2
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        The input waveform in ``torch.Tensor`` type with shape ``(batch, 1, len_audio)``
+
+    filterKernel : str
+        Filter kernel in ``torch.Tensor`` type with shape ``(1, 1, len_kernel)``
+
+    Returns
+    -------
+    torch.Tensor
+        The downsampled waveform
+
+    Examples
+    --------
+    >>> x_down = downsampling_by_2(x, filterKernel)
+    """
+    return downsampling_by_n(x, filterKernel, 2)
 
 
 def get_cqt_complex2(x, cqt_kernels_real, cqt_kernels_imag, hop_length, padding, wcos=None, wsin=None):
@@ -1067,7 +1069,7 @@ class CQT2010(nn.Module):
             None
         start = time()
         basis, self.n_fft, _, _ = create_cqt_kernels(Q, sr, self.fmin_t, n_filters, bins_per_octave, norm=basis_norm, topbin_check=False)
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
         self.frequencies = freqs
         lenghts = np.ceil(Q * sr / freqs)
         lenghts = torch.tensor(lenghts).float()
@@ -1523,7 +1525,7 @@ class CQT2010v2(nn.Module):
             None
         start = time()
         basis, self.n_fft, lenghts, _ = create_cqt_kernels(Q, sr, self.fmin_t, n_filters, bins_per_octave, norm=basis_norm, topbin_check=False)
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
         self.frequencies = freqs
         lenghts = np.ceil(Q * sr / freqs)
         lenghts = torch.tensor(lenghts).float()
@@ -1600,274 +1602,6 @@ class CQT2010v2(nn.Module):
 class CQT(CQT1992v2):
     """An abbreviation for :func:`~nnAudio.Spectrogram.CQT1992v2`. Please refer to the :func:`~nnAudio.Spectrogram.CQT1992v2` documentation"""
     pass
-
-
-def fft2gammatonemx(sr=20000, n_fft=2048, n_bins=64, width=1.0, fmin=0.0, fmax=11025, maxlen=1024):
-    """
-    # Ellis' description in MATLAB:
-    # [wts,cfreqa] = fft2gammatonemx(nfft, sr, nfilts, width, minfreq, maxfreq, maxlen)
-    #      Generate a matrix of weights to combine FFT bins into
-    #      Gammatone bins.  nfft defines the source FFT size at
-    #      sampling rate sr.  Optional nfilts specifies the number of
-    #      output bands required (default 64), and width is the
-    #      constant width of each band in Bark (default 1).
-    #      minfreq, maxfreq specify range covered in Hz (100, sr/2).
-    #      While wts has nfft columns, the second half are all zero.
-    #      Hence, aud spectrum is
-    #      fft2gammatonemx(nfft,sr)*abs(fft(xincols,nfft));
-    #      maxlen truncates the rows to this many bins.
-    #      cfreqs returns the actual center frequencies of each
-    #      gammatone band in Hz.
-    #
-    # 2009/02/22 02:29:25 Dan Ellis dpwe@ee.columbia.edu  based on rastamat/audspec.m
-    # Sat May 27 15:37:50 2017 Maddie Cusimano, mcusi@mit.edu 27 May 2017: convert to python
-    """
-    wts = np.zeros([n_bins, n_fft], dtype=np.float32)
-    EarQ = 9.26449
-    minBW = 24.7
-    order = 1
-    nFr = np.array(range(n_bins)) + 1
-    em = EarQ * minBW
-    cfreqs = (fmax + em) * np.exp(nFr * (-np.log(fmax + em) + np.log(fmin + em)) / n_bins) - em
-    cfreqs = cfreqs[::-1]
-    GTord = 4
-    ucircArray = np.array(range(int(n_fft / 2 + 1)))
-    ucirc = np.exp(1.0j * 2 * np.pi * ucircArray / n_fft)
-    ERB = width * np.power(np.power(cfreqs / EarQ, order) + np.power(minBW, order), 1 / order)
-    B = 1.019 * 2 * np.pi * ERB
-    r = np.exp(-B / sr)
-    theta = 2 * np.pi * cfreqs / sr
-    pole = r * np.exp(1.0j * theta)
-    T = 1 / sr
-    ebt = np.exp(B * T)
-    cpt = 2 * cfreqs * np.pi * T
-    ccpt = 2 * T * np.cos(cpt)
-    scpt = 2 * T * np.sin(cpt)
-    A11 = -np.divide(np.divide(ccpt, ebt) + np.divide(np.sqrt(3 + 2 ** 1.5) * scpt, ebt), 2)
-    A12 = -np.divide(np.divide(ccpt, ebt) - np.divide(np.sqrt(3 + 2 ** 1.5) * scpt, ebt), 2)
-    A13 = -np.divide(np.divide(ccpt, ebt) + np.divide(np.sqrt(3 - 2 ** 1.5) * scpt, ebt), 2)
-    A14 = -np.divide(np.divide(ccpt, ebt) - np.divide(np.sqrt(3 - 2 ** 1.5) * scpt, ebt), 2)
-    zros = -np.array([A11, A12, A13, A14]) / T
-    wIdx = range(int(n_fft / 2 + 1))
-    gain = np.abs((-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) - np.sqrt(3 - 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) + np.sqrt(3 - 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) - np.sqrt(3 + 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) + np.sqrt(3 + 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) / (-2 / np.exp(2 * B * T) - 2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) + 2 * (1 + np.exp(4 * 1.0j * cfreqs * np.pi * T)) / np.exp(B * T)) ** 4)
-    wts[:, wIdx] = T ** 4 / np.reshape(gain, (n_bins, 1)) * np.abs(ucirc - np.reshape(zros[0], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[1], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[2], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[3], (n_bins, 1))) * np.abs(np.power(np.multiply(np.reshape(pole, (n_bins, 1)) - ucirc, np.conj(np.reshape(pole, (n_bins, 1))) - ucirc), -GTord))
-    wts = wts[:, range(maxlen)]
-    return wts, cfreqs
-
-
-def get_gammatone(sr, n_fft, n_bins=64, fmin=20.0, fmax=None, htk=False, norm=1, dtype=np.float32):
-    """Create a Filterbank matrix to combine FFT bins into Gammatone bins
-    Parameters
-    ----------
-    sr        : number > 0 [scalar]
-        sampling rate of the incoming signal
-    n_fft     : int > 0 [scalar]
-        number of FFT components
-    n_bins    : int > 0 [scalar]
-        number of Mel bands to generate
-    fmin      : float >= 0 [scalar]
-        lowest frequency (in Hz)
-    fmax      : float >= 0 [scalar]
-        highest frequency (in Hz).
-        If `None`, use `fmax = sr / 2.0`
-    htk       : bool [scalar]
-        use HTK formula instead of Slaney
-    norm : {None, 1, np.inf} [scalar]
-        if 1, divide the triangular mel weights by the width of the mel band
-        (area normalization).  Otherwise, leave all the triangles aiming for
-        a peak value of 1.0
-    dtype : np.dtype
-        The data type of the output basis.
-        By default, uses 32-bit (single-precision) floating point.
-    Returns
-    -------
-    G         : np.ndarray [shape=(n_bins, 1 + n_fft/2)]
-        Gammatone transform matrix
-    """
-    if fmax is None:
-        fmax = float(sr) / 2
-    n_bins = int(n_bins)
-    weights, _ = fft2gammatonemx(sr=sr, n_fft=n_fft, n_bins=n_bins, fmin=fmin, fmax=fmax, maxlen=int(n_fft // 2 + 1))
-    return 1 / n_fft * weights
-
-
-class Gammatonegram(nn.Module):
-    """
-    This function is to calculate the Gammatonegram of the input signal.
-    
-    Input signal should be in either of the following shapes. 1. ``(len_audio)``, 2. ``(num_audio, len_audio)``, 3. ``(num_audio, 1, len_audio)``. The correct shape will be inferred autommatically if the input follows these 3 shapes. This class inherits from ``nn.Module``, therefore, the usage is same as ``nn.Module``.
-
-    Parameters
-    ----------
-    sr : int
-        The sampling rate for the input audio. It is used to calucate the correct ``fmin`` and ``fmax``. Setting the correct sampling rate is very important for calculating the correct frequency.
-    n_fft : int
-        The window size for the STFT. Default value is 2048
-    n_mels : int
-        The number of Gammatonegram filter banks. The filter banks maps the n_fft to Gammatone bins. Default value is 64
-
-    hop_length : int
-        The hop (or stride) size. Default value is 512.
-    window : str
-        The windowing function for STFT. It uses ``scipy.signal.get_window``, please refer to scipy documentation for possible windowing functions. The default value is 'hann'
-    center : bool
-        Putting the STFT keneral at the center of the time-step or not. If ``False``, the time index is the beginning of the STFT kernel, if ``True``, the time index is the center of the STFT kernel. Default value if ``True``.
-    pad_mode : str
-        The padding method. Default value is 'reflect'.
-    htk : bool
-        When ``False`` is used, the Mel scale is quasi-logarithmic. When ``True`` is used, the Mel scale is logarithmic. The default value is ``False``
-
-    fmin : int
-        The starting frequency for the lowest Gammatone filter bank
-    fmax : int
-        The ending frequency for the highest Gammatone filter bank
-    trainable_mel : bool
-        Determine if the Gammatone filter banks are trainable or not. If ``True``, the gradients for Mel filter banks will also be caluclated and the Mel filter banks will be updated during model training. Default value is ``False``
-    trainable_STFT : bool
-        Determine if the STFT kenrels are trainable or not. If ``True``, the gradients for STFT kernels will also be caluclated and the STFT kernels will be updated during model training. Default value is ``False``
-
-    verbose : bool
-        If ``True``, it shows layer information. If ``False``, it suppresses all prints
-
-    Returns
-    -------
-    spectrogram : torch.tensor
-        It returns a tensor of spectrograms.  shape = ``(num_samples, freq_bins,time_steps)``.
-
-    Examples
-    --------
-    >>> spec_layer = Spectrogram.Gammatonegram()
-    >>> specs = spec_layer(x)
-    
-    """
-
-    def __init__(self, sr=44100, n_fft=2048, n_bins=64, hop_length=512, window='hann', center=True, pad_mode='reflect', power=2.0, htk=False, fmin=20.0, fmax=None, norm=1, trainable_bins=False, trainable_STFT=False, verbose=True):
-        super().__init__()
-        self.stride = hop_length
-        self.center = center
-        self.pad_mode = pad_mode
-        self.n_fft = n_fft
-        self.power = power
-        start = time()
-        wsin, wcos, self.bins2freq, _, _ = create_fourier_kernels(n_fft, freq_bins=None, window=window, freq_scale='no', sr=sr)
-        wsin = torch.tensor(wsin, dtype=torch.float)
-        wcos = torch.tensor(wcos, dtype=torch.float)
-        if trainable_STFT:
-            wsin = nn.Parameter(wsin, requires_grad=trainable_STFT)
-            wcos = nn.Parameter(wcos, requires_grad=trainable_STFT)
-            self.register_parameter('wsin', wsin)
-            self.register_parameter('wcos', wcos)
-        else:
-            self.register_buffer('wsin', wsin)
-            self.register_buffer('wcos', wcos)
-        start = time()
-        gammatone_basis = get_gammatone(sr, n_fft, n_bins, fmin, fmax)
-        gammatone_basis = torch.tensor(gammatone_basis)
-        if verbose == True:
-            None
-            None
-        else:
-            pass
-        if trainable_bins:
-            gammatone_basis = nn.Parameter(gammatone_basis, requires_grad=trainable_bins)
-            self.register_parameter('gammatone_basis', gammatone_basis)
-        else:
-            self.register_buffer('gammatone_basis', gammatone_basis)
-
-    def forward(self, x):
-        x = broadcast_dim(x)
-        if self.center:
-            if self.pad_mode == 'constant':
-                padding = nn.ConstantPad1d(self.n_fft // 2, 0)
-            elif self.pad_mode == 'reflect':
-                padding = nn.ReflectionPad1d(self.n_fft // 2)
-            x = padding(x)
-        spec = torch.sqrt(conv1d(x, self.wsin, stride=self.stride).pow(2) + conv1d(x, self.wcos, stride=self.stride).pow(2)) ** self.power
-        gammatonespec = torch.matmul(self.gammatone_basis, spec)
-        return gammatonespec
-
-
-class Griffin_Lim(nn.Module):
-    """
-    Converting Magnitude spectrograms back to waveforms based on the "fast Griffin-Lim"[1].
-    This Griffin Lim is a direct clone from librosa.griffinlim.
-
-    [1] Perraudin, N., Balazs, P., & Søndergaard, P. L. “A fast Griffin-Lim algorithm,”
-    IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (pp. 1-4), Oct. 2013.
-
-    Parameters
-    ----------
-    n_fft : int
-        The window size. Default value is 2048.
-
-    n_iter=32 : int
-        The number of iterations for Griffin-Lim. The default value is ``32``
-
-    hop_length : int
-        The hop (or stride) size. Default value is ``None`` which is equivalent to ``n_fft//4``.
-        Please make sure the value is the same as the forward STFT.
-
-    window : str
-        The windowing function for iSTFT. It uses ``scipy.signal.get_window``, please refer to
-        scipy documentation for possible windowing functions. The default value is 'hann'.
-        Please make sure the value is the same as the forward STFT.
-
-    center : bool
-        Putting the iSTFT keneral at the center of the time-step or not. If ``False``, the time
-        index is the beginning of the iSTFT kernel, if ``True``, the time index is the center of
-        the iSTFT kernel. Default value if ``True``.
-        Please make sure the value is the same as the forward STFT.
-
-    momentum : float
-        The momentum for the update rule. The default value is ``0.99``.
-
-    device : str
-        Choose which device to initialize this layer. Default value is 'cpu'
-
-    """
-
-    def __init__(self, n_fft, n_iter=32, hop_length=None, win_length=None, window='hann', center=True, pad_mode='reflect', momentum=0.99, device='cpu'):
-        super().__init__()
-        self.n_fft = n_fft
-        self.win_length = win_length
-        self.n_iter = n_iter
-        self.center = center
-        self.pad_mode = pad_mode
-        self.momentum = momentum
-        self.device = device
-        if win_length == None:
-            self.win_length = n_fft
-        else:
-            self.win_length = win_length
-        if hop_length == None:
-            self.hop_length = n_fft // 4
-        else:
-            self.hop_length = hop_length
-        self.w = torch.tensor(get_window(window, int(self.win_length), fftbins=True), device=device).float()
-
-    def forward(self, S):
-        """
-        Convert a batch of magnitude spectrograms to waveforms.
-
-        Parameters
-        ----------
-        S : torch tensor
-            Spectrogram of the shape ``(batch, n_fft//2+1, timesteps)``
-        """
-        assert S.dim() == 3, 'Please make sure your input is in the shape of (batch, freq_bins, timesteps)'
-        rand_phase = torch.randn(*S.shape, device=self.device)
-        angles = torch.empty((*S.shape, 2), device=self.device)
-        angles[:, :, :, 0] = torch.cos(2 * np.pi * rand_phase)
-        angles[:, :, :, 1] = torch.sin(2 * np.pi * rand_phase)
-        rebuilt = torch.zeros(*angles.shape, device=self.device)
-        for _ in range(self.n_iter):
-            tprev = rebuilt
-            inverse = torch.istft(S.unsqueeze(-1) * angles, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, center=self.center)
-            rebuilt = torch.stft(inverse, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, pad_mode=self.pad_mode)
-            angles[:, :, :] = rebuilt[:, :, :] - self.momentum / (1 + self.momentum) * tprev[:, :, :]
-            angles = angles.div(torch.sqrt(angles.pow(2).sum(-1)).unsqueeze(-1) + 1e-16)
-        inverse = torch.istft(S.unsqueeze(-1) * angles, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, center=self.center)
-        return inverse
 
 
 def extend_fbins(X):
@@ -2134,6 +1868,315 @@ class STFT(STFTBase):
 
     def extra_repr(self) ->str:
         return 'n_fft={}, Fourier Kernel size={}, iSTFT={}, trainable={}'.format(self.n_fft, (*self.wsin.shape,), self.iSTFT, self.trainable)
+
+
+def fft2gammatonemx(sr=20000, n_fft=2048, n_bins=64, width=1.0, fmin=0.0, fmax=11025, maxlen=1024):
+    """
+    # Ellis' description in MATLAB:
+    # [wts,cfreqa] = fft2gammatonemx(nfft, sr, nfilts, width, minfreq, maxfreq, maxlen)
+    #      Generate a matrix of weights to combine FFT bins into
+    #      Gammatone bins.  nfft defines the source FFT size at
+    #      sampling rate sr.  Optional nfilts specifies the number of
+    #      output bands required (default 64), and width is the
+    #      constant width of each band in Bark (default 1).
+    #      minfreq, maxfreq specify range covered in Hz (100, sr/2).
+    #      While wts has nfft columns, the second half are all zero.
+    #      Hence, aud spectrum is
+    #      fft2gammatonemx(nfft,sr)*abs(fft(xincols,nfft));
+    #      maxlen truncates the rows to this many bins.
+    #      cfreqs returns the actual center frequencies of each
+    #      gammatone band in Hz.
+    #
+    # 2009/02/22 02:29:25 Dan Ellis dpwe@ee.columbia.edu  based on rastamat/audspec.m
+    # Sat May 27 15:37:50 2017 Maddie Cusimano, mcusi@mit.edu 27 May 2017: convert to python
+    """
+    wts = np.zeros([n_bins, n_fft], dtype=np.float32)
+    EarQ = 9.26449
+    minBW = 24.7
+    order = 1
+    nFr = np.array(range(n_bins)) + 1
+    em = EarQ * minBW
+    cfreqs = (fmax + em) * np.exp(nFr * (-np.log(fmax + em) + np.log(fmin + em)) / n_bins) - em
+    cfreqs = cfreqs[::-1]
+    GTord = 4
+    ucircArray = np.array(range(int(n_fft / 2 + 1)))
+    ucirc = np.exp(1.0j * 2 * np.pi * ucircArray / n_fft)
+    ERB = width * np.power(np.power(cfreqs / EarQ, order) + np.power(minBW, order), 1 / order)
+    B = 1.019 * 2 * np.pi * ERB
+    r = np.exp(-B / sr)
+    theta = 2 * np.pi * cfreqs / sr
+    pole = r * np.exp(1.0j * theta)
+    T = 1 / sr
+    ebt = np.exp(B * T)
+    cpt = 2 * cfreqs * np.pi * T
+    ccpt = 2 * T * np.cos(cpt)
+    scpt = 2 * T * np.sin(cpt)
+    A11 = -np.divide(np.divide(ccpt, ebt) + np.divide(np.sqrt(3 + 2 ** 1.5) * scpt, ebt), 2)
+    A12 = -np.divide(np.divide(ccpt, ebt) - np.divide(np.sqrt(3 + 2 ** 1.5) * scpt, ebt), 2)
+    A13 = -np.divide(np.divide(ccpt, ebt) + np.divide(np.sqrt(3 - 2 ** 1.5) * scpt, ebt), 2)
+    A14 = -np.divide(np.divide(ccpt, ebt) - np.divide(np.sqrt(3 - 2 ** 1.5) * scpt, ebt), 2)
+    zros = -np.array([A11, A12, A13, A14]) / T
+    wIdx = range(int(n_fft / 2 + 1))
+    gain = np.abs((-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) - np.sqrt(3 - 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) + np.sqrt(3 - 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) - np.sqrt(3 + 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) * (-2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) * T + 2 * np.exp(-(B * T) + 2 * 1.0j * cfreqs * np.pi * T) * T * (np.cos(2 * cfreqs * np.pi * T) + np.sqrt(3 + 2 ** (3 / 2)) * np.sin(2 * cfreqs * np.pi * T))) / (-2 / np.exp(2 * B * T) - 2 * np.exp(4 * 1.0j * cfreqs * np.pi * T) + 2 * (1 + np.exp(4 * 1.0j * cfreqs * np.pi * T)) / np.exp(B * T)) ** 4)
+    wts[:, wIdx] = T ** 4 / np.reshape(gain, (n_bins, 1)) * np.abs(ucirc - np.reshape(zros[0], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[1], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[2], (n_bins, 1))) * np.abs(ucirc - np.reshape(zros[3], (n_bins, 1))) * np.abs(np.power(np.multiply(np.reshape(pole, (n_bins, 1)) - ucirc, np.conj(np.reshape(pole, (n_bins, 1))) - ucirc), -GTord))
+    wts = wts[:, range(maxlen)]
+    return wts, cfreqs
+
+
+def get_gammatone(sr, n_fft, n_bins=64, fmin=20.0, fmax=None, htk=False, norm=1, dtype=np.float32):
+    """Create a Filterbank matrix to combine FFT bins into Gammatone bins
+    Parameters
+    ----------
+    sr        : number > 0 [scalar]
+        sampling rate of the incoming signal
+    n_fft     : int > 0 [scalar]
+        number of FFT components
+    n_bins    : int > 0 [scalar]
+        number of Mel bands to generate
+    fmin      : float >= 0 [scalar]
+        lowest frequency (in Hz)
+    fmax      : float >= 0 [scalar]
+        highest frequency (in Hz).
+        If `None`, use `fmax = sr / 2.0`
+    htk       : bool [scalar]
+        use HTK formula instead of Slaney
+    norm : {None, 1, np.inf} [scalar]
+        if 1, divide the triangular mel weights by the width of the mel band
+        (area normalization).  Otherwise, leave all the triangles aiming for
+        a peak value of 1.0
+    dtype : np.dtype
+        The data type of the output basis.
+        By default, uses 32-bit (single-precision) floating point.
+    Returns
+    -------
+    G         : np.ndarray [shape=(n_bins, 1 + n_fft/2)]
+        Gammatone transform matrix
+    """
+    if fmax is None:
+        fmax = float(sr) / 2
+    n_bins = int(n_bins)
+    weights, _ = fft2gammatonemx(sr=sr, n_fft=n_fft, n_bins=n_bins, fmin=fmin, fmax=fmax, maxlen=int(n_fft // 2 + 1))
+    return 1 / n_fft * weights
+
+
+class Gammatonegram(nn.Module):
+    """This function is to calculate the Gammatonegram of the input signal.
+    Input signal should be in either of the following shapes.
+
+    1. ``(len_audio)``
+
+    2. ``(num_audio, len_audio)``
+
+    3. ``(num_audio, 1, len_audio)``
+
+    The correct shape will be inferred automatically if the input follows these 3 shapes.
+    Most of the arguments follow the convention from librosa.
+    This class inherits from ``nn.Module``, therefore, the usage is same as ``nn.Module``.
+
+    Parameters
+    ----------
+    sr : int
+        The sampling rate for the input audio.
+        It is used to calculate the correct ``fmin`` and ``fmax``.
+        Setting the correct sampling rate is very important for calculating the correct frequency.
+
+    n_fft : int
+        The window size for the STFT. Default value is 2048
+
+    win_length : int
+        the size of window frame and STFT filter.
+        Default: None (treated as equal to n_fft)
+
+    n_bins : int
+        The number of Gammatone filter banks. The filter banks maps the n_fft to gammatone bins.
+        Default value is 128.
+
+    hop_length : int
+        The hop (or stride) size. Default value is 512.
+
+    window : str
+        The windowing function for STFT. It uses ``scipy.signal.get_window``, please refer to
+        scipy documentation for possible windowing functions. The default value is 'hann'.
+
+    center : bool
+        Putting the STFT keneral at the center of the time-step or not. If ``False``,
+        the time index is the beginning of the STFT kernel, if ``True``, the time index is the
+        center of the STFT kernel. Default value if ``True``.
+
+    pad_mode : str
+        The padding method. Default value is 'reflect'.
+
+    htk : bool
+        When ``False`` is used, the Mel scale is quasi-logarithmic. When ``True`` is used, the
+        Mel scale is logarithmic. The default value is ``False``.
+
+    fmin : int
+        The starting frequency for the lowest Gammatone filter bank.
+
+    fmax : int
+        The ending frequency for the highest Gammatone filter bank.
+
+    norm :
+        if 1, divide the triangular Gammatone weights by the width of the Gammatone band
+        (area normalization, AKA 'slaney' default in librosa).
+        Otherwise, leave all the triangles aiming for
+        a peak value of 1.0
+
+    trainable_bins : bool
+        Determine if the Gammatone filter banks are trainable or not. If ``True``, the gradients for Gammatone
+        filter banks will also be calculated and the Gammatone filter banks will be updated during model
+        training. Default value is ``False``.
+
+    trainable_STFT : bool
+        Determine if the STFT kenrels are trainable or not. If ``True``, the gradients for STFT
+        kernels will also be caluclated and the STFT kernels will be updated during model training.
+        Default value is ``False``.
+
+    verbose : bool
+        If ``True``, it shows layer information. If ``False``, it suppresses all prints.
+
+    Returns
+    -------
+    spectrogram : torch.tensor
+        It returns a tensor of spectrograms.  shape = ``(num_samples, freq_bins,time_steps)``.
+
+    Examples
+    --------
+    >>> spec_layer = Spectrogram.Gammatonegram()
+    >>> specs = spec_layer(x)
+    """
+
+    def __init__(self, sr=22050, n_fft=2048, win_length=None, n_bins=64, hop_length=512, window='hann', center=True, pad_mode='reflect', power=2.0, htk=False, fmin=0.0, fmax=None, norm=1, trainable_bins=False, trainable_STFT=False, verbose=True, **kwargs):
+        super().__init__()
+        self.stride = hop_length
+        self.center = center
+        self.pad_mode = pad_mode
+        self.n_fft = n_fft
+        self.power = power
+        self.trainable_bins = trainable_bins
+        self.trainable_STFT = trainable_STFT
+        self.stft = STFT(n_fft=n_fft, win_length=win_length, freq_bins=None, hop_length=hop_length, window=window, freq_scale='no', center=center, pad_mode=pad_mode, sr=sr, trainable=trainable_STFT, output_format='Magnitude', verbose=verbose, **kwargs)
+        start = time()
+        start = time()
+        gammatone_basis = get_gammatone(sr, n_fft, n_bins, fmin, fmax)
+        gammatone_basis = torch.tensor(gammatone_basis)
+        if verbose == True:
+            None
+            None
+        else:
+            pass
+        if trainable_bins:
+            gammatone_basis = nn.Parameter(gammatone_basis, requires_grad=trainable_bins)
+            self.register_parameter('gammatone_basis', gammatone_basis)
+        else:
+            self.register_buffer('gammatone_basis', gammatone_basis)
+
+    def forward(self, x):
+        """
+        Convert a batch of waveforms to Mel spectrograms.
+
+        Parameters
+        ----------
+        x : torch tensor
+            Input signal should be in either of the following shapes.
+
+            1. ``(len_audio)``
+
+            2. ``(num_audio, len_audio)``
+
+            3. ``(num_audio, 1, len_audio)``
+            It will be automatically broadcast to the right shape
+        """
+        x = broadcast_dim(x)
+        spec = self.stft(x, output_format='Magnitude') ** self.power
+        gammatonespec = torch.matmul(self.gammatone_basis, spec)
+        return gammatonespec
+
+    def extra_repr(self) ->str:
+        return 'Gammatone filter banks size = {}, trainable_bins={}'.format((*self.gammatone_basis.shape,), self.trainable_bins, self.trainable_STFT)
+
+
+class Griffin_Lim(nn.Module):
+    """
+    Converting Magnitude spectrograms back to waveforms based on the "fast Griffin-Lim"[1].
+    This Griffin Lim is a direct clone from librosa.griffinlim.
+
+    [1] Perraudin, N., Balazs, P., & Søndergaard, P. L. “A fast Griffin-Lim algorithm,”
+    IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (pp. 1-4), Oct. 2013.
+
+    Parameters
+    ----------
+    n_fft : int
+        The window size. Default value is 2048.
+
+    n_iter=32 : int
+        The number of iterations for Griffin-Lim. The default value is ``32``
+
+    hop_length : int
+        The hop (or stride) size. Default value is ``None`` which is equivalent to ``n_fft//4``.
+        Please make sure the value is the same as the forward STFT.
+
+    window : str
+        The windowing function for iSTFT. It uses ``scipy.signal.get_window``, please refer to
+        scipy documentation for possible windowing functions. The default value is 'hann'.
+        Please make sure the value is the same as the forward STFT.
+
+    center : bool
+        Putting the iSTFT keneral at the center of the time-step or not. If ``False``, the time
+        index is the beginning of the iSTFT kernel, if ``True``, the time index is the center of
+        the iSTFT kernel. Default value if ``True``.
+        Please make sure the value is the same as the forward STFT.
+
+    momentum : float
+        The momentum for the update rule. The default value is ``0.99``.
+
+    device : str
+        Choose which device to initialize this layer. Default value is 'cpu'
+
+    """
+
+    def __init__(self, n_fft, n_iter=32, hop_length=None, win_length=None, window='hann', center=True, pad_mode='reflect', momentum=0.99, device='cpu'):
+        super().__init__()
+        self.n_fft = n_fft
+        self.win_length = win_length
+        self.n_iter = n_iter
+        self.center = center
+        self.pad_mode = pad_mode
+        self.momentum = momentum
+        self.device = device
+        if win_length == None:
+            self.win_length = n_fft
+        else:
+            self.win_length = win_length
+        if hop_length == None:
+            self.hop_length = n_fft // 4
+        else:
+            self.hop_length = hop_length
+        self.w = torch.tensor(get_window(window, int(self.win_length), fftbins=True), device=device).float()
+
+    def forward(self, S):
+        """
+        Convert a batch of magnitude spectrograms to waveforms.
+
+        Parameters
+        ----------
+        S : torch tensor
+            Spectrogram of the shape ``(batch, n_fft//2+1, timesteps)``
+        """
+        assert S.dim() == 3, 'Please make sure your input is in the shape of (batch, freq_bins, timesteps)'
+        rand_phase = torch.randn(*S.shape, device=self.device)
+        angles = torch.empty((*S.shape, 2), device=self.device)
+        angles[:, :, :, 0] = torch.cos(2 * np.pi * rand_phase)
+        angles[:, :, :, 1] = torch.sin(2 * np.pi * rand_phase)
+        rebuilt = torch.zeros(*angles.shape, device=self.device)
+        for _ in range(self.n_iter):
+            tprev = rebuilt
+            inverse = torch.istft(S.unsqueeze(-1) * angles, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, center=self.center)
+            rebuilt = torch.stft(inverse, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, pad_mode=self.pad_mode)
+            angles[:, :, :] = rebuilt[:, :, :] - self.momentum / (1 + self.momentum) * tprev[:, :, :]
+            angles = angles.div(torch.sqrt(angles.pow(2).sum(-1)).unsqueeze(-1) + 1e-16)
+        inverse = torch.istft(S.unsqueeze(-1) * angles, self.n_fft, self.hop_length, win_length=self.win_length, window=self.w, center=self.center)
+        return inverse
 
 
 def fft_frequencies(sr=22050, n_fft=2048):
@@ -2799,7 +2842,7 @@ class VQT(torch.nn.Module):
         else:
             self.downsample_factor = 1.0
         alpha = 2.0 ** (1.0 / bins_per_octave) - 1.0
-        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.float(bins_per_octave))
+        freqs = fmin * 2.0 ** (np.r_[0:n_bins] / np.double(bins_per_octave))
         self.frequencies = freqs
         lenghts = np.ceil(Q * sr / (freqs + gamma / alpha))
         max_len = int(max(lenghts))
@@ -2847,10 +2890,11 @@ class VQT(torch.nn.Module):
                 hop //= 2
             else:
                 x_down = x
+            pad_length = int(getattr(self, 'cqt_kernels_real_{}'.format(i)).shape[-1] // 2)
             if self.pad_mode == 'constant':
-                my_padding = nn.ConstantPad1d(getattr(self, 'cqt_kernels_real_{}'.format(i)).shape[-1] // 2, 0)
+                my_padding = nn.ConstantPad1d((pad_length, pad_length), 0)
             elif self.pad_mode == 'reflect':
-                my_padding = nn.ReflectionPad1d(getattr(self, 'cqt_kernels_real_{}'.format(i)).shape[-1] // 2)
+                my_padding = nn.ReflectionPad1d((pad_length, pad_length))
             cur_vqt = get_cqt_complex(x_down, getattr(self, 'cqt_kernels_real_{}'.format(i)), getattr(self, 'cqt_kernels_imag_{}'.format(i)), hop, my_padding)
             vqt.insert(0, cur_vqt)
         vqt = torch.cat(vqt, dim=1)

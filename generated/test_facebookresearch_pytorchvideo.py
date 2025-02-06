@@ -193,7 +193,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -374,7 +376,7 @@ from torchvision.transforms._transforms_video import NormalizeVideo
 import torchvision
 
 
-import torchvision.transforms.functional_tensor as F_t
+from torch import Tensor
 
 
 from torchvision.transforms.functional import InterpolationMode
@@ -507,7 +509,7 @@ class NoOpConvertBlock(EfficientBlockBase):
             applied when convert() is called.
     """
 
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: 'nn.Module'):
         super().__init__()
         self.model = model
 
@@ -548,7 +550,7 @@ class SwishFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        x = ctx.saved_variables[0]
+        x, = ctx.saved_tensors
         sigmoid_x = torch.sigmoid(x)
         return grad_output * (sigmoid_x * (1 + x * (1 - sigmoid_x)))
 
@@ -618,7 +620,7 @@ class _Reshape(nn.Module):
         reshape_size (tuple): size of data after reshape.
     """
 
-    def __init__(self, reshape_size: Tuple):
+    def __init__(self, reshape_size: 'Tuple'):
         super().__init__()
         self.reshape_size = reshape_size
 
@@ -634,7 +636,7 @@ class _SkipConnectMul(nn.Module):
             implements layer(x)*x.
     """
 
-    def __init__(self, layer: nn.Module):
+    def __init__(self, layer: 'nn.Module'):
         super().__init__()
         self.layer = layer
         self.mul_func = nn.quantized.FloatFunctional()
@@ -658,7 +660,7 @@ class SqueezeExcitation(EfficientBlockBase):
     while it is in deployable form if convert_flag is true.
     """
 
-    def __init__(self, num_channels: int, num_channels_reduced: Optional[int]=None, reduction_ratio: float=2.0, is_3d: bool=False, activation: Optional[nn.Module]=None) ->None:
+    def __init__(self, num_channels: 'int', num_channels_reduced: 'Optional[int]'=None, reduction_ratio: 'float'=2.0, is_3d: 'bool'=False, activation: 'Optional[nn.Module]'=None) ->None:
         """
         Args:
             num_channels (int): Number of input channels.
@@ -726,7 +728,7 @@ class _Conv3dTemporalKernel3Decomposed(nn.Module):
     The input Conv3d also needs zero padding of size 1 in temporal dimension.
     """
 
-    def __init__(self, conv3d_in: nn.Conv3d, input_THW_tuple: Tuple):
+    def __init__(self, conv3d_in: 'nn.Conv3d', input_THW_tuple: 'Tuple'):
         """
         Args:
             conv3d_in (nn.Module): input nn.Conv3d module to be converted
@@ -810,7 +812,7 @@ class _Conv3dTemporalKernel5Decomposed(nn.Module):
     The input Conv3d also needs zero padding of size 2 in temporal dimension at begin and end.
     """
 
-    def __init__(self, conv3d_in: nn.Conv3d, thw_shape: Tuple[int, int, int]):
+    def __init__(self, conv3d_in: 'nn.Conv3d', thw_shape: 'Tuple[int, int, int]'):
         """
         Args:
             conv3d_in (nn.Module): input nn.Conv3d module to be converted
@@ -916,7 +918,7 @@ class _Conv3dTemporalKernel1Decomposed(nn.Module):
     where T is the length of I in temporal dimension.
     """
 
-    def __init__(self, conv3d_eq: nn.Conv3d, input_THW_tuple: Tuple):
+    def __init__(self, conv3d_eq: 'nn.Conv3d', input_THW_tuple: 'Tuple'):
         """
         Args:
             conv3d_eq (nn.Module): input nn.Conv3d module to be converted
@@ -981,7 +983,7 @@ class Conv3dPwBnAct(EfficientBlockBase):
 
     """
 
-    def __init__(self, in_channels: int, out_channels: int, bias=False, activation: str='relu', use_bn=True, norm_eps: float=1e-05, norm_momentum: float=0.1):
+    def __init__(self, in_channels: 'int', out_channels: 'int', bias=False, activation: 'str'='relu', use_bn=True, norm_eps: 'float'=1e-05, norm_momentum: 'float'=0.1):
         super().__init__()
         self._in_channels = in_channels
         self._out_channels = out_channels
@@ -995,7 +997,7 @@ class Conv3dPwBnAct(EfficientBlockBase):
         self.kernel = nn.Sequential(kernel)
         self.convert_flag = False
 
-    def convert(self, input_blob_size: Tuple, convert_for_quantize: bool=False, native_conv3d_op_qnnpack: bool=False, **kwargs):
+    def convert(self, input_blob_size: 'Tuple', convert_for_quantize: 'bool'=False, native_conv3d_op_qnnpack: 'bool'=False, **kwargs):
         """
         Converts the block into efficient form.
         For fp32 operation, or quantized but with older version of QNNPACK w/o native int8
@@ -1084,7 +1086,7 @@ class Conv3d3x3x3DwBnAct(EfficientBlockBase):
     For other spatial kernels like 7x7 dw, the efficiency may be lower.
     """
 
-    def __init__(self, in_channels: int, spatial_stride: int=1, bias=False, activation: str='relu', use_bn=True, norm_eps: float=1e-05, norm_momentum: float=0.1):
+    def __init__(self, in_channels: 'int', spatial_stride: 'int'=1, bias=False, activation: 'str'='relu', use_bn=True, norm_eps: 'float'=1e-05, norm_momentum: 'float'=0.1):
         super().__init__()
         kernel = OrderedDict()
         conv_stride = 1, spatial_stride, spatial_stride
@@ -1096,7 +1098,7 @@ class Conv3d3x3x3DwBnAct(EfficientBlockBase):
         self.kernel = nn.Sequential(kernel)
         self.convert_flag = False
 
-    def convert(self, input_blob_size: Tuple, convert_for_quantize: bool=False, native_conv3d_op_qnnpack: bool=False, **kwargs):
+    def convert(self, input_blob_size: 'Tuple', convert_for_quantize: 'bool'=False, native_conv3d_op_qnnpack: 'bool'=False, **kwargs):
         """
         Converts the block into efficient form.
         For fp32 operation, or quantized but with older version of QNNPACK w/o native int8
@@ -1166,7 +1168,7 @@ class Conv3dTemporalKernel1BnAct(EfficientBlockBase):
 
     """
 
-    def __init__(self, in_channels: int, out_channels: int, bias=False, groups: int=1, spatial_kernel: int=1, spatial_stride: int=1, spatial_padding: int=0, spatial_dilation: int=1, activation: str='relu', use_bn=True, norm_eps: float=1e-05, norm_momentum: float=0.1):
+    def __init__(self, in_channels: 'int', out_channels: 'int', bias=False, groups: 'int'=1, spatial_kernel: 'int'=1, spatial_stride: 'int'=1, spatial_padding: 'int'=0, spatial_dilation: 'int'=1, activation: 'str'='relu', use_bn=True, norm_eps: 'float'=1e-05, norm_momentum: 'float'=0.1):
         super().__init__()
         kernel_size = 1, spatial_kernel, spatial_kernel
         stride = 1, spatial_stride, spatial_stride
@@ -1181,7 +1183,7 @@ class Conv3dTemporalKernel1BnAct(EfficientBlockBase):
         self.kernel = nn.Sequential(kernel)
         self.convert_flag = False
 
-    def convert(self, input_blob_size: Tuple, **kwargs):
+    def convert(self, input_blob_size: 'Tuple', **kwargs):
         """
         Converts Conv3d into equivalent Conv2d for QNNPACK deployment.
         This conversion is done by first fuse conv3d with bn,
@@ -1248,12 +1250,12 @@ class Conv3d3x1x1BnAct(EfficientBlockBase):
 
     """
 
-    def __init__(self, in_channels: int, out_channels: int, groups: int=1, bias=False, activation: str='relu', use_bn=True, norm_eps=1e-05, norm_momentum=0.1):
+    def __init__(self, in_channels: 'int', out_channels: 'int', groups: 'int'=1, bias=False, activation: 'str'='relu', use_bn=True, norm_eps=1e-05, norm_momentum=0.1):
         super().__init__()
         kernel = OrderedDict()
         kernel['conv'] = nn.Conv3d(in_channels, out_channels, kernel_size=(3, 1, 1), groups=groups, padding=(1, 0, 0), bias=bias)
         if groups == out_channels:
-            logging.warn('Conv3d3x1x1BnAct has low efficiency for depthwise conv. Consider using Conv3d3x3x3DwBnRelu instead.')
+            logging.warning('Conv3d3x1x1BnAct has low efficiency for depthwise conv. Consider using Conv3d3x3x3DwBnRelu instead.')
         if use_bn:
             kernel['bn'] = nn.BatchNorm3d(out_channels, eps=norm_eps, momentum=norm_momentum)
         assert activation in supported_act_functions, f'Conv3d3x1x1BnAct: {activation} is not in supported_act_functions.'
@@ -1317,7 +1319,7 @@ class Conv3d5x1x1BnAct(EfficientBlockBase):
 
     """
 
-    def __init__(self, in_channels: int, out_channels: int, groups: int=1, bias=False, activation: str='relu', use_bn=True, norm_eps=1e-05, norm_momentum=0.1):
+    def __init__(self, in_channels: 'int', out_channels: 'int', groups: 'int'=1, bias=False, activation: 'str'='relu', use_bn=True, norm_eps=1e-05, norm_momentum=0.1):
         super().__init__()
         kernel = OrderedDict()
         kernel['conv'] = nn.Conv3d(in_channels, out_channels, kernel_size=(5, 1, 1), groups=groups, padding=(2, 0, 0), bias=bias)
@@ -1357,7 +1359,7 @@ class FullyConnected(NoOpConvertBlock):
         bias (bool): if True, bias is applied
     """
 
-    def __init__(self, in_features: int, out_features: int, bias: bool=True):
+    def __init__(self, in_features: 'int', out_features: 'int', bias: 'bool'=True):
         super().__init__(model=nn.Linear(in_features, out_features, bias=bias))
 
 
@@ -1372,7 +1374,7 @@ class AdaptiveAvgPool3dOutSize1(EfficientBlockBase):
         self.pool = nn.AdaptiveAvgPool3d(1)
         self.convert_flag = False
 
-    def convert(self, input_blob_size: Tuple, **kwargs):
+    def convert(self, input_blob_size: 'Tuple', **kwargs):
         """
         Converts AdaptiveAvgPool into AvgPool with constant kernel size for better
         efficiency.
@@ -1401,7 +1403,7 @@ class AdaptiveAvgPool2dOutSize1(EfficientBlockBase):
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.convert_flag = False
 
-    def convert(self, input_blob_size: Tuple, **kwargs):
+    def convert(self, input_blob_size: 'Tuple', **kwargs):
         """
         Converts AdaptiveAvgPool into AvgPool with constant kernel size for better
         efficiency.
@@ -1431,7 +1433,7 @@ class AdaptiveAvgPool3d(NoOpConvertBlock):
             will be equal to (output_size, output_size, output_size).
     """
 
-    def __init__(self, output_size: Union[int, Tuple]):
+    def __init__(self, output_size: 'Union[int, Tuple]'):
         super().__init__(model=nn.AdaptiveAvgPool3d(output_size))
 
 
@@ -1447,7 +1449,7 @@ class AdaptiveAvgPool2d(NoOpConvertBlock):
             will be equal to (output_size, output_size).
     """
 
-    def __init__(self, output_size: Union[int, Tuple]):
+    def __init__(self, output_size: 'Union[int, Tuple]'):
         super().__init__(model=nn.AdaptiveAvgPool2d(output_size))
 
 
@@ -1469,7 +1471,7 @@ class Mlp(nn.Module):
                                 Dropout (p=dropout_rate)
     """
 
-    def __init__(self, in_features: int, hidden_features: Optional[int]=None, out_features: Optional[int]=None, act_layer=nn.GELU, dropout_rate: float=0.0, bias_on: bool=True) ->None:
+    def __init__(self, in_features: 'int', hidden_features: 'Optional[int]'=None, out_features: 'Optional[int]'=None, act_layer=nn.GELU, dropout_rate: 'float'=0.0, bias_on: 'bool'=True) ->None:
         """
         Args:
             in_features (int): Input feature dimension.
@@ -1489,7 +1491,7 @@ class Mlp(nn.Module):
         self.act = act_layer()
         self.fc2 = nn.Linear(hidden_features, out_features, bias=bias_on)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (tensor): Input tensor.
@@ -1501,7 +1503,7 @@ class Mlp(nn.Module):
 
 
 @torch.fx.wrap
-def _squeeze_dims_fx(tensor: torch.Tensor, tensor_dim: int) ->torch.Tensor:
+def _squeeze_dims_fx(tensor: 'torch.Tensor', tensor_dim: 'int') ->torch.Tensor:
     if tensor_dim == 4:
         pass
     elif tensor_dim == 3:
@@ -1512,12 +1514,12 @@ def _squeeze_dims_fx(tensor: torch.Tensor, tensor_dim: int) ->torch.Tensor:
 
 
 @torch.jit.script
-def _squeeze_dims_jit(tensor: torch.Tensor, tensor_dim: int) ->torch.Tensor:
+def _squeeze_dims_jit(tensor: 'torch.Tensor', tensor_dim: 'int') ->torch.Tensor:
     return _squeeze_dims_fx(tensor, tensor_dim)
 
 
 @torch.fx.wrap
-def _unsqueeze_dims_fx(tensor: torch.Tensor) ->Tuple[torch.Tensor, int]:
+def _unsqueeze_dims_fx(tensor: 'torch.Tensor') ->Tuple[torch.Tensor, int]:
     tensor_dim = tensor.ndim
     if tensor_dim == 4:
         pass
@@ -1529,13 +1531,13 @@ def _unsqueeze_dims_fx(tensor: torch.Tensor) ->Tuple[torch.Tensor, int]:
 
 
 @torch.jit.script
-def _unsqueeze_dims_jit(tensor: torch.Tensor) ->Tuple[torch.Tensor, int]:
+def _unsqueeze_dims_jit(tensor: 'torch.Tensor') ->Tuple[torch.Tensor, int]:
     return _unsqueeze_dims_fx(tensor)
 
 
 class _AttentionPool(torch.nn.Module):
 
-    def __init__(self, pool: Optional[torch.nn.Module], has_cls_embed: bool, norm: Optional[torch.nn.Module]) ->None:
+    def __init__(self, pool: 'Optional[torch.nn.Module]', has_cls_embed: 'bool', norm: 'Optional[torch.nn.Module]') ->None:
         """Apply pool to a flattened input (given pool operation and the unflattened shape).
 
 
@@ -1571,7 +1573,7 @@ class _AttentionPool(torch.nn.Module):
             self.has_norm = False
             self.norm = torch.nn.Identity()
 
-    def forward(self, tensor: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int]]:
+    def forward(self, tensor: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int]]:
         """
         Args:
             tensor (torch.Tensor): Input tensor.
@@ -1588,7 +1590,7 @@ class _AttentionPool(torch.nn.Module):
             tensor, tensor_dim = _unsqueeze_dims_jit(tensor)
         else:
             tensor, tensor_dim = _unsqueeze_dims_fx(tensor)
-        cls_tok: torch.Tensor = torch.tensor(0)
+        cls_tok: 'torch.Tensor' = torch.tensor(0)
         if self.has_cls_embed:
             cls_tok, tensor = tensor[:, :, :1, :], tensor[:, :, 1:, :]
         B, N, L, C = tensor.shape
@@ -1612,7 +1614,7 @@ class _AttentionPool(torch.nn.Module):
         return tensor, thw_shape
 
 
-def _post_attention_pool(tensor: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int]]:
+def _post_attention_pool(tensor: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int]]:
     B, N, L, C, T, H, W, tensor_dim = thw_shape
     thw_shape = [tensor.shape[2], tensor.shape[3], tensor.shape[4]]
     L_pooled = tensor.shape[2] * tensor.shape[3] * tensor.shape[4]
@@ -1624,7 +1626,7 @@ def _post_attention_pool(tensor: torch.Tensor, thw_shape: List[int]) ->Tuple[tor
     return tensor, thw_shape
 
 
-def _pre_attention_pool(tensor: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, Tuple[int, int, int, int, int, int, int, int]]:
+def _pre_attention_pool(tensor: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, Tuple[int, int, int, int, int, int, int, int]]:
     """
     Apply pool to a flattened input (given pool operation and the unflattened shape).
 
@@ -1691,7 +1693,7 @@ class MultiScaleAttention(nn.Module):
                                       DropOut
     """
 
-    def __init__(self, dim: int, num_heads: int=8, qkv_bias: bool=False, dropout_rate: float=0.0, kernel_q: _size_3_t=(1, 1, 1), kernel_kv: _size_3_t=(1, 1, 1), stride_q: _size_3_t=(1, 1, 1), stride_kv: _size_3_t=(1, 1, 1), norm_layer=nn.LayerNorm, has_cls_embed: bool=True, pool_mode: str='conv', pool_first: bool=False, residual_pool: bool=True, depthwise_conv: bool=True, bias_on: bool=True, separate_qkv: bool=True) ->None:
+    def __init__(self, dim: 'int', num_heads: 'int'=8, qkv_bias: 'bool'=False, dropout_rate: 'float'=0.0, kernel_q: '_size_3_t'=(1, 1, 1), kernel_kv: '_size_3_t'=(1, 1, 1), stride_q: '_size_3_t'=(1, 1, 1), stride_kv: '_size_3_t'=(1, 1, 1), norm_layer=nn.LayerNorm, has_cls_embed: 'bool'=True, pool_mode: 'str'='conv', pool_first: 'bool'=False, residual_pool: 'bool'=True, depthwise_conv: 'bool'=True, bias_on: 'bool'=True, separate_qkv: 'bool'=True) ->None:
         """
         Args:
             dim (int): Input feature dimension.
@@ -1753,13 +1755,13 @@ class MultiScaleAttention(nn.Module):
         else:
             raise NotImplementedError(f'Unsupported model {pool_mode}')
 
-    def _qkv_proj(self, q: torch.Tensor, q_size: List[int], k: torch.Tensor, k_size: List[int], v: torch.Tensor, v_size: List[int], batch_size: List[int], chan_size: List[int]) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _qkv_proj(self, q: 'torch.Tensor', q_size: 'List[int]', k: 'torch.Tensor', k_size: 'List[int]', v: 'torch.Tensor', v_size: 'List[int]', batch_size: 'List[int]', chan_size: 'List[int]') ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         q = self.q(q).reshape(batch_size, q_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
         k = self.k(k).reshape(batch_size, k_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
         v = self.v(v).reshape(batch_size, v_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
         return q, k, v
 
-    def _qkv_pool(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int], torch.Tensor, List[int], torch.Tensor, List[int]]:
+    def _qkv_pool(self, q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int], torch.Tensor, List[int], torch.Tensor, List[int]]:
         if self.pool_q is None:
             q_shape = thw_shape
         else:
@@ -1783,19 +1785,19 @@ class MultiScaleAttention(nn.Module):
             v, v_shape = _post_attention_pool(v, v_shape)
         return q, q_shape, k, k_shape, v, v_shape
 
-    def _get_qkv_length(self, q_shape: List[int], k_shape: List[int], v_shape: List[int]) ->Tuple[int]:
+    def _get_qkv_length(self, q_shape: 'List[int]', k_shape: 'List[int]', v_shape: 'List[int]') ->Tuple[int]:
         q_N = numpy.prod(q_shape) + 1 if self.has_cls_embed else numpy.prod(q_shape)
         k_N = numpy.prod(k_shape) + 1 if self.has_cls_embed else numpy.prod(k_shape)
         v_N = numpy.prod(v_shape) + 1 if self.has_cls_embed else numpy.prod(v_shape)
         return q_N, k_N, v_N
 
-    def _reshape_qkv_to_seq(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, q_N: int, v_N: int, k_N: int, B: int, C: int) ->Tuple[int]:
+    def _reshape_qkv_to_seq(self, q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', q_N: 'int', v_N: 'int', k_N: 'int', B: 'int', C: 'int') ->Tuple[int]:
         q = q.permute(0, 2, 1, 3).reshape(B, q_N, C)
         v = v.permute(0, 2, 1, 3).reshape(B, v_N, C)
         k = k.permute(0, 2, 1, 3).reshape(B, k_N, C)
         return q, k, v
 
-    def forward(self, x: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int]]:
+    def forward(self, x: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int]]:
         """
         Args:
             x (torch.Tensor): Input tensor.
@@ -1816,7 +1818,7 @@ class MultiScaleAttention(nn.Module):
         return x, q_shape
 
 
-def drop_path(x: torch.Tensor, drop_prob: float=0.0, training: bool=False) ->torch.Tensor:
+def drop_path(x: 'torch.Tensor', drop_prob: 'float'=0.0, training: 'bool'=False) ->torch.Tensor:
     """
     Stochastic Depth per sample.
 
@@ -1840,7 +1842,7 @@ class DropPath(nn.Module):
     Drop paths (Stochastic Depth) per sample.
     """
 
-    def __init__(self, drop_prob: float=0.0) ->None:
+    def __init__(self, drop_prob: 'float'=0.0) ->None:
         """
         Args:
             drop_prob (float): Probability to apply drop path.
@@ -1848,7 +1850,7 @@ class DropPath(nn.Module):
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (tensor): Input tensor.
@@ -1869,7 +1871,8 @@ class MultiScaleBlock(nn.Module):
                                         ↓                   |
                                        Norm                 |
                                         ↓                   |
-                                MultiScaleAttention        Pool
+                                MultiScaleAttention  [Proj: dim expand]
+                                  [dim expand]             Pool
                                         ↓                   |
                                      DropPath               |
                                         ↓                   |
@@ -1879,14 +1882,15 @@ class MultiScaleBlock(nn.Module):
                                         ↓                   |
                                        Norm                 |
                                         ↓                   |
-                                       Mlp                 Proj
+                                       Mlp          [Proj: dim expand]
+                                   [dim expand]             |
                                         ↓                   |
                                      DropPath               |
                                         ↓                   |
                                     Summation  ←------------+
     """
 
-    def __init__(self, dim: int, dim_out: int, num_heads: int, mlp_ratio: float=4.0, qkv_bias: bool=False, dropout_rate: float=0.0, droppath_rate: float=0.0, act_layer: nn.Module=nn.GELU, norm_layer: nn.Module=nn.LayerNorm, attn_norm_layer: nn.Module=nn.LayerNorm, kernel_q: _size_3_t=(1, 1, 1), kernel_kv: _size_3_t=(1, 1, 1), stride_q: _size_3_t=(1, 1, 1), stride_kv: _size_3_t=(1, 1, 1), pool_mode: str='conv', has_cls_embed: bool=True, pool_first: bool=False, residual_pool: bool=False, depthwise_conv: bool=True, bias_on: bool=True, separate_qkv: bool=True) ->None:
+    def __init__(self, dim: 'int', dim_out: 'int', num_heads: 'int', mlp_ratio: 'float'=4.0, qkv_bias: 'bool'=False, dropout_rate: 'float'=0.0, droppath_rate: 'float'=0.0, act_layer: 'nn.Module'=nn.GELU, norm_layer: 'nn.Module'=nn.LayerNorm, attn_norm_layer: 'nn.Module'=nn.LayerNorm, dim_mul_in_att: 'bool'=False, kernel_q: '_size_3_t'=(1, 1, 1), kernel_kv: '_size_3_t'=(1, 1, 1), stride_q: '_size_3_t'=(1, 1, 1), stride_kv: '_size_3_t'=(1, 1, 1), pool_mode: 'str'='conv', has_cls_embed: 'bool'=True, pool_first: 'bool'=False, residual_pool: 'bool'=False, depthwise_conv: 'bool'=True, bias_on: 'bool'=True, separate_qkv: 'bool'=True) ->None:
         """
         Args:
             dim (int): Input feature dimension.
@@ -1901,6 +1905,8 @@ class MultiScaleBlock(nn.Module):
             act_layer (nn.Module): Activation layer used in the Mlp layer.
             norm_layer (nn.Module): Normalization layer.
             attn_norm_layer (nn.Module): Normalization layer in the attention module.
+            dim_mul_in_att (bool): If set to True, dimension expansion happens inside
+                the attention module, otherwise it happens in the Mlp block. Default: False.
             kernel_q (_size_3_t): Pooling kernel size for q. If pooling kernel size is
                 1 for all the dimensions, pooling is not used (by default).
             kernel_kv (_size_3_t): Pooling kernel size for kv. If pooling kernel size
@@ -1925,17 +1931,19 @@ class MultiScaleBlock(nn.Module):
         self.dim = dim
         self.dim_out = dim_out
         self.norm1 = norm_layer(dim)
+        self.dim_mul_in_att = dim_mul_in_att
         self.norm1_is_batchnorm_1d = isinstance(self.norm1, nn.BatchNorm1d)
         kernel_skip = [(s + 1 if s > 1 else s) for s in stride_q]
         stride_skip = stride_q
         padding_skip = [int(skip // 2) for skip in kernel_skip]
-        self.attn = MultiScaleAttention(dim, num_heads=num_heads, qkv_bias=qkv_bias, dropout_rate=dropout_rate, kernel_q=kernel_q, kernel_kv=kernel_kv, stride_q=stride_q, stride_kv=stride_kv, norm_layer=attn_norm_layer, has_cls_embed=has_cls_embed, pool_mode=pool_mode, pool_first=pool_first, residual_pool=residual_pool, bias_on=bias_on, depthwise_conv=depthwise_conv, separate_qkv=separate_qkv)
+        att_dim = dim_out if dim_mul_in_att else dim
+        self.attn = MultiScaleAttention(dim=dim, dim_out=att_dim, num_heads=num_heads, qkv_bias=qkv_bias, dropout_rate=dropout_rate, kernel_q=kernel_q, kernel_kv=kernel_kv, stride_q=stride_q, stride_kv=stride_kv, norm_layer=attn_norm_layer, has_cls_embed=has_cls_embed, pool_mode=pool_mode, pool_first=pool_first, residual_pool=residual_pool, bias_on=bias_on, depthwise_conv=depthwise_conv, separate_qkv=separate_qkv)
         self.drop_path = DropPath(droppath_rate) if droppath_rate > 0.0 else nn.Identity()
-        self.norm2 = norm_layer(dim)
+        self.norm2 = norm_layer(att_dim)
         self.norm2_is_batchnorm_1d = isinstance(self.norm2, nn.BatchNorm1d)
-        mlp_hidden_dim = int(dim * mlp_ratio)
+        mlp_hidden_dim = int(att_dim * mlp_ratio)
         self.has_cls_embed = has_cls_embed
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, out_features=dim_out, act_layer=act_layer, dropout_rate=dropout_rate, bias_on=bias_on)
+        self.mlp = Mlp(in_features=att_dim, hidden_features=mlp_hidden_dim, out_features=dim_out, act_layer=act_layer, dropout_rate=dropout_rate, bias_on=bias_on)
         if dim != dim_out:
             self.proj = nn.Linear(dim, dim_out, bias=bias_on)
         else:
@@ -1943,18 +1951,21 @@ class MultiScaleBlock(nn.Module):
         self.pool_skip = nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False) if len(stride_skip) > 0 and numpy.prod(stride_skip) > 1 else None
         self._attention_pool = _AttentionPool(self.pool_skip, has_cls_embed=self.has_cls_embed, norm=None)
 
-    def forward(self, x: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int]]:
+    def forward(self, x: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int]]:
         """
         Args:
             x (torch.Tensor): Input tensor.
             thw_shape (List): The shape of the input tensor (before flattening).
         """
-        x_block, thw_shape_new = self.attn(self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1) if self.norm1_is_batchnorm_1d else self.norm1(x), thw_shape)
+        x_norm = self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1) if self.norm1_is_batchnorm_1d else self.norm1(x)
+        x_block, thw_shape_new = self.attn(x_norm, thw_shape)
+        if self.dim_mul_in_att and self.dim != self.dim_out:
+            x = self.proj(x_norm)
         x_res, _ = self._attention_pool(x, thw_shape)
         x = x_res + self.drop_path(x_block)
         x_norm = self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if self.norm2_is_batchnorm_1d else self.norm2(x)
         x_mlp = self.mlp(x_norm)
-        if self.dim != self.dim_out:
+        if not self.dim_mul_in_att and self.dim != self.dim_out:
             x = self.proj(x_norm)
         x = x + self.drop_path(x_mlp)
         return x, thw_shape_new
@@ -1990,7 +2001,7 @@ class ScriptableMultiScaleBlock(nn.Module):
                                     Summation  ←------------+
     """
 
-    def __init__(self, dim: int, dim_out: int, num_heads: int, mlp_ratio: float=4.0, qkv_bias: bool=False, dropout_rate: float=0.0, droppath_rate: float=0.0, act_layer: nn.Module=nn.GELU, norm_layer: nn.Module=nn.LayerNorm, attn_norm_layer: nn.Module=nn.LayerNorm, kernel_q: _size_3_t=(1, 1, 1), kernel_kv: _size_3_t=(1, 1, 1), stride_q: _size_3_t=(1, 1, 1), stride_kv: _size_3_t=(1, 1, 1), pool_mode: str='conv', has_cls_embed: bool=True, pool_first: bool=False, residual_pool: bool=False, depthwise_conv: bool=True, bias_on: bool=True, separate_qkv: bool=True) ->None:
+    def __init__(self, dim: 'int', dim_out: 'int', num_heads: 'int', mlp_ratio: 'float'=4.0, qkv_bias: 'bool'=False, dropout_rate: 'float'=0.0, droppath_rate: 'float'=0.0, act_layer: 'nn.Module'=nn.GELU, norm_layer: 'nn.Module'=nn.LayerNorm, attn_norm_layer: 'nn.Module'=nn.LayerNorm, kernel_q: '_size_3_t'=(1, 1, 1), kernel_kv: '_size_3_t'=(1, 1, 1), stride_q: '_size_3_t'=(1, 1, 1), stride_kv: '_size_3_t'=(1, 1, 1), pool_mode: 'str'='conv', has_cls_embed: 'bool'=True, pool_first: 'bool'=False, residual_pool: 'bool'=False, depthwise_conv: 'bool'=True, bias_on: 'bool'=True, separate_qkv: 'bool'=True) ->None:
         """
         Args:
             dim (int): Input feature dimension.
@@ -2041,7 +2052,7 @@ class ScriptableMultiScaleBlock(nn.Module):
         self.proj = nn.Linear(dim, dim_out, bias=bias_on) if dim != dim_out else nn.Identity()
         self.pool_skip = nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False) if len(stride_skip) > 0 and numpy.prod(stride_skip) > 1 else None
 
-    def forward(self, x: torch.Tensor, thw_shape: List[int]) ->Tuple[torch.Tensor, List[int]]:
+    def forward(self, x: 'torch.Tensor', thw_shape: 'List[int]') ->Tuple[torch.Tensor, List[int]]:
         """
         Args:
             x (torch.Tensor): Input tensor.
@@ -2274,7 +2285,7 @@ class ConvReduce3D(nn.Module):
             conv_list.append(nn.Conv3d(**conv_param))
         self.convs = nn.ModuleList(conv_list)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         output = []
         for ind in range(len(self.convs)):
             output.append(self.convs[ind](x))
@@ -2285,7 +2296,7 @@ class ConvReduce3D(nn.Module):
         return output
 
 
-def set_attributes(self, params: List[object]=None) ->None:
+def set_attributes(self, params: 'List[object]'=None) ->None:
     """
     An utility function used in classes to set attributes from the input list of parameters.
     Args:
@@ -2330,7 +2341,7 @@ class Conv2plus1d(nn.Module):
         assert self.conv_t is not None
         assert self.conv_xy is not None
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.conv_xy(x) if self.conv_xy_first else self.conv_t(x)
         x = self.norm(x) if self.norm else x
         x = self.activation(x) if self.activation else x
@@ -2338,7 +2349,7 @@ class Conv2plus1d(nn.Module):
         return x
 
 
-def _verify_feature_dim(feature_dims: List[int]):
+def _verify_feature_dim(feature_dims: 'List[int]'):
     assert isinstance(feature_dims, list)
     assert all(x > 0 for x in feature_dims)
 
@@ -2349,7 +2360,7 @@ class ConcatFusion(nn.Module):
     the sum of the last dimension of all input tensors.
     """
 
-    def __init__(self, feature_dims: List[int]):
+    def __init__(self, feature_dims: 'List[int]'):
         super().__init__()
         _verify_feature_dim(feature_dims)
         self._output_dim = sum(feature_dims)
@@ -2361,7 +2372,7 @@ class ConcatFusion(nn.Module):
         """
         return self._output_dim
 
-    def forward(self, input_list: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, input_list: 'List[torch.Tensor]') ->torch.Tensor:
         """
         Args:
             input_list (List[torch.Tensor]): a list of tensors of shape
@@ -2379,7 +2390,7 @@ class TemporalConcatFusion(nn.Module):
     Concatenates all inputs by their temporal dimension which is assumed to be dim=1.
     """
 
-    def __init__(self, feature_dims: List[int]):
+    def __init__(self, feature_dims: 'List[int]'):
         super().__init__()
         _verify_feature_dim(feature_dims)
         self._output_dim = max(feature_dims)
@@ -2392,7 +2403,7 @@ class TemporalConcatFusion(nn.Module):
         """
         return self._output_dim
 
-    def forward(self, input_list: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, input_list: 'List[torch.Tensor]') ->torch.Tensor:
         """
         Args:
             input_list (List[torch.Tensor]): a list of tensors of shape
@@ -2412,7 +2423,7 @@ class ReduceFusion(nn.Module):
     methods like "sum", "max" and "prod".
     """
 
-    def __init__(self, feature_dims: List[int], reduce_fn: Callable[[torch.Tensor], torch.Tensor]):
+    def __init__(self, feature_dims: 'List[int]', reduce_fn: 'Callable[[torch.Tensor], torch.Tensor]'):
         super().__init__()
         _verify_feature_dim(feature_dims)
         self.reduce_fn = reduce_fn
@@ -2426,7 +2437,7 @@ class ReduceFusion(nn.Module):
         """
         return self._output_dim
 
-    def forward(self, input_list: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, input_list: 'List[torch.Tensor]') ->torch.Tensor:
         """
         Args:
             input_list (List[torch.Tensor]): a list of tensors of shape
@@ -2501,7 +2512,7 @@ class PositionalEncoding(nn.Module):
     Implementation Reference: https://pytorch.org/tutorials/beginner/transformer_tutorial.html
     """
 
-    def __init__(self, embed_dim: int, seq_len: int=1024) ->None:
+    def __init__(self, embed_dim: 'int', seq_len: 'int'=1024) ->None:
         super().__init__()
         pe = torch.zeros(seq_len, embed_dim, dtype=torch.float)
         position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1)
@@ -2511,7 +2522,7 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         assert self.pe.size(1) >= x.size(1), 'Cannot apply position encoding of size ' + f'{self.pe.size()} when input has size {x.size()}'
         return x + self.pe[:, :x.size(1), :]
 
@@ -2521,7 +2532,7 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
     Add a cls token and apply a spatiotemporal encoding to a tensor.
     """
 
-    def __init__(self, embed_dim: int, patch_embed_shape: Tuple[int, int, int], sep_pos_embed: bool=False, has_cls: bool=True) ->None:
+    def __init__(self, embed_dim: 'int', patch_embed_shape: 'Tuple[int, int, int]', sep_pos_embed: 'bool'=False, has_cls: 'bool'=True) ->None:
         """
         Args:
             embed_dim (int): Embedding dimension for input sequence.
@@ -2565,7 +2576,7 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
     def patch_embed_shape(self) ->Tuple[int, int, int]:
         return self._patch_embed_shape
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): Input tensor.
@@ -2589,7 +2600,7 @@ class ScriptableSpatioTemporalClsPositionalEncoding(nn.Module):
     Add a cls token and apply a spatiotemporal encoding to a tensor.
     """
 
-    def __init__(self, embed_dim: int, patch_embed_shape: Tuple[int, int, int], sep_pos_embed: bool=False, has_cls: bool=True) ->None:
+    def __init__(self, embed_dim: 'int', patch_embed_shape: 'Tuple[int, int, int]', sep_pos_embed: 'bool'=False, has_cls: 'bool'=True) ->None:
         """
         Args:
             embed_dim (int): Embedding dimension for input sequence.
@@ -2616,7 +2627,7 @@ class ScriptableSpatioTemporalClsPositionalEncoding(nn.Module):
     def patch_embed_shape(self):
         return self._patch_embed_shape
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): Input tensor.
@@ -2631,7 +2642,7 @@ class ScriptableSpatioTemporalClsPositionalEncoding(nn.Module):
 class SqueezeAndExcitationLayer2D(nn.Module):
     """2D Squeeze and excitation layer, as per https://arxiv.org/pdf/1709.01507.pdf"""
 
-    def __init__(self, in_planes: int, reduction_ratio: Optional[int]=16, reduced_planes: Optional[int]=None):
+    def __init__(self, in_planes: 'int', reduction_ratio: 'Optional[int]'=16, reduced_planes: 'Optional[int]'=None):
         """
         Args:
             in_planes (int): input channel dimension.
@@ -2646,7 +2657,7 @@ class SqueezeAndExcitationLayer2D(nn.Module):
         reduced_planes = in_planes // reduction_ratio if reduced_planes is None else reduced_planes
         self.excitation = nn.Sequential(nn.Conv2d(in_planes, reduced_planes, kernel_size=1, stride=1, bias=True), nn.ReLU(), nn.Conv2d(reduced_planes, in_planes, kernel_size=1, stride=1, bias=True), nn.Sigmoid())
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (tensor): 2D image of format C * H * W
@@ -2657,7 +2668,7 @@ class SqueezeAndExcitationLayer2D(nn.Module):
         return x_scaled
 
 
-def convert_to_one_hot(targets: torch.Tensor, num_class: int, label_smooth: float=0.0) ->torch.Tensor:
+def convert_to_one_hot(targets: 'torch.Tensor', num_class: 'int', label_smooth: 'float'=0.0) ->torch.Tensor:
     """
     This function converts target class indices to one-hot vectors,
     given the number of classes.
@@ -2683,7 +2694,7 @@ class SoftTargetCrossEntropyLoss(nn.Module):
     This allows the targets for the cross entropy loss to be multi-label.
     """
 
-    def __init__(self, ignore_index: int=-100, reduction: str='mean', normalize_targets: bool=True) ->None:
+    def __init__(self, ignore_index: 'int'=-100, reduction: 'str'='mean', normalize_targets: 'bool'=True) ->None:
         """
         Args:
             ignore_index (int): sample should be ignored for loss if the class is this value.
@@ -2698,7 +2709,7 @@ class SoftTargetCrossEntropyLoss(nn.Module):
             raise NotImplementedError('reduction type "{}" not implemented'.format(self.reduction))
         self.eps = torch.finfo(torch.float32).eps
 
-    def forward(self, input: torch.Tensor, target: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             input (torch.Tensor): the shape of the tensor is N x C, where N is the number of
@@ -2810,7 +2821,7 @@ class X3dBottleneckBlock(EfficientBlockBase):
 
     """
 
-    def __init__(self, in_channels: int, mid_channels: int, out_channels: int, use_residual: bool=True, spatial_stride: int=1, se_ratio: float=0.0625, act_functions: Optional[Tuple[str]]=('relu', 'relu', 'relu'), bias: Optional[Tuple[bool]]=(False, False, False), use_bn: Optional[Tuple[bool]]=(True, True, True), norm_eps: float=1e-05, norm_momentum: float=0.1):
+    def __init__(self, in_channels: 'int', mid_channels: 'int', out_channels: 'int', use_residual: 'bool'=True, spatial_stride: 'int'=1, se_ratio: 'float'=0.0625, act_functions: 'Optional[Tuple[str]]'=('relu', 'relu', 'relu'), bias: 'Optional[Tuple[bool]]'=(False, False, False), use_bn: 'Optional[Tuple[bool]]'=(True, True, True), norm_eps: 'float'=1e-05, norm_momentum: 'float'=0.1):
         super().__init__()
         self._use_residual = use_residual
         self._res_proj = None
@@ -2877,7 +2888,7 @@ class EfficientX3d(nn.Module):
         enable_head (bool): Whether X3D model provides head.
     """
 
-    def __init__(self, num_classes: int=400, dropout: float=0.5, expansion: str='XS', head_act: str='identity', enable_head: bool=True):
+    def __init__(self, num_classes: 'int'=400, dropout: 'float'=0.5, expansion: 'str'='XS', head_act: 'str'='identity', enable_head: 'bool'=True):
         super().__init__()
         assert expansion in ('XS', 'S', 'M', 'L'), f'Expansion {expansion} not supported.'
         s1 = OrderedDict()
@@ -2948,7 +2959,7 @@ class FuseAudioToFastSlow(nn.Module):
     order.
     """
 
-    def __init__(self, block_fast_to_slow: nn.Module, block_audio_to_fastslow: nn.Module) ->None:
+    def __init__(self, block_fast_to_slow: 'nn.Module', block_audio_to_fastslow: 'nn.Module') ->None:
         """
         Args:
             conv_fast_to_slow (nn.module): convolution to perform fusion.
@@ -2970,7 +2981,7 @@ class FuseAudioToFastSlow(nn.Module):
         return [fuse_a + x_s_fuse, x_f, x_a]
 
 
-def _init_resnet_weights(model: nn.Module, fc_init_std: float=0.01) ->None:
+def _init_resnet_weights(model: 'nn.Module', fc_init_std: 'float'=0.01) ->None:
     """
     Performs ResNet style weight initialization. That is, recursively initialize the
     given model in the following way for each type:
@@ -3012,7 +3023,7 @@ def _init_resnet_weights(model: nn.Module, fc_init_std: float=0.01) ->None:
     return model
 
 
-def _init_vit_weights(model: nn.Module, trunc_normal_std: float=0.02) ->None:
+def _init_vit_weights(model: 'nn.Module', trunc_normal_std: 'float'=0.02) ->None:
     """
     Weight initialization for vision transformers.
 
@@ -3034,7 +3045,7 @@ def _init_vit_weights(model: nn.Module, trunc_normal_std: float=0.02) ->None:
                 nn.init.trunc_normal_(weights, std=trunc_normal_std)
 
 
-def init_net_weights(model: nn.Module, init_std: float=0.01, style: str='resnet') ->None:
+def init_net_weights(model: 'nn.Module', init_std: 'float'=0.01, style: 'str'='resnet') ->None:
     """
     Performs weight initialization. Options include ResNet style weight initialization
     and transformer style weight initialization.
@@ -3060,7 +3071,7 @@ class BYOL(nn.Module):
     https://arxiv.org/pdf/2006.07733.pdf
     """
 
-    def __init__(self, mmt: float, backbone: nn.Module, predictor: nn.Module, backbone_mmt: nn.Module, projector: Optional[nn.Module]=None, projector_mmt: Optional[nn.Module]=None) ->None:
+    def __init__(self, mmt: 'float', backbone: 'nn.Module', predictor: 'nn.Module', backbone_mmt: 'nn.Module', projector: 'Optional[nn.Module]'=None, projector_mmt: 'Optional[nn.Module]'=None) ->None:
         """
         Args:
             backbone (nn.Module): backbone for byol, input shape depends on the forward
@@ -3078,7 +3089,7 @@ class BYOL(nn.Module):
             mmt (float): momentum update ratio for the momentum backbone.
         """
         super().__init__()
-        self.mmt: float = mmt
+        self.mmt: 'float' = mmt
         if projector is not None:
             backbone = nn.Sequential(backbone, projector)
         init_net_weights(backbone)
@@ -3113,7 +3124,7 @@ class BYOL(nn.Module):
             p.data = dist[name].data * (1.0 - m) + p.data * m
 
     @torch.no_grad()
-    def forward_backbone_mmt(self, x: torch.Tensor) ->torch.Tensor:
+    def forward_backbone_mmt(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Forward momentum backbone.
         Args:
@@ -3123,7 +3134,7 @@ class BYOL(nn.Module):
             proj = self.backbone_mmt(x)
         return F.normalize(proj, dim=1)
 
-    def forward(self, x: torch.Tensor) ->Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def forward(self, x: 'torch.Tensor') ->Union[torch.Tensor, Tuple[torch.Tensor]]:
         """
         Args:
             x (tensor): input to be forwarded of shape N x C x T x H x W
@@ -3146,7 +3157,7 @@ class SequencePool(nn.Module):
 
     """
 
-    def __init__(self, mode: str) ->None:
+    def __init__(self, mode: 'str') ->None:
         """
         Args:
             mode (str): Optionals include "cls" and "mean". If set to "cls", it assumes
@@ -3157,7 +3168,7 @@ class SequencePool(nn.Module):
         assert mode in ['cls', 'mean'], 'Unsupported mode for SequencePool.'
         self.mode = mode
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.mode == 'cls':
             x = x[:, 0]
         elif self.mode == 'mean':
@@ -3188,7 +3199,7 @@ class ResNetBasicHead(nn.Module):
     The builder can be found in `create_res_basic_head`.
     """
 
-    def __init__(self, pool: nn.Module=None, dropout: nn.Module=None, proj: nn.Module=None, activation: nn.Module=None, output_pool: nn.Module=None) ->None:
+    def __init__(self, pool: 'nn.Module'=None, dropout: 'nn.Module'=None, proj: 'nn.Module'=None, activation: 'nn.Module'=None, output_pool: 'nn.Module'=None) ->None:
         """
         Args:
             pool (torch.nn.modules): pooling module.
@@ -3201,7 +3212,7 @@ class ResNetBasicHead(nn.Module):
         set_attributes(self, locals())
         assert self.proj is not None
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.pool is not None:
             x = self.pool(x)
         if self.dropout is not None:
@@ -3241,7 +3252,7 @@ class ResNetRoIHead(nn.Module):
     The builder can be found in `create_res_roi_pooling_head`.
     """
 
-    def __init__(self, pool: nn.Module=None, pool_spatial: nn.Module=None, roi_layer: nn.Module=None, dropout: nn.Module=None, proj: nn.Module=None, activation: nn.Module=None, output_pool: nn.Module=None) ->None:
+    def __init__(self, pool: 'nn.Module'=None, pool_spatial: 'nn.Module'=None, roi_layer: 'nn.Module'=None, dropout: 'nn.Module'=None, proj: 'nn.Module'=None, activation: 'nn.Module'=None, output_pool: 'nn.Module'=None) ->None:
         """
         Args:
             pool (torch.nn.modules): pooling module.
@@ -3256,7 +3267,7 @@ class ResNetRoIHead(nn.Module):
         set_attributes(self, locals())
         assert self.proj is not None
 
-    def forward(self, x: torch.Tensor, bboxes: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', bboxes: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.tensor): input tensor
@@ -3308,7 +3319,7 @@ class VisionTransformerBasicHead(nn.Module):
     The builder can be found in `create_vit_basic_head`.
     """
 
-    def __init__(self, sequence_pool: nn.Module=None, dropout: nn.Module=None, proj: nn.Module=None, activation: nn.Module=None) ->None:
+    def __init__(self, sequence_pool: 'nn.Module'=None, dropout: 'nn.Module'=None, proj: 'nn.Module'=None, activation: 'nn.Module'=None) ->None:
         """
         Args:
             sequence_pool (torch.nn.modules): pooling module.
@@ -3320,7 +3331,7 @@ class VisionTransformerBasicHead(nn.Module):
         set_attributes(self, locals())
         assert self.proj is not None
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.sequence_pool is not None:
             x = self.sequence_pool(x)
         if self.dropout is not None:
@@ -3338,7 +3349,7 @@ class MaskedTemporalPooling(torch.nn.Module):
     all masked values are ignored.
     """
 
-    def __init__(self, method: str):
+    def __init__(self, method: 'str'):
         """
         method (str): the method of pooling to use. Options:
             'max': reduces temporal dimension to each valid max value.
@@ -3351,7 +3362,7 @@ class MaskedTemporalPooling(torch.nn.Module):
         assert method in ('max', 'avg', 'sum')
         self._method = method
 
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor]=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): tensor with shape (batch_size, seq_len, feature_dim)
@@ -3392,7 +3403,7 @@ class TransposeMultiheadAttention(nn.Module):
     shape.
     """
 
-    def __init__(self, feature_dim: int, num_heads: int=1):
+    def __init__(self, feature_dim: 'int', num_heads: 'int'=1):
         """
         Args:
             feature_dim (int): attention embedding dimension
@@ -3409,7 +3420,7 @@ class TransposeMultiheadAttention(nn.Module):
         """
         return self._attention_weights
 
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor]=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): tensor of shape (batch_size, seq_len, feature_dim)
@@ -3437,7 +3448,7 @@ class LearnMaskedDefault(nn.Module):
     invalid rather than just a portion of invalid entries within each batch row.
     """
 
-    def __init__(self, feature_dim: int, init_method: str='gaussian', freeze: bool=False):
+    def __init__(self, feature_dim: 'int', init_method: 'str'='gaussian', freeze: 'bool'=False):
         """
         Args:
             feature_dim (int): the size of the default value parameter, this must match the
@@ -3456,7 +3467,7 @@ class LearnMaskedDefault(nn.Module):
         else:
             raise NotImplementedError(f"{init_method} not available. Options are: 'zeros' or 'gaussian'")
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): tensor of shape (batch_size, feature_dim).
@@ -3479,7 +3490,7 @@ class LSTM(nn.Module):
     Wrapper for torch.nn.LSTM that handles masked inputs.
     """
 
-    def __init__(self, dim_in: int, hidden_dim: int, dropout: float=0.0, bidirectional: bool=False):
+    def __init__(self, dim_in: 'int', hidden_dim: 'int', dropout: 'float'=0.0, bidirectional: 'bool'=False):
         """
         Args:
           dim_in (int): input feature dimension
@@ -3493,7 +3504,7 @@ class LSTM(nn.Module):
         self.output_dim = 2 * hidden_dim if bidirectional else hidden_dim
         self.bidirectional = bidirectional
 
-    def forward(self, data: torch.Tensor, mask: Optional[torch.Tensor]=None) ->torch.Tensor:
+    def forward(self, data: 'torch.Tensor', mask: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
         """
         Args:
             data (torch.Tensor): tensor with shape (batch_size, seq_len, feature_dim)
@@ -3523,7 +3534,7 @@ class TransposeTransformerEncoder(nn.Module):
     Wrapper for torch.nn.TransformerEncoder that handles masked inputs.
     """
 
-    def __init__(self, dim_in: int, num_heads: int=1, num_layers: int=1):
+    def __init__(self, dim_in: 'int', num_heads: 'int'=1, num_layers: 'int'=1):
         """
         Args:
           dim_in (int): input feature dimension
@@ -3533,7 +3544,7 @@ class TransposeTransformerEncoder(nn.Module):
         super().__init__()
         self.encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(dim_in, num_heads), num_layers)
 
-    def forward(self, data: torch.Tensor, mask: Optional[torch.Tensor]=None) ->torch.Tensor:
+    def forward(self, data: 'torch.Tensor', mask: 'Optional[torch.Tensor]'=None) ->torch.Tensor:
         """
         Args:
             data (torch.Tensor): tensor with shape (batch_size, seq_len, feature_dim)
@@ -3558,7 +3569,7 @@ class MaskedSequential(nn.Sequential):
     """
     _MASK_MODULES = [MaskedTemporalPooling, LearnMaskedDefault, TransposeMultiheadAttention, LSTM, TransposeTransformerEncoder]
 
-    def forward(self, input: torch.Tensor, mask: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', mask: 'torch.Tensor') ->torch.Tensor:
         for module in self:
             if any(isinstance(module, mask_type) for mask_type in self._MASK_MODULES):
                 input = module(input, mask=mask)
@@ -3590,7 +3601,7 @@ class MaskedMultiPathWay(nn.Module):
         super().__init__()
         set_attributes(self, locals())
 
-    def forward(self, x_and_mask: List[Tuple[torch.Tensor, torch.Tensor]]) ->torch.Tensor:
+    def forward(self, x_and_mask: 'List[Tuple[torch.Tensor, torch.Tensor]]') ->torch.Tensor:
         out = []
         for pathway_idx in range(len(self.multipathway_blocks)):
             out.append(self.multipathway_blocks[pathway_idx](*x_and_mask[pathway_idx]))
@@ -3614,7 +3625,7 @@ class MemoryBank(nn.Module):
     https://arxiv.org/pdf/1911.05722.pdf
     """
 
-    def __init__(self, backbone: nn.Module, mlp: Optional[nn.Module]=None, neg_size: int=4096, temperature: float=0.07, bank_size: int=1280000, dim: int=2048, mmt: float=0.999) ->None:
+    def __init__(self, backbone: 'nn.Module', mlp: 'Optional[nn.Module]'=None, neg_size: 'int'=4096, temperature: 'float'=0.07, bank_size: 'int'=1280000, dim: 'int'=2048, mmt: 'float'=0.999) ->None:
         """
         Args:
             backbone (nn.Module): backbone used to forward the input.
@@ -3631,7 +3642,7 @@ class MemoryBank(nn.Module):
         set_attributes(self, locals())
         self._init_mem_bank(bank_size, dim)
 
-    def _init_mem_bank(self, bank_size: int, dim: int) ->None:
+    def _init_mem_bank(self, bank_size: 'int', dim: 'int') ->None:
         """
         Given the memory bank size and the channel dimension, initialize the memory
             bank.
@@ -3643,7 +3654,7 @@ class MemoryBank(nn.Module):
         stdv = 1.0 / math.sqrt(dim / 3)
         self.register_buffer('memory', torch.rand(bank_size, dim).mul_(2 * stdv).add_(-stdv))
 
-    def forward(self, x: torch.Tensor, x_ind: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', x_ind: 'torch.Tensor') ->torch.Tensor:
         """
         Perform contrastive learning with random sampled negative instance from the
             memory bank. During training, update the memory bank with latest feature
@@ -3708,7 +3719,7 @@ class Net(nn.Module):
         self.blocks = blocks
         init_net_weights(self)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         for _, block in enumerate(self.blocks):
             x = block(x)
         return x
@@ -3719,7 +3730,7 @@ class DetectionBBoxNetwork(nn.Module):
     A general purpose model that handles bounding boxes as part of input.
     """
 
-    def __init__(self, model: nn.Module, detection_head: nn.Module):
+    def __init__(self, model: 'nn.Module', detection_head: 'nn.Module'):
         """
         Args:
             model (nn.Module): a model that preceeds the head. Ex: stem + stages.
@@ -3730,7 +3741,7 @@ class DetectionBBoxNetwork(nn.Module):
         self.model = model
         self.detection_head = detection_head
 
-    def forward(self, x: torch.Tensor, bboxes: torch.Tensor):
+    def forward(self, x: 'torch.Tensor', bboxes: 'torch.Tensor'):
         """
         Args:
             x (torch.tensor): input tensor
@@ -3768,7 +3779,7 @@ class MultiPathWayWithFuse(nn.Module):
         super().__init__()
         set_attributes(self, locals())
 
-    def forward(self, x: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, x: 'List[torch.Tensor]') ->torch.Tensor:
         assert isinstance(x, list), 'input for MultiPathWayWithFuse needs to be a list of tensors'
         if self.inplace:
             x_out = x
@@ -3803,7 +3814,7 @@ class ResBlock(nn.Module):
     The builder can be found in `create_res_block`.
     """
 
-    def __init__(self, branch1_conv: nn.Module=None, branch1_norm: nn.Module=None, branch2: nn.Module=None, activation: nn.Module=None, branch_fusion: Callable=None) ->nn.Module:
+    def __init__(self, branch1_conv: 'nn.Module'=None, branch1_norm: 'nn.Module'=None, branch2: 'nn.Module'=None, activation: 'nn.Module'=None, branch_fusion: 'Callable'=None) ->nn.Module:
         """
         Args:
             branch1_conv (torch.nn.modules): convolutional module in branch1.
@@ -3880,7 +3891,7 @@ class SeparableBottleneckBlock(nn.Module):
         if self.norm_c is not None:
             self.norm_c.block_final_bn = True
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         if self.conv_a is not None:
             x = self.conv_a(x)
         if self.norm_a is not None:
@@ -3950,7 +3961,7 @@ class BottleneckBlock(nn.Module):
         if self.norm_c is not None:
             self.norm_c.block_final_bn = True
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.conv_a(x)
         if self.norm_a is not None:
             x = self.norm_a(x)
@@ -3988,7 +3999,7 @@ class ResStage(nn.Module):
     The builder can be found in `create_res_stage`.
     """
 
-    def __init__(self, res_blocks: nn.ModuleList) ->nn.Module:
+    def __init__(self, res_blocks: 'nn.ModuleList') ->nn.Module:
         """
         Args:
             res_blocks (torch.nn.module_list): ResBlock module(s).
@@ -3996,7 +4007,7 @@ class ResStage(nn.Module):
         super().__init__()
         self.res_blocks = res_blocks
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         for _, res_block in enumerate(self.res_blocks):
             x = res_block(x)
         return x
@@ -4008,7 +4019,7 @@ class SimCLR(nn.Module):
     arbitrary bacbone and projector models.
     """
 
-    def __init__(self, backbone: nn.Module, projector: Optional[nn.Module]=None) ->None:
+    def __init__(self, backbone: 'nn.Module', projector: 'Optional[nn.Module]'=None) ->None:
         """
         Args:
             backbone (nn.Module): backbone for simclr, input shape depends on the forward
@@ -4023,7 +4034,7 @@ class SimCLR(nn.Module):
         init_net_weights(backbone)
         self.backbone = backbone
 
-    def forward(self, x_list: Union[torch.Tensor, List[torch.Tensor]]) ->Union[torch.Tensor, List[torch.Tensor]]:
+    def forward(self, x_list: 'Union[torch.Tensor, List[torch.Tensor]]') ->Union[torch.Tensor, List[torch.Tensor]]:
         """
         Args:
             x_list (list(tensor) or tensor): Expects a list of 2 tensors
@@ -4052,7 +4063,7 @@ class PoolConcatPathway(nn.Module):
         tensors along the channel dimension.
     """
 
-    def __init__(self, retain_list: bool=False, pool: Optional[nn.ModuleList]=None, dim: int=1) ->None:
+    def __init__(self, retain_list: 'bool'=False, pool: 'Optional[nn.ModuleList]'=None, dim: 'int'=1) ->None:
         """
         Args:
             retain_list (bool): if True, return the concatenated tensor in a list.
@@ -4063,7 +4074,7 @@ class PoolConcatPathway(nn.Module):
         super().__init__()
         set_attributes(self, locals())
 
-    def forward(self, x: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, x: 'List[torch.Tensor]') ->torch.Tensor:
         if self.pool is not None:
             assert len(x) == len(self.pool)
         output = []
@@ -4086,7 +4097,7 @@ class FuseFastToSlow(nn.Module):
     order.
     """
 
-    def __init__(self, conv_fast_to_slow: nn.Module, norm: Optional[nn.Module]=None, activation: Optional[nn.Module]=None) ->None:
+    def __init__(self, conv_fast_to_slow: 'nn.Module', norm: 'Optional[nn.Module]'=None, activation: 'Optional[nn.Module]'=None) ->None:
         """
         Args:
             conv_fast_to_slow (nn.module): convolution to perform fusion.
@@ -4138,7 +4149,7 @@ class ResNetBasicStem(nn.Module):
         set_attributes(self, locals())
         assert self.conv is not None
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.conv(x)
         if self.norm is not None:
             x = self.norm(x)
@@ -4293,7 +4304,7 @@ class MultiscaleVisionTransformers(nn.Module):
                 blk.proj = self.fuse_norm_before_linear(blk.norm2, blk.proj)
             blk.norm2 = nn.Identity()
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.patch_embed(x)
         x = self.cls_positional_encoding(x)
         x = self.pos_drop(x)
@@ -4344,7 +4355,7 @@ class ProjectedPool(nn.Module):
         assert self.pool is not None
         assert self.post_conv is not None
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.pre_conv(x)
         if self.pre_norm is not None:
             x = self.pre_norm(x)
@@ -4359,7 +4370,7 @@ class ProjectedPool(nn.Module):
         return x
 
 
-def _mix_labels(labels: torch.Tensor, num_classes: int, lam: float=1.0, label_smoothing: float=0.0, one_hot: bool=False):
+def _mix_labels(labels: 'torch.Tensor', num_classes: 'int', lam: 'float'=1.0, label_smoothing: 'float'=0.0, one_hot: 'bool'=False):
     """
     This function converts class indices to one-hot vectors and mix labels, given the
     number of classes.
@@ -4384,7 +4395,7 @@ class MixUp(torch.nn.Module):
     Mixup: Beyond Empirical Risk Minimization (https://arxiv.org/abs/1710.09412)
     """
 
-    def __init__(self, alpha: float=1.0, label_smoothing: float=0.0, num_classes: int=400, one_hot: bool=False) ->None:
+    def __init__(self, alpha: 'float'=1.0, label_smoothing: 'float'=0.0, num_classes: 'int'=400, one_hot: 'bool'=False) ->None:
         """
         This implements MixUp for videos.
 
@@ -4399,7 +4410,7 @@ class MixUp(torch.nn.Module):
         self.num_classes = num_classes
         self.one_hot = one_hot
 
-    def forward(self, x_video: torch.Tensor, labels: torch.Tensor, **args: Any) ->Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x_video: 'torch.Tensor', labels: 'torch.Tensor', **args: Any) ->Tuple[torch.Tensor, torch.Tensor]:
         """
         The input is a batch of samples and their corresponding labels.
 
@@ -4430,7 +4441,7 @@ class CutMix(torch.nn.Module):
     (https://arxiv.org/abs/1905.04899)
     """
 
-    def __init__(self, alpha: float=1.0, label_smoothing: float=0.0, num_classes: int=400, one_hot: bool=False) ->None:
+    def __init__(self, alpha: 'float'=1.0, label_smoothing: 'float'=0.0, num_classes: 'int'=400, one_hot: 'bool'=False) ->None:
         """
         This implements CutMix for videos.
 
@@ -4445,13 +4456,13 @@ class CutMix(torch.nn.Module):
         self.label_smoothing = label_smoothing
         self.num_classes = num_classes
 
-    def _clip(self, value: int, min_value: int, max_value: int) ->int:
+    def _clip(self, value: 'int', min_value: 'int', max_value: 'int') ->int:
         """
         Clip value based on minimum value and maximum value.
         """
         return min(max(value, min_value), max_value)
 
-    def _get_rand_box(self, input_shape: Tuple[int], cutmix_lamda: float) ->Tuple[int]:
+    def _get_rand_box(self, input_shape: 'Tuple[int]', cutmix_lamda: 'float') ->Tuple[int]:
         """
         Get a random square box given a lambda value.
         """
@@ -4466,7 +4477,7 @@ class CutMix(torch.nn.Module):
         xh = self._clip(cx + cut_w // 2, 0, input_w)
         return yl, yh, xl, xh
 
-    def _cutmix(self, x: torch.Tensor, cutmix_lamda: float) ->Tuple[torch.Tensor, float]:
+    def _cutmix(self, x: 'torch.Tensor', cutmix_lamda: 'float') ->Tuple[torch.Tensor, float]:
         """
         Perform CutMix and return corrected lambda value.
         """
@@ -4476,7 +4487,7 @@ class CutMix(torch.nn.Module):
         x[..., yl:yh, xl:xh] = x.flip(0)[..., yl:yh, xl:xh]
         return x, cutmix_lamda_corrected
 
-    def forward(self, x_video: torch.Tensor, labels: torch.Tensor, **args: Any) ->Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x_video: 'torch.Tensor', labels: 'torch.Tensor', **args: Any) ->Tuple[torch.Tensor, torch.Tensor]:
         """
         The input is a batch of samples and their corresponding labels.
 
@@ -4505,7 +4516,7 @@ class MixVideo(torch.nn.Module):
     Stochastically applies either MixUp or CutMix to the input video.
     """
 
-    def __init__(self, cutmix_prob: float=0.5, mixup_alpha: float=1.0, cutmix_alpha: float=1.0, label_smoothing: float=0.0, num_classes: int=400, one_hot: bool=False):
+    def __init__(self, cutmix_prob: 'float'=0.5, mixup_alpha: 'float'=1.0, cutmix_alpha: 'float'=1.0, label_smoothing: 'float'=0.0, num_classes: 'int'=400, one_hot: 'bool'=False):
         """
         Args:
             cutmix_prob (float): Probability of using CutMix. MixUp will be used with
@@ -4522,7 +4533,7 @@ class MixVideo(torch.nn.Module):
         self.mixup = MixUp(alpha=mixup_alpha, label_smoothing=label_smoothing, num_classes=num_classes, one_hot=one_hot)
         self.cutmix = CutMix(alpha=cutmix_alpha, label_smoothing=label_smoothing, num_classes=num_classes)
 
-    def forward(self, x_video: torch.Tensor, labels: torch.Tensor, **args: Any) ->Dict[str, Any]:
+    def forward(self, x_video: 'torch.Tensor', labels: 'torch.Tensor', **args: Any) ->Dict[str, Any]:
         """
         The input is a batch of samples and their corresponding labels.
 
@@ -4552,11 +4563,11 @@ class RemoveKey(torch.nn.Module):
     video clip that aren't needed.
     """
 
-    def __init__(self, key: str):
+    def __init__(self, key: 'str'):
         super().__init__()
         self._key = key
 
-    def __call__(self, x: Dict[str, torch.Tensor]) ->Dict[str, torch.Tensor]:
+    def __call__(self, x: 'Dict[str, torch.Tensor]') ->Dict[str, torch.Tensor]:
         """
         Args:
             x (Dict[str, torch.Tensor]): video clip dict.
@@ -4571,7 +4582,7 @@ class UniformTemporalSubsample(torch.nn.Module):
     ``nn.Module`` wrapper for ``pytorchvideo.transforms.functional.uniform_temporal_subsample``.
     """
 
-    def __init__(self, num_samples: int, temporal_dim: int=-3):
+    def __init__(self, num_samples: 'int', temporal_dim: 'int'=-3):
         """
         Args:
             num_samples (int): The number of equispaced samples to be selected
@@ -4581,7 +4592,7 @@ class UniformTemporalSubsample(torch.nn.Module):
         self._num_samples = num_samples
         self._temporal_dim = temporal_dim
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4595,12 +4606,12 @@ class UniformTemporalSubsampleRepeated(torch.nn.Module):
     ``pytorchvideo.transforms.functional.uniform_temporal_subsample_repeated``.
     """
 
-    def __init__(self, frame_ratios: Tuple[int], temporal_dim: int=-3):
+    def __init__(self, frame_ratios: 'Tuple[int]', temporal_dim: 'int'=-3):
         super().__init__()
         self._frame_ratios = frame_ratios
         self._temporal_dim = temporal_dim
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4613,13 +4624,13 @@ class ShortSideScale(torch.nn.Module):
     ``nn.Module`` wrapper for ``pytorchvideo.transforms.functional.short_side_scale``.
     """
 
-    def __init__(self, size: int, interpolation: str='bilinear', backend: str='pytorch'):
+    def __init__(self, size: 'int', interpolation: 'str'='bilinear', backend: 'str'='pytorch'):
         super().__init__()
         self._size = size
         self._interpolation = interpolation
         self._backend = backend
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4633,14 +4644,14 @@ class RandomShortSideScale(torch.nn.Module):
     parameter is chosen randomly in [min_size, max_size].
     """
 
-    def __init__(self, min_size: int, max_size: int, interpolation: str='bilinear', backend: str='pytorch'):
+    def __init__(self, min_size: 'int', max_size: 'int', interpolation: 'str'='bilinear', backend: 'str'='pytorch'):
         super().__init__()
         self._min_size = min_size
         self._max_size = max_size
         self._interpolation = interpolation
         self._backend = backend
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4654,13 +4665,13 @@ class UniformCropVideo(torch.nn.Module):
     ``nn.Module`` wrapper for ``pytorchvideo.transforms.functional.uniform_crop``.
     """
 
-    def __init__(self, size: int, video_key: str='video', aug_index_key: str='aug_index'):
+    def __init__(self, size: 'int', video_key: 'str'='video', aug_index_key: 'str'='aug_index'):
         super().__init__()
         self._size = size
         self._video_key = video_key
         self._aug_index_key = aug_index_key
 
-    def __call__(self, x: Dict[str, torch.Tensor]) ->Dict[str, torch.Tensor]:
+    def __call__(self, x: 'Dict[str, torch.Tensor]') ->Dict[str, torch.Tensor]:
         """
         Args:
             x (Dict[str, torch.Tensor]): video clip dict.
@@ -4678,7 +4689,7 @@ class ConvertFloatToUint8(torch.nn.Module):
         super().__init__()
         self.convert_func = torchvision.transforms.ConvertImageDtype(torch.uint8)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4696,7 +4707,7 @@ class ConvertUint8ToFloat(torch.nn.Module):
         super().__init__()
         self.convert_func = torchvision.transforms.ConvertImageDtype(torch.float32)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor with shape (C, T, H, W).
@@ -4714,7 +4725,7 @@ class MoveChannelRear(torch.nn.Module):
         super().__init__()
 
     @torch.jit.script_method
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor whose dimensions are to be permuted.
@@ -4732,7 +4743,7 @@ class MoveChannelFront(torch.nn.Module):
         super().__init__()
 
     @torch.jit.script_method
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor whose dimensions are to be permuted.
@@ -4746,7 +4757,7 @@ class RandomResizedCrop(torch.nn.Module):
     ``nn.Module`` wrapper for ``pytorchvideo.transforms.functional.random_resized_crop``.
     """
 
-    def __init__(self, target_height: int, target_width: int, scale: Tuple[float, float], aspect_ratio: Tuple[float, float], shift: bool=False, log_uniform_ratio: bool=True, interpolation: str='bilinear', num_tries: int=10) ->None:
+    def __init__(self, target_height: 'int', target_width: 'int', scale: 'Tuple[float, float]', aspect_ratio: 'Tuple[float, float]', shift: 'bool'=False, log_uniform_ratio: 'bool'=True, interpolation: 'str'='bilinear', num_tries: 'int'=10) ->None:
         super().__init__()
         self._target_height = target_height
         self._target_width = target_width
@@ -4757,7 +4768,7 @@ class RandomResizedCrop(torch.nn.Module):
         self._interpolation = interpolation
         self._num_tries = num_tries
 
-    def __call__(self, x: torch.Tensor) ->torch.Tensor:
+    def __call__(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): Input video tensor with shape (C, T, H, W).
@@ -4770,7 +4781,7 @@ class Permute(torch.nn.Module):
     Permutes the dimensions of a video.
     """
 
-    def __init__(self, dims: Tuple[int]):
+    def __init__(self, dims: 'Tuple[int]'):
         """
         Args:
             dims (Tuple[int]): The desired ordering of dimensions.
@@ -4779,7 +4790,7 @@ class Permute(torch.nn.Module):
         super().__init__()
         self._dims = dims
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): video tensor whose dimensions are to be permuted.
@@ -4793,7 +4804,7 @@ class OpSampler(torch.nn.Module):
     select n transforms, which are then applied sequentially to the input.
     """
 
-    def __init__(self, transforms_list: List[Callable], transforms_prob: Optional[List[float]]=None, num_sample_op: int=1, randomly_sample_depth: bool=False, replacement: bool=False):
+    def __init__(self, transforms_list: 'List[Callable]', transforms_prob: 'Optional[List[float]]'=None, num_sample_op: 'int'=1, randomly_sample_depth: 'bool'=False, replacement: 'bool'=False):
         """
         Args:
             transforms_list (List[Callable]): A list of tuples of all available transforms
@@ -4820,7 +4831,7 @@ class OpSampler(torch.nn.Module):
         self.randomly_sample_depth = randomly_sample_depth
         self.replacement = replacement
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             x (torch.Tensor): Input tensor.
@@ -4837,7 +4848,7 @@ class Div255(torch.nn.Module):
     ``nn.Module`` wrapper for ``pytorchvideo.transforms.functional.div_255``.
     """
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Scale clip frames from [0, 255] to [0, 1].
         Args:
@@ -4854,7 +4865,7 @@ class SoftTargetCrossEntropy(nn.Module):
     Cross entropy loss with soft target.
     """
 
-    def __init__(self, reduction: str='mean') ->None:
+    def __init__(self, reduction: 'str'='mean') ->None:
         """
         Args:
             reduction (str): specifies reduction to apply to the output.
@@ -4863,7 +4874,7 @@ class SoftTargetCrossEntropy(nn.Module):
         super(SoftTargetCrossEntropy, self).__init__()
         self.reduction = reduction
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', y: 'torch.Tensor') ->torch.Tensor:
         loss = torch.sum(-y * F.log_softmax(x, dim=-1), dim=-1)
         if self.reduction == 'mean':
             return loss.mean()
@@ -4882,11 +4893,11 @@ class NtxentLoss(nn.Module):
         temperature (float): scalar value to scale the loss by.
     """
 
-    def __init__(self, temperature: float) ->None:
+    def __init__(self, temperature: 'float') ->None:
         super().__init__()
         set_attributes(self, locals())
 
-    def forward(self, x_list: List[torch.Tensor]) ->torch.Tensor:
+    def forward(self, x_list: 'List[torch.Tensor]') ->torch.Tensor:
         """
         Args:
             x_list (list[torch.tensor]): A list of two tensors of shape N x C.
@@ -4916,11 +4927,11 @@ class SimilarityLoss(nn.Module):
         temperature (float): scalar value to scale the loss by.
     """
 
-    def __init__(self, temperature: float) ->None:
+    def __init__(self, temperature: 'float') ->None:
         super().__init__()
         self.temperature = temperature
 
-    def forward(self, q: torch.Tensor, k: torch.Tensor) ->torch.Tensor:
+    def forward(self, q: 'torch.Tensor', k: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             q and k (nn.tensor): inputs to calculate the similarity, expected to have
@@ -4942,12 +4953,12 @@ class ContrastiveLoss(nn.Module):
         temperature (float): scalar value to scale the loss by.
     """
 
-    def __init__(self, reduction: str='mean', temperature: float=0.1) ->None:
+    def __init__(self, reduction: 'str'='mean', temperature: 'float'=0.1) ->None:
         super(ContrastiveLoss, self).__init__()
         self.reduction = reduction
         self.temperature = temperature
 
-    def forward(self, inputs: torch.Tensor) ->torch.Tensor:
+    def forward(self, inputs: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             inputs (nn.tensor):  Expected to have the same shape of `N x C`.
@@ -4966,7 +4977,7 @@ class MOCO(nn.Module):
     https://arxiv.org/abs/1911.05722
     """
 
-    def __init__(self, mmt: float, backbone: nn.Module, backbone_mmt: nn.Module, projector: Optional[nn.Module]=None, projector_mmt: Optional[nn.Module]=None) ->None:
+    def __init__(self, mmt: 'float', backbone: 'nn.Module', backbone_mmt: 'nn.Module', projector: 'Optional[nn.Module]'=None, projector_mmt: 'Optional[nn.Module]'=None) ->None:
         """
         Args:
             backbone (nn.Module): backbone for byol, input shape depends on the forward
@@ -4982,7 +4993,7 @@ class MOCO(nn.Module):
             mmt (float): momentum update ratio for the momentum backbone.
         """
         super().__init__()
-        self.mmt: float = mmt
+        self.mmt: 'float' = mmt
         if projector is not None:
             backbone = nn.Sequential(backbone, projector)
         init_net_weights(backbone)
@@ -5015,7 +5026,7 @@ class MOCO(nn.Module):
             p.data = dist[name].data * (1.0 - m) + p.data * m
 
     @torch.no_grad()
-    def forward_backbone_mmt(self, x: torch.Tensor) ->torch.Tensor:
+    def forward_backbone_mmt(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         Forward momentum backbone.
         Args:
@@ -5026,7 +5037,7 @@ class MOCO(nn.Module):
             out_proj = F.normalize(proj, dim=1)
         return out_proj
 
-    def forward(self, x: torch.Tensor) ->Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def forward(self, x: 'torch.Tensor') ->Union[torch.Tensor, Tuple[torch.Tensor]]:
         """
         Args:
             x (tensor): input to be forwarded of shape N x C x T x H x W
@@ -5050,7 +5061,7 @@ class SSLFineTuningModel(nn.Module):
             updated for the bacbone. Only updates the MLP weights during finetuning.
     """
 
-    def __init__(self, backbone: nn.Module, mlp: nn.Module, detach_backbone: bool) ->None:
+    def __init__(self, backbone: 'nn.Module', mlp: 'nn.Module', detach_backbone: 'bool') ->None:
         super().__init__()
         self.backbone = backbone
         self.mlp = mlp
@@ -5058,13 +5069,145 @@ class SSLFineTuningModel(nn.Module):
         for p in self.backbone.parameters():
             p.requires_grad = False if detach_backbone else True
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = self.backbone(x)
         if self.detach_backbone:
             x = x.detach()
         if self.mlp is not None:
             x = self.mlp(x)
         return x
+
+
+class KnnMemory(nn.Module):
+    """
+    KNN Memory object that keeps track of the features generated by the SSL model
+    during the traing phase and performs nearest neighbours inference during the
+    test and validation phases for video classfication.
+
+    KNN memory requires that you provide the labels and video indices for the
+    dataset used for the SSL training phase.
+
+    Args:
+        length (int): Size of the KNN memory. Set to be equal to the training dataset size.
+        dim (int): Feture dimention generated by the SSL model.
+        momentum (float): The rate at which to update the features in memory during the SSL-
+            training phase.
+        downstream_classes (int): Number of classes in the dataset.
+        temperature (float): Temperature scaling to use during the inference phase. Typically,
+            set to the same value as the loss temperature used in SSL.
+        knn_k (int): Number of nearest neighbours to aggregate metrics over for inference.
+        deive (str): Device to store the memory module on.
+    """
+
+    def __init__(self, length: 'int', dim: 'int', momentum: 'float'=1.0, downstream_classes: 'int'=400, temperature: 'float'=1.0, knn_k: 'int'=200, device: 'str'='cpu') ->None:
+        super(KnnMemory, self).__init__()
+        self.length = length
+        self.dim = dim
+        self.momentum = momentum
+        self.temperature = temperature
+        self.downstream_classes = downstream_classes
+        self.knn_k = knn_k
+        stdv = 1.0 / math.sqrt(dim / 3)
+        self.device = device
+        self.register_buffer('memory', torch.rand(length, dim, device=self.device).mul_(2 * stdv).add_(-stdv))
+
+    def resize(self, length: 'int', dim: 'int') ->None:
+        """
+        Resizes the memory and intialized it fresh.
+
+        Args:
+            length (int): Size of the KNN memory. Set to be equal to the training
+                dataset size.
+            dim (int): Feture dimention generated by the SSL model.
+        """
+        self.length = length
+        self.dim = dim
+        stdv = 1.0 / math.sqrt(dim / 3)
+        del self.memory
+        self.memory = torch.rand(length, dim, device=self.device).mul_(2 * stdv).add_(-stdv)
+
+    @torch.no_grad()
+    def get(self, ind: 'torch.Tensor') ->torch.Tensor:
+        """
+        Fetches features from the memory based on the video index.
+
+        Args:
+            ind (int): Index of the video / clip for which to fetch the features.
+        """
+        batch_size = ind.size(0)
+        selected_mem = self.memory[ind.view(-1), :]
+        out = selected_mem.view(batch_size, -1, self.dim)
+        return out
+
+    @torch.no_grad()
+    def update(self, mem: 'torch.Tensor', ind: 'torch.Tensor') ->None:
+        """
+        Peforms feature update in the memory based on the new features realized by the
+        SSL model. Called during the SSL training phase.
+
+        Args:
+            mem (tensor): Features of the same N x C genereated by the SSL model.
+                N is the batch size and C is the feature dimention generated by the
+                SSL Model.
+            ind (tensor): A 1-D tensor of video indices associated the given features.
+        """
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            mem, ind = du.all_gather([mem, ind])
+        mem = mem.view(mem.size(0), 1, -1)
+        mem_old = self.get(ind)
+        mem_update = mem * self.momentum + mem_old * (1 - self.momentum)
+        mem_update = F.normalize(mem_update, p=2, dim=1)
+        self.memory[ind.view(-1), :] = mem_update.squeeze()
+
+    @torch.no_grad()
+    def init_knn_labels(self, train_loader: 'Trainer') ->None:
+        """
+        Called before traning, intializes the KNN Memory and resizes it based on the
+        labels and number of samples in the train dataloader.
+
+        Args:
+            train_loader (dataloader): Trainining dataloader containing an attribute
+                `dataset._labeled_videos` which holds mapping from video indices to
+                labels.
+        """
+        self.num_imgs = len(train_loader.dataset._labeled_videos)
+        self.train_labels = np.zeros((self.num_imgs,), dtype=np.int32)
+        for i in range(self.num_imgs):
+            self.train_labels[i] = train_loader.dataset._labeled_videos[i][1]['label']
+        self.train_labels = torch.LongTensor(self.train_labels)
+        if self.length != self.num_imgs:
+            self.resize(self.num_imgs, self.dim)
+
+    def forward(self, inputs: 'torch.Tensor') ->None:
+        pass
+
+    @torch.no_grad()
+    def eval_knn(self, q_knn: 'torch.Tensor') ->torch.Tensor:
+        """
+        Peforms KNN nearest neighbour aggregations and returns predictions
+        for the qurried features.
+
+        Args:
+            q_nn (tensor): Features generated by the SSL model during the inference
+                phase. Expected to be of shape N x C where, N is the batch size and
+                C is the feature dimention generated by the SSL Model.
+        """
+        device = q_knn.device
+        batch_size = q_knn.size(0)
+        dist = torch.einsum('nc,mc->nm', q_knn.view(batch_size, -1), self.memory.view(self.memory.size(0), -1))
+        yd, yi = dist.topk(self.knn_k, dim=1, largest=True, sorted=True)
+        K = yi.shape[1]
+        C = self.downstream_classes
+        candidates = self.train_labels.view(1, -1).expand(batch_size, -1)
+        candidates = candidates
+        yi = yi
+        retrieval = torch.gather(candidates, 1, yi)
+        retrieval_one_hot = torch.zeros((batch_size * K, C))
+        retrieval_one_hot.scatter_(1, retrieval.view(-1, 1), 1)
+        yd_transform = yd.clone().div_(self.temperature).exp_()
+        probs = torch.mul(retrieval_one_hot.view(batch_size, -1, C), yd_transform.view(batch_size, -1, 1))
+        preds = torch.sum(probs, 1)
+        return preds
 
 
 import torch
@@ -5148,6 +5291,10 @@ TESTCASES = [
      True),
     (Identity,
      lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (KnnMemory,
+     lambda: ([], {'length': 4, 'dim': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (LSTM,
@@ -5335,4 +5482,7 @@ class Test_facebookresearch_pytorchvideo(_paritybench_base):
 
     def test_036(self):
         self._check(*TESTCASES[36])
+
+    def test_037(self):
+        self._check(*TESTCASES[37])
 

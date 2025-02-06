@@ -44,7 +44,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -126,7 +128,7 @@ class PointnetFPModule(nn.Module):
         super().__init__()
         self.mlp = pt_utils.SharedMLP(mlp, bn=bn)
 
-    def forward(self, unknown: torch.Tensor, known: torch.Tensor, unknow_feats: torch.Tensor, known_feats: torch.Tensor) ->torch.Tensor:
+    def forward(self, unknown: 'torch.Tensor', known: 'torch.Tensor', unknow_feats: 'torch.Tensor', known_feats: 'torch.Tensor') ->torch.Tensor:
         """
         Parameters
         ----------
@@ -187,7 +189,7 @@ class PointnetSAModuleVotes(nn.Module):
             mlp_spec[0] += 3
         self.mlp_module = pt_utils.SharedMLP(mlp_spec, bn=bn)
 
-    def forward(self, xyz: torch.Tensor, features: torch.Tensor=None, inds: torch.Tensor=None) ->(torch.Tensor, torch.Tensor):
+    def forward(self, xyz: 'torch.Tensor', features: 'torch.Tensor'=None, inds: 'torch.Tensor'=None) ->(torch.Tensor, torch.Tensor):
         """
         Parameters
         ----------
@@ -258,7 +260,7 @@ class Pointnet2Backbone(nn.Module):
         features = pc[..., 3:].transpose(1, 2).contiguous() if pc.size(-1) > 3 else None
         return xyz, features
 
-    def forward(self, pointcloud: torch.FloatTensor, end_points=None):
+    def forward(self, pointcloud: 'torch.cuda.FloatTensor', end_points=None):
         """
             Forward pass of the network
 
@@ -512,7 +514,7 @@ class _PointnetSAModuleBase(nn.Module):
         self.groupers = None
         self.mlps = None
 
-    def forward(self, xyz: torch.Tensor, features: torch.Tensor=None) ->(torch.Tensor, torch.Tensor):
+    def forward(self, xyz: 'torch.Tensor', features: 'torch.Tensor'=None) ->(torch.Tensor, torch.Tensor):
         """
         Parameters
         ----------
@@ -613,7 +615,7 @@ class PointnetSAModuleMSGVotes(nn.Module):
                 mlp_spec[0] += 3
             self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn))
 
-    def forward(self, xyz: torch.Tensor, features: torch.Tensor=None, inds: torch.Tensor=None) ->(torch.Tensor, torch.Tensor):
+    def forward(self, xyz: 'torch.Tensor', features: 'torch.Tensor'=None, inds: 'torch.Tensor'=None) ->(torch.Tensor, torch.Tensor):
         """
         Parameters
         ----------
@@ -666,7 +668,7 @@ class PointnetLFPModuleMSG(nn.Module):
                 mlp_spec[0] += 3
             self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn))
 
-    def forward(self, xyz2: torch.Tensor, xyz1: torch.Tensor, features2: torch.Tensor, features1: torch.Tensor) ->torch.Tensor:
+    def forward(self, xyz2: 'torch.Tensor', xyz1: 'torch.Tensor', features2: 'torch.Tensor', features1: 'torch.Tensor') ->torch.Tensor:
         """ Propagate features from xyz1 to xyz2.
         Parameters
         ----------
@@ -916,7 +918,7 @@ class _BNBase(nn.Sequential):
 
 class BatchNorm2d(_BNBase):
 
-    def __init__(self, in_size: int, name: str=''):
+    def __init__(self, in_size: 'int', name: 'str'=''):
         super().__init__(in_size, batch_norm=nn.BatchNorm2d, name=name)
 
 
@@ -949,13 +951,13 @@ class _ConvBase(nn.Sequential):
 
 class Conv2d(_ConvBase):
 
-    def __init__(self, in_size: int, out_size: int, *, kernel_size: Tuple[int, int]=(1, 1), stride: Tuple[int, int]=(1, 1), padding: Tuple[int, int]=(0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
+    def __init__(self, in_size: 'int', out_size: 'int', *, kernel_size: Tuple[int, int]=(1, 1), stride: Tuple[int, int]=(1, 1), padding: Tuple[int, int]=(0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
         super().__init__(in_size, out_size, kernel_size, stride, padding, activation, bn, init, conv=nn.Conv2d, batch_norm=BatchNorm2d, bias=bias, preact=preact, name=name)
 
 
 class SharedMLP(nn.Sequential):
 
-    def __init__(self, args: List[int], *, bn: bool=False, activation=nn.ReLU(inplace=True), preact: bool=False, first: bool=False, name: str=''):
+    def __init__(self, args: 'List[int]', *, bn: bool=False, activation=nn.ReLU(inplace=True), preact: bool=False, first: bool=False, name: str=''):
         super().__init__()
         for i in range(len(args) - 1):
             self.add_module(name + 'layer{}'.format(i), Conv2d(args[i], args[i + 1], bn=(not first or not preact or i != 0) and bn, activation=activation if not first or not preact or i != 0 else None, preact=preact))
@@ -963,31 +965,31 @@ class SharedMLP(nn.Sequential):
 
 class BatchNorm1d(_BNBase):
 
-    def __init__(self, in_size: int, *, name: str=''):
+    def __init__(self, in_size: 'int', *, name: str=''):
         super().__init__(in_size, batch_norm=nn.BatchNorm1d, name=name)
 
 
 class BatchNorm3d(_BNBase):
 
-    def __init__(self, in_size: int, name: str=''):
+    def __init__(self, in_size: 'int', name: 'str'=''):
         super().__init__(in_size, batch_norm=nn.BatchNorm3d, name=name)
 
 
 class Conv1d(_ConvBase):
 
-    def __init__(self, in_size: int, out_size: int, *, kernel_size: int=1, stride: int=1, padding: int=0, activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
+    def __init__(self, in_size: 'int', out_size: 'int', *, kernel_size: int=1, stride: int=1, padding: int=0, activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
         super().__init__(in_size, out_size, kernel_size, stride, padding, activation, bn, init, conv=nn.Conv1d, batch_norm=BatchNorm1d, bias=bias, preact=preact, name=name)
 
 
 class Conv3d(_ConvBase):
 
-    def __init__(self, in_size: int, out_size: int, *, kernel_size: Tuple[int, int, int]=(1, 1, 1), stride: Tuple[int, int, int]=(1, 1, 1), padding: Tuple[int, int, int]=(0, 0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
+    def __init__(self, in_size: 'int', out_size: 'int', *, kernel_size: Tuple[int, int, int]=(1, 1, 1), stride: Tuple[int, int, int]=(1, 1, 1), padding: Tuple[int, int, int]=(0, 0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str=''):
         super().__init__(in_size, out_size, kernel_size, stride, padding, activation, bn, init, conv=nn.Conv3d, batch_norm=BatchNorm3d, bias=bias, preact=preact, name=name)
 
 
 class FC(nn.Sequential):
 
-    def __init__(self, in_size: int, out_size: int, *, activation=nn.ReLU(inplace=True), bn: bool=False, init=None, preact: bool=False, name: str=''):
+    def __init__(self, in_size: 'int', out_size: 'int', *, activation=nn.ReLU(inplace=True), bn: bool=False, init=None, preact: bool=False, name: str=''):
         super().__init__()
         fc = nn.Linear(in_size, out_size, bias=not bn)
         if init is not None:

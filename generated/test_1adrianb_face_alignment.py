@@ -20,6 +20,7 @@ bbox = _module
 detect = _module
 net_s3fd = _module
 sfd_detector = _module
+folder_data = _module
 utils = _module
 setup = _module
 facealignment_test = _module
@@ -30,7 +31,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -107,6 +110,18 @@ class BlazeBlock(nn.Module):
         return self.act(self.convs(h) + x)
 
 
+class FinalBlazeBlock(nn.Module):
+
+    def __init__(self, channels, kernel_size=3):
+        super(FinalBlazeBlock, self).__init__()
+        self.convs = nn.Sequential(nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=kernel_size, stride=2, padding=0, groups=channels, bias=True), nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=1, stride=1, padding=0, bias=True))
+        self.act = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        h = F.pad(x, (0, 2, 0, 2), 'constant', 0)
+        return self.act(self.convs(h))
+
+
 def intersect(box_a, box_b):
     """ We resize both tensors to [A,B,2] without new malloc:
     [A,2] -> [A,1,2] -> [A,B,2]
@@ -171,21 +186,37 @@ class BlazeFace(nn.Module):
     https://github.com/google/mediapipe/
     """
 
-    def __init__(self):
+    def __init__(self, back_model=False):
         super(BlazeFace, self).__init__()
         self.num_classes = 1
         self.num_anchors = 896
         self.num_coords = 16
         self.score_clipping_thresh = 100.0
-        self.x_scale = 128.0
-        self.y_scale = 128.0
-        self.h_scale = 128.0
-        self.w_scale = 128.0
-        self.min_score_thresh = 0.75
+        self.back_model = back_model
+        if back_model:
+            self.x_scale = 256.0
+            self.y_scale = 256.0
+            self.h_scale = 256.0
+            self.w_scale = 256.0
+            self.min_score_thresh = 0.65
+        else:
+            self.x_scale = 128.0
+            self.y_scale = 128.0
+            self.h_scale = 128.0
+            self.w_scale = 128.0
+            self.min_score_thresh = 0.75
         self.min_suppression_threshold = 0.3
         self._define_layers()
 
-    def _define_layers(self):
+    def _define_back_model_layers(self):
+        self.backbone = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=24, kernel_size=5, stride=2, padding=0, bias=True), nn.ReLU(inplace=True), *[BlazeBlock(24, 24) for _ in range(7)], BlazeBlock(24, 24, stride=2), *[BlazeBlock(24, 24) for _ in range(7)], BlazeBlock(24, 48, stride=2), *[BlazeBlock(48, 48) for _ in range(7)], BlazeBlock(48, 96, stride=2), *[BlazeBlock(96, 96) for _ in range(7)])
+        self.final = FinalBlazeBlock(96)
+        self.classifier_8 = nn.Conv2d(96, 2, 1, bias=True)
+        self.classifier_16 = nn.Conv2d(96, 6, 1, bias=True)
+        self.regressor_8 = nn.Conv2d(96, 32, 1, bias=True)
+        self.regressor_16 = nn.Conv2d(96, 96, 1, bias=True)
+
+    def _define_front_model_layers(self):
         self.backbone1 = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=24, kernel_size=5, stride=2, padding=0, bias=True), nn.ReLU(inplace=True), BlazeBlock(24, 24), BlazeBlock(24, 28), BlazeBlock(28, 32, stride=2), BlazeBlock(32, 36), BlazeBlock(36, 42), BlazeBlock(42, 48, stride=2), BlazeBlock(48, 56), BlazeBlock(56, 64), BlazeBlock(64, 72), BlazeBlock(72, 80), BlazeBlock(80, 88))
         self.backbone2 = nn.Sequential(BlazeBlock(88, 96, stride=2), BlazeBlock(96, 96), BlazeBlock(96, 96), BlazeBlock(96, 96), BlazeBlock(96, 96))
         self.classifier_8 = nn.Conv2d(88, 2, 1, bias=True)
@@ -193,11 +224,21 @@ class BlazeFace(nn.Module):
         self.regressor_8 = nn.Conv2d(88, 32, 1, bias=True)
         self.regressor_16 = nn.Conv2d(96, 96, 1, bias=True)
 
+    def _define_layers(self):
+        if self.back_model:
+            self._define_back_model_layers()
+        else:
+            self._define_front_model_layers()
+
     def forward(self, x):
         x = F.pad(x, (1, 2, 1, 2), 'constant', 0)
         b = x.shape[0]
-        x = self.backbone1(x)
-        h = self.backbone2(x)
+        if self.back_model:
+            x = self.backbone(x)
+            h = self.final(x)
+        else:
+            x = self.backbone1(x)
+            h = self.backbone2(x)
         c1 = self.classifier_8(x)
         c1 = c1.permute(0, 2, 3, 1)
         c1 = c1.reshape(b, -1, 1)
@@ -275,11 +316,15 @@ class BlazeFace(nn.Module):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x).permute((0, 3, 1, 2))
         assert x.shape[1] == 3
-        assert x.shape[2] == 128
-        assert x.shape[3] == 128
+        if self.back_model:
+            assert x.shape[2] == 256
+            assert x.shape[3] == 256
+        else:
+            assert x.shape[2] == 128
+            assert x.shape[3] == 128
         x = x
         x = self._preprocess(x)
-        with torch.no_grad():
+        with torch.inference_mode():
             out = self.__call__(x)
         detections = self._tensors_to_detections(out[0], out[1], self.anchors)
         filtered_detections = []
@@ -506,6 +551,10 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 3, 64, 64])], {}),
      False),
+    (FinalBlazeBlock,
+     lambda: ([], {'channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (L2Norm,
      lambda: ([], {'n_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -528,4 +577,7 @@ class Test_1adrianb_face_alignment(_paritybench_base):
 
     def test_003(self):
         self._check(*TESTCASES[3])
+
+    def test_004(self):
+        self._check(*TESTCASES[4])
 

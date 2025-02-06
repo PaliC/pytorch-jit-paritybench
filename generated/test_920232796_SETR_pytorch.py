@@ -11,7 +11,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -109,28 +111,9 @@ class TransEmbeddings(nn.Module):
         return embeddings
 
 
-class TransConfig(object):
-
-    def __init__(self, patch_size, in_channels, out_channels, sample_rate=4, hidden_size=768, num_hidden_layers=8, num_attention_heads=6, intermediate_size=1024, hidden_act='gelu', hidden_dropout_prob=0.1, attention_probs_dropout_prob=0.1, max_position_embeddings=512, initializer_range=0.02, layer_norm_eps=1e-12):
-        self.sample_rate = sample_rate
-        self.patch_size = patch_size
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.hidden_act = hidden_act
-        self.intermediate_size = intermediate_size
-        self.hidden_dropout_prob = hidden_dropout_prob
-        self.attention_probs_dropout_prob = attention_probs_dropout_prob
-        self.max_position_embeddings = max_position_embeddings
-        self.initializer_range = initializer_range
-        self.layer_norm_eps = layer_norm_eps
-
-
 class TransSelfAttention(nn.Module):
 
-    def __init__(self, config: TransConfig):
+    def __init__(self, config: 'TransConfig'):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError('The hidden size (%d) is not a multiple of the number of attention heads (%d)' % (config.hidden_size, config.num_attention_heads))
@@ -342,7 +325,7 @@ class TransModel3d(nn.Module):
 
 class Encoder2D(nn.Module):
 
-    def __init__(self, config: TransConfig, is_segmentation=True):
+    def __init__(self, config: 'TransConfig', is_segmentation=True):
         super().__init__()
         self.config = config
         self.out_channels = config.out_channels
@@ -376,6 +359,25 @@ class Encoder2D(nn.Module):
         x = self.final_dense(encode_x)
         x = rearrange(x, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)', p1=self.hh, p2=self.ww, h=hh, w=ww, c=self.config.hidden_size)
         return encode_x, x
+
+
+class TransConfig(object):
+
+    def __init__(self, patch_size, in_channels, out_channels, sample_rate=4, hidden_size=768, num_hidden_layers=8, num_attention_heads=6, intermediate_size=1024, hidden_act='gelu', hidden_dropout_prob=0.1, attention_probs_dropout_prob=0.1, max_position_embeddings=512, initializer_range=0.02, layer_norm_eps=1e-12):
+        self.sample_rate = sample_rate
+        self.patch_size = patch_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.hidden_size = hidden_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.hidden_act = hidden_act
+        self.intermediate_size = intermediate_size
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.attention_probs_dropout_prob = attention_probs_dropout_prob
+        self.max_position_embeddings = max_position_embeddings
+        self.initializer_range = initializer_range
+        self.layer_norm_eps = layer_norm_eps
 
 
 class PreTrainModel(nn.Module):

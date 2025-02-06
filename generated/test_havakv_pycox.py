@@ -57,7 +57,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -148,12 +150,12 @@ class _Loss(torch.nn.Module):
             'sum: sum.
     """
 
-    def __init__(self, reduction: str='mean') ->None:
+    def __init__(self, reduction: 'str'='mean') ->None:
         super().__init__()
         self.reduction = reduction
 
 
-def _reduction(loss: Tensor, reduction: str='mean') ->Tensor:
+def _reduction(loss: 'Tensor', reduction: 'str'='mean') ->Tensor:
     if reduction == 'none':
         return loss
     elif reduction == 'mean':
@@ -163,7 +165,7 @@ def _reduction(loss: Tensor, reduction: str='mean') ->Tensor:
     raise ValueError(f"`reduction` = {reduction} is not valid. Use 'none', 'mean' or 'sum'.")
 
 
-def nll_logistic_hazard(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: str='mean') ->Tensor:
+def nll_logistic_hazard(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', reduction: 'str'='mean') ->Tensor:
     """Negative log-likelihood of the discrete time hazard parametrized model LogisticHazard [1].
     
     Arguments:
@@ -210,11 +212,11 @@ class NLLLogistiHazardLoss(_Loss):
         torch.tensor -- The negative log-likelihood.
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor') ->Tensor:
         return nll_logistic_hazard(phi, idx_durations, events, self.reduction)
 
 
-def nll_pmf(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: str='mean', epsilon: float=1e-07) ->Tensor:
+def nll_pmf(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', reduction: 'str'='mean', epsilon: 'float'=1e-07) ->Tensor:
     """Negative log-likelihood for the PMF parametrized model [1].
     
     Arguments:
@@ -266,11 +268,11 @@ class NLLPMFLoss(_Loss):
         torch.tensor -- The negative log-likelihood.
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor') ->Tensor:
         return nll_pmf(phi, idx_durations, events, self.reduction)
 
 
-def nll_mtlr(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: str='mean', epsilon: float=1e-07) ->Tensor:
+def nll_mtlr(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', reduction: 'str'='mean', epsilon: 'float'=1e-07) ->Tensor:
     """Negative log-likelihood for the MTLR parametrized model [1] [2].
 
     This is essentially a PMF parametrization with an extra cumulative sum, as explained in [3].
@@ -324,11 +326,11 @@ class NLLMTLRLoss(_Loss):
         torch.tensor -- The negative log-likelihood.
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor') ->Tensor:
         return nll_mtlr(phi, idx_durations, events, self.reduction)
 
 
-def nll_pc_hazard_loss(phi: Tensor, idx_durations: Tensor, events: Tensor, interval_frac: Tensor, reduction: str='mean') ->Tensor:
+def nll_pc_hazard_loss(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', interval_frac: 'Tensor', reduction: 'str'='mean') ->Tensor:
     """Negative log-likelihood of the PC-Hazard parametrization model [1].
     
     Arguments:
@@ -371,7 +373,7 @@ def nll_pc_hazard_loss(phi: Tensor, idx_durations: Tensor, events: Tensor, inter
 
 class NLLPCHazardLoss(_Loss):
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor, interval_frac: Tensor, reduction: str='mean') ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', interval_frac: 'Tensor', reduction: 'str'='mean') ->Tensor:
         """Negative log-likelihood of the PC-Hazard parametrization model.
         See `loss.nll_pc_hazard_loss` for details.
     
@@ -400,7 +402,7 @@ class _DeepHitLoss(_Loss):
         sigma {float} -- Part of rank loss (see DeepHit paper)
     """
 
-    def __init__(self, alpha: float, sigma: float, reduction: str='mean') ->None:
+    def __init__(self, alpha: 'float', sigma: 'float', reduction: 'str'='mean') ->None:
         super().__init__(reduction)
         self.alpha = alpha
         self.sigma = sigma
@@ -410,7 +412,7 @@ class _DeepHitLoss(_Loss):
         return self._alpha
 
     @alpha.setter
-    def alpha(self, alpha: float) ->None:
+    def alpha(self, alpha: 'float') ->None:
         if alpha < 0 or alpha > 1:
             raise ValueError(f'Need `alpha` to be in [0, 1]. Got {alpha}.')
         self._alpha = alpha
@@ -420,13 +422,13 @@ class _DeepHitLoss(_Loss):
         return self._sigma
 
     @sigma.setter
-    def sigma(self, sigma: float) ->None:
+    def sigma(self, sigma: 'float') ->None:
         if sigma <= 0:
             raise ValueError(f'Need `sigma` to be positive. Got {sigma}.')
         self._sigma = sigma
 
 
-def _diff_cdf_at_time_i(pmf: Tensor, y: Tensor) ->Tensor:
+def _diff_cdf_at_time_i(pmf: 'Tensor', y: 'Tensor') ->Tensor:
     """R is the matrix from the DeepHit code giving the difference in CDF between individual
     i and j, at the event time of j. 
     I.e: R_ij = F_i(T_i) - F_j(T_i)
@@ -446,7 +448,7 @@ def _diff_cdf_at_time_i(pmf: Tensor, y: Tensor) ->Tensor:
     return r.transpose(0, 1)
 
 
-def _rank_loss_deephit(pmf: Tensor, y: Tensor, rank_mat: Tensor, sigma: float, reduction: str='mean') ->Tensor:
+def _rank_loss_deephit(pmf: 'Tensor', y: 'Tensor', rank_mat: 'Tensor', sigma: 'float', reduction: 'str'='mean') ->Tensor:
     """Ranking loss from DeepHit.
     
     Arguments:
@@ -464,7 +466,7 @@ def _rank_loss_deephit(pmf: Tensor, y: Tensor, rank_mat: Tensor, sigma: float, r
     return _reduction(loss, reduction)
 
 
-def rank_loss_deephit_single(phi: Tensor, idx_durations: Tensor, events: Tensor, rank_mat: Tensor, sigma: Tensor, reduction: str='mean') ->Tensor:
+def rank_loss_deephit_single(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', rank_mat: 'Tensor', sigma: 'Tensor', reduction: 'str'='mean') ->Tensor:
     """Rank loss proposed by DeepHit authors [1] for a single risks.
     
     Arguments:
@@ -525,13 +527,13 @@ class DeepHitSingleLoss(_DeepHitLoss):
         http://medianetlab.ee.ucla.edu/papers/AAAI_2018_DeepHit
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor, rank_mat: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', rank_mat: 'Tensor') ->Tensor:
         nll = nll_pmf(phi, idx_durations, events, self.reduction)
         rank_loss = rank_loss_deephit_single(phi, idx_durations, events, rank_mat, self.sigma, self.reduction)
         return self.alpha * nll + (1.0 - self.alpha) * rank_loss
 
 
-def nll_pmf_cr(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: str='mean', epsilon: float=1e-07) ->Tensor:
+def nll_pmf_cr(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', reduction: 'str'='mean', epsilon: 'float'=1e-07) ->Tensor:
     """Negative log-likelihood for PMF parameterizations. `phi` is the ''logit''.
     
     Arguments:
@@ -562,7 +564,7 @@ def nll_pmf_cr(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: st
     return _reduction(loss, reduction)
 
 
-def rank_loss_deephit_cr(phi: Tensor, idx_durations: Tensor, events: Tensor, rank_mat: Tensor, sigma: float, reduction: str='mean') ->Tensor:
+def rank_loss_deephit_cr(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', rank_mat: 'Tensor', sigma: 'float', reduction: 'str'='mean') ->Tensor:
     """Rank loss proposed by DeepHit authors for competing risks [1].
     
     Arguments:
@@ -629,13 +631,13 @@ class DeepHitLoss(_DeepHitLoss):
         http://medianetlab.ee.ucla.edu/papers/AAAI_2018_DeepHit
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor, rank_mat: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', rank_mat: 'Tensor') ->Tensor:
         nll = nll_pmf_cr(phi, idx_durations, events, self.reduction)
         rank_loss = rank_loss_deephit_cr(phi, idx_durations, events, rank_mat, self.sigma, self.reduction)
         return self.alpha * nll + (1.0 - self.alpha) * rank_loss
 
 
-def bce_surv_loss(phi: Tensor, idx_durations: Tensor, events: Tensor, reduction: str='mean') ->Tensor:
+def bce_surv_loss(phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor', reduction: 'str'='mean') ->Tensor:
     """Loss function for a set of binary classifiers. Each output node (element in `phi`)
     is the logit of a survival prediction at the time corresponding to that index.
     See [1] for explanation of the method.
@@ -681,11 +683,11 @@ class BCESurvLoss(_Loss):
         torch.tensor -- The negative log-likelihood.
     """
 
-    def forward(self, phi: Tensor, idx_durations: Tensor, events: Tensor) ->Tensor:
+    def forward(self, phi: 'Tensor', idx_durations: 'Tensor', events: 'Tensor') ->Tensor:
         return bce_surv_loss(phi, idx_durations, events, self.reduction)
 
 
-def cox_cc_loss(g_case: Tensor, g_control: Tensor, shrink: float=0.0, clamp: Tuple[float, float]=(-3e+38, 80.0)) ->Tensor:
+def cox_cc_loss(g_case: 'Tensor', g_control: 'Tensor', shrink: 'float'=0.0, clamp: 'Tuple[float, float]'=(-3e+38, 80.0)) ->Tensor:
     """Torch loss function for the Cox case-control models.
     For only one control, see `cox_cc_loss_single_ctrl` instead.
     
@@ -715,7 +717,7 @@ def cox_cc_loss(g_case: Tensor, g_control: Tensor, shrink: float=0.0, clamp: Tup
     return torch.mean(loss) + shrink_zero.abs()
 
 
-def cox_cc_loss_single_ctrl(g_case: Tensor, g_control: Tensor, shrink: float=0.0) ->Tensor:
+def cox_cc_loss_single_ctrl(g_case: 'Tensor', g_control: 'Tensor', shrink: 'float'=0.0) ->Tensor:
     """CoxCC and CoxTime loss, but with only a single control.
     """
     loss = F.softplus(g_control - g_case).mean()
@@ -724,7 +726,44 @@ def cox_cc_loss_single_ctrl(g_case: Tensor, g_control: Tensor, shrink: float=0.0
     return loss
 
 
-def cox_ph_loss_sorted(log_h: Tensor, events: Tensor, eps: float=1e-07) ->Tensor:
+class CoxCCLoss(torch.nn.Module):
+    """Torch loss function for the Cox case-control models.
+
+    loss_func = LossCoxCC()
+    loss = loss_func(g_case, g_control)
+    
+    Keyword Arguments:
+        shrink {float} -- Shrinkage that encourage the net got give g_case and g_control
+            closer to zero (a regularizer in a sense). (default: {0.})
+        clamp {tuple} -- See code (default: {(-3e+38, 80.)})
+    """
+
+    def __init__(self, shrink: 'float'=0.0, clamp: 'Tuple[float, float]'=(-3e+38, 80.0)) ->Tensor:
+        super().__init__()
+        self.shrink = shrink
+        self.clamp = clamp
+
+    @property
+    def shrink(self) ->float:
+        return self._shrink
+
+    @shrink.setter
+    def shrink(self, shrink: 'float') ->None:
+        if shrink < 0:
+            raise ValueError(f'Need shrink to be non-negative, got {shrink}.')
+        self._shrink = shrink
+
+    def forward(self, g_case: 'Tensor', g_control: 'TupleTree') ->Tensor:
+        single = False
+        if hasattr(g_control, 'shape'):
+            if g_case.shape == g_control.shape:
+                return cox_cc_loss_single_ctrl(g_case, g_control, self.shrink)
+        elif len(g_control) == 1 and g_control[0].shape == g_case.shape:
+            return cox_cc_loss_single_ctrl(g_case, g_control[0], self.shrink)
+        return cox_cc_loss(g_case, g_control, self.shrink, self.clamp)
+
+
+def cox_ph_loss_sorted(log_h: 'Tensor', events: 'Tensor', eps: 'float'=1e-07) ->Tensor:
     """Requires the input to be sorted by descending duration time.
     See DatasetDurationSorted.
 
@@ -758,11 +797,11 @@ class CoxPHLossSorted(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, log_h: Tensor, events: Tensor) ->Tensor:
+    def forward(self, log_h: 'Tensor', events: 'Tensor') ->Tensor:
         return cox_ph_loss_sorted(log_h, events)
 
 
-def cox_ph_loss(log_h: Tensor, durations: Tensor, events: Tensor, eps: float=1e-07) ->Tensor:
+def cox_ph_loss(log_h: 'Tensor', durations: 'Tensor', events: 'Tensor', eps: 'float'=1e-07) ->Tensor:
     """Loss for CoxPH model. If data is sorted by descending duration, see `cox_ph_loss_sorted`.
 
     We calculate the negative log of $(rac{h_i}{\\sum_{j \\in R_i} h_j})^d$,
@@ -787,7 +826,7 @@ class CoxPHLoss(torch.nn.Module):
     limitation, but simple and fast.
     """
 
-    def forward(self, log_h: Tensor, durations: Tensor, events: Tensor) ->Tensor:
+    def forward(self, log_h: 'Tensor', durations: 'Tensor', events: 'Tensor') ->Tensor:
         return cox_ph_loss(log_h, durations, events)
 
 
@@ -798,6 +837,10 @@ from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _
 
 TESTCASES = [
     # (nn.Module, init_args, forward_args, jit_compiles)
+    (CoxCCLoss,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     False),
     (CoxPHLoss,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
@@ -814,4 +857,7 @@ class Test_havakv_pycox(_paritybench_base):
 
     def test_001(self):
         self._check(*TESTCASES[1])
+
+    def test_002(self):
+        self._check(*TESTCASES[2])
 

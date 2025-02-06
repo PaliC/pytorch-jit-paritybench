@@ -77,7 +77,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -186,7 +188,7 @@ from torch.nn.utils import clip_grad_norm_
 from scipy.special import softmax
 
 
-def instantiate_class(full_name: str, **kwargs):
+def instantiate_class(full_name: 'str', **kwargs):
     module_name, class_name = full_name.rsplit('.', 1)
     module = importlib.import_module(module_name)
     class_ = getattr(module, class_name)
@@ -339,7 +341,7 @@ class FixedPositionalEncoding(nn.Module):
     Fixed positional encodings up to max_len position are computed once during object construction.
     """
 
-    def __init__(self, d_model: int, max_len=5000):
+    def __init__(self, d_model: 'int', max_len=5000):
         """
         :param d_model: dimensionality of the embeddings
         :param max_len: maximum length of the sequence

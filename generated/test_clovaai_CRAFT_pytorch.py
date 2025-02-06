@@ -14,7 +14,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -43,9 +45,6 @@ import torch.nn.init as init
 
 
 from torchvision import models
-
-
-from torchvision.models.vgg import model_urls
 
 
 import torch.nn.functional as F
@@ -208,27 +207,13 @@ from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _
 
 TESTCASES = [
     # (nn.Module, init_args, forward_args, jit_compiles)
-    (CRAFT,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 3, 64, 64])], {}),
-     False),
     (double_conv,
      lambda: ([], {'in_ch': 4, 'mid_ch': 4, 'out_ch': 4}),
      lambda: ([torch.rand([4, 8, 64, 64])], {}),
      True),
-    (vgg16_bn,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 3, 64, 64])], {}),
-     False),
 ]
 
 class Test_clovaai_CRAFT_pytorch(_paritybench_base):
     def test_000(self):
         self._check(*TESTCASES[0])
-
-    def test_001(self):
-        self._check(*TESTCASES[1])
-
-    def test_002(self):
-        self._check(*TESTCASES[2])
 

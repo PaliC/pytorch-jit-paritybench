@@ -1,0 +1,1050 @@
+# AOT ID: ['17_forward']
+from ctypes import c_void_p, c_long, c_int
+import torch
+import math
+import random
+import os
+import tempfile
+from math import inf, nan
+from torch._inductor.hooks import run_intermediate_hooks
+from torch._inductor.utils import maybe_profile
+from torch._inductor.codegen.memory_planning import _align as align
+from torch import device, empty_strided
+from torch._inductor.async_compile import AsyncCompile
+from torch._inductor.select_algorithm import extern_kernels
+from torch._inductor.codegen.multi_kernel import MultiKernelCall
+import triton
+import triton.language as tl
+from torch._inductor.runtime.triton_heuristics import (
+    grid,
+    split_scan_grid,
+    grid_combo_kernels,
+    start_graph,
+    end_graph,
+    cooperative_reduction_grid,
+)
+from torch._C import _cuda_getCurrentRawStream as get_raw_stream
+from torch._C import _cuda_getCurrentRawStream as get_raw_stream
+
+aten = torch.ops.aten
+inductor_ops = torch.ops.inductor
+_quantized = torch.ops._quantized
+assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
+reinterpret_tensor = torch._C._dynamo.guards._reinterpret_tensor
+alloc_from_pool = torch.ops.inductor._alloc_from_pool
+async_compile = AsyncCompile()
+empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2p
+
+
+# kernel path: inductor_cache/nj/cnj3ydodsq5doqiiyfqx7wviztl3fo6oia4vmsgsniprgdyljs35.py
+# Topologically Sorted Source Nodes: [conv3d, h], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d => convolution
+#   h => relu
+# Graph fragment:
+#   %convolution : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%primals_1, %primals_2, %primals_3, [1, 1, 1], [60, 60, 60], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution,), kwargs = {})
+triton_poi_fused_convolution_relu_0 = async_compile.triton('triton_poi_fused_convolution_relu_0', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 268435456}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_0', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_0(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 192914176
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 6028568) % 8)
+    tmp0 = tl.load(in_out_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr0 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/ht/chtr4hboaspz7vhwwqtkbh6rr6hvgm3rprtbn4t3ye4zirmxzwpy.py
+# Topologically Sorted Source Nodes: [conv3d_1, h_1], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_1 => convolution_1
+#   h_1 => relu_1
+# Graph fragment:
+#   %convolution_1 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%relu, %primals_4, %primals_5, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_1 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_1,), kwargs = {})
+triton_poi_fused_convolution_relu_1 = async_compile.triton('triton_poi_fused_convolution_relu_1', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 268435456}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_1', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_1(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 192914176
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x4 = xindex
+    x2 = ((xindex // 6028568) % 8)
+    x0 = (xindex % 33124)
+    x5 = xindex // 33124
+    tmp0 = tl.load(in_ptr0 + (x4), xmask)
+    tmp1 = tl.load(in_ptr1 + (x2), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(out_ptr0 + (x0 + 33152*x5), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/ll/cllqkqebcd5ykvztcmpsvcytrnnsh26xsha4vc2ozsppa5v46lb7.py
+# Topologically Sorted Source Nodes: [conv3d_2, h_3], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_2 => convolution_2
+#   h_3 => relu_2
+# Graph fragment:
+#   %convolution_2 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%getitem, %primals_6, %primals_7, [1, 1, 1], [15, 15, 15], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_2 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_2,), kwargs = {})
+triton_poi_fused_convolution_relu_2 = async_compile.triton('triton_poi_fused_convolution_relu_2', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 134217728}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_2', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_2(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 107850176
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 1685159) % 16)
+    tmp0 = tl.load(in_out_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr0 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/wb/cwbscqu4ssqzs5n2aoga34rr3kvdl5zuuioan2cuatyuln2wnm4y.py
+# Topologically Sorted Source Nodes: [conv3d_3, h_4], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_3 => convolution_3
+#   h_4 => relu_3
+# Graph fragment:
+#   %convolution_3 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%relu_2, %primals_8, %primals_9, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_3 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_3,), kwargs = {})
+triton_poi_fused_convolution_relu_3 = async_compile.triton('triton_poi_fused_convolution_relu_3', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 134217728}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_3', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_3(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 107850176
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x4 = xindex
+    x2 = ((xindex // 1685159) % 16)
+    x0 = (xindex % 14161)
+    x5 = xindex // 14161
+    tmp0 = tl.load(in_ptr0 + (x4), xmask)
+    tmp1 = tl.load(in_ptr1 + (x2), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(out_ptr0 + (x0 + 14176*x5), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/lb/clbmhkqqtwlvh4yzpjlevvdec2s2licbqqao7jzagxeonenoee67.py
+# Topologically Sorted Source Nodes: [conv3d_4, h_6], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_4 => convolution_4
+#   h_6 => relu_4
+# Graph fragment:
+#   %convolution_4 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%getitem_2, %primals_10, %primals_11, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_4 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_4,), kwargs = {})
+triton_poi_fused_convolution_relu_4 = async_compile.triton('triton_poi_fused_convolution_relu_4', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 33554432}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_4', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_4(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 27648000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = tl.full([XBLOCK], True, tl.int1)
+    x3 = xindex
+    x1 = ((xindex // 216000) % 32)
+    tmp0 = tl.load(in_out_ptr0 + (x3), None)
+    tmp1 = tl.load(in_ptr0 + (x1), None, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, None)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/lr/clr53qkenqq3nxdd7dipxxwx434m2zyo5d3ndavo3sj2ibgaej2a.py
+# Topologically Sorted Source Nodes: [conv3d_6, h_8], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_6 => convolution_6
+#   h_8 => relu_6
+# Graph fragment:
+#   %convolution_6 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%relu_5, %primals_14, %primals_15, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_6 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_6,), kwargs = {})
+triton_poi_fused_convolution_relu_5 = async_compile.triton('triton_poi_fused_convolution_relu_5', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 33554432}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_5', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_5(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 27648000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = tl.full([XBLOCK], True, tl.int1)
+    x4 = xindex
+    x2 = ((xindex // 216000) % 32)
+    x0 = (xindex % 3600)
+    x5 = xindex // 3600
+    tmp0 = tl.load(in_ptr0 + (x4), None)
+    tmp1 = tl.load(in_ptr1 + (x2), None, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(out_ptr0 + (x0 + 3616*x5), tmp4, None)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/us/cusfrywincaoe55isujaesob4ctf47nx6xzpohzta4n7kvusmipv.py
+# Topologically Sorted Source Nodes: [conv3d_7, h_10], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_7 => convolution_7
+#   h_10 => relu_7
+# Graph fragment:
+#   %convolution_7 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%getitem_4, %primals_16, %primals_17, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_7 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_7,), kwargs = {})
+triton_poi_fused_convolution_relu_6 = async_compile.triton('triton_poi_fused_convolution_relu_6', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 8388608}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_6', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_6(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 6912000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 27000) % 64)
+    tmp0 = tl.load(in_out_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr0 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/gr/cgr7eshrmv4l6xvvfdcufcr6fojklb6i4b5ttd3zsuqgcqci6swm.py
+# Topologically Sorted Source Nodes: [conv3d_9, h_12], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_9 => convolution_9
+#   h_12 => relu_9
+# Graph fragment:
+#   %convolution_9 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%relu_8, %primals_20, %primals_21, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_9 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_9,), kwargs = {})
+triton_poi_fused_convolution_relu_7 = async_compile.triton('triton_poi_fused_convolution_relu_7', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 8388608}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_7', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_7(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 6912000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 27000) % 64)
+    x0 = (xindex % 27000)
+    x4 = xindex // 27000
+    tmp0 = tl.load(in_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr1 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(out_ptr0 + (x0 + 27008*x4), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/fd/cfd5fkgchmho3slmmapsssa7o5pcq7m4ia36k3gtlxfzcmkgt3xg.py
+# Topologically Sorted Source Nodes: [conv3d_10, h_14], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_10 => convolution_10
+#   h_14 => relu_10
+# Graph fragment:
+#   %convolution_10 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%getitem_6, %primals_22, %primals_23, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_10 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_10,), kwargs = {})
+triton_poi_fused_convolution_relu_8 = async_compile.triton('triton_poi_fused_convolution_relu_8', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 1048576}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_8', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_8(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 864000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 3375) % 64)
+    tmp0 = tl.load(in_out_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr0 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/pg/cpgpu4ij5n4ro6n5k5zbhbjdxgix55ktsafhh3lp572i7quedc54.py
+# Topologically Sorted Source Nodes: [conv3d_12, h_16], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_12 => convolution_12
+#   h_16 => relu_12
+# Graph fragment:
+#   %convolution_12 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%relu_11, %primals_26, %primals_27, [1, 1, 1], [1, 1, 1], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_12 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_12,), kwargs = {})
+triton_poi_fused_convolution_relu_9 = async_compile.triton('triton_poi_fused_convolution_relu_9', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 1048576}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_9', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_9(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 864000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x3 = xindex
+    x1 = ((xindex // 3375) % 64)
+    x0 = (xindex % 3375)
+    x4 = xindex // 3375
+    tmp0 = tl.load(in_ptr0 + (x3), xmask)
+    tmp1 = tl.load(in_ptr1 + (x1), xmask, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(out_ptr0 + (x0 + 3392*x4), tmp4, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/lg/clgxtpaqaztvnpqwoaon55w54sf7gzijqelilkbys3kxssr277nx.py
+# Topologically Sorted Source Nodes: [conv3d_13, h_18], Original ATen: [aten.convolution, aten.relu]
+# Source node to ATen node mapping:
+#   conv3d_13 => convolution_13
+#   h_18 => relu_13
+# Graph fragment:
+#   %convolution_13 : [num_users=1] = call_function[target=torch.ops.aten.convolution.default](args = (%getitem_8, %primals_28, %primals_29, [1, 1, 1], [0, 0, 0], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+#   %relu_13 : [num_users=2] = call_function[target=torch.ops.aten.relu.default](args = (%convolution_13,), kwargs = {})
+triton_poi_fused_convolution_relu_10 = async_compile.triton('triton_poi_fused_convolution_relu_10', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 16384}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_relu_10', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_relu_10(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 16384
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = tl.full([XBLOCK], True, tl.int1)
+    x3 = xindex
+    x1 = ((xindex // 8) % 512)
+    tmp0 = tl.load(in_out_ptr0 + (x3), None)
+    tmp1 = tl.load(in_ptr0 + (x1), None, eviction_policy='evict_last')
+    tmp2 = tmp0 + tmp1
+    tmp3 = tl.full([1], 0, tl.int32)
+    tmp4 = triton_helpers.maximum(tmp3, tmp2)
+    tl.store(in_out_ptr0 + (x3), tmp4, None)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/xb/cxbkchw7wgbwujfjbm5jpxewoskxborfgcbwcmr26w6tismrajs7.py
+# Topologically Sorted Source Nodes: [h_22], Original ATen: [aten.convolution]
+# Source node to ATen node mapping:
+#   h_22 => convolution_15
+# Graph fragment:
+#   %convolution_15 : [num_users=2] = call_function[target=torch.ops.aten.convolution.default](args = (%relu_14, %primals_32, %primals_33, [1, 1, 1], [0, 0, 0], [1, 1, 1], False, [0, 0, 0], 1), kwargs = {})
+triton_poi_fused_convolution_11 = async_compile.triton('triton_poi_fused_convolution_11', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 32}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_convolution_11', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_convolution_11(in_out_ptr0, in_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 32
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = xindex
+    tmp0 = tl.load(in_out_ptr0 + (x0), xmask)
+    tmp1 = tl.load(in_ptr0 + (0))
+    tmp2 = tl.broadcast_to(tmp1, [XBLOCK])
+    tmp3 = tmp0 + tmp2
+    tl.store(in_out_ptr0 + (x0), tmp3, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/ed/cedclxfk6nnezqweoqj6g5rvjmsn4rqggy2ao6i27b44jzb3v54w.py
+# Topologically Sorted Source Nodes: [mul], Original ATen: [aten.mul]
+# Source node to ATen node mapping:
+#   mul => mul
+# Graph fragment:
+#   %mul : [num_users=2] = call_function[target=torch.ops.aten.mul.Tensor](args = (%getitem_6, 0.01), kwargs = {})
+triton_poi_fused_mul_12 = async_compile.triton('triton_poi_fused_mul_12', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 1048576}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_mul_12', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 1, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_mul_12(in_ptr0, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 864000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + (x0), xmask)
+    tmp1 = 0.01
+    tmp2 = tmp0 * tmp1
+    tl.store(out_ptr0 + (x0), tmp2, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/sf/csflcl2datvt25yakdjyozm6t5ezpyjcfhboowkelc54reemfd2f.py
+# Topologically Sorted Source Nodes: [h_26], Original ATen: [aten.add]
+# Source node to ATen node mapping:
+#   h_26 => add
+# Graph fragment:
+#   %add : [num_users=2] = call_function[target=torch.ops.aten.add.Tensor](args = (%convolution_16, %slice_5), kwargs = {})
+triton_poi_fused_add_13 = async_compile.triton('triton_poi_fused_add_13', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 1024}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_add_13', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 3, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_add_13(in_out_ptr0, in_ptr0, in_ptr1, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 864
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x4 = xindex
+    x0 = (xindex % 6)
+    x1 = ((xindex // 6) % 6)
+    x2 = ((xindex // 36) % 6)
+    x3 = xindex // 216
+    tmp0 = tl.load(in_out_ptr0 + (x4), xmask)
+    tmp1 = tl.load(in_ptr0 + (1205 + x0 + 15*x1 + 225*x2 + 3375*x3), xmask)
+    tmp2 = tl.load(in_ptr1 + (0))
+    tmp3 = tl.broadcast_to(tmp2, [XBLOCK])
+    tmp4 = tmp1 + tmp3
+    tmp5 = tmp0 + tmp4
+    tl.store(in_out_ptr0 + (x4), tmp5, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/lc/clciwn3dfbkgm3bgzgtquz5qbbzfbtc62dcnfluekn5gb23kx6jh.py
+# Topologically Sorted Source Nodes: [mul_1], Original ATen: [aten.mul]
+# Source node to ATen node mapping:
+#   mul_1 => mul_1
+# Graph fragment:
+#   %mul_1 : [num_users=2] = call_function[target=torch.ops.aten.mul.Tensor](args = (%getitem_4, 0.0001), kwargs = {})
+triton_poi_fused_mul_14 = async_compile.triton('triton_poi_fused_mul_14', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 4194304}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_mul_14', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 1, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_mul_14(in_ptr0, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 3456000
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + (x0), xmask)
+    tmp1 = 0.0001
+    tmp2 = tmp0 * tmp1
+    tl.store(out_ptr0 + (x0), tmp2, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/uf/cuf4bvjoji3rcikqlvz52kigmgjhqr4hinciiof3mkpqmwo45pox.py
+# Topologically Sorted Source Nodes: [h_30], Original ATen: [aten.add]
+# Source node to ATen node mapping:
+#   h_30 => add_1
+# Graph fragment:
+#   %add_1 : [num_users=2] = call_function[target=torch.ops.aten.add.Tensor](args = (%convolution_18, %slice_10), kwargs = {})
+triton_poi_fused_add_15 = async_compile.triton('triton_poi_fused_add_15', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 16384}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_out_ptr0': '*fp32', 'in_ptr0': '*fp32', 'in_ptr1': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2, 3), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_add_15', 'mutated_arg_names': ['in_out_ptr0'], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 3, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_add_15(in_out_ptr0, in_ptr0, in_ptr1, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 10976
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x4 = xindex
+    x0 = (xindex % 14)
+    x1 = ((xindex // 14) % 14)
+    x2 = ((xindex // 196) % 14)
+    x3 = xindex // 2744
+    tmp0 = tl.load(in_out_ptr0 + (x4), xmask)
+    tmp1 = tl.load(in_ptr0 + (8379 + x0 + 30*x1 + 900*x2 + 27000*x3), xmask)
+    tmp2 = tl.load(in_ptr1 + (0))
+    tmp3 = tl.broadcast_to(tmp2, [XBLOCK])
+    tmp4 = tmp1 + tmp3
+    tmp5 = tmp0 + tmp4
+    tl.store(in_out_ptr0 + (x4), tmp5, xmask)
+''', device_str='cuda')
+
+
+# kernel path: inductor_cache/5w/c5w3bm54cutqzcmw62jjnei5trnhygbolau4ojngpclnfhebdmgq.py
+# Topologically Sorted Source Nodes: [h_32], Original ATen: [aten.clone]
+# Source node to ATen node mapping:
+#   h_32 => clone
+# Graph fragment:
+#   %clone : [num_users=1] = call_function[target=torch.ops.aten.clone.default](args = (%slice_15,), kwargs = {memory_format: torch.contiguous_format})
+triton_poi_fused_clone_16 = async_compile.triton('triton_poi_fused_clone_16', '''
+import triton
+import triton.language as tl
+from triton.compiler.compiler import AttrsDescriptor
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 1048576}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*fp32', 'out_ptr0': '*fp32', 'xnumel': 'i32'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [AttrsDescriptor.from_dict({'arg_properties': {'tt.divisibility': (0, 1, 2), 'tt.equal_to': ()}, 'cls': 'AttrsDescriptor'})]},
+    inductor_meta={'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_clone_16', 'mutated_arg_names': [], 'optimize_mem': False, 'no_x_dim': False, 'num_load': 1, 'num_reduction': 0, 'backend_hash': 'A0D3A2B50857E9501D843044B01F725922648D76E6D26323B14F8A4EA4473D1B', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_clone_16(in_ptr0, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 1048576
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = tl.full([XBLOCK], True, tl.int1)
+    x0 = (xindex % 64)
+    x1 = ((xindex // 64) % 64)
+    x2 = ((xindex // 4096) % 64)
+    x3 = xindex // 262144
+    x4 = xindex
+    tmp0 = tl.load(in_ptr0 + (450151 + x0 + 120*x1 + 14400*x2 + 1728000*x3), None)
+    tl.store(out_ptr0 + (x4), tmp0, None)
+''', device_str='cuda')
+
+
+async_compile.wait(globals())
+del async_compile
+
+def call(args):
+    primals_1, primals_2, primals_3, primals_4, primals_5, primals_6, primals_7, primals_8, primals_9, primals_10, primals_11, primals_12, primals_13, primals_14, primals_15, primals_16, primals_17, primals_18, primals_19, primals_20, primals_21, primals_22, primals_23, primals_24, primals_25, primals_26, primals_27, primals_28, primals_29, primals_30, primals_31, primals_32, primals_33, primals_34, primals_35, primals_36, primals_37, primals_38, primals_39, primals_40 = args
+    args.clear()
+    assert_size_stride(primals_1, (4, 1, 64, 64, 64), (262144, 262144, 4096, 64, 1))
+    assert_size_stride(primals_2, (8, 1, 3, 3, 3), (27, 27, 9, 3, 1))
+    assert_size_stride(primals_3, (8, ), (1, ))
+    assert_size_stride(primals_4, (8, 8, 3, 3, 3), (216, 27, 9, 3, 1))
+    assert_size_stride(primals_5, (8, ), (1, ))
+    assert_size_stride(primals_6, (16, 8, 3, 3, 3), (216, 27, 9, 3, 1))
+    assert_size_stride(primals_7, (16, ), (1, ))
+    assert_size_stride(primals_8, (16, 16, 3, 3, 3), (432, 27, 9, 3, 1))
+    assert_size_stride(primals_9, (16, ), (1, ))
+    assert_size_stride(primals_10, (32, 16, 3, 3, 3), (432, 27, 9, 3, 1))
+    assert_size_stride(primals_11, (32, ), (1, ))
+    assert_size_stride(primals_12, (32, 32, 3, 3, 3), (864, 27, 9, 3, 1))
+    assert_size_stride(primals_13, (32, ), (1, ))
+    assert_size_stride(primals_14, (32, 32, 3, 3, 3), (864, 27, 9, 3, 1))
+    assert_size_stride(primals_15, (32, ), (1, ))
+    assert_size_stride(primals_16, (64, 32, 3, 3, 3), (864, 27, 9, 3, 1))
+    assert_size_stride(primals_17, (64, ), (1, ))
+    assert_size_stride(primals_18, (64, 64, 3, 3, 3), (1728, 27, 9, 3, 1))
+    assert_size_stride(primals_19, (64, ), (1, ))
+    assert_size_stride(primals_20, (64, 64, 3, 3, 3), (1728, 27, 9, 3, 1))
+    assert_size_stride(primals_21, (64, ), (1, ))
+    assert_size_stride(primals_22, (64, 64, 3, 3, 3), (1728, 27, 9, 3, 1))
+    assert_size_stride(primals_23, (64, ), (1, ))
+    assert_size_stride(primals_24, (64, 64, 3, 3, 3), (1728, 27, 9, 3, 1))
+    assert_size_stride(primals_25, (64, ), (1, ))
+    assert_size_stride(primals_26, (64, 64, 3, 3, 3), (1728, 27, 9, 3, 1))
+    assert_size_stride(primals_27, (64, ), (1, ))
+    assert_size_stride(primals_28, (512, 64, 7, 7, 7), (21952, 343, 49, 7, 1))
+    assert_size_stride(primals_29, (512, ), (1, ))
+    assert_size_stride(primals_30, (512, 512, 1, 1, 1), (512, 1, 1, 1, 1))
+    assert_size_stride(primals_31, (512, ), (1, ))
+    assert_size_stride(primals_32, (1, 512, 1, 1, 1), (512, 1, 1, 1, 1))
+    assert_size_stride(primals_33, (1, ), (1, ))
+    assert_size_stride(primals_34, (1, 1, 4, 4, 4), (64, 64, 16, 4, 1))
+    assert_size_stride(primals_35, (1, 64, 1, 1, 1), (64, 1, 1, 1, 1))
+    assert_size_stride(primals_36, (1, ), (1, ))
+    assert_size_stride(primals_37, (1, 1, 4, 4, 4), (64, 64, 16, 4, 1))
+    assert_size_stride(primals_38, (1, 32, 1, 1, 1), (32, 1, 1, 1, 1))
+    assert_size_stride(primals_39, (1, ), (1, ))
+    assert_size_stride(primals_40, (1, 1, 16, 16, 16), (4096, 4096, 256, 16, 1))
+    with torch.cuda._DeviceGuard(0):
+        torch.cuda.set_device(0)
+        # Topologically Sorted Source Nodes: [conv3d], Original ATen: [aten.convolution]
+        buf0 = extern_kernels.convolution(primals_1, primals_2, stride=(1, 1, 1), padding=(60, 60, 60), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf0, (4, 8, 182, 182, 182), (48228544, 6028568, 33124, 182, 1))
+        buf1 = buf0; del buf0  # reuse
+        # Topologically Sorted Source Nodes: [conv3d, h], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_0.run(buf1, primals_3, 192914176, grid=grid(192914176), stream=stream0)
+        del primals_3
+        # Topologically Sorted Source Nodes: [conv3d_1], Original ATen: [aten.convolution]
+        buf2 = extern_kernels.convolution(buf1, primals_4, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf2, (4, 8, 182, 182, 182), (48228544, 6028568, 33124, 182, 1))
+        buf3 = empty_strided_cuda((4, 8, 182, 182, 182), (48269312, 6033664, 33152, 182, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [conv3d_1, h_1], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_1.run(buf2, primals_5, buf3, 192914176, grid=grid(192914176), stream=stream0)
+        del buf2
+        del primals_5
+        # Topologically Sorted Source Nodes: [h_2], Original ATen: [aten.max_pool3d_with_indices]
+        buf4 = torch.ops.aten.max_pool3d_with_indices.default(buf3, [2, 2, 2], [2, 2, 2], [0, 0, 0], [1, 1, 1], True)
+        buf5 = buf4[0]
+        buf6 = buf4[1]
+        del buf4
+        # Topologically Sorted Source Nodes: [conv3d_2], Original ATen: [aten.convolution]
+        buf7 = extern_kernels.convolution(buf5, primals_6, stride=(1, 1, 1), padding=(15, 15, 15), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf7, (4, 16, 119, 119, 119), (26962544, 1685159, 14161, 119, 1))
+        buf8 = buf7; del buf7  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_2, h_3], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_2.run(buf8, primals_7, 107850176, grid=grid(107850176), stream=stream0)
+        del primals_7
+        # Topologically Sorted Source Nodes: [conv3d_3], Original ATen: [aten.convolution]
+        buf9 = extern_kernels.convolution(buf8, primals_8, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf9, (4, 16, 119, 119, 119), (26962544, 1685159, 14161, 119, 1))
+        buf10 = empty_strided_cuda((4, 16, 119, 119, 119), (26991104, 1686944, 14176, 119, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [conv3d_3, h_4], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_3.run(buf9, primals_9, buf10, 107850176, grid=grid(107850176), stream=stream0)
+        del buf9
+        del primals_9
+        # Topologically Sorted Source Nodes: [h_5], Original ATen: [aten.max_pool3d_with_indices]
+        buf11 = torch.ops.aten.max_pool3d_with_indices.default(buf10, [2, 2, 2], [2, 2, 2], [0, 0, 0], [1, 1, 1], True)
+        buf12 = buf11[0]
+        buf13 = buf11[1]
+        del buf11
+        # Topologically Sorted Source Nodes: [conv3d_4], Original ATen: [aten.convolution]
+        buf14 = extern_kernels.convolution(buf12, primals_10, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf14, (4, 32, 60, 60, 60), (6912000, 216000, 3600, 60, 1))
+        buf15 = buf14; del buf14  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_4, h_6], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_4.run(buf15, primals_11, 27648000, grid=grid(27648000), stream=stream0)
+        del primals_11
+        # Topologically Sorted Source Nodes: [conv3d_5], Original ATen: [aten.convolution]
+        buf16 = extern_kernels.convolution(buf15, primals_12, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf16, (4, 32, 60, 60, 60), (6912000, 216000, 3600, 60, 1))
+        buf17 = buf16; del buf16  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_5, h_7], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_4.run(buf17, primals_13, 27648000, grid=grid(27648000), stream=stream0)
+        del primals_13
+        # Topologically Sorted Source Nodes: [conv3d_6], Original ATen: [aten.convolution]
+        buf18 = extern_kernels.convolution(buf17, primals_14, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf18, (4, 32, 60, 60, 60), (6912000, 216000, 3600, 60, 1))
+        buf19 = empty_strided_cuda((4, 32, 60, 60, 60), (6942720, 216960, 3616, 60, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [conv3d_6, h_8], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_5.run(buf18, primals_15, buf19, 27648000, grid=grid(27648000), stream=stream0)
+        del buf18
+        del primals_15
+        # Topologically Sorted Source Nodes: [h_9], Original ATen: [aten.max_pool3d_with_indices]
+        buf20 = torch.ops.aten.max_pool3d_with_indices.default(buf19, [2, 2, 2], [2, 2, 2], [0, 0, 0], [1, 1, 1], True)
+        buf21 = buf20[0]
+        buf22 = buf20[1]
+        del buf20
+        # Topologically Sorted Source Nodes: [conv3d_7], Original ATen: [aten.convolution]
+        buf23 = extern_kernels.convolution(buf21, primals_16, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf23, (4, 64, 30, 30, 30), (1728000, 27000, 900, 30, 1))
+        buf24 = buf23; del buf23  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_7, h_10], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_6.run(buf24, primals_17, 6912000, grid=grid(6912000), stream=stream0)
+        del primals_17
+        # Topologically Sorted Source Nodes: [conv3d_8], Original ATen: [aten.convolution]
+        buf25 = extern_kernels.convolution(buf24, primals_18, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf25, (4, 64, 30, 30, 30), (1728000, 27000, 900, 30, 1))
+        buf26 = buf25; del buf25  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_8, h_11], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_6.run(buf26, primals_19, 6912000, grid=grid(6912000), stream=stream0)
+        del primals_19
+        # Topologically Sorted Source Nodes: [conv3d_9], Original ATen: [aten.convolution]
+        buf27 = extern_kernels.convolution(buf26, primals_20, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf27, (4, 64, 30, 30, 30), (1728000, 27000, 900, 30, 1))
+        buf28 = empty_strided_cuda((4, 64, 30, 30, 30), (1728512, 27008, 900, 30, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [conv3d_9, h_12], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_7.run(buf27, primals_21, buf28, 6912000, grid=grid(6912000), stream=stream0)
+        del buf27
+        del primals_21
+        # Topologically Sorted Source Nodes: [h_13], Original ATen: [aten.max_pool3d_with_indices]
+        buf29 = torch.ops.aten.max_pool3d_with_indices.default(buf28, [2, 2, 2], [2, 2, 2], [0, 0, 0], [1, 1, 1], True)
+        buf30 = buf29[0]
+        buf31 = buf29[1]
+        del buf29
+        # Topologically Sorted Source Nodes: [conv3d_10], Original ATen: [aten.convolution]
+        buf32 = extern_kernels.convolution(buf30, primals_22, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf32, (4, 64, 15, 15, 15), (216000, 3375, 225, 15, 1))
+        buf33 = buf32; del buf32  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_10, h_14], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_8.run(buf33, primals_23, 864000, grid=grid(864000), stream=stream0)
+        del primals_23
+        # Topologically Sorted Source Nodes: [conv3d_11], Original ATen: [aten.convolution]
+        buf34 = extern_kernels.convolution(buf33, primals_24, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf34, (4, 64, 15, 15, 15), (216000, 3375, 225, 15, 1))
+        buf35 = buf34; del buf34  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_11, h_15], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_8.run(buf35, primals_25, 864000, grid=grid(864000), stream=stream0)
+        del primals_25
+        # Topologically Sorted Source Nodes: [conv3d_12], Original ATen: [aten.convolution]
+        buf36 = extern_kernels.convolution(buf35, primals_26, stride=(1, 1, 1), padding=(1, 1, 1), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf36, (4, 64, 15, 15, 15), (216000, 3375, 225, 15, 1))
+        buf37 = empty_strided_cuda((4, 64, 15, 15, 15), (217088, 3392, 225, 15, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [conv3d_12, h_16], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_9.run(buf36, primals_27, buf37, 864000, grid=grid(864000), stream=stream0)
+        del primals_27
+        # Topologically Sorted Source Nodes: [h_17], Original ATen: [aten.max_pool3d_with_indices]
+        buf38 = torch.ops.aten.max_pool3d_with_indices.default(buf37, [2, 2, 2], [2, 2, 2], [0, 0, 0], [1, 1, 1], True)
+        buf39 = buf38[0]
+        buf40 = buf38[1]
+        del buf38
+        # Topologically Sorted Source Nodes: [conv3d_13], Original ATen: [aten.convolution]
+        buf41 = extern_kernels.convolution(buf39, primals_28, stride=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf41, (4, 512, 2, 2, 2), (4096, 8, 4, 2, 1))
+        buf42 = buf41; del buf41  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_13, h_18], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_10.run(buf42, primals_29, 16384, grid=grid(16384), stream=stream0)
+        del primals_29
+        # Topologically Sorted Source Nodes: [conv3d_14], Original ATen: [aten.convolution]
+        buf43 = extern_kernels.convolution(buf42, primals_30, stride=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf43, (4, 512, 2, 2, 2), (4096, 8, 4, 2, 1))
+        buf44 = buf43; del buf43  # reuse
+        # Topologically Sorted Source Nodes: [conv3d_14, h_20], Original ATen: [aten.convolution, aten.relu]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_relu_10.run(buf44, primals_31, 16384, grid=grid(16384), stream=stream0)
+        del primals_31
+        # Topologically Sorted Source Nodes: [h_22], Original ATen: [aten.convolution]
+        buf45 = extern_kernels.convolution(buf44, primals_32, stride=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf45, (4, 1, 2, 2, 2), (8, 8, 4, 2, 1))
+        buf46 = buf45; del buf45  # reuse
+        # Topologically Sorted Source Nodes: [h_22], Original ATen: [aten.convolution]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_convolution_11.run(buf46, primals_33, 32, grid=grid(32), stream=stream0)
+        del primals_33
+        # Topologically Sorted Source Nodes: [h_23], Original ATen: [aten.convolution]
+        buf47 = extern_kernels.convolution(buf46, primals_34, stride=(2, 2, 2), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=True, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf47, (4, 1, 6, 6, 6), (216, 216, 36, 6, 1))
+        buf48 = buf36; del buf36  # reuse
+        # Topologically Sorted Source Nodes: [mul], Original ATen: [aten.mul]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_mul_12.run(buf30, buf48, 864000, grid=grid(864000), stream=stream0)
+        # Topologically Sorted Source Nodes: [h_24], Original ATen: [aten.convolution]
+        buf49 = extern_kernels.convolution(buf48, primals_35, stride=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf49, (4, 1, 15, 15, 15), (3375, 3375, 225, 15, 1))
+        buf50 = buf47; del buf47  # reuse
+        # Topologically Sorted Source Nodes: [h_26], Original ATen: [aten.add]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_add_13.run(buf50, buf49, primals_36, 864, grid=grid(864), stream=stream0)
+        del buf49
+        del primals_36
+        # Topologically Sorted Source Nodes: [h_27], Original ATen: [aten.convolution]
+        buf51 = extern_kernels.convolution(buf50, primals_37, stride=(2, 2, 2), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=True, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf51, (4, 1, 14, 14, 14), (2744, 2744, 196, 14, 1))
+        buf52 = empty_strided_cuda((4, 32, 30, 30, 30), (864000, 27000, 900, 30, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [mul_1], Original ATen: [aten.mul]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_mul_14.run(buf21, buf52, 3456000, grid=grid(3456000), stream=stream0)
+        # Topologically Sorted Source Nodes: [h_28], Original ATen: [aten.convolution]
+        buf53 = extern_kernels.convolution(buf52, primals_38, stride=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=False, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf53, (4, 1, 30, 30, 30), (27000, 27000, 900, 30, 1))
+        buf54 = buf51; del buf51  # reuse
+        # Topologically Sorted Source Nodes: [h_30], Original ATen: [aten.add]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_add_15.run(buf54, buf53, primals_39, 10976, grid=grid(10976), stream=stream0)
+        del buf53
+        del primals_39
+        # Topologically Sorted Source Nodes: [h_31], Original ATen: [aten.convolution]
+        buf55 = extern_kernels.convolution(buf54, primals_40, stride=(8, 8, 8), padding=(0, 0, 0), dilation=(1, 1, 1), transposed=True, output_padding=(0, 0, 0), groups=1, bias=None)
+        assert_size_stride(buf55, (4, 1, 120, 120, 120), (1728000, 1728000, 14400, 120, 1))
+        buf56 = empty_strided_cuda((4, 1, 64, 64, 64), (262144, 262144, 4096, 64, 1), torch.float32)
+        # Topologically Sorted Source Nodes: [h_32], Original ATen: [aten.clone]
+        stream0 = get_raw_stream(0)
+        triton_poi_fused_clone_16.run(buf55, buf56, 1048576, grid=grid(1048576), stream=stream0)
+        del buf55
+    return (buf56, primals_1, primals_2, primals_4, primals_6, primals_8, primals_10, primals_12, primals_14, primals_16, primals_18, primals_20, primals_22, primals_24, primals_26, primals_28, primals_30, primals_32, primals_34, primals_35, primals_37, primals_38, primals_40, buf1, buf3, buf5, buf6, buf8, buf10, buf12, buf13, buf15, buf17, buf19, buf21, buf22, buf24, buf26, buf28, buf30, buf31, buf33, buf35, buf37, buf39, buf40, buf42, buf44, buf46, buf48, buf50, buf52, buf54, )
+
+
+def benchmark_compiled_module(times=10, repeat=10):
+    from torch._dynamo.testing import rand_strided
+    from torch._inductor.utils import print_performance
+    primals_1 = rand_strided((4, 1, 64, 64, 64), (262144, 262144, 4096, 64, 1), device='cuda:0', dtype=torch.float32)
+    primals_2 = rand_strided((8, 1, 3, 3, 3), (27, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_3 = rand_strided((8, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_4 = rand_strided((8, 8, 3, 3, 3), (216, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_5 = rand_strided((8, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_6 = rand_strided((16, 8, 3, 3, 3), (216, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_7 = rand_strided((16, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_8 = rand_strided((16, 16, 3, 3, 3), (432, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_9 = rand_strided((16, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_10 = rand_strided((32, 16, 3, 3, 3), (432, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_11 = rand_strided((32, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_12 = rand_strided((32, 32, 3, 3, 3), (864, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_13 = rand_strided((32, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_14 = rand_strided((32, 32, 3, 3, 3), (864, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_15 = rand_strided((32, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_16 = rand_strided((64, 32, 3, 3, 3), (864, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_17 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_18 = rand_strided((64, 64, 3, 3, 3), (1728, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_19 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_20 = rand_strided((64, 64, 3, 3, 3), (1728, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_21 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_22 = rand_strided((64, 64, 3, 3, 3), (1728, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_23 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_24 = rand_strided((64, 64, 3, 3, 3), (1728, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_25 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_26 = rand_strided((64, 64, 3, 3, 3), (1728, 27, 9, 3, 1), device='cuda:0', dtype=torch.float32)
+    primals_27 = rand_strided((64, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_28 = rand_strided((512, 64, 7, 7, 7), (21952, 343, 49, 7, 1), device='cuda:0', dtype=torch.float32)
+    primals_29 = rand_strided((512, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_30 = rand_strided((512, 512, 1, 1, 1), (512, 1, 1, 1, 1), device='cuda:0', dtype=torch.float32)
+    primals_31 = rand_strided((512, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_32 = rand_strided((1, 512, 1, 1, 1), (512, 1, 1, 1, 1), device='cuda:0', dtype=torch.float32)
+    primals_33 = rand_strided((1, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_34 = rand_strided((1, 1, 4, 4, 4), (64, 64, 16, 4, 1), device='cuda:0', dtype=torch.float32)
+    primals_35 = rand_strided((1, 64, 1, 1, 1), (64, 1, 1, 1, 1), device='cuda:0', dtype=torch.float32)
+    primals_36 = rand_strided((1, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_37 = rand_strided((1, 1, 4, 4, 4), (64, 64, 16, 4, 1), device='cuda:0', dtype=torch.float32)
+    primals_38 = rand_strided((1, 32, 1, 1, 1), (32, 1, 1, 1, 1), device='cuda:0', dtype=torch.float32)
+    primals_39 = rand_strided((1, ), (1, ), device='cuda:0', dtype=torch.float32)
+    primals_40 = rand_strided((1, 1, 16, 16, 16), (4096, 4096, 256, 16, 1), device='cuda:0', dtype=torch.float32)
+    fn = lambda: call([primals_1, primals_2, primals_3, primals_4, primals_5, primals_6, primals_7, primals_8, primals_9, primals_10, primals_11, primals_12, primals_13, primals_14, primals_15, primals_16, primals_17, primals_18, primals_19, primals_20, primals_21, primals_22, primals_23, primals_24, primals_25, primals_26, primals_27, primals_28, primals_29, primals_30, primals_31, primals_32, primals_33, primals_34, primals_35, primals_36, primals_37, primals_38, primals_39, primals_40])
+    return print_performance(fn, times=times, repeat=repeat)
+
+
+if __name__ == "__main__":
+    from torch._inductor.wrapper_benchmark import compiled_module_main
+    compiled_module_main('None', benchmark_compiled_module)

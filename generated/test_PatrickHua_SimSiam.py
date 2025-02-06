@@ -38,7 +38,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -163,7 +165,7 @@ def _setup_size(size, error_msg):
     return size
 
 
-def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) ->Tuple[Tensor, bool, bool, torch.dtype]:
+def _cast_squeeze_in(img: 'Tensor', req_dtype: 'torch.dtype') ->Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
@@ -176,7 +178,7 @@ def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) ->Tuple[Tensor, bool, 
     return img, need_cast, need_squeeze, out_dtype
 
 
-def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
+def _cast_squeeze_out(img: 'Tensor', need_cast: 'bool', need_squeeze: 'bool', out_dtype: 'torch.dtype'):
     if need_squeeze:
         img = img.squeeze(dim=0)
     if need_cast:
@@ -184,7 +186,7 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float) ->Tensor:
+def _get_gaussian_kernel1d(kernel_size: 'int', sigma: 'float') ->Tensor:
     ksize_half = (kernel_size - 1) * 0.5
     x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
     pdf = torch.exp(-0.5 * (x / sigma).pow(2))
@@ -192,18 +194,18 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float) ->Tensor:
     return kernel1d
 
 
-def _get_gaussian_kernel2d(kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device) ->Tensor:
+def _get_gaussian_kernel2d(kernel_size: 'List[int]', sigma: 'List[float]', dtype: 'torch.dtype', device: 'torch.device') ->Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0])
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1])
     kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
     return kernel2d
 
 
-def _is_tensor_a_torch_image(x: Tensor) ->bool:
+def _is_tensor_a_torch_image(x: 'Tensor') ->bool:
     return x.ndim >= 2
 
 
-def _gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) ->Tensor:
+def _gaussian_blur(img: 'Tensor', kernel_size: 'List[int]', sigma: 'List[float]') ->Tensor:
     """PRIVATE METHOD. Performs Gaussian blurring on the img by given kernel.
 
     .. warning::
@@ -233,11 +235,11 @@ def _gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) ->Te
 
 
 @torch.jit.unused
-def _is_pil_image(img: Any) ->bool:
+def _is_pil_image(img: 'Any') ->bool:
     return isinstance(img, Image.Image)
 
 
-def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]]=None) ->Tensor:
+def gaussian_blur(img: 'Tensor', kernel_size: 'List[int]', sigma: 'Optional[List[float]]'=None) ->Tensor:
     """Performs Gaussian blurring on the img by given kernel.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -327,7 +329,7 @@ class GaussianBlur(torch.nn.Module):
         self.sigma = sigma
 
     @staticmethod
-    def get_params(sigma_min: float, sigma_max: float) ->float:
+    def get_params(sigma_min: 'float', sigma_max: 'float') ->float:
         """Choose sigma for random gaussian blurring.
 
         Args:
@@ -339,7 +341,7 @@ class GaussianBlur(torch.nn.Module):
         """
         return torch.empty(1).uniform_(sigma_min, sigma_max).item()
 
-    def forward(self, img: Tensor) ->Tensor:
+    def forward(self, img: 'Tensor') ->Tensor:
         """
         Args:
             img (PIL Image or Tensor): image to be blurred.

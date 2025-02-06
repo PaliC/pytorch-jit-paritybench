@@ -86,7 +86,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -796,7 +798,7 @@ class ForwardProcessBase:
         pass
 
 
-def lab2rgb(image: torch.Tensor, clip: bool=True) ->torch.Tensor:
+def lab2rgb(image: 'torch.Tensor', clip: 'bool'=True) ->torch.Tensor:
     """Convert a Lab image to RGB.
 
     Args:
@@ -814,9 +816,9 @@ def lab2rgb(image: torch.Tensor, clip: bool=True) ->torch.Tensor:
         raise TypeError(f'Input type is not a torch.Tensor. Got {type(image)}')
     if len(image.shape) < 3 or image.shape[-3] != 3:
         raise ValueError(f'Input size must have a shape of (*, 3, H, W). Got {image.shape}')
-    L: torch.Tensor = image[..., 0, :, :]
-    a: torch.Tensor = image[..., 1, :, :]
-    _b: torch.Tensor = image[..., 2, :, :]
+    L: 'torch.Tensor' = image[..., 0, :, :]
+    a: 'torch.Tensor' = image[..., 1, :, :]
+    _b: 'torch.Tensor' = image[..., 2, :, :]
     fy = (L + 16.0) / 116.0
     fx = a / 500.0 + fy
     fz = fy - _b / 200.0
@@ -827,7 +829,7 @@ def lab2rgb(image: torch.Tensor, clip: bool=True) ->torch.Tensor:
     xyz = torch.where(fxyz > 0.2068966, power, scale)
     xyz_ref_white = torch.tensor([0.95047, 1.0, 1.08883], device=xyz.device, dtype=xyz.dtype)[..., :, None, None]
     xyz_im = xyz * xyz_ref_white
-    rgbs_im: torch.Tensor = xyz_to_rgb(xyz_im)
+    rgbs_im: 'torch.Tensor' = xyz_to_rgb(xyz_im)
     rgb_im = linear_rgb_to_rgb(rgbs_im)
     if clip:
         rgb_im = torch.clamp(rgb_im, min=0.0, max=1.0)
@@ -835,7 +837,7 @@ def lab2rgb(image: torch.Tensor, clip: bool=True) ->torch.Tensor:
     return rgb_im
 
 
-def rgb2lab(image_old: torch.Tensor) ->torch.Tensor:
+def rgb2lab(image_old: 'torch.Tensor') ->torch.Tensor:
     """Convert a RGB image to Lab.
 
     .. image:: _static/img/rgb_to_lab.png
@@ -860,20 +862,20 @@ def rgb2lab(image_old: torch.Tensor) ->torch.Tensor:
     if len(image.shape) < 3 or image.shape[-3] != 3:
         raise ValueError(f'Input size must have a shape of (*, 3, H, W). Got {image.shape}')
     lin_rgb = rgb_to_linear_rgb(image)
-    xyz_im: torch.Tensor = rgb_to_xyz(lin_rgb)
+    xyz_im: 'torch.Tensor' = rgb_to_xyz(lin_rgb)
     xyz_ref_white = torch.tensor([0.95047, 1.0, 1.08883], device=xyz_im.device, dtype=xyz_im.dtype)[..., :, None, None]
     xyz_normalized = torch.div(xyz_im, xyz_ref_white)
     threshold = 0.008856
     power = torch.pow(xyz_normalized.clamp(min=threshold), 1 / 3.0)
     scale = 7.787 * xyz_normalized + 4.0 / 29.0
     xyz_int = torch.where(xyz_normalized > threshold, power, scale)
-    x: torch.Tensor = xyz_int[..., 0, :, :]
-    y: torch.Tensor = xyz_int[..., 1, :, :]
-    z: torch.Tensor = xyz_int[..., 2, :, :]
-    L: torch.Tensor = 116.0 * y - 16.0
-    a: torch.Tensor = 500.0 * (x - y)
-    _b: torch.Tensor = 200.0 * (y - z)
-    out: torch.Tensor = torch.stack([L, a, _b], dim=-3)
+    x: 'torch.Tensor' = xyz_int[..., 0, :, :]
+    y: 'torch.Tensor' = xyz_int[..., 1, :, :]
+    z: 'torch.Tensor' = xyz_int[..., 2, :, :]
+    L: 'torch.Tensor' = 116.0 * y - 16.0
+    a: 'torch.Tensor' = 500.0 * (x - y)
+    _b: 'torch.Tensor' = 200.0 * (y - z)
+    out: 'torch.Tensor' = torch.stack([L, a, _b], dim=-3)
     return out
 
 
@@ -1511,7 +1513,7 @@ class RgbToLab(nn.Module):
         [3] https://github.com/torch/image/blob/dc061b98fb7e946e00034a5fc73e883a299edc7f/generic/image.c#L1467
     """
 
-    def forward(self, image: torch.Tensor) ->torch.Tensor:
+    def forward(self, image: 'torch.Tensor') ->torch.Tensor:
         return rgb_to_lab(image)
 
 
@@ -1538,7 +1540,7 @@ class LabToRgb(nn.Module):
         [3] https://github.com/torch/image/blob/dc061b98fb7e946e00034a5fc73e883a299edc7f/generic/image.c#L1518
     """
 
-    def forward(self, image: torch.Tensor, clip: bool=True) ->torch.Tensor:
+    def forward(self, image: 'torch.Tensor', clip: 'bool'=True) ->torch.Tensor:
         return lab_to_rgb(image, clip)
 
 

@@ -68,7 +68,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -186,7 +188,7 @@ from typing import Callable
 Module = torch.nn.Module
 
 
-def fill_tail_dims(y: torch.Tensor, y_like: torch.Tensor):
+def fill_tail_dims(y: 'torch.Tensor', y_like: 'torch.Tensor'):
     """Fill in missing trailing dimensions for y according to y_like."""
     return y[(...,) + (None,) * (y_like.dim() - y.dim())]
 
@@ -285,7 +287,7 @@ class ReverseDiffeqWrapper(Module):
     noise_type = 'diagonal'
     sde_type = 'stratonovich'
 
-    def __init__(self, module: ScoreMatchingSDE):
+    def __init__(self, module: 'ScoreMatchingSDE'):
         super(ReverseDiffeqWrapper, self).__init__()
         self.module = module
 
@@ -992,20 +994,20 @@ class SDELogqp(BaseSDE):
             self.g = self.g_general
             self.f_and_g = self.f_and_g_general
 
-    def f_diagonal(self, t, y: Tensor):
+    def f_diagonal(self, t, y: 'Tensor'):
         y = y[:, :-1]
         f, g, h = self._base_f(t, y), self._base_g(t, y), self._base_h(t, y)
         u = misc.stable_division(f - h, g)
         f_logqp = 0.5 * (u ** 2).sum(dim=1, keepdim=True)
         return torch.cat([f, f_logqp], dim=1)
 
-    def g_diagonal(self, t, y: Tensor):
+    def g_diagonal(self, t, y: 'Tensor'):
         y = y[:, :-1]
         g = self._base_g(t, y)
         g_logqp = y.new_zeros(size=(y.size(0), 1))
         return torch.cat([g, g_logqp], dim=1)
 
-    def f_and_g_diagonal(self, t, y: Tensor):
+    def f_and_g_diagonal(self, t, y: 'Tensor'):
         y = y[:, :-1]
         f, g, h = self._base_f(t, y), self._base_g(t, y), self._base_h(t, y)
         u = misc.stable_division(f - h, g)
@@ -1013,20 +1015,20 @@ class SDELogqp(BaseSDE):
         g_logqp = y.new_zeros(size=(y.size(0), 1))
         return torch.cat([f, f_logqp], dim=1), torch.cat([g, g_logqp], dim=1)
 
-    def f_general(self, t, y: Tensor):
+    def f_general(self, t, y: 'Tensor'):
         y = y[:, :-1]
         f, g, h = self._base_f(t, y), self._base_g(t, y), self._base_h(t, y)
         u = misc.batch_mvp(g.pinverse(), f - h)
         f_logqp = 0.5 * (u ** 2).sum(dim=1, keepdim=True)
         return torch.cat([f, f_logqp], dim=1)
 
-    def g_general(self, t, y: Tensor):
+    def g_general(self, t, y: 'Tensor'):
         y = y[:, :-1]
         g = self._base_sde.g(t, y)
         g_logqp = y.new_zeros(size=(g.size(0), 1, g.size(-1)))
         return torch.cat([g, g_logqp], dim=1)
 
-    def f_and_g_general(self, t, y: Tensor):
+    def f_and_g_general(self, t, y: 'Tensor'):
         y = y[:, :-1]
         f, g, h = self._base_f(t, y), self._base_g(t, y), self._base_h(t, y)
         u = misc.batch_mvp(g.pinverse(), f - h)

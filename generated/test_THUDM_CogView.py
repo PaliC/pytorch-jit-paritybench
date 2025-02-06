@@ -58,7 +58,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -176,9 +178,6 @@ from torch.nn.modules import Module
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 
 
-from torch._six import inf
-
-
 import torch.nn.init as init
 
 
@@ -198,9 +197,6 @@ from torchvision.transforms.functional import resize
 
 
 import itertools
-
-
-from collections import Iterable
 
 
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP

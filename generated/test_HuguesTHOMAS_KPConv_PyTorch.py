@@ -6,6 +6,8 @@ ModelNet40 = _module
 NPM3D = _module
 S3DIS = _module
 SemanticKitti = _module
+SensatUrban = _module
+Toronto3D = _module
 common = _module
 kernel_points = _module
 architectures = _module
@@ -16,6 +18,8 @@ train_ModelNet40 = _module
 train_NPM3D = _module
 train_S3DIS = _module
 train_SemanticKitti = _module
+train_SensatUrban = _module
+train_Toronto3D = _module
 config = _module
 mayavi_visu = _module
 metrics = _module
@@ -29,7 +33,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -484,17 +490,6 @@ def read_ply(filename, triangular_mesh=False):
             num_points, properties = parse_header(plyfile, ext)
             data = np.fromfile(plyfile, dtype=properties, count=num_points)
     return data
-
-
-class bcolors:
-    HEADER = '\x1b[95m'
-    OKBLUE = '\x1b[94m'
-    OKGREEN = '\x1b[92m'
-    WARNING = '\x1b[93m'
-    FAIL = '\x1b[91m'
-    ENDC = '\x1b[0m'
-    BOLD = '\x1b[1m'
-    UNDERLINE = '\x1b[4m'
 
 
 def spherical_Lloyd(radius, num_cells, dimension=3, fixed='center', approximation='monte-carlo', approx_n=5000, max_iter=500, momentum=0.9, verbose=0):

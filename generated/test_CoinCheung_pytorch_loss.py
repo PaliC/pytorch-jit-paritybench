@@ -57,7 +57,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -82,13 +84,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-import torch.cuda.amp as amp
+import torch.amp as amp
 
 
 import torch.distributed as dist
 
 
 import math
+
+
+import torch.cuda.amp as amp
 
 
 import torchvision
@@ -1861,42 +1866,6 @@ class SoftDiceLossV1(nn.Module):
         return loss
 
 
-class SoftDiceLossV2Func(torch.autograd.Function):
-    """
-    compute backward directly for better numeric stability
-    """
-
-    @staticmethod
-    @amp.custom_fwd(cast_inputs=torch.float32)
-    def forward(ctx, logits, labels, p, smooth):
-        """
-        inputs:
-            logits: (N, L)
-            labels: (N, L)
-        outpus:
-            loss: (N,)
-        """
-        probs = torch.sigmoid(logits)
-        numer = 2 * (probs * labels).sum(dim=1) + smooth
-        denor = (probs.pow(p) + labels.pow(p)).sum(dim=1) + smooth
-        loss = 1.0 - numer / denor
-        ctx.vars = probs, labels, numer, denor, p, smooth
-        return loss
-
-    @staticmethod
-    @amp.custom_bwd
-    def backward(ctx, grad_output):
-        """
-        compute gradient of soft-dice loss
-        """
-        probs, labels, numer, denor, p, smooth = ctx.vars
-        numer, denor = numer.view(-1, 1), denor.view(-1, 1)
-        term1 = (1.0 - probs).mul_(2).mul_(labels).mul_(probs).div_(denor)
-        term2 = probs.pow(p).mul_(1.0 - probs).mul_(numer).mul_(p).div_(denor.pow_(2))
-        grads = term2.sub_(term1).mul_(grad_output)
-        return grads, None, None, None
-
-
 class SoftDiceLossV2(nn.Module):
     """
     soft-dice loss, useful in binary segmentation
@@ -1985,25 +1954,6 @@ class SwishV1(nn.Module):
         return feat * torch.sigmoid(feat)
 
 
-class SwishFunction(torch.autograd.Function):
-
-    @staticmethod
-    @amp.custom_fwd
-    def forward(ctx, feat):
-        sig = torch.sigmoid(feat)
-        out = feat * torch.sigmoid(feat)
-        grad = sig * (1 + feat * (1 - sig))
-        ctx.grad = grad
-        return out
-
-    @staticmethod
-    @amp.custom_bwd
-    def backward(ctx, grad_output):
-        grad = ctx.grad
-        grad *= grad_output
-        return grad
-
-
 class SwishV2(nn.Module):
 
     def __init__(self):
@@ -2068,27 +2018,6 @@ class TaylorSoftmaxV1(nn.Module):
             >>> out = mod(inten)
         """
         return taylor_softmax_v1(x, self.dim, self.n, use_log=False)
-
-
-class TaylorSoftmaxFunc(torch.autograd.Function):
-    """
-    use cpp/cuda to accelerate and shrink memory usage
-    """
-
-    @staticmethod
-    @amp.custom_fwd
-    def forward(ctx, feat, dim=1, n=2, use_log=False):
-        ctx.vars = feat, dim, n, use_log
-        return taylor_softmax_cpp.taylor_softmax_forward(feat, dim, n, use_log)
-
-    @staticmethod
-    @amp.custom_bwd
-    def backward(ctx, grad_output):
-        """
-        compute gradient of focal loss
-        """
-        feat, dim, n, use_log = ctx.vars
-        return taylor_softmax_cpp.taylor_softmax_backward(grad_output, feat, dim, n, use_log), None, None, None
 
 
 def taylor_softmax_v3(inten, dim=1, n=4, use_log=False):
@@ -2385,18 +2314,10 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      True),
-    (SoftDiceLossV2,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     False),
     (SwishV1,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (SwishV2,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
     (TaylorSoftmaxV1,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -2482,10 +2403,4 @@ class Test_CoinCheung_pytorch_loss(_paritybench_base):
 
     def test_024(self):
         self._check(*TESTCASES[24])
-
-    def test_025(self):
-        self._check(*TESTCASES[25])
-
-    def test_026(self):
-        self._check(*TESTCASES[26])
 

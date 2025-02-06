@@ -6,8 +6,14 @@ generate_multi_language_configs = _module
 ch_ppocr_v2_det_converter = _module
 ch_ppocr_v2_rec_converter = _module
 ch_ppocr_v3_det_converter = _module
+ch_ppocr_v3_det_converter_github_qa = _module
 ch_ppocr_v3_rec_converter = _module
 ch_ppocr_v3_rec_converter_nodistill = _module
+ch_ppocr_v4_det_converter = _module
+ch_ppocr_v4_det_converter_from_pytorchocr = _module
+ch_ppocr_v4_det_server_converter = _module
+ch_ppocr_v4_rec_converter = _module
+ch_ppocr_v4_rec_server_converter = _module
 det_converter = _module
 det_fcenet_converter = _module
 e2e_converter = _module
@@ -17,12 +23,15 @@ multilingual_ppocr_v3_rec_converter = _module
 ppstructure_table_det_converter = _module
 ppstructure_table_rec_converter = _module
 ppstructure_table_structure_converter = _module
+rec_can_converter = _module
 rec_converter = _module
 rec_nrtr_mtb_converter = _module
 rec_sar_converter = _module
 rec_svtr_converter = _module
 rec_vitstr_converter = _module
+sr_converter = _module
 srn_converter = _module
+static2dygraph = _module
 attention_grucell = _module
 attention_head = _module
 common = _module
@@ -106,6 +115,10 @@ det_resnet = _module
 det_resnet_vd = _module
 det_resnet_vd_sast = _module
 e2e_resnet_vd_pg = _module
+rec_densenet = _module
+rec_hgnet = _module
+rec_lcnetv3 = _module
+rec_lcnetv3_bak = _module
 rec_mobilenet_v3 = _module
 rec_mv1_enhance = _module
 rec_nrtr_mtb = _module
@@ -127,25 +140,31 @@ det_sast_head = _module
 e2e_pg_head = _module
 multiheadAttention = _module
 rec_att_head = _module
+rec_can_head = _module
 rec_ctc_head = _module
+rec_multi_head = _module
 rec_nrtr_head = _module
 rec_sar_head = _module
 rec_srn_head = _module
 self_attention = _module
+sr_rensnet_transformer = _module
 table_att_head = _module
 necks = _module
 db_fpn = _module
 east_fpn = _module
 fce_fpn = _module
 fpn = _module
+intracl = _module
 pg_fpn = _module
 rnn = _module
 sast_fpn = _module
 table_fpn = _module
 transforms = _module
 stn = _module
+tbsrn = _module
 tps = _module
 tps_spatial_transformer = _module
+tsrn = _module
 postprocess = _module
 cls_postprocess = _module
 db_postprocess = _module
@@ -170,13 +189,16 @@ predict_cls = _module
 predict_det = _module
 predict_e2e = _module
 predict_rec = _module
+predict_sr = _module
 pytorchocr_utility = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -279,13 +301,16 @@ from torch.nn.init import xavier_normal_
 from torch.nn import functional as F
 
 
+import warnings
+
+
+import string
+
+
 import itertools
 
 
 from numpy.fft import ifft
-
-
-import string
 
 
 import torch.distributed as dist
@@ -417,7 +442,7 @@ class Activation(nn.Module):
             raise NotImplementedError
         elif act_type == 'hard_sigmoid':
             self.act = Hsigmoid(inplace)
-        elif act_type == 'hard_swish':
+        elif act_type == 'hard_swish' or act_type == 'hswish':
             self.act = Hswish(inplace=inplace)
         elif act_type == 'leakyrelu':
             self.act = nn.LeakyReLU(inplace=inplace)
@@ -430,6 +455,31 @@ class Activation(nn.Module):
 
     def forward(self, inputs):
         return self.act(inputs)
+
+
+class BasicBlock(nn.Module):
+
+    def __init__(self, inplanes, planes, downsample):
+        super(BasicBlock, self).__init__()
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.downsample != None:
+            residual = self.downsample(residual)
+        out += residual
+        out = self.relu(out)
+        return out
 
 
 class ConvBNLayer(nn.Module):
@@ -449,29 +499,6 @@ class ConvBNLayer(nn.Module):
         if self.act is not None:
             x = self._act(x)
         return x
-
-
-class BasicBlock(nn.Module):
-
-    def __init__(self, in_channels, out_channels, stride, shortcut=True, if_first=False, name=None):
-        super(BasicBlock, self).__init__()
-        self.stride = stride
-        self.conv0 = ConvBNLayer(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=stride, act='relu', name=name + '_branch2a')
-        self.conv1 = ConvBNLayer(in_channels=out_channels, out_channels=out_channels, kernel_size=3, act=None, name=name + '_branch2b')
-        if not shortcut:
-            self.short = ConvBNLayer(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, is_vd_mode=False if if_first else True, name=name + '_branch1')
-        self.shortcut = shortcut
-
-    def forward(self, inputs):
-        y = self.conv0(inputs)
-        conv1 = self.conv1(y)
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
-        y = torch.add(short, conv1)
-        y = F.relu(y)
-        return y
 
 
 class BottleneckBlock(nn.Module):
@@ -607,176 +634,86 @@ class Lambda(nn.Module):
         return self.func(x)
 
 
-class FFN(nn.Module):
-    """
-    Feed-Forward Network
-    """
+class ResNet(nn.Module):
 
-    def __init__(self, d_inner_hid, d_model, dropout_rate):
-        super(FFN, self).__init__()
-        self.dropout_rate = dropout_rate
-        self.fc1 = torch.nn.Linear(in_features=d_model, out_features=d_inner_hid)
-        self.fc2 = torch.nn.Linear(in_features=d_inner_hid, out_features=d_model)
+    def __init__(self, num_in, block, layers):
+        super(ResNet, self).__init__()
+        self.conv1 = nn.Conv2d(num_in, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.pool = nn.MaxPool2d((2, 2), (2, 2))
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.layer1_pool = nn.MaxPool2d((2, 2), (2, 2))
+        self.layer1 = self._make_layer(block, 128, 256, layers[0])
+        self.layer1_conv = nn.Conv2d(256, 256, 3, 1, 1)
+        self.layer1_bn = nn.BatchNorm2d(256)
+        self.layer1_relu = nn.ReLU(inplace=True)
+        self.layer2_pool = nn.MaxPool2d((2, 2), (2, 2))
+        self.layer2 = self._make_layer(block, 256, 256, layers[1])
+        self.layer2_conv = nn.Conv2d(256, 256, 3, 1, 1)
+        self.layer2_bn = nn.BatchNorm2d(256)
+        self.layer2_relu = nn.ReLU(inplace=True)
+        self.layer3_pool = nn.MaxPool2d((2, 2), (2, 2))
+        self.layer3 = self._make_layer(block, 256, 512, layers[2])
+        self.layer3_conv = nn.Conv2d(512, 512, 3, 1, 1)
+        self.layer3_bn = nn.BatchNorm2d(512)
+        self.layer3_relu = nn.ReLU(inplace=True)
+        self.layer4_pool = nn.MaxPool2d((2, 2), (2, 2))
+        self.layer4 = self._make_layer(block, 512, 512, layers[3])
+        self.layer4_conv2 = nn.Conv2d(512, 1024, 3, 1, 1)
+        self.layer4_conv2_bn = nn.BatchNorm2d(1024)
+        self.layer4_conv2_relu = nn.ReLU(inplace=True)
+
+    def _make_layer(self, block, inplanes, planes, blocks):
+        if inplanes != planes:
+            downsample = nn.Sequential(nn.Conv2d(inplanes, planes, 3, 1, 1), nn.BatchNorm2d(planes))
+        else:
+            downsample = None
+        layers = []
+        layers.append(block(inplanes, planes, downsample))
+        for i in range(1, blocks):
+            layers.append(block(planes, planes, downsample=None))
+        return nn.Sequential(*layers)
 
     def forward(self, x):
-        hidden = self.fc1(x)
-        hidden = F.relu(hidden)
-        if self.dropout_rate:
-            hidden = F.dropout(hidden, p=self.dropout_rate)
-        out = self.fc2(hidden)
-        return out
-
-
-class MultiHeadAttention(nn.Module):
-    """
-    Multi-Head Attention
-    """
-
-    def __init__(self, d_key, d_value, d_model, n_head=1, dropout_rate=0.0):
-        super(MultiHeadAttention, self).__init__()
-        self.n_head = n_head
-        self.d_key = d_key
-        self.d_value = d_value
-        self.d_model = d_model
-        self.dropout_rate = dropout_rate
-        self.q_fc = torch.nn.Linear(in_features=d_model, out_features=d_key * n_head, bias=False)
-        self.k_fc = torch.nn.Linear(in_features=d_model, out_features=d_key * n_head, bias=False)
-        self.v_fc = torch.nn.Linear(in_features=d_model, out_features=d_value * n_head, bias=False)
-        self.proj_fc = torch.nn.Linear(in_features=d_value * n_head, out_features=d_model, bias=False)
-
-    def _prepare_qkv(self, queries, keys, values, cache=None):
-        if keys is None:
-            keys, values = queries, queries
-            static_kv = False
-        else:
-            static_kv = True
-        q = self.q_fc(queries)
-        q = torch.reshape(q, shape=[q.size(0), q.size(1), self.n_head, self.d_key])
-        q = q.permute(0, 2, 1, 3)
-        if cache is not None and static_kv and 'static_k' in cache:
-            k = cache['static_k']
-            v = cache['static_v']
-        else:
-            k = self.k_fc(keys)
-            v = self.v_fc(values)
-            k = torch.reshape(k, shape=[k.size(0), k.size(1), self.n_head, self.d_key])
-            k = k.permute(0, 2, 1, 3)
-            v = torch.reshape(v, shape=[v.size(0), v.size(1), self.n_head, self.d_value])
-            v = v.permute(0, 2, 1, 3)
-        if cache is not None:
-            if static_kv and not 'static_k' in cache:
-                cache['static_k'], cache['static_v'] = k, v
-            elif not static_kv:
-                cache_k, cache_v = cache['k'], cache['v']
-                k = torch.cat([cache_k, k], dim=2)
-                v = torch.cat([cache_v, v], dim=2)
-                cache['k'], cache['v'] = k, v
-        return q, k, v
-
-    def forward(self, queries, keys, values, attn_bias, cache=None):
-        keys = queries if keys is None else keys
-        values = keys if values is None else values
-        q, k, v = self._prepare_qkv(queries, keys, values, cache)
-        product = torch.matmul(q, k.transpose(2, 3))
-        product = product * self.d_model ** -0.5
-        if attn_bias is not None:
-            product += attn_bias
-        weights = F.softmax(product, dim=-1)
-        if self.dropout_rate:
-            weights = F.dropout(weights, p=self.dropout_rate)
-        out = torch.matmul(weights, v)
-        out = out.permute(0, 2, 1, 3)
-        out = torch.reshape(out, shape=[out.size(0), out.size(1), out.shape[2] * out.shape[3]])
-        out = self.proj_fc(out)
-        return out
-
-
-class LambdaXY(nn.Module):
-    """An easy way to create a pytorch layer for a simple `func`."""
-
-    def __init__(self, func):
-        """create a layer that simply calls `func` with `x`"""
-        super().__init__()
-        self.func = func
-
-    def forward(self, x, y):
-        return self.func(x, y)
-
-
-class PrePostProcessLayer(nn.Module):
-    """
-    PrePostProcessLayer
-    """
-
-    def __init__(self, process_cmd, d_model, dropout_rate):
-        super(PrePostProcessLayer, self).__init__()
-        self.process_cmd = process_cmd
-        self.functors = nn.ModuleList()
-        cur_a_len = 0
-        cur_n_len = 0
-        cur_d_len = 0
-        for cmd in self.process_cmd:
-            if cmd == 'a':
-                self.functors.add_module('add_res_connect_{}'.format(cur_a_len), LambdaXY(lambda x, y: x + y if y is not None else x))
-                cur_a_len += 1
-            elif cmd == 'n':
-                layerNorm = torch.nn.LayerNorm(normalized_shape=d_model, elementwise_affine=True, eps=1e-05)
-                self.functors.add_module('layer_norm_%d' % cur_n_len, layerNorm)
-                cur_n_len += 1
-            elif cmd == 'd':
-                self.functors.add_module('add_drop_{}'.format(cur_d_len), Lambda(lambda x: F.dropout(x, p=dropout_rate) if dropout_rate else x))
-                cur_d_len += 1
-
-    def forward(self, x, residual=None):
-        for i, (cmd, functor) in enumerate(zip(self.process_cmd, self.functors)):
-            if cmd == 'a':
-                x = functor(x, residual)
-            else:
-                x = functor(x)
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu1(x)
+        x = self.pool(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu2(x)
+        x = self.layer1_pool(x)
+        x = self.layer1(x)
+        x = self.layer1_conv(x)
+        x = self.layer1_bn(x)
+        x = self.layer1_relu(x)
+        x = self.layer2(x)
+        x = self.layer2_conv(x)
+        x = self.layer2_bn(x)
+        x = self.layer2_relu(x)
+        x = self.layer3(x)
+        x = self.layer3_conv(x)
+        x = self.layer3_bn(x)
+        x = self.layer3_relu(x)
+        x = self.layer4(x)
+        x = self.layer4_conv2(x)
+        x = self.layer4_conv2_bn(x)
+        x = self.layer4_conv2_relu(x)
         return x
 
 
-class EncoderLayer(nn.Module):
-    """
-    EncoderLayer
-    """
-
-    def __init__(self, n_head, d_key, d_value, d_model, d_inner_hid, prepostprocess_dropout, attention_dropout, relu_dropout, preprocess_cmd='n', postprocess_cmd='da'):
-        super(EncoderLayer, self).__init__()
-        self.preprocesser1 = PrePostProcessLayer(preprocess_cmd, d_model, prepostprocess_dropout)
-        self.self_attn = MultiHeadAttention(d_key, d_value, d_model, n_head, attention_dropout)
-        self.postprocesser1 = PrePostProcessLayer(postprocess_cmd, d_model, prepostprocess_dropout)
-        self.preprocesser2 = PrePostProcessLayer(preprocess_cmd, d_model, prepostprocess_dropout)
-        self.ffn = FFN(d_inner_hid, d_model, relu_dropout)
-        self.postprocesser2 = PrePostProcessLayer(postprocess_cmd, d_model, prepostprocess_dropout)
-
-    def forward(self, enc_input, attn_bias):
-        attn_output = self.self_attn(self.preprocesser1(enc_input), None, None, attn_bias)
-        attn_output = self.postprocesser1(attn_output, enc_input)
-        ffn_output = self.ffn(self.preprocesser2(attn_output))
-        ffn_output = self.postprocesser2(ffn_output, attn_output)
-        return ffn_output
-
-
 class Encoder(nn.Module):
-    """
-    encoder
-    """
 
-    def __init__(self, n_layer, n_head, d_key, d_value, d_model, d_inner_hid, prepostprocess_dropout, attention_dropout, relu_dropout, preprocess_cmd='n', postprocess_cmd='da'):
+    def __init__(self):
         super(Encoder, self).__init__()
-        self.encoder_layers = nn.ModuleList()
-        for i in range(n_layer):
-            encoderLayer = EncoderLayer(n_head, d_key, d_value, d_model, d_inner_hid, prepostprocess_dropout, attention_dropout, relu_dropout, preprocess_cmd, postprocess_cmd)
-            self.encoder_layers.add_module('layer_%d' % i, encoderLayer)
-        self.processer = PrePostProcessLayer(preprocess_cmd, d_model, prepostprocess_dropout)
+        self.cnn = ResNet(num_in=1, block=BasicBlock, layers=[1, 2, 5, 3])
 
-    def forward(self, enc_input, attn_bias):
-        for encoder_layer in self.encoder_layers:
-            enc_output = encoder_layer(enc_input, attn_bias)
-            enc_input = enc_output
-        enc_output = self.processer(enc_output)
-        return enc_output
+    def forward(self, input):
+        conv_result = self.cnn(input)
+        return conv_result
 
 
 class PrepareEncoder(nn.Module):
@@ -995,6 +932,157 @@ class SRNHead(nn.Module):
         _, decoded_out = torch.topk(final_out, k=1)
         predicts = OrderedDict([('predict', final_out), ('pvam_feature', pvam_feature), ('decoded_out', decoded_out), ('word_out', word_out), ('gsrm_out', gsrm_out)])
         return predicts
+
+
+class FFN(nn.Module):
+    """
+    Feed-Forward Network
+    """
+
+    def __init__(self, d_inner_hid, d_model, dropout_rate):
+        super(FFN, self).__init__()
+        self.dropout_rate = dropout_rate
+        self.fc1 = torch.nn.Linear(in_features=d_model, out_features=d_inner_hid)
+        self.fc2 = torch.nn.Linear(in_features=d_inner_hid, out_features=d_model)
+
+    def forward(self, x):
+        hidden = self.fc1(x)
+        hidden = F.relu(hidden)
+        if self.dropout_rate:
+            hidden = F.dropout(hidden, p=self.dropout_rate)
+        out = self.fc2(hidden)
+        return out
+
+
+class MultiHeadAttention(nn.Module):
+    """
+    Multi-Head Attention
+    """
+
+    def __init__(self, d_key, d_value, d_model, n_head=1, dropout_rate=0.0):
+        super(MultiHeadAttention, self).__init__()
+        self.n_head = n_head
+        self.d_key = d_key
+        self.d_value = d_value
+        self.d_model = d_model
+        self.dropout_rate = dropout_rate
+        self.q_fc = torch.nn.Linear(in_features=d_model, out_features=d_key * n_head, bias=False)
+        self.k_fc = torch.nn.Linear(in_features=d_model, out_features=d_key * n_head, bias=False)
+        self.v_fc = torch.nn.Linear(in_features=d_model, out_features=d_value * n_head, bias=False)
+        self.proj_fc = torch.nn.Linear(in_features=d_value * n_head, out_features=d_model, bias=False)
+
+    def _prepare_qkv(self, queries, keys, values, cache=None):
+        if keys is None:
+            keys, values = queries, queries
+            static_kv = False
+        else:
+            static_kv = True
+        q = self.q_fc(queries)
+        q = torch.reshape(q, shape=[q.size(0), q.size(1), self.n_head, self.d_key])
+        q = q.permute(0, 2, 1, 3)
+        if cache is not None and static_kv and 'static_k' in cache:
+            k = cache['static_k']
+            v = cache['static_v']
+        else:
+            k = self.k_fc(keys)
+            v = self.v_fc(values)
+            k = torch.reshape(k, shape=[k.size(0), k.size(1), self.n_head, self.d_key])
+            k = k.permute(0, 2, 1, 3)
+            v = torch.reshape(v, shape=[v.size(0), v.size(1), self.n_head, self.d_value])
+            v = v.permute(0, 2, 1, 3)
+        if cache is not None:
+            if static_kv and not 'static_k' in cache:
+                cache['static_k'], cache['static_v'] = k, v
+            elif not static_kv:
+                cache_k, cache_v = cache['k'], cache['v']
+                k = torch.cat([cache_k, k], dim=2)
+                v = torch.cat([cache_v, v], dim=2)
+                cache['k'], cache['v'] = k, v
+        return q, k, v
+
+    def forward(self, queries, keys, values, attn_bias, cache=None):
+        keys = queries if keys is None else keys
+        values = keys if values is None else values
+        q, k, v = self._prepare_qkv(queries, keys, values, cache)
+        product = torch.matmul(q, k.transpose(2, 3))
+        product = product * self.d_model ** -0.5
+        if attn_bias is not None:
+            product += attn_bias
+        weights = F.softmax(product, dim=-1)
+        if self.dropout_rate:
+            weights = F.dropout(weights, p=self.dropout_rate)
+        out = torch.matmul(weights, v)
+        out = out.permute(0, 2, 1, 3)
+        out = torch.reshape(out, shape=[out.size(0), out.size(1), out.shape[2] * out.shape[3]])
+        out = self.proj_fc(out)
+        return out
+
+
+class LambdaXY(nn.Module):
+    """An easy way to create a pytorch layer for a simple `func`."""
+
+    def __init__(self, func):
+        """create a layer that simply calls `func` with `x`"""
+        super().__init__()
+        self.func = func
+
+    def forward(self, x, y):
+        return self.func(x, y)
+
+
+class PrePostProcessLayer(nn.Module):
+    """
+    PrePostProcessLayer
+    """
+
+    def __init__(self, process_cmd, d_model, dropout_rate):
+        super(PrePostProcessLayer, self).__init__()
+        self.process_cmd = process_cmd
+        self.functors = nn.ModuleList()
+        cur_a_len = 0
+        cur_n_len = 0
+        cur_d_len = 0
+        for cmd in self.process_cmd:
+            if cmd == 'a':
+                self.functors.add_module('add_res_connect_{}'.format(cur_a_len), LambdaXY(lambda x, y: x + y if y is not None else x))
+                cur_a_len += 1
+            elif cmd == 'n':
+                layerNorm = torch.nn.LayerNorm(normalized_shape=d_model, elementwise_affine=True, eps=1e-05)
+                self.functors.add_module('layer_norm_%d' % cur_n_len, layerNorm)
+                cur_n_len += 1
+            elif cmd == 'd':
+                self.functors.add_module('add_drop_{}'.format(cur_d_len), Lambda(lambda x: F.dropout(x, p=dropout_rate) if dropout_rate else x))
+                cur_d_len += 1
+
+    def forward(self, x, residual=None):
+        for i, (cmd, functor) in enumerate(zip(self.process_cmd, self.functors)):
+            if cmd == 'a':
+                x = functor(x, residual)
+            else:
+                x = functor(x)
+        return x
+
+
+class EncoderLayer(nn.Module):
+    """
+    EncoderLayer
+    """
+
+    def __init__(self, n_head, d_key, d_value, d_model, d_inner_hid, prepostprocess_dropout, attention_dropout, relu_dropout, preprocess_cmd='n', postprocess_cmd='da'):
+        super(EncoderLayer, self).__init__()
+        self.preprocesser1 = PrePostProcessLayer(preprocess_cmd, d_model, prepostprocess_dropout)
+        self.self_attn = MultiHeadAttention(d_key, d_value, d_model, n_head, attention_dropout)
+        self.postprocesser1 = PrePostProcessLayer(postprocess_cmd, d_model, prepostprocess_dropout)
+        self.preprocesser2 = PrePostProcessLayer(preprocess_cmd, d_model, prepostprocess_dropout)
+        self.ffn = FFN(d_inner_hid, d_model, relu_dropout)
+        self.postprocesser2 = PrePostProcessLayer(postprocess_cmd, d_model, prepostprocess_dropout)
+
+    def forward(self, enc_input, attn_bias):
+        attn_output = self.self_attn(self.preprocesser1(enc_input), None, None, attn_bias)
+        attn_output = self.postprocesser1(attn_output, enc_input)
+        ffn_output = self.ffn(self.preprocesser2(attn_output))
+        ffn_output = self.postprocesser2(ffn_output, attn_output)
+        return ffn_output
 
 
 class AttentionGRUCell(nn.Module):
@@ -1573,72 +1661,6 @@ class PPYOLOPAN(nn.Module):
         return {'in_channels': [i.channels for i in input_shape]}
 
 
-class ResNet(nn.Module):
-
-    def __init__(self, in_channels=3, layers=50, **kwargs):
-        super(ResNet, self).__init__()
-        self.layers = layers
-        supported_layers = [18, 34, 50, 101, 152, 200]
-        assert layers in supported_layers, 'supported layers are {} but input layer is {}'.format(supported_layers, layers)
-        if layers == 18:
-            depth = [2, 2, 2, 2]
-        elif layers == 34 or layers == 50:
-            depth = [3, 4, 6, 3]
-        elif layers == 101:
-            depth = [3, 4, 23, 3]
-        elif layers == 152:
-            depth = [3, 8, 36, 3]
-        elif layers == 200:
-            depth = [3, 12, 48, 3]
-        num_channels = [64, 256, 512, 1024] if layers >= 50 else [64, 64, 128, 256]
-        num_filters = [64, 128, 256, 512]
-        self.conv1_1 = ConvBNLayer(in_channels=in_channels, out_channels=32, kernel_size=3, stride=2, act='relu', name='conv1_1')
-        self.conv1_2 = ConvBNLayer(in_channels=32, out_channels=32, kernel_size=3, stride=1, act='relu', name='conv1_2')
-        self.conv1_3 = ConvBNLayer(in_channels=32, out_channels=64, kernel_size=3, stride=1, act='relu', name='conv1_3')
-        self.pool2d_max = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.stages = nn.ModuleList()
-        self.out_channels = []
-        if layers >= 50:
-            for block in range(len(depth)):
-                block_list = nn.Sequential()
-                shortcut = False
-                for i in range(depth[block]):
-                    if layers in [101, 152] and block == 2:
-                        if i == 0:
-                            conv_name = 'res' + str(block + 2) + 'a'
-                        else:
-                            conv_name = 'res' + str(block + 2) + 'b' + str(i)
-                    else:
-                        conv_name = 'res' + str(block + 2) + chr(97 + i)
-                    bottleneck_block = BottleneckBlock(in_channels=num_channels[block] if i == 0 else num_filters[block] * 4, out_channels=num_filters[block], stride=2 if i == 0 and block != 0 else 1, shortcut=shortcut, if_first=block == i == 0, name=conv_name)
-                    shortcut = True
-                    block_list.add_module('bb_%d_%d' % (block, i), bottleneck_block)
-                self.out_channels.append(num_filters[block] * 4)
-                self.stages.append(block_list)
-        else:
-            for block in range(len(depth)):
-                block_list = nn.Sequential()
-                shortcut = False
-                for i in range(depth[block]):
-                    conv_name = 'res' + str(block + 2) + chr(97 + i)
-                    basic_block = BasicBlock(in_channels=num_channels[block] if i == 0 else num_filters[block], out_channels=num_filters[block], stride=2 if i == 0 and block != 0 else 1, shortcut=shortcut, if_first=block == i == 0, name=conv_name)
-                    shortcut = True
-                    block_list.add_module('bb_%d_%d' % (block, i), basic_block)
-                self.out_channels.append(num_filters[block])
-                self.stages.append(block_list)
-
-    def forward(self, inputs):
-        y = self.conv1_1(inputs)
-        y = self.conv1_2(y)
-        y = self.conv1_3(y)
-        y = self.pool2d_max(y)
-        out = []
-        for block in self.stages:
-            y = block(y)
-            out.append(y)
-        return out
-
-
 def _de_sigmoid(x, eps=1e-07):
     x = torch.clip(x, eps, 1.0 / eps)
     x = torch.clip(1.0 / x - 1.0, eps, 1.0 / eps)
@@ -1980,25 +2002,23 @@ class ConvNormLayer(nn.Module):
 
 class SELayer(nn.Module):
 
-    def __init__(self, ch, reduction_ratio=16):
-        super(SELayer, self).__init__()
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        stdv = 1.0 / math.sqrt(ch)
-        c_ = ch // reduction_ratio
-        self.squeeze = nn.Linear(in_features=ch, out_features=c_, bias=True)
-        stdv = 1.0 / math.sqrt(c_)
-        self.extract = nn.Linear(in_features=c_, out_features=ch, bias=True)
+    def __init__(self, channel, reduction=4, lr_mult=1.0):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv1 = nn.Conv2d(in_channels=channel, out_channels=channel // reduction, kernel_size=1, stride=1, padding=0)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(in_channels=channel // reduction, out_channels=channel, kernel_size=1, stride=1, padding=0)
+        self.hardsigmoid = Activation('hard_sigmoid')
 
-    def forward(self, inputs):
-        out = self.pool(inputs)
-        out = out.squeeze(dim=3).squeeze(dim=2)
-        out = self.squeeze(out)
-        out = F.relu(out)
-        out = self.extract(out)
-        out = F.sigmoid(out)
-        out = out.unsqueeze(dim=2).unsqueeze(dim=3)
-        scale = out * inputs
-        return scale
+    def forward(self, x):
+        identity = x
+        x = self.avg_pool(x)
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.hardsigmoid(x)
+        x = x * identity
+        return x
 
 
 class BottleNeck(nn.Module):
@@ -3415,9 +3435,9 @@ logger = get_logger()
 
 def build_backbone(config, model_type):
     if model_type == 'det':
-        support_dict = ['MobileNetV3', 'ResNet', 'ResNet_vd', 'ResNet_SAST']
+        support_dict = ['MobileNetV3', 'ResNet', 'ResNet_vd', 'ResNet_SAST', 'PPLCNetV3', 'PPHGNet_small']
     elif model_type == 'rec' or model_type == 'cls':
-        support_dict = ['MobileNetV1Enhance', 'MobileNetV3', 'ResNet', 'ResNetFPN', 'MTB', 'ResNet31', 'SVTRNet', 'ViTSTR']
+        support_dict = ['MobileNetV1Enhance', 'MobileNetV3', 'ResNet', 'ResNetFPN', 'MTB', 'ResNet31', 'SVTRNet', 'ViTSTR', 'DenseNet', 'PPLCNetV3', 'PPHGNet_small']
     elif model_type == 'e2e':
         support_dict = ['ResNet']
     elif model_type == 'table':
@@ -3431,10 +3451,9 @@ def build_backbone(config, model_type):
 
 
 def build_head(config, **kwargs):
-    support_dict = ['DBHead', 'PSEHead', 'EASTHead', 'SASTHead', 'CTCHead', 'ClsHead', 'AttentionHead', 'SRNHead', 'PGHead', 'Transformer', 'TableAttentionHead', 'SARHead', 'FCEHead']
+    support_dict = ['DBHead', 'PSEHead', 'EASTHead', 'SASTHead', 'CTCHead', 'ClsHead', 'AttentionHead', 'SRNHead', 'PGHead', 'Transformer', 'TableAttentionHead', 'SARHead', 'FCEHead', 'CANHead', 'MultiHead', 'PFHeadLocal']
     module_name = config.pop('name')
     assert module_name in support_dict, Exception('head only support {}'.format(support_dict))
-    None
     module_class = eval(module_name)(**config, **kwargs)
     return module_class
 
@@ -3448,7 +3467,7 @@ def build_neck(config):
 
 
 def build_transform(config):
-    support_dict = ['TPS', 'STN_ON']
+    support_dict = ['TPS', 'STN_ON', 'TSRN', 'TBSRN']
     module_name = config.pop('name')
     assert module_name in support_dict, Exception('transform only support {}'.format(support_dict))
     module_class = eval(module_name)(**config)
@@ -3473,9 +3492,13 @@ class BaseModel(nn.Module):
             config['Transform']['in_channels'] = in_channels
             self.transform = build_transform(config['Transform'])
             in_channels = self.transform.out_channels
-        config['Backbone']['in_channels'] = in_channels
-        self.backbone = build_backbone(config['Backbone'], model_type)
-        in_channels = self.backbone.out_channels
+        if 'Backbone' not in config or config['Backbone'] is None:
+            self.use_backbone = False
+        else:
+            self.use_backbone = True
+            config['Backbone']['in_channels'] = in_channels
+            self.backbone = build_backbone(config['Backbone'], model_type)
+            in_channels = self.backbone.out_channels
         if 'Neck' not in config or config['Neck'] is None:
             self.use_neck = False
         else:
@@ -3514,11 +3537,20 @@ class BaseModel(nn.Module):
         y = dict()
         if self.use_transform:
             x = self.transform(x)
-        x = self.backbone(x)
-        y['backbone_out'] = x
+        if self.use_backbone:
+            x = self.backbone(x)
+        if isinstance(x, dict):
+            y.update(x)
+        else:
+            y['backbone_out'] = x
+        final_name = 'backbone_out'
         if self.use_neck:
             x = self.neck(x)
-        y['neck_out'] = x
+            if isinstance(x, dict):
+                y.update(x)
+            else:
+                y['neck_out'] = x
+            final_name = 'neck_out'
         if self.use_head:
             x = self.head(x)
         if isinstance(x, dict) and 'ctc_nect' in x.keys():
@@ -3531,8 +3563,10 @@ class BaseModel(nn.Module):
         if self.return_all_feats:
             if self.training:
                 return y
+            elif isinstance(x, dict):
+                return x
             else:
-                return {'head_out': y['head_out']}
+                return {final_name: x}
         else:
             return x
 
@@ -3674,6 +3708,440 @@ class ResNet_SAST(nn.Module):
             y = block(y)
             out.append(y)
         return out
+
+
+class Bottleneck(nn.Module):
+
+    def __init__(self, input_dim):
+        super(Bottleneck, self).__init__()
+        self.conv1 = nn.Conv2d(input_dim, input_dim, 1)
+        self.bn1 = nn.BatchNorm2d(input_dim)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(input_dim, input_dim, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(input_dim)
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out += residual
+        out = self.relu(out)
+        return out
+
+
+class SingleLayer(nn.Module):
+
+    def __init__(self, nChannels, growthRate, use_dropout):
+        super(SingleLayer, self).__init__()
+        self.bn1 = nn.BatchNorm2d(nChannels)
+        self.conv1 = nn.Conv2d(nChannels, growthRate, kernel_size=3, padding=1, bias=False)
+        self.use_dropout = use_dropout
+        self.dropout = nn.Dropout(p=0.2)
+
+    def forward(self, x):
+        out = self.conv1(F.relu(x))
+        if self.use_dropout:
+            out = self.dropout(out)
+        out = torch.cat([x, out], 1)
+        return out
+
+
+class Transition(nn.Module):
+
+    def __init__(self, nChannels, out_channels, use_dropout):
+        super(Transition, self).__init__()
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv1 = nn.Conv2d(nChannels, out_channels, kernel_size=1, bias=False)
+        self.use_dropout = use_dropout
+        self.dropout = nn.Dropout(p=0.2)
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        if self.use_dropout:
+            out = self.dropout(out)
+        out = F.avg_pool2d(out, 2, ceil_mode=True, count_include_pad=False)
+        return out
+
+
+class DenseNet(nn.Module):
+
+    def __init__(self, growthRate, reduction, bottleneck, use_dropout, input_channel, **kwargs):
+        super(DenseNet, self).__init__()
+        nDenseBlocks = 16
+        nChannels = 2 * growthRate
+        self.conv1 = nn.Conv2d(input_channel, nChannels, kernel_size=7, padding=3, stride=2, bias=False)
+        self.dense1 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck, use_dropout)
+        nChannels += nDenseBlocks * growthRate
+        out_channels = int(math.floor(nChannels * reduction))
+        self.trans1 = Transition(nChannels, out_channels, use_dropout)
+        nChannels = out_channels
+        self.dense2 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck, use_dropout)
+        nChannels += nDenseBlocks * growthRate
+        out_channels = int(math.floor(nChannels * reduction))
+        self.trans2 = Transition(nChannels, out_channels, use_dropout)
+        nChannels = out_channels
+        self.dense3 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck, use_dropout)
+        self.out_channels = out_channels
+
+    def _make_dense(self, nChannels, growthRate, nDenseBlocks, bottleneck, use_dropout):
+        layers = []
+        for i in range(int(nDenseBlocks)):
+            if bottleneck:
+                layers.append(Bottleneck(nChannels, growthRate, use_dropout))
+            else:
+                layers.append(SingleLayer(nChannels, growthRate, use_dropout))
+            nChannels += growthRate
+        return nn.Sequential(*layers)
+
+    def forward(self, inputs):
+        x, x_m, y = inputs
+        out = self.conv1(x)
+        out = F.relu(out, inplace=True)
+        out = F.max_pool2d(out, 2, ceil_mode=True)
+        out = self.dense1(out)
+        out = self.trans1(out)
+        out = self.dense2(out)
+        out = self.trans2(out)
+        out = self.dense3(out)
+        return out, x_m, y
+
+
+class ConvBNAct(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride, groups=1, use_act=True):
+        super().__init__()
+        self.use_act = use_act
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=(kernel_size - 1) // 2, groups=groups, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
+        if self.use_act:
+            self.act = nn.ReLU()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        if self.use_act:
+            x = self.act(x)
+        return x
+
+
+class ESEModule(nn.Module):
+
+    def __init__(self, channels):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=1, stride=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        identity = x
+        x = self.avg_pool(x)
+        x = self.conv(x)
+        x = self.sigmoid(x)
+        return x * identity
+
+
+class HG_Block(nn.Module):
+
+    def __init__(self, in_channels, mid_channels, out_channels, layer_num, identity=False):
+        super().__init__()
+        self.identity = identity
+        self.layers = nn.ModuleList()
+        self.layers.append(ConvBNAct(in_channels=in_channels, out_channels=mid_channels, kernel_size=3, stride=1))
+        for _ in range(layer_num - 1):
+            self.layers.append(ConvBNAct(in_channels=mid_channels, out_channels=mid_channels, kernel_size=3, stride=1))
+        total_channels = in_channels + layer_num * mid_channels
+        self.aggregation_conv = ConvBNAct(in_channels=total_channels, out_channels=out_channels, kernel_size=1, stride=1)
+        self.att = ESEModule(out_channels)
+
+    def forward(self, x):
+        identity = x
+        output = []
+        output.append(x)
+        for layer in self.layers:
+            x = layer(x)
+            output.append(x)
+        x = torch.cat(output, dim=1)
+        x = self.aggregation_conv(x)
+        x = self.att(x)
+        if self.identity:
+            x += identity
+        return x
+
+
+class HG_Stage(nn.Module):
+
+    def __init__(self, in_channels, mid_channels, out_channels, block_num, layer_num, downsample=True, stride=[2, 1]):
+        super().__init__()
+        self.downsample = downsample
+        if downsample:
+            self.downsample = ConvBNAct(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=stride, groups=in_channels, use_act=False)
+        blocks_list = []
+        blocks_list.append(HG_Block(in_channels, mid_channels, out_channels, layer_num, identity=False))
+        for _ in range(block_num - 1):
+            blocks_list.append(HG_Block(out_channels, mid_channels, out_channels, layer_num, identity=True))
+        self.blocks = nn.Sequential(*blocks_list)
+
+    def forward(self, x):
+        if self.downsample:
+            x = self.downsample(x)
+        x = self.blocks(x)
+        return x
+
+
+class PPHGNet(nn.Module):
+    """
+    PPHGNet
+    Args:
+        stem_channels: list. Stem channel list of PPHGNet.
+        stage_config: dict. The configuration of each stage of PPHGNet. such as the number of channels, stride, etc.
+        layer_num: int. Number of layers of HG_Block.
+        use_last_conv: boolean. Whether to use a 1x1 convolutional layer before the classification layer.
+        class_expand: int=2048. Number of channels for the last 1x1 convolutional layer.
+        dropout_prob: float. Parameters of dropout, 0.0 means dropout is not used.
+        class_num: int=1000. The number of classes.
+    Returns:
+        model: nn.Layer. Specific PPHGNet model depends on args.
+    """
+
+    def __init__(self, stem_channels, stage_config, layer_num, in_channels=3, det=False, out_indices=None):
+        super().__init__()
+        self.det = det
+        self.out_indices = out_indices if out_indices is not None else [0, 1, 2, 3]
+        stem_channels.insert(0, in_channels)
+        self.stem = nn.Sequential(*[ConvBNAct(in_channels=stem_channels[i], out_channels=stem_channels[i + 1], kernel_size=3, stride=2 if i == 0 else 1) for i in range(len(stem_channels) - 1)])
+        if self.det:
+            self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.stages = nn.ModuleList()
+        self.out_channels = []
+        for block_id, k in enumerate(stage_config):
+            in_channels, mid_channels, out_channels, block_num, downsample, stride = stage_config[k]
+            self.stages.append(HG_Stage(in_channels, mid_channels, out_channels, block_num, layer_num, downsample, stride))
+            if block_id in self.out_indices:
+                self.out_channels.append(out_channels)
+        if not self.det:
+            self.out_channels = stage_config['stage4'][2]
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        x = self.stem(x)
+        if self.det:
+            x = self.pool(x)
+        out = []
+        for i, stage in enumerate(self.stages):
+            x = stage(x)
+            if self.det and i in self.out_indices:
+                out.append(x)
+        if self.det:
+            return out
+        if self.training:
+            x = F.adaptive_avg_pool2d(x, [1, 40])
+        else:
+            x = F.avg_pool2d(x, [3, 2])
+        return x
+
+
+class LearnableAffineBlock(nn.Module):
+
+    def __init__(self, scale_value=1.0, bias_value=0.0, lr_mult=1.0, lab_lr=0.1):
+        super().__init__()
+        self.scale = nn.Parameter(torch.Tensor([scale_value]))
+        self.bias = nn.Parameter(torch.Tensor([bias_value]))
+
+    def forward(self, x):
+        return self.scale * x + self.bias
+
+
+class Act(nn.Module):
+
+    def __init__(self, act='hard_swish', lr_mult=1.0, lab_lr=0.1):
+        super().__init__()
+        assert act in ['hard_swish', 'relu']
+        self.act = Activation(act)
+        self.lab = LearnableAffineBlock(lr_mult=lr_mult, lab_lr=lab_lr)
+
+    def forward(self, x):
+        return self.lab(self.act(x))
+
+
+class LearnableRepLayer(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, groups=1, num_conv_branches=1, lr_mult=1.0, lab_lr=0.1):
+        super().__init__()
+        self.is_repped = False
+        self.groups = groups
+        self.stride = stride
+        self.kernel_size = kernel_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.num_conv_branches = num_conv_branches
+        self.padding = (kernel_size - 1) // 2
+        self.identity = nn.BatchNorm2d(in_channels) if out_channels == in_channels and stride == 1 else None
+        self.conv_kxk = nn.ModuleList([ConvBNLayer(in_channels, out_channels, kernel_size, stride, groups=groups, lr_mult=lr_mult) for _ in range(self.num_conv_branches)])
+        self.conv_1x1 = ConvBNLayer(in_channels, out_channels, 1, stride, groups=groups, lr_mult=lr_mult) if kernel_size > 1 else None
+        self.lab = LearnableAffineBlock(lr_mult=lr_mult, lab_lr=lab_lr)
+        self.act = Act(lr_mult=lr_mult, lab_lr=lab_lr)
+
+    def forward(self, x):
+        if self.is_repped:
+            out = self.lab(self.reparam_conv(x))
+            if self.stride != 2:
+                out = self.act(out)
+            return out
+        out = 0
+        if self.identity is not None:
+            out += self.identity(x)
+        if self.conv_1x1 is not None:
+            out += self.conv_1x1(x)
+        for conv in self.conv_kxk:
+            out += conv(x)
+        out = self.lab(out)
+        if self.stride != 2:
+            out = self.act(out)
+        return out
+
+    def rep(self):
+        if self.is_repped:
+            return
+        kernel, bias = self._get_kernel_bias()
+        self.reparam_conv = nn.Conv2d(in_channels=self.in_channels, out_channels=self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, groups=self.groups)
+        self.reparam_conv.weight.data = kernel
+        self.reparam_conv.bias.data = bias
+        self.is_repped = True
+
+    def _pad_kernel_1x1_to_kxk(self, kernel1x1, pad):
+        if not isinstance(kernel1x1, torch.Tensor):
+            return 0
+        else:
+            return nn.functional.pad(kernel1x1, [pad, pad, pad, pad])
+
+    def _get_kernel_bias(self):
+        kernel_conv_1x1, bias_conv_1x1 = self._fuse_bn_tensor(self.conv_1x1)
+        kernel_conv_1x1 = self._pad_kernel_1x1_to_kxk(kernel_conv_1x1, self.kernel_size // 2)
+        kernel_identity, bias_identity = self._fuse_bn_tensor(self.identity)
+        kernel_conv_kxk = 0
+        bias_conv_kxk = 0
+        for conv in self.conv_kxk:
+            kernel, bias = self._fuse_bn_tensor(conv)
+            kernel_conv_kxk += kernel
+            bias_conv_kxk += bias
+        kernel_reparam = kernel_conv_kxk + kernel_conv_1x1 + kernel_identity
+        bias_reparam = bias_conv_kxk + bias_conv_1x1 + bias_identity
+        return kernel_reparam, bias_reparam
+
+    def _fuse_bn_tensor(self, branch):
+        if not branch:
+            return 0, 0
+        elif isinstance(branch, ConvBNLayer):
+            kernel = branch.conv.weight
+            running_mean = branch.bn.running_mean
+            running_var = branch.bn.running_var
+            gamma = branch.bn.weight
+            beta = branch.bn.bias
+            eps = branch.bn.eps
+        else:
+            assert isinstance(branch, nn.BatchNorm2d)
+            if not hasattr(self, 'id_tensor'):
+                input_dim = self.in_channels // self.groups
+                kernel_value = torch.zeros((self.in_channels, input_dim, self.kernel_size, self.kernel_size), dtype=branch.weight.dtype)
+                for i in range(self.in_channels):
+                    kernel_value[i, i % input_dim, self.kernel_size // 2, self.kernel_size // 2] = 1
+                self.id_tensor = kernel_value
+            kernel = self.id_tensor
+            running_mean = branch.running_mean
+            running_var = branch.running_var
+            gamma = branch.weight
+            beta = branch.bias
+            eps = branch.eps
+        std = (running_var + eps).sqrt()
+        t = (gamma / std).reshape((-1, 1, 1, 1))
+        return kernel * t, beta - running_mean * gamma / std
+
+
+class LCNetV3Block(nn.Module):
+
+    def __init__(self, in_channels, out_channels, stride, dw_size, use_se=False, conv_kxk_num=4, lr_mult=1.0, lab_lr=0.1):
+        super().__init__()
+        self.use_se = use_se
+        self.dw_conv = LearnableRepLayer(in_channels=in_channels, out_channels=in_channels, kernel_size=dw_size, stride=stride, groups=in_channels, num_conv_branches=conv_kxk_num, lr_mult=lr_mult, lab_lr=lab_lr)
+        if use_se:
+            self.se = SELayer(in_channels, lr_mult=lr_mult)
+        self.pw_conv = LearnableRepLayer(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, num_conv_branches=conv_kxk_num, lr_mult=lr_mult, lab_lr=lab_lr)
+
+    def forward(self, x):
+        x = self.dw_conv(x)
+        if self.use_se:
+            x = self.se(x)
+        x = self.pw_conv(x)
+        return x
+
+
+NET_CONFIG_det = {'blocks2': [[3, 16, 32, 1, False]], 'blocks3': [[3, 32, 64, 2, False], [3, 64, 64, 1, False]], 'blocks4': [[3, 64, 128, 2, False], [3, 128, 128, 1, False]], 'blocks5': [[3, 128, 256, 2, False], [5, 256, 256, 1, False], [5, 256, 256, 1, False], [5, 256, 256, 1, False], [5, 256, 256, 1, False]], 'blocks6': [[5, 256, 512, 2, True], [5, 512, 512, 1, True], [5, 512, 512, 1, False], [5, 512, 512, 1, False]]}
+
+
+NET_CONFIG_rec = {'blocks2': [[3, 16, 32, 1, False]], 'blocks3': [[3, 32, 64, 1, False], [3, 64, 64, 1, False]], 'blocks4': [[3, 64, 128, (2, 1), False], [3, 128, 128, 1, False]], 'blocks5': [[3, 128, 256, (1, 2), False], [5, 256, 256, 1, False], [5, 256, 256, 1, False], [5, 256, 256, 1, False], [5, 256, 256, 1, False]], 'blocks6': [[5, 256, 512, (2, 1), True], [5, 512, 512, 1, True], [5, 512, 512, (2, 1), False], [5, 512, 512, 1, False]]}
+
+
+class PPLCNetV3(nn.Module):
+
+    def __init__(self, scale=1.0, conv_kxk_num=4, lr_mult_list=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0], lab_lr=0.1, det=False, **kwargs):
+        super().__init__()
+        self.scale = scale
+        self.lr_mult_list = lr_mult_list
+        self.det = det
+        self.net_config = NET_CONFIG_det if self.det else NET_CONFIG_rec
+        assert isinstance(self.lr_mult_list, (list, tuple)), 'lr_mult_list should be in (list, tuple) but got {}'.format(type(self.lr_mult_list))
+        assert len(self.lr_mult_list) == 6, 'lr_mult_list length should be 6 but got {}'.format(len(self.lr_mult_list))
+        self.conv1 = ConvBNLayer(in_channels=3, out_channels=make_divisible(16 * scale), kernel_size=3, stride=2, lr_mult=self.lr_mult_list[0])
+        self.blocks2 = nn.Sequential(*[LCNetV3Block(in_channels=make_divisible(in_c * scale), out_channels=make_divisible(out_c * scale), dw_size=k, stride=s, use_se=se, conv_kxk_num=conv_kxk_num, lr_mult=self.lr_mult_list[1], lab_lr=lab_lr) for i, (k, in_c, out_c, s, se) in enumerate(self.net_config['blocks2'])])
+        self.blocks3 = nn.Sequential(*[LCNetV3Block(in_channels=make_divisible(in_c * scale), out_channels=make_divisible(out_c * scale), dw_size=k, stride=s, use_se=se, conv_kxk_num=conv_kxk_num, lr_mult=self.lr_mult_list[2], lab_lr=lab_lr) for i, (k, in_c, out_c, s, se) in enumerate(self.net_config['blocks3'])])
+        self.blocks4 = nn.Sequential(*[LCNetV3Block(in_channels=make_divisible(in_c * scale), out_channels=make_divisible(out_c * scale), dw_size=k, stride=s, use_se=se, conv_kxk_num=conv_kxk_num, lr_mult=self.lr_mult_list[3], lab_lr=lab_lr) for i, (k, in_c, out_c, s, se) in enumerate(self.net_config['blocks4'])])
+        self.blocks5 = nn.Sequential(*[LCNetV3Block(in_channels=make_divisible(in_c * scale), out_channels=make_divisible(out_c * scale), dw_size=k, stride=s, use_se=se, conv_kxk_num=conv_kxk_num, lr_mult=self.lr_mult_list[4], lab_lr=lab_lr) for i, (k, in_c, out_c, s, se) in enumerate(self.net_config['blocks5'])])
+        self.blocks6 = nn.Sequential(*[LCNetV3Block(in_channels=make_divisible(in_c * scale), out_channels=make_divisible(out_c * scale), dw_size=k, stride=s, use_se=se, conv_kxk_num=conv_kxk_num, lr_mult=self.lr_mult_list[5], lab_lr=lab_lr) for i, (k, in_c, out_c, s, se) in enumerate(self.net_config['blocks6'])])
+        self.out_channels = make_divisible(512 * scale)
+        if self.det:
+            mv_c = [16, 24, 56, 480]
+            self.out_channels = [make_divisible(self.net_config['blocks3'][-1][2] * scale), make_divisible(self.net_config['blocks4'][-1][2] * scale), make_divisible(self.net_config['blocks5'][-1][2] * scale), make_divisible(self.net_config['blocks6'][-1][2] * scale)]
+            self.layer_list = nn.ModuleList([nn.Conv2d(self.out_channels[0], int(mv_c[0] * scale), 1, 1, 0), nn.Conv2d(self.out_channels[1], int(mv_c[1] * scale), 1, 1, 0), nn.Conv2d(self.out_channels[2], int(mv_c[2] * scale), 1, 1, 0), nn.Conv2d(self.out_channels[3], int(mv_c[3] * scale), 1, 1, 0)])
+            self.out_channels = [int(mv_c[0] * scale), int(mv_c[1] * scale), int(mv_c[2] * scale), int(mv_c[3] * scale)]
+
+    def forward(self, x):
+        out_list = []
+        x = self.conv1(x)
+        x = self.blocks2(x)
+        x = self.blocks3(x)
+        out_list.append(x)
+        x = self.blocks4(x)
+        out_list.append(x)
+        x = self.blocks5(x)
+        out_list.append(x)
+        import numpy as np
+        x = torch.Tensor(np.load('../PaddleOCR4debug/tmp.npy'))
+        x = self.blocks6(x)
+        out_list.append(x)
+        if self.det:
+            out_list[0] = self.layer_list[0](out_list[0])
+            out_list[1] = self.layer_list[1](out_list[1])
+            out_list[2] = self.layer_list[2](out_list[2])
+            out_list[3] = self.layer_list[3](out_list[3])
+            return out_list
+        if self.training:
+            x = F.adaptive_avg_pool2d(x, [1, 40])
+        else:
+            x = F.avg_pool2d(x, [3, 2])
+        return x
 
 
 class DepthwiseSeparable(nn.Module):
@@ -3914,52 +4382,29 @@ class ConvMixer(nn.Module):
 
 class Attention(nn.Module):
 
-    def __init__(self, dim, num_heads=8, mixer='Global', HW=[8, 25], local_k=[7, 11], qkv_bias=False, qk_scale=None, attn_drop=0.0, proj_drop=0.0):
-        super().__init__()
-        self.num_heads = num_heads
-        head_dim = dim // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(proj_drop)
-        self.HW = HW
-        if HW is not None:
-            H = HW[0]
-            W = HW[1]
-            self.N = H * W
-            self.C = dim
-        if mixer == 'Local' and HW is not None:
-            hk = local_k[0]
-            wk = local_k[1]
-            mask = torch.ones(H * W, H + hk - 1, W + wk - 1, dtype=torch.float32)
-            for h in range(0, H):
-                for w in range(0, W):
-                    mask[h * W + w, h:h + hk, w:w + wk] = 0.0
-            mask_paddle = mask[:, hk // 2:H + hk // 2, wk // 2:W + wk // 2].flatten(1)
-            mask_inf = torch.full([H * W, H * W], fill_value=float('-Inf'), dtype=torch.float32)
-            mask = torch.where(mask_paddle < 1, mask_paddle, mask_inf)
-            self.mask = mask.unsqueeze(0).unsqueeze(1)
-        self.mixer = mixer
+    def __init__(self, hidden_size, attention_dim):
+        super(Attention, self).__init__()
+        self.hidden = hidden_size
+        self.attention_dim = attention_dim
+        self.hidden_weight = nn.Linear(self.hidden, self.attention_dim)
+        self.attention_conv = nn.Conv2d(1, 512, kernel_size=11, padding=5, bias=False)
+        self.attention_weight = nn.Linear(512, self.attention_dim, bias=False)
+        self.alpha_convert = nn.Linear(self.attention_dim, 1)
 
-    def forward(self, x):
-        if self.HW is not None:
-            N = self.N
-            C = self.C
-        else:
-            _, N, C = x.shape
-        qkv = self.qkv(x)
-        qkv = qkv.reshape((-1, N, 3, self.num_heads, C // self.num_heads)).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv[0] * self.scale, qkv[1], qkv[2]
-        attn = q.matmul(k.permute(0, 1, 3, 2))
-        if self.mixer == 'Local':
-            attn += self.mask
-        attn = nn.functional.softmax(attn, dim=-1)
-        attn = self.attn_drop(attn)
-        x = attn.matmul(v).permute(0, 2, 1, 3).reshape((-1, N, C))
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        return x
+    def forward(self, cnn_features, cnn_features_trans, hidden, alpha_sum, image_mask=None):
+        query = self.hidden_weight(hidden)
+        alpha_sum_trans = self.attention_conv(alpha_sum)
+        coverage_alpha = self.attention_weight(alpha_sum_trans.permute(0, 2, 3, 1))
+        alpha_score = torch.tanh(query[:, None, None, :] + coverage_alpha + cnn_features_trans.permute(0, 2, 3, 1))
+        energy = self.alpha_convert(alpha_score)
+        energy = energy - energy.max()
+        energy_exp = torch.exp(torch.squeeze(energy, -1))
+        if image_mask is not None:
+            energy_exp = energy_exp * torch.squeeze(image_mask, 1)
+        alpha = energy_exp / (energy_exp.sum(-1).sum(-1)[:, None, None] + 1e-10)
+        alpha_sum = torch.unsqueeze(alpha, 1) + alpha_sum
+        context_vector = torch.sum(torch.sum(torch.unsqueeze(alpha, 1) * cnn_features, -1), -1)
+        return context_vector, alpha, alpha_sum
 
 
 class Block(nn.Module):
@@ -4254,15 +4699,19 @@ class Head(nn.Module):
         self.relu2 = Activation(act_type='relu')
         self.conv3 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2)
 
-    def forward(self, x):
+    def forward(self, x, return_f=False):
         x = self.conv1(x)
         x = self.conv_bn1(x)
         x = self.relu1(x)
         x = self.conv2(x)
         x = self.conv_bn2(x)
         x = self.relu2(x)
+        if return_f is True:
+            f = x
         x = self.conv3(x)
         x = torch.sigmoid(x)
+        if return_f is True:
+            return x, f
         return x
 
 
@@ -4279,8 +4728,8 @@ class DBHead(nn.Module):
         self.k = k
         binarize_name_list = ['conv2d_56', 'batch_norm_47', 'conv2d_transpose_0', 'batch_norm_48', 'conv2d_transpose_1', 'binarize']
         thresh_name_list = ['conv2d_57', 'batch_norm_49', 'conv2d_transpose_2', 'batch_norm_50', 'conv2d_transpose_3', 'thresh']
-        self.binarize = Head(in_channels)
-        self.thresh = Head(in_channels)
+        self.binarize = Head(in_channels, **kwargs)
+        self.thresh = Head(in_channels, **kwargs)
 
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
@@ -4293,6 +4742,43 @@ class DBHead(nn.Module):
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = torch.cat([shrink_maps, threshold_maps, binary_maps], dim=1)
         return {'maps': y}
+
+
+class LocalModule(nn.Module):
+
+    def __init__(self, in_c, mid_c, use_distance=True):
+        super(self.__class__, self).__init__()
+        self.last_3 = ConvBNLayer(in_c + 1, mid_c, 3, 1, 1, act='relu')
+        self.last_1 = nn.Conv2d(mid_c, 1, 1, 1, 0)
+
+    def forward(self, x, init_map, distance_map):
+        outf = torch.cat([init_map, x], dim=1)
+        out = self.last_1(self.last_3(outf))
+        return out
+
+
+class PFHeadLocal(DBHead):
+
+    def __init__(self, in_channels, k=50, mode='small', **kwargs):
+        super(PFHeadLocal, self).__init__(in_channels, k, **kwargs)
+        self.mode = mode
+        self.up_conv = nn.Upsample(scale_factor=2, mode='nearest')
+        if self.mode == 'large':
+            self.cbn_layer = LocalModule(in_channels // 4, in_channels // 4)
+        elif self.mode == 'small':
+            self.cbn_layer = LocalModule(in_channels // 4, in_channels // 8)
+
+    def forward(self, x, targets=None):
+        shrink_maps, f = self.binarize(x, return_f=True)
+        base_maps = shrink_maps
+        cbn_maps = self.cbn_layer(self.up_conv(f), shrink_maps, None)
+        cbn_maps = F.sigmoid(cbn_maps)
+        if not self.training:
+            return {'maps': 0.5 * (base_maps + cbn_maps), 'cbn_maps': cbn_maps}
+        threshold_maps = self.thresh(x)
+        binary_maps = self.step_function(shrink_maps, threshold_maps)
+        y = torch.cat([cbn_maps, threshold_maps, binary_maps], dim=1)
+        return {'maps': y, 'distance_maps': cbn_maps, 'cbn_maps': binary_maps}
 
 
 class EASTHead(nn.Module):
@@ -4640,6 +5126,161 @@ class AttentionHead(nn.Module):
         return probs
 
 
+class ChannelAtt(nn.Module):
+
+    def __init__(self, channel, reduction):
+        super(ChannelAtt, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(nn.Linear(channel, channel // reduction), nn.ReLU(), nn.Linear(channel // reduction, channel), nn.Sigmoid())
+
+    def forward(self, x):
+        b, c, _, _ = x.shape
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y
+
+
+class CountingDecoder(nn.Module):
+
+    def __init__(self, in_channel, out_channel, kernel_size):
+        super(CountingDecoder, self).__init__()
+        self.in_channel = in_channel
+        self.out_channel = out_channel
+        self.trans_layer = nn.Sequential(nn.Conv2d(self.in_channel, 512, kernel_size=kernel_size, padding=kernel_size // 2, bias=False), nn.BatchNorm2d(512))
+        self.channel_att = ChannelAtt(512, 16)
+        self.pred_layer = nn.Sequential(nn.Conv2d(512, self.out_channel, kernel_size=1, bias=False), nn.Sigmoid())
+
+    def forward(self, x, mask):
+        b, _, h, w = x.shape
+        x = self.trans_layer(x)
+        x = self.channel_att(x)
+        x = self.pred_layer(x)
+        if mask is not None:
+            x = x * mask
+        x = x.view(b, self.out_channel, -1)
+        x1 = torch.sum(x, dim=-1)
+        return x1, x.view(b, self.out_channel, h, w)
+
+
+class PositionEmbeddingSine(nn.Module):
+
+    def __init__(self, num_pos_feats=64, temperature=10000, normalize=False, scale=None):
+        super().__init__()
+        self.num_pos_feats = num_pos_feats
+        self.temperature = temperature
+        self.normalize = normalize
+        if scale is not None and normalize is False:
+            raise ValueError('normalize should be True if scale is passed')
+        if scale is None:
+            scale = 2 * math.pi
+        self.scale = scale
+
+    def forward(self, x, mask):
+        y_embed = mask.cumsum(1, dtype=torch.float32)
+        x_embed = mask.cumsum(2, dtype=torch.float32)
+        if self.normalize:
+            eps = 1e-06
+            y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
+            x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
+        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=x.device)
+        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        pos_x = torch.unsqueeze(x_embed, 3) / dim_t
+        pos_y = torch.unsqueeze(y_embed, 3) / dim_t
+        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
+        return pos
+
+
+class AttDecoder(nn.Module):
+
+    def __init__(self, ratio, is_train, input_size, hidden_size, encoder_out_channel, dropout, dropout_ratio, word_num, counting_decoder_out_channel, attention):
+        super(AttDecoder, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.out_channel = encoder_out_channel
+        self.attention_dim = attention['attention_dim']
+        self.dropout_prob = dropout
+        self.ratio = ratio
+        self.word_num = word_num
+        self.counting_num = counting_decoder_out_channel
+        self.is_train = is_train
+        self.init_weight = nn.Linear(self.out_channel, self.hidden_size)
+        self.embedding = nn.Embedding(self.word_num, self.input_size)
+        self.word_input_gru = nn.GRUCell(self.input_size, self.hidden_size)
+        self.word_attention = Attention(hidden_size, attention['attention_dim'])
+        self.encoder_feature_conv = nn.Conv2d(self.out_channel, self.attention_dim, kernel_size=attention['word_conv_kernel'], padding=attention['word_conv_kernel'] // 2)
+        self.word_state_weight = nn.Linear(self.hidden_size, self.hidden_size)
+        self.word_embedding_weight = nn.Linear(self.input_size, self.hidden_size)
+        self.word_context_weight = nn.Linear(self.out_channel, self.hidden_size)
+        self.counting_context_weight = nn.Linear(self.counting_num, self.hidden_size)
+        self.word_convert = nn.Linear(self.hidden_size, self.word_num)
+        if dropout:
+            self.dropout = nn.Dropout(dropout_ratio)
+
+    def forward(self, cnn_features, labels, counting_preds, images_mask):
+        if self.is_train:
+            _, num_steps = labels.shape
+        else:
+            num_steps = 36
+        batch_size, _, height, width = cnn_features.shape
+        images_mask = images_mask[:, :, ::self.ratio, ::self.ratio]
+        word_probs = torch.zeros((batch_size, num_steps, self.word_num))
+        word_alpha_sum = torch.zeros((batch_size, 1, height, width))
+        hidden = self.init_hidden(cnn_features, images_mask)
+        counting_context_weighted = self.counting_context_weight(counting_preds)
+        cnn_features_trans = self.encoder_feature_conv(cnn_features)
+        position_embedding = PositionEmbeddingSine(256, normalize=True)
+        pos = position_embedding(cnn_features_trans, images_mask[:, 0, :, :])
+        cnn_features_trans = cnn_features_trans + pos
+        word = torch.ones([batch_size]).long()
+        for i in range(num_steps):
+            word_embedding = self.embedding(word)
+            hidden = self.word_input_gru(word_embedding, hidden)
+            word_context_vec, _, word_alpha_sum = self.word_attention(cnn_features, cnn_features_trans, hidden, word_alpha_sum, images_mask)
+            current_state = self.word_state_weight(hidden)
+            word_weighted_embedding = self.word_embedding_weight(word_embedding)
+            word_context_weighted = self.word_context_weight(word_context_vec)
+            if self.dropout_prob:
+                word_out_state = self.dropout(current_state + word_weighted_embedding + word_context_weighted + counting_context_weighted)
+            else:
+                word_out_state = current_state + word_weighted_embedding + word_context_weighted + counting_context_weighted
+            word_prob = self.word_convert(word_out_state)
+            word_probs[:, i] = word_prob
+            if self.is_train:
+                word = labels[:, i]
+            else:
+                word = word_prob.argmax(1)
+                word = torch.mul(word, labels[:, i])
+        return word_probs
+
+    def init_hidden(self, features, feature_mask):
+        average = torch.sum(torch.sum(features * feature_mask, dim=-1), dim=-1) / torch.sum(torch.sum(feature_mask, dim=-1), dim=-1)
+        average = self.init_weight(average)
+        return torch.tanh(average)
+
+
+class CANHead(nn.Module):
+
+    def __init__(self, in_channel, out_channel, ratio, attdecoder, **kwargs):
+        super(CANHead, self).__init__()
+        self.in_channel = in_channel
+        self.out_channel = out_channel
+        self.counting_decoder1 = CountingDecoder(self.in_channel, self.out_channel, 3)
+        self.counting_decoder2 = CountingDecoder(self.in_channel, self.out_channel, 5)
+        self.decoder = AttDecoder(ratio, **attdecoder)
+        self.ratio = ratio
+
+    def forward(self, inputs, targets=None):
+        cnn_features, images_mask, labels = inputs
+        counting_mask = images_mask[:, :, ::self.ratio, ::self.ratio]
+        counting_preds1, _ = self.counting_decoder1(cnn_features, counting_mask)
+        counting_preds2, _ = self.counting_decoder2(cnn_features, counting_mask)
+        counting_preds = (counting_preds1 + counting_preds2) / 2
+        word_probs = self.decoder(cnn_features, labels, counting_preds, images_mask)
+        return word_probs, counting_preds, counting_preds1, counting_preds2
+
+
 class CTCHead(nn.Module):
 
     def __init__(self, in_channels, out_channels=6625, fc_decay=0.0004, mid_channels=None, return_feats=False, **kwargs):
@@ -4669,140 +5310,398 @@ class CTCHead(nn.Module):
         return result
 
 
-class Beam:
-    """ Beam search """
+class FCTranspose(nn.Module):
 
-    def __init__(self, size, device=False):
-        self.size = size
-        self._done = False
-        self.scores = torch.zeros((size,), dtype=torch.float32)
-        self.all_scores = []
-        self.prev_ks = []
-        self.next_ys = [torch.full((size,), 0, dtype=torch.int64)]
-        self.next_ys[0][0] = 2
+    def __init__(self, in_channels, out_channels, only_transpose=False):
+        super().__init__()
+        self.only_transpose = only_transpose
+        if not self.only_transpose:
+            self.fc = nn.Linear(in_channels, out_channels, bias=False)
 
-    def get_current_state(self):
-        """Get the outputs for the current timestep."""
-        return self.get_tentative_hypothesis()
-
-    def get_current_origin(self):
-        """Get the backpointers for the current timestep."""
-        return self.prev_ks[-1]
-
-    @property
-    def done(self):
-        return self._done
-
-    def advance(self, word_prob):
-        """Update beam status and check if finished or not."""
-        num_words = word_prob.shape[1]
-        if len(self.prev_ks) > 0:
-            beam_lk = word_prob + self.scores.unsqueeze(1).expand_as(word_prob)
+    def forward(self, x):
+        if self.only_transpose:
+            return x.permute([0, 2, 1])
         else:
-            beam_lk = word_prob[0]
-        flat_beam_lk = beam_lk.reshape([-1])
-        best_scores, best_scores_id = flat_beam_lk.topk(self.size, 0, True, True)
-        self.all_scores.append(self.scores)
-        self.scores = best_scores
-        prev_k = best_scores_id // num_words
-        self.prev_ks.append(prev_k)
-        self.next_ys.append(best_scores_id - prev_k * num_words)
-        if self.next_ys[-1][0] == 3:
-            self._done = True
-            self.all_scores.append(self.scores)
-        return self._done
+            return self.fc(x.permute([0, 2, 1]))
 
-    def sort_scores(self):
-        """Sort the scores."""
-        return self.scores, torch.tensor([i for i in range(int(self.scores.shape[0]))], dtype=torch.int32)
 
-    def get_the_best_score_and_idx(self):
-        """Get the score of the best in the beam."""
-        scores, ids = self.sort_scores()
-        return scores[1], ids[1]
+class Im2Seq(nn.Module):
 
-    def get_tentative_hypothesis(self):
-        """Get the decoded sequence for the current timestep."""
-        if len(self.next_ys) == 1:
-            dec_seq = self.next_ys[0].unsqueeze(1)
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        self.out_channels = in_channels
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        x = x.squeeze(dim=2)
+        x = x.permute(0, 2, 1)
+        return x
+
+
+class EncoderWithFC(nn.Module):
+
+    def __init__(self, in_channels, hidden_size):
+        super(EncoderWithFC, self).__init__()
+        self.out_channels = hidden_size
+        self.fc = nn.Linear(in_channels, hidden_size, bias=True)
+
+    def forward(self, x):
+        x = self.fc(x)
+        return x
+
+
+class EncoderWithRNN(nn.Module):
+
+    def __init__(self, in_channels, hidden_size):
+        super(EncoderWithRNN, self).__init__()
+        self.out_channels = hidden_size * 2
+        self.lstm = nn.LSTM(in_channels, hidden_size, num_layers=2, batch_first=True, bidirectional=True)
+
+    def forward(self, x):
+        x, _ = self.lstm(x)
+        return x
+
+
+class EncoderWithSVTR(nn.Module):
+
+    def __init__(self, in_channels, dims=64, depth=2, hidden_dims=120, use_guide=False, num_heads=8, qkv_bias=True, mlp_ratio=2.0, drop_rate=0.1, kernel_size=[3, 3], attn_drop_rate=0.1, drop_path=0.0, qk_scale=None):
+        super(EncoderWithSVTR, self).__init__()
+        self.depth = depth
+        self.use_guide = use_guide
+        self.conv1 = ConvBNLayer(in_channels, in_channels // 8, kernel_size=kernel_size, padding=[kernel_size[0] // 2, kernel_size[1] // 2], act='swish')
+        self.conv2 = ConvBNLayer(in_channels // 8, hidden_dims, kernel_size=1, act='swish')
+        self.svtr_block = nn.ModuleList([Block(dim=hidden_dims, num_heads=num_heads, mixer='Global', HW=None, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale, drop=drop_rate, act_layer='swish', attn_drop=attn_drop_rate, drop_path=drop_path, norm_layer='nn.LayerNorm', epsilon=1e-05, prenorm=False) for i in range(depth)])
+        self.norm = nn.LayerNorm(hidden_dims, eps=1e-06)
+        self.conv3 = ConvBNLayer(hidden_dims, in_channels, kernel_size=1, act='swish')
+        self.conv4 = ConvBNLayer(2 * in_channels, in_channels // 8, padding=1, act='swish')
+        self.conv1x1 = ConvBNLayer(in_channels // 8, dims, kernel_size=1, act='swish')
+        self.out_channels = dims
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out')
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.ones_(m.weight)
+            nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.Linear):
+            nn.init.normal_(m.weight, 0, 0.01)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.ConvTranspose2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out')
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.ones_(m.weight)
+            nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        if self.use_guide:
+            z = x.clone()
+            z.stop_gradient = True
         else:
-            _, keys = self.sort_scores()
-            hyps = [self.get_hypothesis(k) for k in keys]
-            hyps = [([2] + h) for h in hyps]
-            dec_seq = torch.tensor(hyps, dtype=torch.int64)
-        return dec_seq
+            z = x
+        h = z
+        z = self.conv1(z)
+        z = self.conv2(z)
+        B, C, H, W = z.shape
+        z = z.flatten(2).permute(0, 2, 1)
+        for blk in self.svtr_block:
+            z = blk(z)
+        z = self.norm(z)
+        z = z.reshape([-1, H, W, C]).permute(0, 3, 1, 2)
+        z = self.conv3(z)
+        z = torch.cat((h, z), dim=1)
+        z = self.conv1x1(self.conv4(z))
+        return z
 
-    def get_hypothesis(self, k):
-        """ Walk back to construct the full hypothesis. """
-        hyp = []
-        for j in range(len(self.prev_ks) - 1, -1, -1):
-            hyp.append(self.next_ys[j + 1][k])
-            k = self.prev_ks[j][k]
-        return list(map(lambda x: x.item(), hyp[::-1]))
+
+class SequenceEncoder(nn.Module):
+
+    def __init__(self, in_channels, encoder_type, hidden_size=48, **kwargs):
+        super(SequenceEncoder, self).__init__()
+        self.encoder_reshape = Im2Seq(in_channels)
+        self.out_channels = self.encoder_reshape.out_channels
+        self.encoder_type = encoder_type
+        if encoder_type == 'reshape':
+            self.only_reshape = True
+        else:
+            support_encoder_dict = {'reshape': Im2Seq, 'fc': EncoderWithFC, 'rnn': EncoderWithRNN, 'svtr': EncoderWithSVTR}
+            assert encoder_type in support_encoder_dict, '{} must in {}'.format(encoder_type, support_encoder_dict.keys())
+            if encoder_type == 'svtr':
+                self.encoder = support_encoder_dict[encoder_type](self.encoder_reshape.out_channels, **kwargs)
+            else:
+                self.encoder = support_encoder_dict[encoder_type](self.encoder_reshape.out_channels, hidden_size)
+            self.out_channels = self.encoder.out_channels
+            self.only_reshape = False
+
+    def forward(self, x):
+        if self.encoder_type != 'svtr':
+            x = self.encoder_reshape(x)
+            if not self.only_reshape:
+                x = self.encoder(x)
+            return x
+        else:
+            x = self.encoder(x)
+            x = self.encoder_reshape(x)
+            return x
+
+
+class MultiHead(nn.Module):
+
+    def __init__(self, in_channels, out_channels_list, **kwargs):
+        super().__init__()
+        self.head_list = kwargs.pop('head_list')
+        self.gtc_head = 'sar'
+        assert len(self.head_list) >= 2
+        for idx, head_name in enumerate(self.head_list):
+            name = list(head_name)[0]
+            if name == 'SARHead':
+                pass
+            elif name == 'NRTRHead':
+                pass
+            elif name == 'CTCHead':
+                self.encoder_reshape = Im2Seq(in_channels)
+                neck_args = self.head_list[idx][name]['Neck']
+                encoder_type = neck_args.pop('name')
+                self.ctc_encoder = SequenceEncoder(in_channels=in_channels, encoder_type=encoder_type, **neck_args)
+                head_args = self.head_list[idx][name].get('Head', {})
+                if head_args is None:
+                    head_args = {}
+                self.ctc_head = eval(name)(in_channels=self.ctc_encoder.out_channels, out_channels=out_channels_list['CTCLabelDecode'], **head_args)
+            else:
+                raise NotImplementedError('{} is not supported in MultiHead yet'.format(name))
+
+    def forward(self, x, data=None):
+        ctc_encoder = self.ctc_encoder(x)
+        ctc_out = self.ctc_head(ctc_encoder)
+        head_out = dict()
+        head_out['ctc'] = ctc_out
+        head_out['res'] = ctc_out
+        head_out['ctc_neck'] = ctc_encoder
+        if not self.training:
+            return ctc_out
+        if self.gtc_head == 'sar':
+            sar_out = self.sar_head(x, data[1:])['res']
+            head_out['sar'] = sar_out
+        else:
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])['res']
+            head_out['nrtr'] = gtc_out
+        return head_out
+
+
+def attention(query, key, value, mask=None, dropout=None, attention_map=None):
+    d_k = query.shape[-1]
+    scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, float('-inf'))
+    else:
+        pass
+    p_attn = F.softmax(scores, dim=-1)
+    if dropout is not None:
+        p_attn = dropout(p_attn)
+    return torch.matmul(p_attn, value), p_attn
+
+
+def clones(module, N):
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
+
+class MultiHeadedAttention(nn.Module):
+
+    def __init__(self, h, d_model, dropout=0.1, compress_attention=False):
+        super(MultiHeadedAttention, self).__init__()
+        assert d_model % h == 0
+        self.d_k = d_model // h
+        self.h = h
+        self.linears = clones(nn.Linear(d_model, d_model), 4)
+        self.attn = None
+        self.dropout = nn.Dropout(p=dropout)
+        self.compress_attention = compress_attention
+        self.compress_attention_linear = nn.Linear(h, 1)
+
+    def forward(self, query, key, value, mask=None, attention_map=None):
+        if mask is not None:
+            mask = mask.unsqueeze(1)
+        nbatches = query.size(0)
+        query, key, value = [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2) for l, x in zip(self.linears, (query, key, value))]
+        x, attention_map = attention(query, key, value, mask=mask, dropout=self.dropout, attention_map=attention_map)
+        x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
+        return self.linears[-1](x), attention_map
+
+
+class PositionwiseFeedForward(nn.Module):
+    """Implements FFN equation."""
+
+    def __init__(self, d_model, d_ff, dropout=0.1):
+        super(PositionwiseFeedForward, self).__init__()
+        self.w_1 = nn.Linear(d_model, d_ff)
+        self.w_2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+
+
+def subsequent_mask(size):
+    """Generate a square mask for the sequence. The masked positions are filled with float('-inf').
+        Unmasked positions are filled with float(0.0).
+    """
+    mask = torch.ones(1, size, size, dtype=torch.float32)
+    mask_inf = torch.triu(torch.full(size=[1, size, size], fill_value=-np.inf, dtype=torch.float32), diagonal=1)
+    mask = mask + mask_inf
+    padding_mask = torch.equal(mask, torch.Tensor(1).type(mask.dtype))
+    return padding_mask
+
+
+class Decoder(nn.Module):
+
+    def __init__(self):
+        super(Decoder, self).__init__()
+        self.mask_multihead = MultiHeadedAttention(h=16, d_model=1024, dropout=0.1)
+        self.mul_layernorm1 = LayerNorm(1024)
+        self.multihead = MultiHeadedAttention(h=16, d_model=1024, dropout=0.1)
+        self.mul_layernorm2 = LayerNorm(1024)
+        self.pff = PositionwiseFeedForward(1024, 2048)
+        self.mul_layernorm3 = LayerNorm(1024)
+
+    def forward(self, text, conv_feature, attention_map=None):
+        text_max_length = text.shape[1]
+        mask = subsequent_mask(text_max_length)
+        result = text
+        result = self.mul_layernorm1(result + self.mask_multihead(text, text, text, mask=mask)[0])
+        b, c, h, w = conv_feature.shape
+        conv_feature = conv_feature.view(b, c, h * w).permute(0, 2, 1).contiguous()
+        word_image_align, attention_map = self.multihead(result, conv_feature, conv_feature, mask=None, attention_map=attention_map)
+        result = self.mul_layernorm2(result + word_image_align)
+        result = self.mul_layernorm3(result + self.pff(result))
+        return result, attention_map
 
 
 class Embeddings(nn.Module):
 
-    def __init__(self, d_model, vocab, padding_idx, scale_embedding):
+    def __init__(self, d_model, vocab):
         super(Embeddings, self).__init__()
-        self.embedding = nn.Embedding(vocab, d_model, padding_idx=padding_idx)
-        w0 = np.random.normal(0.0, d_model ** -0.5, (vocab, d_model)).astype(np.float32)
-        self.embedding.weight.data = torch.from_numpy(w0)
+        self.lut = nn.Embedding(vocab, d_model)
         self.d_model = d_model
-        self.scale_embedding = scale_embedding
 
     def forward(self, x):
-        if self.scale_embedding:
-            x = self.embedding(x)
-            return x * math.sqrt(self.d_model)
-        return self.embedding(x)
+        embed = self.lut(x) * math.sqrt(self.d_model)
+        return embed
+
+
+class Generator(nn.Module):
+    """Define standard linear + softmax generation step."""
+
+    def __init__(self, d_model, vocab):
+        super(Generator, self).__init__()
+        self.proj = nn.Linear(d_model, vocab)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        out = self.proj(x)
+        return out
 
 
 class PositionalEncoding(nn.Module):
-    """Inject some information about the relative or absolute position of the tokens
-        in the sequence. The positional encodings have the same dimension as
-        the embeddings, so that the two can be summed. Here, we use sine and cosine
-        functions of different frequencies.
-    .. math::
-        	ext{PosEncoder}(pos, 2i) = sin(pos/10000^(2i/d_model))
-        	ext{PosEncoder}(pos, 2i+1) = cos(pos/10000^(2i/d_model))
-        	ext{where pos is the word position and i is the embed idx)
-    Args:
-        d_model: the embed dim (required).
-        dropout: the dropout value (default=0.1).
-        max_len: the max. length of the incoming sequence (default=5000).
-    Examples:
-        >>> pos_encoder = PositionalEncoding(d_model)
-    """
+    """Implement the PE function."""
 
     def __init__(self, dropout, dim, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
-        pe = torch.zeros([max_len, dim])
-        position = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2).type(torch.float32) * (-math.log(10000.0) / dim))
+        pe = torch.zeros(max_len, dim)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
+        div_term = torch.exp(torch.arange(0, dim, 2).float() * (-math.log(10000.0) / dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = torch.unsqueeze(pe, 0)
-        pe = pe.permute(1, 0, 2)
+        pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        """Inputs of forward function
-        Args:
-            x: the sequence fed to the positional encoder model (required).
-        Shape:
-            x: [sequence length, batch size, embed dim]
-            output: [sequence length, batch size, embed dim]
-        Examples:
-            >>> output = pos_encoder(x)
-        """
-        x = x + self.pe[:x.shape[0], :]
+        x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
+
+
+class Transformer(nn.Module):
+
+    def __init__(self, in_channels=1, alphabet='0123456789'):
+        super(Transformer, self).__init__()
+        self.alphabet = alphabet
+        word_n_class = self.get_alphabet_len()
+        self.embedding_word_with_upperword = Embeddings(512, word_n_class)
+        self.pe = PositionalEncoding(dim=512, dropout=0.1, max_len=5000)
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+        self.generator_word_with_upperword = Generator(1024, word_n_class)
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+    def get_alphabet_len(self):
+        return len(self.alphabet)
+
+    def forward(self, image, text_length, text_input, attention_map=None):
+        if image.shape[1] == 3:
+            R = image[:, 0:1, :, :]
+            G = image[:, 1:2, :, :]
+            B = image[:, 2:3, :, :]
+            image = 0.299 * R + 0.587 * G + 0.114 * B
+        conv_feature = self.encoder(image)
+        max_length = max(text_length)
+        text_input = text_input[:, :max_length]
+        text_embedding = self.embedding_word_with_upperword(text_input)
+        if torch.cuda.is_available():
+            postion_embedding = self.pe(torch.zeros(text_embedding.shape).cuda())
+        else:
+            postion_embedding = self.pe(torch.zeros(text_embedding.shape))
+        text_input_with_pe = torch.cat([text_embedding, postion_embedding], 2)
+        batch, seq_len, _ = text_input_with_pe.shape
+        text_input_with_pe, word_attention_map = self.decoder(text_input_with_pe, conv_feature)
+        word_decoder_result = self.generator_word_with_upperword(text_input_with_pe)
+        if self.training:
+            total_length = torch.sum(text_length).data
+            probs_res = torch.zeros([total_length, self.get_alphabet_len()]).type_as(word_decoder_result.data)
+            start = 0
+            for index, length in enumerate(text_length):
+                length = int(length.numpy())
+                probs_res[start:start + length, :] = word_decoder_result[index, 0:0 + length, :]
+                start = start + length
+            return probs_res, word_attention_map, None
+        else:
+            return word_decoder_result
 
 
 def _get_clones(module, N):
     return LayerList([copy.deepcopy(module) for i in range(N)])
+
+
+class TransformerEncoder(nn.Module):
+    """TransformerEncoder is a stack of N encoder layers
+    Args:
+        encoder_layer: an instance of the TransformerEncoderLayer() class (required).
+        num_layers: the number of sub-encoder-layers in the encoder (required).
+        norm: the layer normalization component (optional).
+    """
+
+    def __init__(self, encoder_layer, num_layers):
+        super(TransformerEncoder, self).__init__()
+        self.layers = _get_clones(encoder_layer, num_layers)
+        self.num_layers = num_layers
+
+    def forward(self, src):
+        """Pass the input through the endocder layers in turn.
+        Args:
+            src: the sequnce to the encoder (required).
+            mask: the mask for the src sequence (optional).
+            src_key_padding_mask: the mask for the src keys per batch (optional).
+        """
+        output = src
+        for i in range(self.num_layers):
+            output = self.layers[i](output, src_mask=None, src_key_padding_mask=None)
+        return output
 
 
 class TransformerDecoder(nn.Module):
@@ -4835,6 +5734,54 @@ class TransformerDecoder(nn.Module):
         for i in range(self.num_layers):
             output = self.layers[i](output, memory, tgt_mask=tgt_mask, memory_mask=memory_mask, tgt_key_padding_mask=tgt_key_padding_mask, memory_key_padding_mask=memory_key_padding_mask)
         return output
+
+
+class TransformerEncoderLayer(nn.Module):
+    """TransformerEncoderLayer is made up of self-attn and feedforward network.
+    This standard encoder layer is based on the paper "Attention Is All You Need".
+    Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+    Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in
+    Neural Information Processing Systems, pages 6000-6010. Users may modify or implement
+    in a different way during application.
+
+    Args:
+        d_model: the number of expected features in the input (required).
+        nhead: the number of heads in the multiheadattention models (required).
+        dim_feedforward: the dimension of the feedforward network model (default=2048).
+        dropout: the dropout value (default=0.1).
+
+    """
+
+    def __init__(self, d_model, nhead, dim_feedforward=2048, attention_dropout_rate=0.0, residual_dropout_rate=0.1):
+        super(TransformerEncoderLayer, self).__init__()
+        self.self_attn = MultiheadAttention(d_model, nhead, dropout=attention_dropout_rate)
+        self.conv1 = nn.Conv2d(in_channels=d_model, out_channels=dim_feedforward, kernel_size=(1, 1))
+        self.conv2 = nn.Conv2d(in_channels=dim_feedforward, out_channels=d_model, kernel_size=(1, 1))
+        self.norm1 = LayerNorm(d_model)
+        self.norm2 = LayerNorm(d_model)
+        self.dropout1 = Dropout(residual_dropout_rate)
+        self.dropout2 = Dropout(residual_dropout_rate)
+
+    def forward(self, src, src_mask=None, src_key_padding_mask=None):
+        """Pass the input through the endocder layer.
+        Args:
+            src: the sequnce to the encoder layer (required).
+            src_mask: the mask for the src sequence (optional).
+            src_key_padding_mask: the mask for the src keys per batch (optional).
+        """
+        src2 = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
+        src = src + self.dropout1(src2)
+        src = self.norm1(src)
+        src = src.permute(1, 2, 0)
+        src = torch.unsqueeze(src, 2)
+        src2 = self.conv2(F.relu(self.conv1(src)))
+        src2 = torch.squeeze(src2, 2)
+        src2 = src2.permute(2, 0, 1)
+        src = torch.squeeze(src, 2)
+        src = src.permute(2, 0, 1)
+        src = src + self.dropout2(src2)
+        src = self.norm2(src)
+        return src
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -4894,309 +5841,6 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout3(tgt2)
         tgt = self.norm3(tgt)
         return tgt
-
-
-class TransformerEncoder(nn.Module):
-    """TransformerEncoder is a stack of N encoder layers
-    Args:
-        encoder_layer: an instance of the TransformerEncoderLayer() class (required).
-        num_layers: the number of sub-encoder-layers in the encoder (required).
-        norm: the layer normalization component (optional).
-    """
-
-    def __init__(self, encoder_layer, num_layers):
-        super(TransformerEncoder, self).__init__()
-        self.layers = _get_clones(encoder_layer, num_layers)
-        self.num_layers = num_layers
-
-    def forward(self, src):
-        """Pass the input through the endocder layers in turn.
-        Args:
-            src: the sequnce to the encoder (required).
-            mask: the mask for the src sequence (optional).
-            src_key_padding_mask: the mask for the src keys per batch (optional).
-        """
-        output = src
-        for i in range(self.num_layers):
-            output = self.layers[i](output, src_mask=None, src_key_padding_mask=None)
-        return output
-
-
-class TransformerEncoderLayer(nn.Module):
-    """TransformerEncoderLayer is made up of self-attn and feedforward network.
-    This standard encoder layer is based on the paper "Attention Is All You Need".
-    Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
-    Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in
-    Neural Information Processing Systems, pages 6000-6010. Users may modify or implement
-    in a different way during application.
-
-    Args:
-        d_model: the number of expected features in the input (required).
-        nhead: the number of heads in the multiheadattention models (required).
-        dim_feedforward: the dimension of the feedforward network model (default=2048).
-        dropout: the dropout value (default=0.1).
-
-    """
-
-    def __init__(self, d_model, nhead, dim_feedforward=2048, attention_dropout_rate=0.0, residual_dropout_rate=0.1):
-        super(TransformerEncoderLayer, self).__init__()
-        self.self_attn = MultiheadAttention(d_model, nhead, dropout=attention_dropout_rate)
-        self.conv1 = nn.Conv2d(in_channels=d_model, out_channels=dim_feedforward, kernel_size=(1, 1))
-        self.conv2 = nn.Conv2d(in_channels=dim_feedforward, out_channels=d_model, kernel_size=(1, 1))
-        self.norm1 = LayerNorm(d_model)
-        self.norm2 = LayerNorm(d_model)
-        self.dropout1 = Dropout(residual_dropout_rate)
-        self.dropout2 = Dropout(residual_dropout_rate)
-
-    def forward(self, src, src_mask=None, src_key_padding_mask=None):
-        """Pass the input through the endocder layer.
-        Args:
-            src: the sequnce to the encoder layer (required).
-            src_mask: the mask for the src sequence (optional).
-            src_key_padding_mask: the mask for the src keys per batch (optional).
-        """
-        src2 = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
-        src = src + self.dropout1(src2)
-        src = self.norm1(src)
-        src = src.permute(1, 2, 0)
-        src = torch.unsqueeze(src, 2)
-        src2 = self.conv2(F.relu(self.conv1(src)))
-        src2 = torch.squeeze(src2, 2)
-        src2 = src2.permute(2, 0, 1)
-        src = torch.squeeze(src, 2)
-        src = src.permute(2, 0, 1)
-        src = src + self.dropout2(src2)
-        src = self.norm2(src)
-        return src
-
-
-class Transformer(nn.Module):
-    """A transformer model. User is able to modify the attributes as needed. The architechture
-    is based on the paper "Attention Is All You Need". Ashish Vaswani, Noam Shazeer,
-    Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Lukasz Kaiser, and
-    Illia Polosukhin. 2017. Attention is all you need. In Advances in Neural Information
-    Processing Systems, pages 6000-6010.
-
-    Args:
-        d_model: the number of expected features in the encoder/decoder inputs (default=512).
-        nhead: the number of heads in the multiheadattention models (default=8).
-        num_encoder_layers: the number of sub-encoder-layers in the encoder (default=6).
-        num_decoder_layers: the number of sub-decoder-layers in the decoder (default=6).
-        dim_feedforward: the dimension of the feedforward network model (default=2048).
-        dropout: the dropout value (default=0.1).
-        custom_encoder: custom encoder (default=None).
-        custom_decoder: custom decoder (default=None).
-
-    """
-
-    def __init__(self, d_model=512, nhead=8, num_encoder_layers=6, beam_size=0, num_decoder_layers=6, dim_feedforward=1024, attention_dropout_rate=0.0, residual_dropout_rate=0.1, custom_encoder=None, custom_decoder=None, in_channels=0, out_channels=0, scale_embedding=True):
-        super(Transformer, self).__init__()
-        self.out_channels = out_channels
-        self.embedding = Embeddings(d_model=d_model, vocab=self.out_channels, padding_idx=0, scale_embedding=scale_embedding)
-        self.positional_encoding = PositionalEncoding(dropout=residual_dropout_rate, dim=d_model)
-        if custom_encoder is not None:
-            self.encoder = custom_encoder
-        elif num_encoder_layers > 0:
-            encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward, attention_dropout_rate, residual_dropout_rate)
-            self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers)
-        else:
-            self.encoder = None
-        if custom_decoder is not None:
-            self.decoder = custom_decoder
-        else:
-            decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward, attention_dropout_rate, residual_dropout_rate)
-            self.decoder = TransformerDecoder(decoder_layer, num_decoder_layers)
-        self._reset_parameters()
-        self.beam_size = beam_size
-        self.d_model = d_model
-        self.nhead = nhead
-        self.tgt_word_prj = nn.Linear(d_model, self.out_channels, bias=False)
-        w0 = np.random.normal(0.0, d_model ** -0.5, (self.out_channels, d_model)).astype(np.float32)
-        self.tgt_word_prj.weight.data = torch.from_numpy(w0)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, nn.Conv2d):
-            xavier_normal_(m.weight)
-            if m.bias is not None:
-                torch.nn.init.zeros_(m.bias)
-
-    def forward_train(self, src, tgt):
-        tgt = tgt[:, :-1]
-        tgt_key_padding_mask = self.generate_padding_mask(tgt)
-        tgt = self.embedding(tgt).permute(1, 0, 2)
-        tgt = self.positional_encoding(tgt)
-        tgt_mask = self.generate_square_subsequent_mask(tgt.shape[0])
-        if self.encoder is not None:
-            src = self.positional_encoding(src.permute(1, 0, 2))
-            memory = self.encoder(src)
-        else:
-            memory = src.squeeze(2).permute(2, 0, 1)
-        output = self.decoder(tgt, memory, tgt_mask=tgt_mask, memory_mask=None, tgt_key_padding_mask=tgt_key_padding_mask, memory_key_padding_mask=None)
-        output = output.permute(1, 0, 2)
-        logit = self.tgt_word_prj(output)
-        return logit
-
-    def forward(self, src, targets=None):
-        """Take in and process masked source/target sequences.
-        Args:
-            src: the sequence to the encoder (required).
-            tgt: the sequence to the decoder (required).
-        Shape:
-            - src: :math:`(S, N, E)`.
-            - tgt: :math:`(T, N, E)`.
-        Examples:
-            >>> output = transformer_model(src, tgt)
-        """
-        if self.training:
-            max_len = targets[1].max()
-            tgt = targets[0][:, :2 + max_len]
-            return self.forward_train(src, tgt)
-        elif self.beam_size > 0:
-            return self.forward_beam(src)
-        else:
-            return self.forward_test(src)
-
-    def forward_test(self, src):
-        bs = src.shape[0]
-        if self.encoder is not None:
-            src = self.positional_encoding(src.permute(1, 0, 2))
-            memory = self.encoder(src)
-        else:
-            memory = torch.squeeze(src, 2).permute(2, 0, 1)
-        dec_seq = torch.full((bs, 1), 2, dtype=torch.int64)
-        dec_prob = torch.full((bs, 1), 1.0, dtype=torch.float32)
-        for len_dec_seq in range(1, 25):
-            dec_seq_embed = self.embedding(dec_seq).permute(1, 0, 2)
-            dec_seq_embed = self.positional_encoding(dec_seq_embed)
-            tgt_mask = self.generate_square_subsequent_mask(dec_seq_embed.shape[0])
-            output = self.decoder(dec_seq_embed, memory, tgt_mask=tgt_mask, memory_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None)
-            dec_output = output.permute(1, 0, 2)
-            dec_output = dec_output[:, -1, :]
-            tgt_word_prj = self.tgt_word_prj(dec_output)
-            word_prob = F.softmax(tgt_word_prj, dim=1)
-            preds_idx = word_prob.argmax(dim=1)
-            if torch.equal(preds_idx, torch.full(preds_idx.shape, 3, dtype=torch.int64)):
-                break
-            preds_prob = torch.max(word_prob, dim=1).values
-            dec_seq = torch.cat([dec_seq, torch.reshape(preds_idx, (-1, 1))], dim=1)
-            dec_prob = torch.cat([dec_prob, torch.reshape(preds_prob, (-1, 1))], dim=1)
-        return [dec_seq, dec_prob]
-
-    def forward_beam(self, images):
-        """ Translation work in one batch """
-
-        def get_inst_idx_to_tensor_position_map(inst_idx_list):
-            """ Indicate the position of an instance in a tensor. """
-            return {inst_idx: tensor_position for tensor_position, inst_idx in enumerate(inst_idx_list)}
-
-        def collect_active_part(beamed_tensor, curr_active_inst_idx, n_prev_active_inst, n_bm):
-            """ Collect tensor parts associated to active instances. """
-            beamed_tensor_shape = beamed_tensor.shape
-            n_curr_active_inst = len(curr_active_inst_idx)
-            new_shape = n_curr_active_inst * n_bm, beamed_tensor_shape[1], beamed_tensor_shape[2]
-            beamed_tensor = beamed_tensor.reshape([n_prev_active_inst, -1])
-            beamed_tensor = beamed_tensor.index_select(curr_active_inst_idx, axis=0)
-            beamed_tensor = beamed_tensor.reshape(new_shape)
-            return beamed_tensor
-
-        def collate_active_info(src_enc, inst_idx_to_position_map, active_inst_idx_list):
-            n_prev_active_inst = len(inst_idx_to_position_map)
-            active_inst_idx = [inst_idx_to_position_map[k] for k in active_inst_idx_list]
-            active_inst_idx = torch.tensor(active_inst_idx, dtype=torch.int64)
-            active_src_enc = collect_active_part(src_enc.permute(1, 0, 2), active_inst_idx, n_prev_active_inst, n_bm).permute(1, 0, 2)
-            active_inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
-            return active_src_enc, active_inst_idx_to_position_map
-
-        def beam_decode_step(inst_dec_beams, len_dec_seq, enc_output, inst_idx_to_position_map, n_bm, memory_key_padding_mask):
-            """ Decode and update beam status, and then return active beam idx """
-
-            def prepare_beam_dec_seq(inst_dec_beams, len_dec_seq):
-                dec_partial_seq = [b.get_current_state() for b in inst_dec_beams if not b.done]
-                dec_partial_seq = torch.stack(dec_partial_seq)
-                dec_partial_seq = dec_partial_seq.reshape([-1, len_dec_seq])
-                return dec_partial_seq
-
-            def predict_word(dec_seq, enc_output, n_active_inst, n_bm, memory_key_padding_mask):
-                dec_seq = self.embedding(dec_seq).permute(1, 0, 2)
-                dec_seq = self.positional_encoding(dec_seq)
-                tgt_mask = self.generate_square_subsequent_mask(dec_seq.shape[0])
-                dec_output = self.decoder(dec_seq, enc_output, tgt_mask=tgt_mask, tgt_key_padding_mask=None, memory_key_padding_mask=memory_key_padding_mask)
-                dec_output = dec_output.permute(1, 0, 2)
-                dec_output = dec_output[:, -1, :]
-                word_prob = F.softmax(self.tgt_word_prj(dec_output), dim=1)
-                word_prob = torch.reshape(word_prob, (n_active_inst, n_bm, -1))
-                return word_prob
-
-            def collect_active_inst_idx_list(inst_beams, word_prob, inst_idx_to_position_map):
-                active_inst_idx_list = []
-                for inst_idx, inst_position in inst_idx_to_position_map.items():
-                    is_inst_complete = inst_beams[inst_idx].advance(word_prob[inst_position])
-                    if not is_inst_complete:
-                        active_inst_idx_list += [inst_idx]
-                return active_inst_idx_list
-            n_active_inst = len(inst_idx_to_position_map)
-            dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
-            word_prob = predict_word(dec_seq, enc_output, n_active_inst, n_bm, None)
-            active_inst_idx_list = collect_active_inst_idx_list(inst_dec_beams, word_prob, inst_idx_to_position_map)
-            return active_inst_idx_list
-
-        def collect_hypothesis_and_scores(inst_dec_beams, n_best):
-            all_hyp, all_scores = [], []
-            for inst_idx in range(len(inst_dec_beams)):
-                scores, tail_idxs = inst_dec_beams[inst_idx].sort_scores()
-                all_scores += [scores[:n_best]]
-                hyps = [inst_dec_beams[inst_idx].get_hypothesis(i) for i in tail_idxs[:n_best]]
-                all_hyp += [hyps]
-            return all_hyp, all_scores
-        with torch.no_grad():
-            if self.encoder is not None:
-                src = self.positional_encoding(images.permute(1, 0, 2))
-                src_enc = self.encoder(src)
-            else:
-                src_enc = images.squeeze(2).transpose([0, 2, 1])
-            n_bm = self.beam_size
-            src_shape = src_enc.shape
-            inst_dec_beams = [Beam(n_bm) for _ in range(1)]
-            active_inst_idx_list = list(range(1))
-            src_enc = src_enc.repeat(1, n_bm, 1)
-            inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
-            for len_dec_seq in range(1, 25):
-                src_enc_copy = src_enc.clone()
-                active_inst_idx_list = beam_decode_step(inst_dec_beams, len_dec_seq, src_enc_copy, inst_idx_to_position_map, n_bm, None)
-                if not active_inst_idx_list:
-                    break
-                src_enc, inst_idx_to_position_map = collate_active_info(src_enc_copy, inst_idx_to_position_map, active_inst_idx_list)
-        batch_hyp, batch_scores = collect_hypothesis_and_scores(inst_dec_beams, 1)
-        result_hyp = []
-        hyp_scores = []
-        for bs_hyp, score in zip(batch_hyp, batch_scores):
-            l = len(bs_hyp[0])
-            bs_hyp_pad = bs_hyp[0] + [3] * (25 - l)
-            result_hyp.append(bs_hyp_pad)
-            score = float(score) / l
-            hyp_score = [score for _ in range(25)]
-            hyp_scores.append(hyp_score)
-        return [torch.tensor(np.array(result_hyp), dtype=torch.int64), torch.tensor(hyp_scores)]
-
-    def generate_square_subsequent_mask(self, sz):
-        """Generate a square mask for the sequence. The masked positions are filled with float('-inf').
-            Unmasked positions are filled with float(0.0).
-        """
-        mask = torch.zeros([sz, sz], dtype=torch.float32)
-        mask_inf = torch.triu(torch.full(size=[sz, sz], fill_value=float('-Inf'), dtype=torch.float32), diagonal=1)
-        mask = mask + mask_inf
-        return mask
-
-    def generate_padding_mask(self, x):
-        padding_mask = x == torch.tensor(0, dtype=x.dtype)
-        return padding_mask
-
-    def _reset_parameters(self):
-        """Initiate parameters in the transformer model."""
-        for p in self.parameters():
-            if p.dim() > 1:
-                xavier_uniform_(p)
 
 
 class PositionalEncoding_2d(nn.Module):
@@ -5474,6 +6118,21 @@ class SARHead(nn.Module):
         return final_out
 
 
+class LayerNorm(nn.Module):
+    """Construct a layernorm module (See citation for details)."""
+
+    def __init__(self, features, eps=1e-06):
+        super(LayerNorm, self).__init__()
+        self.a_2 = nn.parameter.Parameter(torch.ones(features))
+        self.b_2 = nn.parameter.Parameter(torch.zeros(features))
+        self.eps = eps
+
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+
+
 def hard_swish(x, inplace=True):
     return x * F.relu6(x + 3.0, inplace=inplace) / 6.0
 
@@ -5605,6 +6264,46 @@ class RSELayer(nn.Module):
         return out
 
 
+class IntraCLBlock(nn.Module):
+
+    def __init__(self, in_channels=96, reduce_factor=4):
+        super(IntraCLBlock, self).__init__()
+        self.channels = in_channels
+        self.rf = reduce_factor
+        self.conv1x1_reduce_channel = nn.Conv2d(self.channels, self.channels // self.rf, kernel_size=1, stride=1, padding=0)
+        self.conv1x1_return_channel = nn.Conv2d(self.channels // self.rf, self.channels, kernel_size=1, stride=1, padding=0)
+        self.v_layer_7x1 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(7, 1), stride=(1, 1), padding=(3, 0))
+        self.v_layer_5x1 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(5, 1), stride=(1, 1), padding=(2, 0))
+        self.v_layer_3x1 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(3, 1), stride=(1, 1), padding=(1, 0))
+        self.q_layer_1x7 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(1, 7), stride=(1, 1), padding=(0, 3))
+        self.q_layer_1x5 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(1, 5), stride=(1, 1), padding=(0, 2))
+        self.q_layer_1x3 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(1, 3), stride=(1, 1), padding=(0, 1))
+        self.c_layer_7x7 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3))
+        self.c_layer_5x5 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
+        self.c_layer_3x3 = nn.Conv2d(self.channels // self.rf, self.channels // self.rf, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.bn = nn.BatchNorm2d(self.channels)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x_new = self.conv1x1_reduce_channel(x)
+        x_7_c = self.c_layer_7x7(x_new)
+        x_7_v = self.v_layer_7x1(x_new)
+        x_7_q = self.q_layer_1x7(x_new)
+        x_7 = x_7_c + x_7_v + x_7_q
+        x_5_c = self.c_layer_5x5(x_7)
+        x_5_v = self.v_layer_5x1(x_7)
+        x_5_q = self.q_layer_1x5(x_7)
+        x_5 = x_5_c + x_5_v + x_5_q
+        x_3_c = self.c_layer_3x3(x_5)
+        x_3_v = self.v_layer_3x1(x_5)
+        x_3_q = self.q_layer_1x3(x_5)
+        x_3 = x_3_c + x_3_v + x_3_q
+        x_relation = self.conv1x1_return_channel(x_3)
+        x_relation = self.bn(x_relation)
+        x_relation = self.relu(x_relation)
+        return x + x_relation
+
+
 class RSEFPN(nn.Module):
 
     def __init__(self, in_channels, out_channels, shortcut=True, **kwargs):
@@ -5612,6 +6311,13 @@ class RSEFPN(nn.Module):
         self.out_channels = out_channels
         self.ins_conv = nn.ModuleList()
         self.inp_conv = nn.ModuleList()
+        self.intracl = False
+        if 'intracl' in kwargs.keys() and kwargs['intracl'] is True:
+            self.intracl = kwargs['intracl']
+            self.incl1 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl2 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl3 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl4 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
         for i in range(len(in_channels)):
             self.ins_conv.append(RSELayer(in_channels[i], out_channels, kernel_size=1, shortcut=shortcut))
             self.inp_conv.append(RSELayer(out_channels, out_channels // 4, kernel_size=3, shortcut=shortcut))
@@ -5629,6 +6335,11 @@ class RSEFPN(nn.Module):
         p4 = self.inp_conv[2](out4)
         p3 = self.inp_conv[1](out3)
         p2 = self.inp_conv[0](out2)
+        if self.intracl is True:
+            p5 = self.incl4(p5)
+            p4 = self.incl3(p4)
+            p3 = self.incl2(p3)
+            p2 = self.incl1(p2)
         p5 = F.upsample(p5, scale_factor=8, mode='nearest')
         p4 = F.upsample(p4, scale_factor=4, mode='nearest')
         p3 = F.upsample(p3, scale_factor=2, mode='nearest')
@@ -5657,6 +6368,13 @@ class LKPAN(nn.Module):
             if i > 0:
                 self.pan_head_conv.append(nn.Conv2d(in_channels=self.out_channels // 4, out_channels=self.out_channels // 4, kernel_size=3, padding=1, stride=2, bias=False))
             self.pan_lat_conv.append(p_layer(in_channels=self.out_channels // 4, out_channels=self.out_channels // 4, kernel_size=9, padding=4, bias=False))
+            self.intracl = False
+            if 'intracl' in kwargs.keys() and kwargs['intracl'] is True:
+                self.intracl = kwargs['intracl']
+                self.incl1 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+                self.incl2 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+                self.incl3 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+                self.incl4 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
 
     def forward(self, x):
         c2, c3, c4, c5 = x
@@ -5678,6 +6396,11 @@ class LKPAN(nn.Module):
         p3 = self.pan_lat_conv[1](pan3)
         p4 = self.pan_lat_conv[2](pan4)
         p5 = self.pan_lat_conv[3](pan5)
+        if self.intracl is True:
+            p5 = self.incl4(p5)
+            p4 = self.incl3(p4)
+            p3 = self.incl2(p3)
+            p2 = self.incl1(p2)
         p5 = F.upsample(p5, scale_factor=8, mode='nearest')
         p4 = F.upsample(p4, scale_factor=4, mode='nearest')
         p3 = F.upsample(p3, scale_factor=2, mode='nearest')
@@ -5935,19 +6658,6 @@ class PGFPN(nn.Module):
         return f_common
 
 
-class Im2Seq(nn.Module):
-
-    def __init__(self, in_channels, **kwargs):
-        super().__init__()
-        self.out_channels = in_channels
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        x = x.squeeze(dim=2)
-        x = x.permute(0, 2, 1)
-        return x
-
-
 class EncoderWithRNN_(nn.Module):
 
     def __init__(self, in_channels, hidden_size):
@@ -5962,118 +6672,6 @@ class EncoderWithRNN_(nn.Module):
         out1, h1 = self.rnn1(x)
         out2, h2 = self.rnn2(torch.flip(x, [1]))
         return torch.cat([out1, torch.flip(out2, [1])], 2)
-
-
-class EncoderWithRNN(nn.Module):
-
-    def __init__(self, in_channels, hidden_size):
-        super(EncoderWithRNN, self).__init__()
-        self.out_channels = hidden_size * 2
-        self.lstm = nn.LSTM(in_channels, hidden_size, num_layers=2, batch_first=True, bidirectional=True)
-
-    def forward(self, x):
-        x, _ = self.lstm(x)
-        return x
-
-
-class EncoderWithFC(nn.Module):
-
-    def __init__(self, in_channels, hidden_size):
-        super(EncoderWithFC, self).__init__()
-        self.out_channels = hidden_size
-        self.fc = nn.Linear(in_channels, hidden_size, bias=True)
-
-    def forward(self, x):
-        x = self.fc(x)
-        return x
-
-
-class EncoderWithSVTR(nn.Module):
-
-    def __init__(self, in_channels, dims=64, depth=2, hidden_dims=120, use_guide=False, num_heads=8, qkv_bias=True, mlp_ratio=2.0, drop_rate=0.1, attn_drop_rate=0.1, drop_path=0.0, qk_scale=None):
-        super(EncoderWithSVTR, self).__init__()
-        self.depth = depth
-        self.use_guide = use_guide
-        self.conv1 = ConvBNLayer(in_channels, in_channels // 8, padding=1, act='swish')
-        self.conv2 = ConvBNLayer(in_channels // 8, hidden_dims, kernel_size=1, act='swish')
-        self.svtr_block = nn.ModuleList([Block(dim=hidden_dims, num_heads=num_heads, mixer='Global', HW=None, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale, drop=drop_rate, act_layer='swish', attn_drop=attn_drop_rate, drop_path=drop_path, norm_layer='nn.LayerNorm', epsilon=1e-05, prenorm=False) for i in range(depth)])
-        self.norm = nn.LayerNorm(hidden_dims, eps=1e-06)
-        self.conv3 = ConvBNLayer(hidden_dims, in_channels, kernel_size=1, act='swish')
-        self.conv4 = ConvBNLayer(2 * in_channels, in_channels // 8, padding=1, act='swish')
-        self.conv1x1 = ConvBNLayer(in_channels // 8, dims, kernel_size=1, act='swish')
-        self.out_channels = dims
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.BatchNorm2d):
-            nn.init.ones_(m.weight)
-            nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight, 0, 0.01)
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.ConvTranspose2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.ones_(m.weight)
-            nn.init.zeros_(m.bias)
-
-    def forward(self, x):
-        if self.use_guide:
-            z = x.clone()
-            z.stop_gradient = True
-        else:
-            z = x
-        h = z
-        z = self.conv1(z)
-        z = self.conv2(z)
-        B, C, H, W = z.shape
-        z = z.flatten(2).permute(0, 2, 1)
-        for blk in self.svtr_block:
-            z = blk(z)
-        z = self.norm(z)
-        z = z.reshape([-1, H, W, C]).permute(0, 3, 1, 2)
-        z = self.conv3(z)
-        z = torch.cat((h, z), dim=1)
-        z = self.conv1x1(self.conv4(z))
-        return z
-
-
-class SequenceEncoder(nn.Module):
-
-    def __init__(self, in_channels, encoder_type, hidden_size=48, **kwargs):
-        super(SequenceEncoder, self).__init__()
-        self.encoder_reshape = Im2Seq(in_channels)
-        self.out_channels = self.encoder_reshape.out_channels
-        self.encoder_type = encoder_type
-        if encoder_type == 'reshape':
-            self.only_reshape = True
-        else:
-            support_encoder_dict = {'reshape': Im2Seq, 'fc': EncoderWithFC, 'rnn': EncoderWithRNN, 'svtr': EncoderWithSVTR}
-            assert encoder_type in support_encoder_dict, '{} must in {}'.format(encoder_type, support_encoder_dict.keys())
-            if encoder_type == 'svtr':
-                self.encoder = support_encoder_dict[encoder_type](self.encoder_reshape.out_channels, **kwargs)
-            else:
-                self.encoder = support_encoder_dict[encoder_type](self.encoder_reshape.out_channels, hidden_size)
-            self.out_channels = self.encoder.out_channels
-            self.only_reshape = False
-
-    def forward(self, x):
-        if self.encoder_type != 'svtr':
-            x = self.encoder_reshape(x)
-            if not self.only_reshape:
-                x = self.encoder(x)
-            return x
-        else:
-            x = self.encoder(x)
-            x = self.encoder_reshape(x)
-            return x
 
 
 class FPN_Up_Fusion(nn.Module):
@@ -6362,6 +6960,224 @@ class STN_ON(nn.Module):
         return x
 
 
+def positionalencoding2d(d_model, height, width):
+    """
+    :param d_model: dimension of the model
+    :param height: height of the positions
+    :param width: width of the positions
+    :return: d_model*height*width position matrix
+    """
+    if d_model % 4 != 0:
+        raise ValueError('Cannot use sin/cos positional encoding with odd dimension (got dim={:d})'.format(d_model))
+    pe = torch.zeros([d_model, height, width])
+    d_model = int(d_model / 2)
+    div_term = torch.exp(torch.arange(0.0, d_model, 2) * -(math.log(10000.0) / d_model))
+    pos_w = torch.arange(0.0, width, dtype=torch.float32).unsqueeze(1)
+    pos_h = torch.arange(0.0, height, dtype=torch.float32).unsqueeze(1)
+    pe[0:d_model:2, :, :] = torch.sin(pos_w * div_term).transpose(0, 1).unsqueeze(1).repeat(1, height, 1)
+    pe[1:d_model:2, :, :] = torch.cos(pos_w * div_term).transpose(0, 1).unsqueeze(1).repeat(1, height, 1)
+    pe[d_model::2, :, :] = torch.sin(pos_h * div_term).transpose(0, 1).unsqueeze(2).repeat(1, 1, width)
+    pe[d_model + 1::2, :, :] = torch.cos(pos_h * div_term).transpose(0, 1).unsqueeze(2).repeat(1, 1, width)
+    return pe
+
+
+class FeatureEnhancer(nn.Module):
+
+    def __init__(self):
+        super(FeatureEnhancer, self).__init__()
+        self.multihead = MultiHeadedAttention(h=4, d_model=128, dropout=0.1)
+        self.mul_layernorm1 = LayerNorm(features=128)
+        self.pff = PositionwiseFeedForward(128, 128)
+        self.mul_layernorm3 = LayerNorm(features=128)
+        self.linear = nn.Linear(128, 64)
+
+    def forward(self, conv_feature):
+        """
+        text : (batch, seq_len, embedding_size)
+        global_info: (batch, embedding_size, 1, 1)
+        conv_feature: (batch, channel, H, W)
+        """
+        batch = conv_feature.shape[0]
+        if torch.cuda.is_available():
+            position2d = positionalencoding2d(64, 16, 64).float().unsqueeze(0).reshape([1, 64, 1024])
+        else:
+            position2d = positionalencoding2d(64, 16, 64).float().unsqueeze(0).reshape([1, 64, 1024])
+        position2d = position2d.repeat(batch, 1, 1)
+        conv_feature = torch.cat([conv_feature, position2d], 1)
+        result = conv_feature.permute(0, 2, 1).contiguous()
+        origin_result = result
+        result = self.mul_layernorm1(origin_result + self.multihead(result, result, result, mask=None)[0])
+        origin_result = result
+        result = self.mul_layernorm3(origin_result + self.pff(result))
+        result = self.linear(result)
+        return result.permute(0, 2, 1).contiguous()
+
+
+class GruBlock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(GruBlock, self).__init__()
+        assert out_channels % 2 == 0
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0)
+        self.gru = nn.GRU(out_channels, out_channels // 2, bidirectional=True, batch_first=True)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = x.permute(0, 2, 3, 1).contiguous()
+        batch_size, w, h, c = x.size()
+        x = x.view(batch_size * w, h, c)
+        x, _ = self.gru(x)
+        x = x.view(batch_size, w, h, c)
+        x = x.permute(0, 3, 1, 2).contiguous()
+        return x
+
+
+class mish(nn.Module):
+
+    def __init__(self):
+        super(mish, self).__init__()
+        self.activated = True
+
+    def forward(self, x):
+        if self.activated:
+            x = x * torch.tanh(F.softplus(x))
+        return x
+
+
+class RecurrentResidualBlock(nn.Module):
+
+    def __init__(self, channels):
+        super(RecurrentResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.gru1 = GruBlock(channels, channels)
+        self.prelu = mish()
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.gru2 = GruBlock(channels, channels)
+
+    def forward(self, x):
+        residual = self.conv1(x)
+        residual = self.bn1(residual)
+        residual = self.prelu(residual)
+        residual = self.conv2(residual)
+        residual = self.bn2(residual)
+        residual = self.gru1(residual.permute(0, 1, 3, 2).contiguous()).permute(0, 1, 3, 2).contiguous()
+        return self.gru2(x + residual).contiguous()
+
+
+class UpsampleBLock(nn.Module):
+
+    def __init__(self, in_channels, up_scale):
+        super(UpsampleBLock, self).__init__()
+        self.conv = nn.Conv2d(in_channels, in_channels * up_scale ** 2, kernel_size=3, padding=1)
+        self.pixel_shuffle = nn.PixelShuffle(up_scale)
+        self.prelu = mish()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.pixel_shuffle(x)
+        x = self.prelu(x)
+        return x
+
+
+def str_filt(str_, voc_type):
+    alpha_dict = {'digit': string.digits, 'lower': string.digits + string.ascii_lowercase, 'upper': string.digits + string.ascii_letters, 'all': string.digits + string.ascii_letters + string.punctuation}
+    if voc_type == 'lower':
+        str_ = str_.lower()
+    for char in str_:
+        if char not in alpha_dict[voc_type]:
+            str_ = str_.replace(char, '')
+    str_ = str_.lower()
+    return str_
+
+
+class TBSRN(nn.Module):
+
+    def __init__(self, in_channels=3, scale_factor=2, width=128, height=32, STN=True, srb_nums=5, mask=False, hidden_units=32, infer_mode=False):
+        super(TBSRN, self).__init__()
+        in_planes = 3
+        if mask:
+            in_planes = 4
+        assert math.log(scale_factor, 2) % 1 == 0
+        upsample_block_num = int(math.log(scale_factor, 2))
+        self.block1 = nn.Sequential(nn.Conv2d(in_planes, 2 * hidden_units, kernel_size=9, padding=4), nn.PReLU())
+        self.srb_nums = srb_nums
+        for i in range(srb_nums):
+            setattr(self, 'block%d' % (i + 2), RecurrentResidualBlock(2 * hidden_units))
+        setattr(self, 'block%d' % (srb_nums + 2), nn.Sequential(nn.Conv2d(2 * hidden_units, 2 * hidden_units, kernel_size=3, padding=1), nn.BatchNorm2d(2 * hidden_units)))
+        block_ = [UpsampleBLock(2 * hidden_units, 2) for _ in range(upsample_block_num)]
+        block_.append(nn.Conv2d(2 * hidden_units, in_planes, kernel_size=9, padding=4))
+        setattr(self, 'block%d' % (srb_nums + 3), nn.Sequential(*block_))
+        self.tps_inputsize = [height // scale_factor, width // scale_factor]
+        tps_outputsize = [height // scale_factor, width // scale_factor]
+        num_control_points = 20
+        tps_margins = [0.05, 0.05]
+        self.stn = STN
+        self.out_channels = in_channels
+        if self.stn:
+            self.tps = TPSSpatialTransformer(output_image_size=tuple(tps_outputsize), num_control_points=num_control_points, margins=tuple(tps_margins))
+            self.stn_head = STNHead(in_channels=in_planes, num_ctrlpoints=num_control_points, activation='none')
+        self.infer_mode = infer_mode
+        self.english_alphabet = '-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        self.english_dict = {}
+        for index in range(len(self.english_alphabet)):
+            self.english_dict[self.english_alphabet[index]] = index
+        transformer = Transformer(alphabet='-0123456789abcdefghijklmnopqrstuvwxyz')
+        self.transformer = transformer
+        for param in self.transformer.parameters():
+            param.trainable = False
+
+    def label_encoder(self, label):
+        batch = len(label)
+        length = [len(i) for i in label]
+        length_tensor = torch.Tensor(length).type(torch.int64)
+        max_length = max(length)
+        input_tensor = np.zeros((batch, max_length))
+        for i in range(batch):
+            for j in range(length[i] - 1):
+                input_tensor[i][j + 1] = self.english_dict[label[i][j]]
+        text_gt = []
+        for i in label:
+            for j in i:
+                text_gt.append(self.english_dict[j])
+        text_gt = torch.Tensor(text_gt).type(torch.int64)
+        input_tensor = torch.Tensor(input_tensor).type(torch.int64)
+        return length_tensor, input_tensor, text_gt
+
+    def forward(self, x):
+        output = {}
+        if self.infer_mode:
+            output['lr_img'] = x
+            y = x
+        else:
+            output['lr_img'] = x[0]
+            output['hr_img'] = x[1]
+            y = x[0]
+        if self.stn and self.training:
+            _, ctrl_points_x = self.stn_head(y)
+            y, _ = self.tps(y, ctrl_points_x)
+        block = {'1': self.block1(y)}
+        for i in range(self.srb_nums + 1):
+            block[str(i + 2)] = getattr(self, 'block%d' % (i + 2))(block[str(i + 1)])
+        block[str(self.srb_nums + 3)] = getattr(self, 'block%d' % (self.srb_nums + 3))(block['1'] + block[str(self.srb_nums + 2)])
+        sr_img = torch.tanh(block[str(self.srb_nums + 3)])
+        output['sr_img'] = sr_img
+        if self.training:
+            hr_img = x[1]
+            label = [(str_filt(i, 'lower') + '-') for i in x[2]]
+            length_tensor, input_tensor, text_gt = self.label_encoder(label)
+            hr_pred, word_attention_map_gt, hr_correct_list = self.transformer(hr_img, length_tensor, input_tensor)
+            sr_pred, word_attention_map_pred, sr_correct_list = self.transformer(sr_img, length_tensor, input_tensor)
+            output['hr_img'] = hr_img
+            output['hr_pred'] = hr_pred
+            output['text_gt'] = text_gt
+            output['word_attention_map_gt'] = word_attention_map_gt
+            output['sr_pred'] = sr_pred
+            output['word_attention_map_pred'] = word_attention_map_pred
+        return output
+
+
 class LocalizationNetwork(nn.Module):
 
     def __init__(self, in_channels, num_fiducial, loc_lr, model_name):
@@ -6535,6 +7351,69 @@ class TPS(nn.Module):
         return batch_I_r
 
 
+class TSRN(nn.Module):
+
+    def __init__(self, in_channels, scale_factor=2, width=128, height=32, STN=False, srb_nums=5, mask=False, hidden_units=32, infer_mode=False, **kwargs):
+        super(TSRN, self).__init__()
+        in_planes = 3
+        if mask:
+            in_planes = 4
+        assert math.log(scale_factor, 2) % 1 == 0
+        upsample_block_num = int(math.log(scale_factor, 2))
+        self.block1 = nn.Sequential(nn.Conv2d(in_planes, 2 * hidden_units, kernel_size=9, padding=4), nn.PReLU())
+        self.srb_nums = srb_nums
+        for i in range(srb_nums):
+            setattr(self, 'block%d' % (i + 2), RecurrentResidualBlock(2 * hidden_units))
+        setattr(self, 'block%d' % (srb_nums + 2), nn.Sequential(nn.Conv2d(2 * hidden_units, 2 * hidden_units, kernel_size=3, padding=1), nn.BatchNorm2d(2 * hidden_units)))
+        block_ = [UpsampleBLock(2 * hidden_units, 2) for _ in range(upsample_block_num)]
+        block_.append(nn.Conv2d(2 * hidden_units, in_planes, kernel_size=9, padding=4))
+        setattr(self, 'block%d' % (srb_nums + 3), nn.Sequential(*block_))
+        self.tps_inputsize = [height // scale_factor, width // scale_factor]
+        tps_outputsize = [height // scale_factor, width // scale_factor]
+        num_control_points = 20
+        tps_margins = [0.05, 0.05]
+        self.stn = STN
+        if self.stn:
+            self.tps = TPSSpatialTransformer(output_image_size=tuple(tps_outputsize), num_control_points=num_control_points, margins=tuple(tps_margins))
+            self.stn_head = STN_model(in_channels=in_planes, num_ctrlpoints=num_control_points, activation='none')
+        self.out_channels = in_channels
+        self.r34_transformer = Transformer()
+        for param in self.r34_transformer.parameters():
+            param.trainable = False
+        self.infer_mode = infer_mode
+
+    def forward(self, x):
+        output = {}
+        if self.infer_mode:
+            output['lr_img'] = x
+            y = x
+        else:
+            output['lr_img'] = x[0]
+            output['hr_img'] = x[1]
+            y = x[0]
+        if self.stn and self.training:
+            _, ctrl_points_x = self.stn_head(y)
+            y, _ = self.tps(y, ctrl_points_x)
+        block = {'1': self.block1(y)}
+        for i in range(self.srb_nums + 1):
+            block[str(i + 2)] = getattr(self, 'block%d' % (i + 2))(block[str(i + 1)])
+        block[str(self.srb_nums + 3)] = getattr(self, 'block%d' % (self.srb_nums + 3))(block['1'] + block[str(self.srb_nums + 2)])
+        sr_img = torch.tanh(block[str(self.srb_nums + 3)])
+        output['sr_img'] = sr_img
+        if self.training:
+            hr_img = x[1]
+            length = x[2]
+            input_tensor = x[3]
+            sr_pred, word_attention_map_pred, _ = self.r34_transformer(sr_img, length, input_tensor)
+            hr_pred, word_attention_map_gt, _ = self.r34_transformer(hr_img, length, input_tensor)
+            output['hr_img'] = hr_img
+            output['hr_pred'] = hr_pred
+            output['word_attention_map_gt'] = word_attention_map_gt
+            output['sr_pred'] = sr_pred
+            output['word_attention_map_pred'] = word_attention_map_pred
+        return output
+
+
 import torch
 from torch.nn import MSELoss, ReLU
 from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
@@ -6545,6 +7424,10 @@ TESTCASES = [
     (ASFBlock,
      lambda: ([], {'in_channels': 4, 'inter_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (Act,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (AttentionGRUCell,
      lambda: ([], {'input_size': 4, 'hidden_size': 4, 'num_embeddings': 4}),
@@ -6558,6 +7441,10 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([], {}),
      False),
+    (BasicBlock,
+     lambda: ([], {'inplanes': 4, 'planes': 4, 'downsample': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (BasicStem,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 3, 64, 64])], {}),
@@ -6566,14 +7453,18 @@ TESTCASES = [
      lambda: ([], {'in_features': 4, 'out_features': 4}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      True),
-    (Block,
-     lambda: ([], {'dim': 4, 'num_heads': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
+    (Bottleneck,
+     lambda: ([], {'input_dim': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (CTCHead,
      lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (ChannelAtt,
+     lambda: ([], {'channel': 4, 'reduction': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (ClsHead,
      lambda: ([], {'in_channels': 4, 'class_dim': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6582,6 +7473,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (ConvBNAct,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'stride': 1}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (ConvNormLayer,
      lambda: ([], {'ch_in': 4, 'ch_out': 4, 'filter_size': 4, 'stride': 1}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6593,7 +7488,7 @@ TESTCASES = [
     (DBHead,
      lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
+     False),
     (DSConv,
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'padding': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6602,6 +7497,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'stride': 1}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (DeformableConvV2,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (DropBlock,
      lambda: ([], {'block_size': 4, 'keep_prob': 4, 'name': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6610,9 +7509,13 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (ESEModule,
+     lambda: ([], {'channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (Encoder,
-     lambda: ([], {'n_layer': 1, 'n_head': 4, 'd_key': 4, 'd_value': 4, 'd_model': 4, 'd_inner_hid': 4, 'prepostprocess_dropout': 0.5, 'attention_dropout': 0.5, 'relu_dropout': 0.5}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 1, 64, 64])], {}),
      False),
     (EncoderLayer,
      lambda: ([], {'n_head': 4, 'd_key': 4, 'd_value': 4, 'd_model': 4, 'd_inner_hid': 4, 'prepostprocess_dropout': 0.5, 'attention_dropout': 0.5, 'relu_dropout': 0.5}),
@@ -6630,6 +7533,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'hidden_size': 4}),
      lambda: ([torch.rand([4, 4, 4])], {}),
      False),
+    (FCTranspose,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4])], {}),
+     True),
     (FFN,
      lambda: ([], {'d_inner_hid': 4, 'd_model': 4, 'dropout_rate': 0.5}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6642,10 +7549,26 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (Generator,
+     lambda: ([], {'d_model': 4, 'vocab': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (GruBlock,
+     lambda: ([], {'in_channels': 4, 'out_channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (HG_Block,
+     lambda: ([], {'in_channels': 4, 'mid_channels': 4, 'out_channels': 4, 'layer_num': 1}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (HG_Stage,
+     lambda: ([], {'in_channels': 4, 'mid_channels': 4, 'out_channels': 4, 'block_num': 4, 'layer_num': 1}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (Head,
      lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
+     False),
     (Hsigmoid,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6658,12 +7581,20 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (IntraCLBlock,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 96, 64, 64])], {}),
+     True),
     (Lambda,
      lambda: ([], {'func': _mock_layer()}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (LastLevelMaxPool,
      lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (LayerNorm,
+     lambda: ([], {'features': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (LayoutLMPooler,
@@ -6682,6 +7613,10 @@ TESTCASES = [
      lambda: ([], {'config': _mock_config(hidden_size=4, layer_norm_eps=1, hidden_dropout_prob=0.5)}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      False),
+    (LearnableAffineBlock,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (LocalizationNetwork,
      lambda: ([], {'in_channels': 4, 'num_fiducial': 4, 'loc_lr': 4, 'model_name': 4}),
      lambda: ([torch.rand([4, 4, 64, 64])], {}),
@@ -6697,6 +7632,10 @@ TESTCASES = [
     (MultiHeadAttention,
      lambda: ([], {'d_key': 4, 'd_value': 4, 'd_model': 4}),
      lambda: ([torch.rand([4, 4, 1, 4]), torch.rand([4, 4, 1, 4]), torch.rand([4, 4, 1, 4]), torch.rand([4, 4])], {}),
+     False),
+    (MultiHeadedAttention,
+     lambda: ([], {'h': 4, 'd_model': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      False),
     (MultiheadAttention,
      lambda: ([], {'embed_dim': 4, 'num_heads': 4}),
@@ -6714,12 +7653,20 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'hidden_size': 4}),
      lambda: ([torch.rand([4, 4])], {}),
      False),
+    (PositionEmbeddingSine,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4]), torch.rand([4, 4, 4])], {}),
+     True),
     (PositionalEncoding,
      lambda: ([], {'dropout': 0.5, 'dim': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (PositionalEncoding_2d,
      lambda: ([], {'dropout': 0.5, 'dim': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (PositionwiseFeedForward,
+     lambda: ([], {'d_model': 4, 'd_ff': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (PrePostProcessLayer,
@@ -6733,6 +7680,14 @@ TESTCASES = [
     (RSELayer,
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (RecurrentResidualBlock,
+     lambda: ([], {'channels': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (ResNet31,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 3, 64, 64])], {}),
      False),
     (SARHead,
      lambda: ([], {'in_channels': 4, 'out_channels': 4}),
@@ -6750,6 +7705,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (SELayer,
+     lambda: ([], {'channel': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (SEModule,
      lambda: ([], {'in_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6758,6 +7717,10 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'stride': 1, 'name': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (SingleLayer,
+     lambda: ([], {'nChannels': 4, 'growthRate': 4, 'use_dropout': 0.5}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (SubSample,
      lambda: ([], {'in_channels': 4, 'out_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -6778,6 +7741,14 @@ TESTCASES = [
      lambda: ([], {'d_model': 4, 'nhead': 4}),
      lambda: ([torch.rand([4, 4, 4])], {}),
      False),
+    (Transition,
+     lambda: ([], {'nChannels': 4, 'out_channels': 4, 'use_dropout': 0.5}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (mish,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
 ]
 
 class Test_frotms_PaddleOCR2Pytorch(_paritybench_base):
@@ -6957,4 +7928,73 @@ class Test_frotms_PaddleOCR2Pytorch(_paritybench_base):
 
     def test_058(self):
         self._check(*TESTCASES[58])
+
+    def test_059(self):
+        self._check(*TESTCASES[59])
+
+    def test_060(self):
+        self._check(*TESTCASES[60])
+
+    def test_061(self):
+        self._check(*TESTCASES[61])
+
+    def test_062(self):
+        self._check(*TESTCASES[62])
+
+    def test_063(self):
+        self._check(*TESTCASES[63])
+
+    def test_064(self):
+        self._check(*TESTCASES[64])
+
+    def test_065(self):
+        self._check(*TESTCASES[65])
+
+    def test_066(self):
+        self._check(*TESTCASES[66])
+
+    def test_067(self):
+        self._check(*TESTCASES[67])
+
+    def test_068(self):
+        self._check(*TESTCASES[68])
+
+    def test_069(self):
+        self._check(*TESTCASES[69])
+
+    def test_070(self):
+        self._check(*TESTCASES[70])
+
+    def test_071(self):
+        self._check(*TESTCASES[71])
+
+    def test_072(self):
+        self._check(*TESTCASES[72])
+
+    def test_073(self):
+        self._check(*TESTCASES[73])
+
+    def test_074(self):
+        self._check(*TESTCASES[74])
+
+    def test_075(self):
+        self._check(*TESTCASES[75])
+
+    def test_076(self):
+        self._check(*TESTCASES[76])
+
+    def test_077(self):
+        self._check(*TESTCASES[77])
+
+    def test_078(self):
+        self._check(*TESTCASES[78])
+
+    def test_079(self):
+        self._check(*TESTCASES[79])
+
+    def test_080(self):
+        self._check(*TESTCASES[80])
+
+    def test_081(self):
+        self._check(*TESTCASES[81])
 
