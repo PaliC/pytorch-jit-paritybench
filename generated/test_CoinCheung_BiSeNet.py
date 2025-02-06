@@ -81,7 +81,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -164,6 +166,9 @@ from torch.utils.cpp_extension import load
 
 
 import torch.multiprocessing as mp
+
+
+from torch.onnx import OperatorExportTypes
 
 
 import torch.cuda.amp as amp
@@ -480,6 +485,17 @@ class FeatureFusionModule(nn.Module):
         return wd_params, nowd_params
 
 
+class CustomArgMax(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, feat_out, dim):
+        return feat_out.argmax(dim=dim).int()
+
+    @staticmethod
+    def symbolic(g, feat_out, dim: 'int'):
+        return g.op('CustomArgMax', feat_out, dim_i=dim)
+
+
 class BiSeNetV1(nn.Module):
 
     def __init__(self, n_classes, aux_mode='train', *args, **kwargs):
@@ -507,7 +523,7 @@ class BiSeNetV1(nn.Module):
         elif self.aux_mode == 'eval':
             return feat_out,
         elif self.aux_mode == 'pred':
-            feat_out = feat_out.argmax(dim=1)
+            feat_out = CustomArgMax.apply(feat_out, 1)
             return feat_out
         else:
             raise NotImplementedError

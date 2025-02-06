@@ -27,7 +27,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -94,7 +96,7 @@ class BasicEndogenousImpact(nn.Module):
     which actually a simple endogenous impact with phi_{kk'}(t) = sum_{m} a_{kk'm} kernel_m(t)
     """
 
-    def __init__(self, num_type: int, kernel):
+    def __init__(self, num_type: 'int', kernel):
         """
         Initialize endogenous impact: phi_{kk'}(t) = sum_{m} a_{kk'm} kernel_m(t),
         for m = 1, ..., M, A_m = [a_{kk'm}] in R^{C*C+1}, C is the number of event type
@@ -124,7 +126,7 @@ class BasicEndogenousImpact(nn.Module):
         logger.info('The number of event types = {}.'.format(self.num_type))
         self.decay_kernel.print_info()
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate intensity of event
         phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -158,7 +160,7 @@ class BasicEndogenousImpact(nn.Module):
         phi_c = phi_c[:, :, 0]
         return phi_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate the expected number of events in dts
         sum_i int_{0}^{dt_i} phi_cc_i(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -195,7 +197,7 @@ class BasicEndogenousImpact(nn.Module):
         pHi = pHi[:, :, 0]
         return pHi
 
-    def granger_causality(self, sample_dict: Dict):
+    def granger_causality(self, sample_dict: 'Dict'):
         """
         Calculate the granger causality among event types
         a_{cc'm}
@@ -218,7 +220,7 @@ class BasicEndogenousImpact(nn.Module):
                 A_all = torch.cat([A_all, A_tmp], dim=2)
         return A_all
 
-    def forward(self, sample_dict: Dict):
+    def forward(self, sample_dict: 'Dict'):
         """
         Calculate
         1) phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -240,7 +242,7 @@ class BasicEndogenousImpact(nn.Module):
         pHi = self.expect_counts(sample_dict)
         return phi_c, pHi
 
-    def plot_and_save(self, infect: torch.Tensor, output_name: str=None):
+    def plot_and_save(self, infect: 'torch.Tensor', output_name: 'str'=None):
         """
         Plot endogenous impact function for all event types
         Args:
@@ -277,7 +279,7 @@ class NaiveEndogenousImpact(BasicEndogenousImpact):
     which actually a simple endogenous impact with phi_{kk'}(t) = sum_{m} a_{kk'm} kernel_m(t)
     """
 
-    def __init__(self, num_type: int, kernel, parameter_set: Dict):
+    def __init__(self, num_type: 'int', kernel, parameter_set: 'Dict'):
         """
         Initialize endogenous impact: phi_{kk'}(t) = sum_{m} a_{kk'm} kernel_m(t),
         for m = 1, ..., M, A_m = [a_{kk'm}] in R^{C*C+1}, C is the number of event type
@@ -317,7 +319,7 @@ class NaiveEndogenousImpact(BasicEndogenousImpact):
             logger.warning('Identity activation is applied instead.')
             self.act = Identity()
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate the intensity of events
         phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -350,7 +352,7 @@ class NaiveEndogenousImpact(BasicEndogenousImpact):
         phi_c = phi_c[:, :, 0]
         return phi_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate the expected number of events in dts
         int_{0}^{dt_i} mu_c(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -387,7 +389,7 @@ class NaiveEndogenousImpact(BasicEndogenousImpact):
         pHi = pHi[:, :, 0]
         return pHi
 
-    def granger_causality(self, sample_dict: Dict):
+    def granger_causality(self, sample_dict: 'Dict'):
         """
         Calculate the granger causality among event types
         a_{cc'm}
@@ -418,7 +420,7 @@ class FactorizedEndogenousImpact(BasicEndogenousImpact):
     Here, U_m=[u_{cm}] and V_m=[v_{cm}], m=1,...,M, are embedding matrices
     """
 
-    def __init__(self, num_type: int, kernel, parameter_set: Dict):
+    def __init__(self, num_type: 'int', kernel, parameter_set: 'Dict'):
         """
         Initialize endogenous impact: phi_{kk'}(t) = sum_{m} a_{kk'm} kernel_m(t),
         for m = 1, ..., M, A_m = [a_{kk'm}] in R^{C*C+1}, C is the number of event type
@@ -465,7 +467,7 @@ class FactorizedEndogenousImpact(BasicEndogenousImpact):
             logger.warning('Identity activation is applied instead.')
             self.act = Identity()
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate the intensity of event
         phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -497,7 +499,7 @@ class FactorizedEndogenousImpact(BasicEndogenousImpact):
         phi_c = phi_c[:, :, 0]
         return phi_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate the expected number of events in dts
         int_{0}^{dt_i} mu_c(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -534,7 +536,7 @@ class FactorizedEndogenousImpact(BasicEndogenousImpact):
         pHi = pHi[:, :, 0]
         return pHi
 
-    def granger_causality(self, sample_dict: Dict):
+    def granger_causality(self, sample_dict: 'Dict'):
         """
         Calculate the granger causality among event types
         a_{cc'm}
@@ -568,7 +570,7 @@ class LinearEndogenousImpact(BasicEndogenousImpact):
     f_{c'} is the feature vector associated with the c'-th history event
     """
 
-    def __init__(self, num_type: int, kernel, parameter_set: Dict):
+    def __init__(self, num_type: 'int', kernel, parameter_set: 'Dict'):
         """
         Initialize endogenous impact: phi_{kk'}(t) = sum_m (w_{cm}^T * f_{c'}) * kernel_m(t),
         for m = 1, ..., M, W_m = [w_{cm}] in R^{(C+1)*D}, C is the number of event type
@@ -612,7 +614,7 @@ class LinearEndogenousImpact(BasicEndogenousImpact):
             logger.warning('Identity activation is applied instead.')
             self.act = Identity()
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate the intensity of events
         phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -647,7 +649,7 @@ class LinearEndogenousImpact(BasicEndogenousImpact):
         phi_c = phi_c[:, :, 0]
         return phi_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate the expected number of events in dts
         int_{0}^{dt_i} mu_c(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -687,7 +689,7 @@ class LinearEndogenousImpact(BasicEndogenousImpact):
         pHi = pHi[:, :, 0]
         return pHi
 
-    def granger_causality(self, sample_dict: Dict):
+    def granger_causality(self, sample_dict: 'Dict'):
         """
         Calculate the granger causality among event types
         a_{cc'm}
@@ -724,7 +726,7 @@ class BilinearEndogenousImpact(BasicEndogenousImpact):
     f_{c'} is the feature vector associated with the c'-th history event
     """
 
-    def __init__(self, num_type: int, kernel, parameter_set: Dict):
+    def __init__(self, num_type: 'int', kernel, parameter_set: 'Dict'):
         """
         Initialize endogenous impact: phi_{cc'}(t) = sum_m (f_{c}^T * W_m * f_{c'}) * kernel_m(t)
         for m = 1, ..., M, W_m = [w_{cm}] in R^{(C+1)*D}, C is the number of event type
@@ -768,7 +770,7 @@ class BilinearEndogenousImpact(BasicEndogenousImpact):
             logger.warning('Identity activation is applied instead.')
             self.act = Identity()
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate the intensity of event
         phi_{c_i,c_j}(t_i - t_j) for c_i in "events";
@@ -808,7 +810,7 @@ class BilinearEndogenousImpact(BasicEndogenousImpact):
         phi_c = phi_c[:, :, 0]
         return phi_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate the expected number of events in dts
         int_{0}^{dt_i} mu_c(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -851,7 +853,7 @@ class BilinearEndogenousImpact(BasicEndogenousImpact):
         pHi = pHi[:, :, 0]
         return pHi
 
-    def granger_causality(self, sample_dict: Dict):
+    def granger_causality(self, sample_dict: 'Dict'):
         """
         Calculate the granger causality among event types
         a_{cc'm}
@@ -885,7 +887,7 @@ class BasicExogenousIntensity(nn.Module):
     The parent class of exogenous intensity function mu(t), which actually a constant exogenous intensity
     """
 
-    def __init__(self, num_type: int):
+    def __init__(self, num_type: 'int'):
         """
         Initialize exogenous intensity function: mu(t) = mu, mu in R^{C+1}, C is the number of event type
         :param num_type: for a point process with C types of events, num_type = C+1, in which the first type "0"
@@ -906,7 +908,7 @@ class BasicExogenousIntensity(nn.Module):
         logger.info('Exogenous intensity function: mu(t) = {}.'.format(self.exogenous_intensity_type))
         logger.info('The number of event types = {}.'.format(self.num_type))
 
-    def forward(self, sample_dict: Dict):
+    def forward(self, sample_dict: 'Dict'):
         """
         Calculate
         1) mu_{c_i} for c_i in "events";
@@ -927,7 +929,7 @@ class BasicExogenousIntensity(nn.Module):
         mU = self.expect_counts(sample_dict)
         return mu_c, mU
 
-    def intensity(self, sample_dict: Dict):
+    def intensity(self, sample_dict: 'Dict'):
         """
         Calculate intensity mu_{c_i} for c_i in "events";
 
@@ -943,7 +945,7 @@ class BasicExogenousIntensity(nn.Module):
         mu_c = mu_c.squeeze(1)
         return mu_c
 
-    def expect_counts(self, sample_dict: Dict):
+    def expect_counts(self, sample_dict: 'Dict'):
         """
         Calculate expected number of events in dts
         int_{0}^{dt_i} mu_c(s)ds for dt_i in "dts" and c in {1, ..., num_type}
@@ -964,7 +966,7 @@ class BasicExogenousIntensity(nn.Module):
         mU = torch.matmul(dts, torch.t(mu_all))
         return mU
 
-    def plot_and_save(self, mu_all: torch.Tensor, output_name: str=None):
+    def plot_and_save(self, mu_all: 'torch.Tensor', output_name: 'str'=None):
         """
         Plot the stem plot of exogenous intensity functions for all event types
         Args:
@@ -990,7 +992,7 @@ class NaiveExogenousIntensity(BasicExogenousIntensity):
     The class of constant exogenous intensity function mu(t) = mu
     """
 
-    def __init__(self, num_type: int, parameter_set: Dict=None):
+    def __init__(self, num_type: 'int', parameter_set: 'Dict'=None):
         """
         Initialize exogenous intensity function: mu(t) = mu, mu in R^{C+1}, C is the number of event type
         :param num_type: for a point process with C types of events, num_type = C+1, in which the first type "0"
@@ -1066,7 +1068,7 @@ class LinearExogenousIntensity(BasicExogenousIntensity):
     Here f is nonnegative feature vector of a sequence.
     """
 
-    def __init__(self, num_type: int, parameter_set: Dict):
+    def __init__(self, num_type: 'int', parameter_set: 'Dict'):
         """
         Initialize exogenous intensity function: mu(t) = mu, mu in R^{C+1}, C is the number of event type
         :param num_type: for a point process with C types of events, num_type = C+1, in which the first type "0"
@@ -1170,7 +1172,7 @@ class NeuralExogenousIntensity(BasicExogenousIntensity):
     Here, we don't need to ensure f to be nonnegative.
     """
 
-    def __init__(self, num_type: int, parameter_set: Dict):
+    def __init__(self, num_type: 'int', parameter_set: 'Dict'):
         """
         Initialize exogenous intensity function: mu(t) = mu, mu in R^{C+1}, C is the number of event type
         :param num_type: for a point process with C types of events, num_type = C+1, in which the first type "0"
@@ -1268,7 +1270,7 @@ class HawkesProcessIntensity(nn.Module):
     The class of inhomogeneous Poisson process
     """
 
-    def __init__(self, exogenous_intensity, endogenous_intensity, activation: str=None):
+    def __init__(self, exogenous_intensity, endogenous_intensity, activation: 'str'=None):
         super(HawkesProcessIntensity, self).__init__()
         self.exogenous_intensity = exogenous_intensity
         self.endogenous_intensity = endogenous_intensity

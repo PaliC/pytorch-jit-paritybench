@@ -10,7 +10,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -38,10 +40,10 @@ import torch
 import random
 
 
-import torchtext
-
-
 import torch.nn as nn
+
+
+import torch.nn.functional as F
 
 
 import functools
@@ -134,6 +136,41 @@ class UnetGenerator(nn.Module):
         return self.model(input)
 
 
+class Smooth(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        kernel = [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
+        kernel = torch.tensor([[kernel]], dtype=torch.float)
+        kernel /= kernel.sum()
+        self.register_buffer('kernel', kernel)
+        self.pad = nn.ReplicationPad2d(1)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        x = x.view(-1, 1, h, w)
+        x = self.pad(x)
+        x = F.conv2d(x, self.kernel)
+        return x.view(b, c, h, w)
+
+
+class Upsample(nn.Module):
+
+    def __init__(self, inc, outc, scale_factor=2):
+        super().__init__()
+        self.scale_factor = scale_factor
+        self.up = nn.Upsample(scale_factor=scale_factor, mode='bilinear')
+        self.smooth = Smooth()
+        self.conv = nn.Conv2d(inc, outc, kernel_size=3, stride=1, padding=1)
+        self.mlp = nn.Sequential(nn.Conv2d(outc, 4 * outc, kernel_size=1, stride=1, padding=0), nn.GELU(), nn.Conv2d(4 * outc, outc, kernel_size=1, stride=1, padding=0))
+
+    def forward(self, x):
+        x = self.smooth(self.up(x))
+        x = self.conv(x)
+        x = self.mlp(x) + x
+        return x
+
+
 import torch
 from torch.nn import MSELoss, ReLU
 from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
@@ -141,13 +178,27 @@ from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _
 
 TESTCASES = [
     # (nn.Module, init_args, forward_args, jit_compiles)
+    (Smooth,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (UnetGenerator,
      lambda: ([], {'input_nc': 4, 'output_nc': 4, 'num_downs': 4}),
      lambda: ([torch.rand([4, 4, 64, 64])], {}),
+     True),
+    (Upsample,
+     lambda: ([], {'inc': 4, 'outc': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
 ]
 
 class Test_Mukosame_Anime2Sketch(_paritybench_base):
     def test_000(self):
         self._check(*TESTCASES[0])
+
+    def test_001(self):
+        self._check(*TESTCASES[1])
+
+    def test_002(self):
+        self._check(*TESTCASES[2])
 

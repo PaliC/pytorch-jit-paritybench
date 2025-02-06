@@ -61,7 +61,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -146,35 +148,6 @@ from collections import Counter
 import torch.nn as nn
 
 
-class Reporter(metaclass=ABCMeta):
-
-    def __init__(self, report_interval: int=1):
-        self.counter = Counter()
-        self.graph_initialized = False
-        self.report_interval = report_interval
-        self.t = 0
-
-    def will_report(self, tag: str) ->bool:
-        return self.counter[tag] % (self.report_interval + 1) == 0
-
-    def scalar(self, tag: str, value: float):
-        if self.will_report(tag):
-            self._scalar(tag, value, self.counter[tag])
-        self.counter[tag] += 1
-
-    def graph(self, model: nn.Module, input_to_model: Tensor):
-        if not self.graph_initialized:
-            self._graph(model, input_to_model)
-            self.graph_initialized = True
-
-    @abstractmethod
-    def _scalar(self, tag: str, value: float, step: int):
-        raise NotImplementedError('Implement me')
-
-    def _graph(self, model: nn.Module, input_to_model: Tensor):
-        raise NotImplementedError('Implement me')
-
-
 class PPOLoss(_Loss):
     """
     Calculates the PPO loss given by equation:
@@ -195,7 +168,7 @@ class PPOLoss(_Loss):
 
     """
 
-    def __init__(self, clip_range: float, v_clip_range: float, c_entropy: float, c_value: float, reporter: Reporter):
+    def __init__(self, clip_range: 'float', v_clip_range: 'float', c_entropy: 'float', c_value: 'float', reporter: 'Reporter'):
         """
 
         :param clip_range: clip range for surrogate function clipping
@@ -211,7 +184,7 @@ class PPOLoss(_Loss):
         self.c_value = c_value
         self.reporter = reporter
 
-    def forward(self, distribution_old: Distribution, value_old: Tensor, distribution: Distribution, value: Tensor, action: Tensor, reward: Tensor, advantage: Tensor):
+    def forward(self, distribution_old: 'Distribution', value_old: 'Tensor', distribution: 'Distribution', value: 'Tensor', action: 'Tensor', reward: 'Tensor', advantage: 'Tensor'):
         value_old_clipped = value_old + (value - value_old).clamp(-self.v_clip_range, self.v_clip_range)
         v_old_loss_clipped = (reward - value_old_clipped).pow(2)
         v_loss = (reward - value).pow(2)
@@ -234,99 +207,55 @@ class PPOLoss(_Loss):
         return total_loss
 
 
-class NormalDistributionModule(nn.Module):
+class ICMModel(nn.Module, metaclass=ABCMeta):
 
-    def __init__(self, in_features: int, n_action_values: int):
+    def __init__(self, state_converter: 'Converter', action_converter: 'Converter'):
         super().__init__()
-        self.policy_mean = nn.Linear(in_features, n_action_values)
-        self.policy_std = nn.Parameter(torch.zeros(1, n_action_values))
+        self.state_converter = state_converter
+        self.action_converter = action_converter
 
-    def forward(self, x):
-        policy = self.policy_mean(x)
-        policy_std = self.policy_std.expand_as(policy).exp()
-        return torch.cat((policy, policy_std), dim=-1)
-
-
-class Normalizer(metaclass=ABCMeta):
-    """
-    Base class for normalizers used to normalize the sate/reward during training before inputing it to the model
-    or a curiosity module
-    """
-
+    @property
     @abstractmethod
-    def partial_fit(self, array: np.ndarray) ->None:
-        """
-        Incrementally fit the normalizer eg. incrementally calculate mean
-        :param array: array of shape ``N*T`` or ``N*T*any`` to calculate statistics on
-        """
+    def recurrent(self) ->bool:
         raise NotImplementedError('Implement me')
-
-    @abstractmethod
-    def transform(self, array: np.ndarray) ->np.ndarray:
-        """
-        Normalizes the array using insights gathered with ``partial_fit``
-        :param array: array of shape ``N*T`` or ``N*T*any`` to be normalized
-        :return:  normalized array of same shape as input
-        """
-        raise NotImplementedError('Implement me')
-
-    def partial_fit_transform(self, array: np.ndarray) ->np.ndarray:
-        """
-        Handy method to run ``partial_fit`` and ``transform`` at once
-        :param array: array of shape ``N*T`` or ``N*T*any`` to be normalized
-        :return: normalized array of same shape as input
-        """
-        self.partial_fit(array)
-        return self.transform(array)
-
-
-class StandardNormalizer(Normalizer):
-    """
-    Normalizes the input by subtracting the mean and dividing by standard deviation.
-    Uses ``sklearn.preprocessing.StandardScaler`` under the hood.
-    """
-
-    def __init__(self):
-        self.scaler = StandardScaler()
-
-    def partial_fit(self, array: np.ndarray) ->None:
-        self.scaler.partial_fit(self._reshape_for_scaler(array))
-
-    def transform(self, array: np.ndarray) ->np.ndarray:
-        return self.scaler.transform(self._reshape_for_scaler(array)).reshape(array.shape)
 
     @staticmethod
-    def _reshape_for_scaler(array: np.ndarray):
-        new_shape = (-1, *array.shape[2:]) if array.ndim > 2 else (-1, 1)
-        return array.reshape(new_shape)
+    @abstractmethod
+    def factory() ->'ICMModelFactory':
+        raise NotImplementedError('Implement me')
 
 
-class NoNormalizer(Normalizer):
-    """
-    Does no normalization on the array. Handy for observation spaces like ``gym.Discrete``
-    """
+class ForwardModel(nn.Module):
 
-    def partial_fit(self, array: np.ndarray) ->None:
-        pass
+    def __init__(self, action_converter: 'Converter', state_latent_features: 'int'):
+        super().__init__()
+        self.action_converter = action_converter
+        action_latent_features = 128
+        if action_converter.discrete:
+            self.action_encoder = nn.Embedding(action_converter.shape[0], action_latent_features)
+        else:
+            self.action_encoder = nn.Linear(action_converter.shape[0], action_latent_features)
+        self.hidden = nn.Sequential(nn.Linear(action_latent_features + state_latent_features, 128), nn.ReLU(inplace=True), nn.Linear(128, 128), nn.ReLU(inplace=True), nn.Linear(128, state_latent_features))
 
-    def transform(self, array: np.ndarray) ->np.ndarray:
-        return array
+    def forward(self, state_latent: 'Tensor', action: 'Tensor'):
+        action = self.action_encoder(action.long() if self.action_converter.discrete else action)
+        x = torch.cat((action, state_latent), dim=-1)
+        x = self.hidden(x)
+        return x
 
 
-import torch
-from torch.nn import MSELoss, ReLU
-from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
+class InverseModel(nn.Module):
+
+    def __init__(self, action_converter: 'Converter', state_latent_features: 'int'):
+        super().__init__()
+        self.input = nn.Sequential(nn.Linear(state_latent_features * 2, 128), nn.ReLU(inplace=True), nn.Linear(128, 128), nn.ReLU(inplace=True), action_converter.policy_out_model(128))
+
+    def forward(self, state_latent: 'Tensor', next_state_latent: 'Tensor'):
+        return self.input(torch.cat((state_latent, next_state_latent), dim=-1))
 
 
-TESTCASES = [
-    # (nn.Module, init_args, forward_args, jit_compiles)
-    (NormalDistributionModule,
-     lambda: ([], {'in_features': 4, 'n_action_values': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-]
+class ICMModelFactory:
 
-class Test_adik993_ppo_pytorch(_paritybench_base):
-    def test_000(self):
-        self._check(*TESTCASES[0])
+    def create(self, state_converter: 'Converter', action_converter: 'Converter') ->ICMModel:
+        raise NotImplementedError('Implement me')
 

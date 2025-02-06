@@ -2,22 +2,31 @@ import dataclasses
 import logging
 import os
 import re
+import threading
 import time
 from functools import partial
 from multiprocessing.pool import ThreadPool
-import threading
 
 import pandas as pd
 import torch
 import torch._dynamo
 import torch._inductor
-from torch.testing._internal.jit_utils import JitTestCase
-from torch._decomp import core_aten_decompositions
-from torch._dynamo.testing import same
 
 from paritybench.reporting import ErrorAggregatorDict, Stats
-from paritybench.utils import import_file, get_skiplist, get_cosine_and_fp64_outputs, get_tol, \
-    patch_torch_manual_seed, reset_rng_state, subproc_wrapper, wrap_args, wrap_kwargs
+from paritybench.utils import (
+    get_cosine_and_fp64_outputs,
+    get_skiplist,
+    get_tol,
+    import_file,
+    patch_torch_manual_seed,
+    reset_rng_state,
+    subproc_wrapper,
+    wrap_args,
+    wrap_kwargs,
+)
+from torch._decomp import core_aten_decompositions
+from torch._dynamo.testing import same
+from torch.testing._internal.jit_utils import JitTestCase
 
 
 log = logging.getLogger(__name__)
@@ -33,14 +42,18 @@ lock = threading.Lock()
 class EagerFailed(RuntimeError):
     pass
 
+
 class OnnxFailed(RuntimeError):
     pass
+
 
 class JitFailed(RuntimeError):
     pass
 
 
-def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, main_args, path):
+def evaluate_nn_module(
+    nn_cls, get_init_args, get_forward_args, record_error, main_args, path
+):
     """
     Run an nn.Module with torch.jit.script and see if it works the same
     as eager.
@@ -51,16 +64,14 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
     :param record_error: function to record an exception for debugging/reporting
     :return: True if the test passes
     """
-
     try:
         args, kwargs = get_init_args()
         nn = nn_cls(*args, **kwargs)
     except Exception as e:
-        record_error('init', e)
+        record_error("init", e)
         raise EagerFailed()
 
     device = torch.device(main_args.device)
-
     try:
         nn.eval()
         nn.to(device)
@@ -68,14 +79,24 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
         pass
 
     nn_script = None
-    if main_args.compile_mode == 'torchscript':
+    if main_args.compile_mode == "torchscript":
         try:
             nn_script = torch.jit.script(nn)
         except Exception as e:
-            record_error('compile {}'.format(main_args.compile_mode), e)
+            record_error("compile {}".format(main_args.compile_mode), e)
             raise JitFailed()
 
-    is_inductor_test = main_args.compile_mode in ('dynamo', 'aot_inductor') and main_args.backend == 'inductor'
+    is_inductor_test = (
+        main_args.compile_mode in ("dynamo", "aot_inductor")
+        and main_args.backend == "inductor"
+    )
+    is_export_test = main_args.compile_mode == "export"
+
+    if is_inductor_test or is_export_test:
+        log_name = f"/home/sahanp/repos/pytorch-jit-paritybench/inductor_logs/{nn_cls.__module__}.{nn_cls.__name__}.txt"
+        os.environ["TORCH_LOGS_OUT"] = log_name
+        torch._logging.set_logs(output_code=True)
+
     cosine = False
     fp64_outputs = None
 
@@ -101,7 +122,7 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
         reset_rng_state()
         result2 = nn(*args, **kwargs)
     except Exception as e:
-        record_error('run_eager', e)
+        record_error("run_eager", e)
         raise EagerFailed()
 
     if main_args.onnxdir:
@@ -109,7 +130,7 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
             onnx_path = "{}/{}.onnx".format(main_args.onnxdir, nn_cls.__name__)
             torch.onnx.export(nn, *args, onnx_path)
         except Exception as e:
-            record_error('export_onnx', e)
+            record_error("export_onnx", e)
             raise OnnxFailed()
 
     if main_args.metric_path:
@@ -123,12 +144,12 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
             # Dynamo/Inductor/Export run
             reset_rng_state()
             torch._dynamo.reset()
-            if main_args.compile_mode == 'dynamo':
+            if main_args.compile_mode == "dynamo":
                 compiled_model = torch._dynamo.optimize(
                     main_args.backend, nopython=main_args.fullgraph
                 )(nn)
                 result3 = compiled_model(*args, **kwargs)
-            elif main_args.compile_mode == 'export':
+            elif main_args.compile_mode == "export":
                 exported_model = torch.export.export(
                     nn,
                     tuple(args),
@@ -136,7 +157,7 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
                     strict=False,
                 ).module()
                 result3 = exported_model(*args, **kwargs)
-            elif main_args.compile_mode == 'aot_inductor':
+            elif main_args.compile_mode == "aot_inductor":
                 ep = torch.export.export(
                     nn,
                     tuple(args),
@@ -150,7 +171,7 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
                 raise AssertionError("Invalid compile_mode")
 
     except Exception as e:
-        record_error('run_jit {} '.format(main_args.compile_mode), e)
+        record_error("run_jit {} ".format(main_args.compile_mode), e)
         raise JitFailed()
 
     if main_args.metric_path:
@@ -175,7 +196,7 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
             else:
                 JitTestCase().assertEqual(result2, result3, atol=tol, rtol=tol)
         except Exception as e:
-            record_error('check_output', e)
+            record_error("check_output", e)
             raise JitFailed()
     except AssertionError:
         pass  # output is not deterministic, cant check it -- assuming correct
@@ -183,13 +204,14 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
     # Record compilation metrics
     if main_args.metric_path:
         from torch._dynamo.utils import compilation_metrics
+
         model_id = f"{nn_cls.__module__}.{nn_cls.__name__}"
         compilation_metrics = {
             "model_id": model_id,
             "dynamo_wall_time": dynamo_elapse,
             "eager_wall_time": eager_elapse,
             "wall_time_diff": dynamo_elapse - eager_elapse,
-            "_compile": compilation_metrics.get("_compile", [0.0])[0]
+            "_compile": compilation_metrics.get("_compile", [0.0])[0],
         }
 
         with lock, open(main_args.metric_path, "a") as f:
@@ -199,8 +221,8 @@ def evaluate_nn_module(nn_cls, get_init_args, get_forward_args, record_error, ma
                     logline.append(f"{v:.3f}")
                 else:
                     logline.append(str(v))
-            f.write(' '.join(logline))
-            f.write('\n')
+            f.write(" ".join(logline))
+            f.write("\n")
 
     return True
 
@@ -245,7 +267,8 @@ def evaluate_pyfile_subproc(tempdir: str, path: str, args):
                 get_forward_args,
                 partial(errors.record, module=repro),
                 main_args=args,
-                path=path)
+                path=path,
+            )
             stats["tests_passed"] += int(rv)
         except JitFailed:
             pass
@@ -268,8 +291,9 @@ def evaluate_pyfile_subproc(tempdir: str, path: str, args):
     return errors, stats
 
 
-def evaluate_all(args, tests_dir: str = './generated', offset: int = 0, limit: int = None,
-                 jobs=4):
+def evaluate_all(
+    args, tests_dir: str = "./generated", offset: int = 0, limit: int = None, jobs=4
+):
     """
     Generate a paritybench score, main entrypoint for this module.
 
@@ -283,13 +307,15 @@ def evaluate_all(args, tests_dir: str = './generated', offset: int = 0, limit: i
     start = time.time()
     stats = Stats()
     errors = ErrorAggregatorDict()
-    testfiles = [os.path.join(tests_dir, f)
-                 for f in os.listdir(tests_dir)
-                 if re.search(r"test_.*[.]py$", f)]
+    testfiles = [
+        os.path.join(tests_dir, f)
+        for f in os.listdir(tests_dir)
+        if re.search(r"test_.*[.]py$", f)
+    ]
     testfiles.sort()
 
     if limit:
-        testfiles = testfiles[offset: offset+limit]
+        testfiles = testfiles[offset : offset + limit]
 
     pool = ThreadPool(jobs)
     for errors_part, stats_part in pool.imap_unordered(fn, testfiles):
@@ -299,10 +325,18 @@ def evaluate_all(args, tests_dir: str = './generated', offset: int = 0, limit: i
     errors.print_report()
     index = ("projects", "tests")
     report = pd.DataFrame(
-        [[stats[f"{k}"], stats[f"{k}_passed"], "{:.1%}".format(stats[f"{k}_passed"] / (stats[f"{k}"] or 1))]
-         for k in index],
+        [
+            [
+                stats[f"{k}"],
+                stats[f"{k}_passed"],
+                "{:.1%}".format(stats[f"{k}_passed"] / (stats[f"{k}"] or 1)),
+            ]
+            for k in index
+        ],
         index=index,
         columns=["total", "passing", "score"],
     )
 
-    log.info(f"TOTAL: {stats}, took {time.time() - start:.1f} seconds\n\n{args.compile_mode} {args.backend} ParityBench:\n{report}")
+    log.info(
+        f"TOTAL: {stats}, took {time.time() - start:.1f} seconds\n\n{args.compile_mode} {args.backend} ParityBench:\n{report}"
+    )

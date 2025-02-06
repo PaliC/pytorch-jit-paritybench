@@ -12,7 +12,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -76,7 +78,7 @@ def conv3x3(in_, out):
 
 class Conv3BN(nn.Module):
 
-    def __init__(self, in_: int, out: int, bn=False):
+    def __init__(self, in_: 'int', out: 'int', bn=False):
         super().__init__()
         self.conv = conv3x3(in_, out)
         self.bn = nn.BatchNorm2d(out) if bn else None
@@ -92,7 +94,7 @@ class Conv3BN(nn.Module):
 
 class UNetModule(nn.Module):
 
-    def __init__(self, in_: int, out: int):
+    def __init__(self, in_: 'int', out: 'int'):
         super().__init__()
         self.l1 = Conv3BN(in_, out)
         self.l2 = Conv3BN(out, out)
@@ -110,7 +112,7 @@ class PsiNet(nn.Module):
     output_downscaled = 1
     module = UNetModule
 
-    def __init__(self, input_channels: int=3, filters_base: int=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
+    def __init__(self, input_channels: 'int'=3, filters_base: 'int'=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
         super().__init__()
         self.num_classes = num_classes
         assert len(down_filter_factors) == len(up_filter_factors)
@@ -187,7 +189,7 @@ class UNet_DCAN(nn.Module):
     output_downscaled = 1
     module = UNetModule
 
-    def __init__(self, input_channels: int=3, filters_base: int=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
+    def __init__(self, input_channels: 'int'=3, filters_base: 'int'=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
         super().__init__()
         self.num_classes = num_classes
         assert len(down_filter_factors) == len(up_filter_factors)
@@ -251,7 +253,7 @@ class UNet_DMTN(nn.Module):
     output_downscaled = 1
     module = UNetModule
 
-    def __init__(self, input_channels=3, filters_base: int=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
+    def __init__(self, input_channels=3, filters_base: 'int'=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
         super().__init__()
         self.num_classes = num_classes
         assert len(down_filter_factors) == len(up_filter_factors)
@@ -316,7 +318,7 @@ class UNet(nn.Module):
     output_downscaled = 1
     module = UNetModule
 
-    def __init__(self, input_channels=3, filters_base: int=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, padding=1, add_output=True):
+    def __init__(self, input_channels=3, filters_base: 'int'=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, padding=1, add_output=True):
         super().__init__()
         self.num_classes = num_classes
         assert len(down_filter_factors) == len(up_filter_factors)
@@ -367,7 +369,7 @@ class UNet_ConvMCD(nn.Module):
     output_downscaled = 1
     module = UNetModule
 
-    def __init__(self, input_channels: int=3, filters_base: int=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
+    def __init__(self, input_channels: 'int'=3, filters_base: 'int'=32, down_filter_factors=(1, 2, 4, 8, 16), up_filter_factors=(1, 2, 4, 8, 16), bottom_s=4, num_classes=1, add_output=True):
         super().__init__()
         self.num_classes = num_classes
         assert len(down_filter_factors) == len(up_filter_factors)

@@ -36,11 +36,13 @@ dcn = _module
 dcnv2 = _module
 deepfm = _module
 dssm = _module
+eulernet = _module
 ffm = _module
 fignn = _module
 fm = _module
 fnn = _module
 fwfm = _module
+kd_dagfm = _module
 lr = _module
 nfm = _module
 pnn = _module
@@ -55,12 +57,14 @@ bpr = _module
 cdae = _module
 convncf = _module
 dgcf = _module
+diffrec = _module
 dmf = _module
 ease = _module
 enmf = _module
 fism = _module
 gcmc = _module
 itemknn = _module
+ldiffrec = _module
 lightgcn = _module
 line = _module
 macridvae = _module
@@ -74,6 +78,7 @@ ngcf = _module
 nncf = _module
 pop = _module
 ract = _module
+random = _module
 recvae = _module
 sgl = _module
 simplex = _module
@@ -100,10 +105,12 @@ core = _module
 dien = _module
 din = _module
 fdsa = _module
+fearec = _module
 fossil = _module
 fpmc = _module
 gcsan = _module
 gru4rec = _module
+gru4reccpr = _module
 gru4recf = _module
 gru4reckg = _module
 hgn = _module
@@ -116,6 +123,7 @@ npe = _module
 repeatnet = _module
 s3rec = _module
 sasrec = _module
+sasreccpr = _module
 sasrecf = _module
 shan = _module
 sine = _module
@@ -141,7 +149,9 @@ save_and_load_example = _module
 session_based_rec_example = _module
 run_hyper = _module
 run_recbole = _module
+run_recbole_group = _module
 setup = _module
+significance_test = _module
 test_command_line = _module
 test_config = _module
 test_overall = _module
@@ -160,7 +170,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -180,6 +192,9 @@ import re
 
 
 from logging import getLogger
+
+
+from typing import Literal
 
 
 import math
@@ -212,6 +227,12 @@ from scipy.sparse import coo_matrix
 import random
 
 
+from copy import deepcopy
+
+
+import warnings
+
+
 import itertools
 
 
@@ -233,6 +254,9 @@ from torch.nn.init import xavier_uniform_
 from itertools import product
 
 
+from torch import nn
+
+
 import scipy.sparse as sp
 
 
@@ -242,19 +266,16 @@ import random as rd
 from torch.autograd import Variable
 
 
+import enum
+
+
+import typing
+
+
 from torch.nn.init import normal_
 
 
 from sklearn.utils.extmath import randomized_svd
-
-
-from copy import deepcopy
-
-
-from torch import nn
-
-
-import warnings
 
 
 from sklearn.linear_model import ElasticNet
@@ -288,6 +309,12 @@ from torch.nn.init import uniform_
 
 
 import logging
+
+
+import torch.distributed as dist
+
+
+from collections.abc import MutableMapping
 
 
 from numpy.random import sample
@@ -730,7 +757,7 @@ class MLPLayers(nn.Module):
         >>> torch.Size([128, 16])
     """
 
-    def __init__(self, layers, dropout=0.0, activation='relu', bn=False, init_method=None):
+    def __init__(self, layers, dropout=0.0, activation='relu', bn=False, init_method=None, last_activation=True):
         super(MLPLayers, self).__init__()
         self.layers = layers
         self.dropout = dropout
@@ -746,6 +773,8 @@ class MLPLayers(nn.Module):
             activation_func = activation_layer(self.activation, output_size)
             if activation_func is not None:
                 mlp_modules.append(activation_func)
+        if self.activation is not None and not last_activation:
+            mlp_modules.pop()
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
             self.apply(self.init_weights)
@@ -821,6 +850,51 @@ class BaseFactorizationMachine(nn.Module):
             output = torch.sum(output, dim=1, keepdim=True)
         output = 0.5 * output
         return output
+
+
+class EulerInteractionLayer(nn.Module):
+    """Euler interaction layer is the core component of EulerNet,
+    which enables the adaptive learning of explicit feature interactions. An Euler
+    interaction layer performs the feature interaction under the complex space one time,
+    taking as input a complex representation and outputting a transformed complex representation.
+    """
+
+    def __init__(self, config, inshape, outshape):
+        super().__init__()
+        self.feature_dim = config.embedding_size
+        self.apply_norm = config.apply_norm
+        init_orders = torch.softmax(torch.randn(inshape // self.feature_dim, outshape // self.feature_dim) / 0.01, dim=0)
+        self.inter_orders = nn.Parameter(init_orders)
+        self.im = nn.Linear(inshape, outshape)
+        self.bias_lam = nn.Parameter(torch.randn(1, self.feature_dim, outshape // self.feature_dim) * 0.01)
+        self.bias_theta = nn.Parameter(torch.randn(1, self.feature_dim, outshape // self.feature_dim) * 0.01)
+        nn.init.normal_(self.im.weight, mean=0, std=0.1)
+        self.drop_ex = nn.Dropout(p=config.drop_ex)
+        self.drop_im = nn.Dropout(p=config.drop_im)
+        self.norm_r = nn.LayerNorm([self.feature_dim])
+        self.norm_p = nn.LayerNorm([self.feature_dim])
+
+    def forward(self, complex_features):
+        r, p = complex_features
+        lam = r ** 2 + p ** 2 + 1e-08
+        theta = torch.atan2(p, r)
+        lam, theta = lam.reshape(lam.shape[0], -1, self.feature_dim), theta.reshape(theta.shape[0], -1, self.feature_dim)
+        r, p = self.drop_im(r), self.drop_im(p)
+        lam = 0.5 * torch.log(lam)
+        lam, theta = torch.transpose(lam, -2, -1), torch.transpose(theta, -2, -1)
+        lam, theta = self.drop_ex(lam), self.drop_ex(theta)
+        lam, theta = lam @ self.inter_orders + self.bias_lam, theta @ self.inter_orders + self.bias_theta
+        lam = torch.exp(lam)
+        lam, theta = torch.transpose(lam, -2, -1), torch.transpose(theta, -2, -1)
+        r, p = r.reshape(r.shape[0], -1), p.reshape(p.shape[0], -1)
+        r, p = self.im(r), self.im(p)
+        r, p = torch.relu(r), torch.relu(p)
+        r, p = r.reshape(r.shape[0], -1, self.feature_dim), p.reshape(p.shape[0], -1, self.feature_dim)
+        o_r, o_p = r + lam * torch.cos(theta), p + lam * torch.sin(theta)
+        o_r, o_p = o_r.reshape(o_r.shape[0], -1, self.feature_dim), o_p.reshape(o_p.shape[0], -1, self.feature_dim)
+        if self.apply_norm:
+            o_r, o_p = self.norm_r(o_r), self.norm_p(o_p)
+        return o_r, o_p
 
 
 class FieldAwareFactorizationMachine(nn.Module):
@@ -1001,6 +1075,127 @@ class GraphLayer(nn.Module):
         return a
 
 
+class DAGFM(nn.Module):
+
+    def __init__(self, config):
+        super(DAGFM, self).__init__()
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+        self.type = config['type']
+        self.depth = config['depth']
+        field_num = config['feature_num']
+        embedding_size = config['embedding_size']
+        if self.type == 'inner':
+            self.p = nn.ParameterList([nn.Parameter(torch.randn(field_num, field_num, embedding_size)) for _ in range(self.depth)])
+            for _ in range(self.depth):
+                xavier_normal_(self.p[_], gain=1.414)
+        elif self.type == 'outer':
+            self.p = nn.ParameterList([nn.Parameter(torch.randn(field_num, field_num, embedding_size)) for _ in range(self.depth)])
+            self.q = nn.ParameterList([nn.Parameter(torch.randn(field_num, field_num, embedding_size)) for _ in range(self.depth)])
+            for _ in range(self.depth):
+                xavier_normal_(self.p[_], gain=1.414)
+                xavier_normal_(self.q[_], gain=1.414)
+        self.adj_matrix = torch.zeros(field_num, field_num, embedding_size)
+        for i in range(field_num):
+            for j in range(i, field_num):
+                self.adj_matrix[i, j, :] += 1
+        self.connect_layer = nn.Parameter(torch.eye(field_num).float())
+        self.linear = nn.Linear(field_num * (self.depth + 1), 1)
+
+    def FeatureInteraction(self, feature):
+        init_state = self.connect_layer @ feature
+        h0, ht = init_state, init_state
+        state = [torch.sum(init_state, dim=-1)]
+        for i in range(self.depth):
+            if self.type == 'inner':
+                aggr = torch.einsum('bfd,fsd->bsd', ht, self.p[i] * self.adj_matrix)
+                ht = h0 * aggr
+            elif self.type == 'outer':
+                term = torch.einsum('bfd,fsd->bfs', ht, self.p[i] * self.adj_matrix)
+                aggr = torch.einsum('bfs,fsd->bsd', term, self.q[i])
+                ht = h0 * aggr
+            state.append(torch.sum(ht, dim=-1))
+        state = torch.cat(state, dim=-1)
+        self.logits = self.linear(state)
+        self.outputs = torch.sigmoid(self.logits)
+        return self.outputs
+
+
+class CrossNet(nn.Module):
+
+    def __init__(self, config):
+        super(CrossNet, self).__init__()
+        self.depth = config['depth']
+        self.embedding_size = config['embedding_size']
+        self.feature_num = config['feature_num']
+        self.in_feature_num = self.feature_num * self.embedding_size
+        self.cross_layer_w = nn.ParameterList(nn.Parameter(torch.randn(self.in_feature_num, self.in_feature_num)) for _ in range(self.depth))
+        self.bias = nn.ParameterList(nn.Parameter(torch.zeros(self.in_feature_num, 1)) for _ in range(self.depth))
+        self.linear = nn.Linear(self.in_feature_num, 1)
+        nn.init.normal_(self.linear.weight)
+
+    def FeatureInteraction(self, x_0):
+        x_0 = x_0.reshape(x_0.shape[0], -1)
+        x_0 = x_0.unsqueeze(dim=2)
+        x_l = x_0
+        for i in range(self.depth):
+            xl_w = torch.matmul(self.cross_layer_w[i], x_l)
+            xl_w = xl_w + self.bias[i]
+            xl_dot = torch.mul(x_0, xl_w)
+            x_l = xl_dot + x_l
+        x_l = x_l.squeeze(dim=2)
+        self.logits = self.linear(x_l)
+        self.outputs = torch.sigmoid(self.logits)
+        return self.outputs
+
+    def forward(self, feature):
+        return self.FeatureInteraction(feature)
+
+
+class CINComp(nn.Module):
+
+    def __init__(self, indim, outdim, config):
+        super(CINComp, self).__init__()
+        basedim = config['feature_num']
+        self.conv = nn.Conv1d(indim * basedim, outdim, 1)
+
+    def forward(self, feature, base):
+        return self.conv((feature[:, :, None, :] * base[:, None, :, :]).reshape(feature.shape[0], feature.shape[1] * base.shape[1], -1))
+
+
+class CIN(nn.Module):
+
+    def __init__(self, config):
+        super().__init__()
+        self.cinlist = [config['feature_num']] + config['cin']
+        self.cin = nn.ModuleList([CINComp(self.cinlist[i], self.cinlist[i + 1], config) for i in range(0, len(self.cinlist) - 1)])
+        self.linear = nn.Parameter(torch.zeros(sum(self.cinlist) - self.cinlist[0], 1))
+        nn.init.normal_(self.linear, mean=0, std=0.01)
+        self.backbone = ['cin', 'linear']
+        self.loss_fn = nn.BCELoss()
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
+    def FeatureInteraction(self, feature):
+        base = feature
+        x = feature
+        p = []
+        for comp in self.cin:
+            x = comp(x, base)
+            p.append(torch.sum(x, dim=-1))
+        p = torch.cat(p, dim=-1)
+        self.logits = p @ self.linear
+        self.outputs = torch.sigmoid(self.logits)
+        return self.outputs
+
+    def forward(self, feature):
+        return self.FeatureInteraction(feature)
+
+
 class InnerProductLayer(nn.Module):
     """InnerProduct Layer used in PNN that compute the element-wise
     product or inner product between feature vectors.
@@ -1126,6 +1321,8 @@ class AutoEncoderMixin(object):
 
     def build_histroy_items(self, dataset):
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
+        self.history_item_id = self.history_item_id
+        self.history_item_value = self.history_item_value
 
     def get_rating_matrix(self, user):
         """Get a batch of user's feature with the user's id and history interaction matrix.
@@ -1138,9 +1335,8 @@ class AutoEncoderMixin(object):
         """
         col_indices = self.history_item_id[user].flatten()
         row_indices = torch.arange(user.shape[0]).repeat_interleave(self.history_item_id.shape[1], dim=0)
-        rating_matrix = torch.zeros(1).repeat(user.shape[0], self.n_items)
+        rating_matrix = torch.zeros(1, device=self.device).repeat(user.shape[0], self.n_items)
         rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
-        rating_matrix = rating_matrix
         return rating_matrix
 
 
@@ -1280,6 +1476,100 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
     cor_users = rd.sample(list(range(n_users)), cor_batch_size)
     cor_items = rd.sample(list(range(n_items)), cor_batch_size)
     return cor_users, cor_items
+
+
+def timestep_embedding(timesteps, dim, max_period=10000):
+    """
+    Create sinusoidal timestep embeddings.
+
+    :param timesteps: a 1-D Tensor of N indices, one per batch element.
+                      These may be fractional. (N,)
+    :param dim: the dimension of the output.
+    :param max_period: controls the minimum frequency of the embeddings.
+    :return: an [N x dim] Tensor of positional embeddings.
+    """
+    half = dim // 2
+    freqs = torch.exp(-math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
+    args = timesteps[:, None].float() * freqs[None]
+    embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+    if dim % 2:
+        embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
+    return embedding
+
+
+class DNN(nn.Module):
+    """
+    A deep neural network for the reverse diffusion preocess.
+    """
+
+    def __init__(self, dims: 'typing.List', emb_size: 'int', time_type='cat', act_func='tanh', norm=False, dropout=0.5):
+        super(DNN, self).__init__()
+        self.dims = dims
+        self.time_type = time_type
+        self.time_emb_dim = emb_size
+        self.norm = norm
+        self.emb_layer = nn.Linear(self.time_emb_dim, self.time_emb_dim)
+        if self.time_type == 'cat':
+            self.dims[0] += self.time_emb_dim
+        else:
+            raise ValueError('Unimplemented timestep embedding type %s' % self.time_type)
+        self.mlp_layers = MLPLayers(layers=self.dims, dropout=0, activation=act_func, last_activation=False)
+        self.drop = nn.Dropout(dropout)
+        self.apply(xavier_normal_initialization)
+
+    def forward(self, x, timesteps):
+        time_emb = timestep_embedding(timesteps, self.time_emb_dim)
+        emb = self.emb_layer(time_emb)
+        if self.norm:
+            x = F.normalize(x)
+        x = self.drop(x)
+        h = torch.cat([x, emb], dim=-1)
+        h = self.mlp_layers(h)
+        return h
+
+
+class ModelMeanType(enum.Enum):
+    START_X = enum.auto()
+    EPSILON = enum.auto()
+
+
+def betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):
+    """
+    Create a beta schedule that discretizes the given alpha_t_bar function,
+    which defines the cumulative product of (1-beta) over time from t = [0,1].
+
+    Args:
+        num_diffusion_timesteps (int): the number of betas to produce.
+        alpha_bar (Callable): a lambda that takes an argument t from 0 to 1 and
+                   produces the cumulative product of (1-beta) up to that
+                   part of the diffusion process.
+        max_beta (int): the maximum beta to use; use values lower than 1 to
+                  prevent singularities.
+    Returns:
+        np.ndarray: a 1-D array of beta values.
+    """
+    betas = []
+    for i in range(num_diffusion_timesteps):
+        t1 = i / num_diffusion_timesteps
+        t2 = (i + 1) / num_diffusion_timesteps
+        betas.append(min(1 - alpha_bar(t2) / alpha_bar(t1), max_beta))
+    return np.array(betas)
+
+
+def betas_from_linear_variance(steps, variance, max_beta=0.999):
+    alpha_bar = 1 - variance
+    betas = []
+    betas.append(1 - alpha_bar[0])
+    for i in range(1, steps):
+        betas.append(min(1 - alpha_bar[i] / alpha_bar[i - 1], max_beta))
+    return np.array(betas)
+
+
+def mean_flat(tensor):
+    """
+    Take the mean over all non-batch dimensions.
+    """
+    return tensor.mean(dim=list(range(1, len(tensor.shape))))
 
 
 def orthogonal(shape, scale=1.1):
@@ -1469,7 +1759,7 @@ class GcEncoder(nn.Module):
         u_hidden = self.dropout(u_hidden)
         v_hidden = self.dropout(v_hidden)
         u_hidden = self.dense_layer_u(u_hidden)
-        v_hidden = self.dense_layer_u(v_hidden)
+        v_hidden = self.dense_layer_v(v_hidden)
         u_outputs = self.dense_activate(u_hidden)
         v_outputs = self.dense_activate(v_hidden)
         return u_outputs, v_outputs
@@ -1567,6 +1857,119 @@ class ComputeSimilarity:
         else:
             W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
         return neigh, W_sparse.tocsc()
+
+
+class AutoEncoder(nn.Module):
+    """
+    Guassian Diffusion for large-scale recommendation.
+    """
+
+    def __init__(self, item_emb, n_cate, in_dims, out_dims, device, act_func, reparam=True, dropout=0.1):
+        super(AutoEncoder, self).__init__()
+        self.item_emb = item_emb
+        self.n_cate = n_cate
+        self.in_dims = in_dims
+        self.out_dims = out_dims
+        self.act_func = act_func
+        self.n_item = len(item_emb)
+        self.reparam = reparam
+        self.dropout = nn.Dropout(dropout)
+        if n_cate == 1:
+            in_dims_temp = [self.n_item + 1] + self.in_dims[:-1] + [self.in_dims[-1] * 2]
+            out_dims_temp = [self.in_dims[-1]] + self.out_dims + [self.n_item + 1]
+            self.encoder = MLPLayers(in_dims_temp, activation=self.act_func)
+            self.decoder = MLPLayers(out_dims_temp, activation=self.act_func, last_activation=False)
+        else:
+            self.cluster_ids, _ = kmeans(X=item_emb, num_clusters=n_cate, distance='euclidean', device=device)
+            category_idx = []
+            for i in range(n_cate):
+                idx = np.argwhere(self.cluster_ids.numpy() == i).flatten().tolist()
+                category_idx.append(torch.tensor(idx, dtype=int) + 1)
+            self.category_idx = category_idx
+            self.category_map = torch.cat(tuple(category_idx), dim=-1)
+            self.category_len = [len(self.category_idx[i]) for i in range(n_cate)]
+            None
+            assert sum(self.category_len) == self.n_item
+            encoders = []
+            decode_dim = []
+            for i in range(n_cate):
+                if i == n_cate - 1:
+                    latent_dims = list(self.in_dims - np.array(decode_dim).sum(axis=0))
+                else:
+                    latent_dims = [int(self.category_len[i] / self.n_item * self.in_dims[j]) for j in range(len(self.in_dims))]
+                    latent_dims = [(latent_dims[j] if latent_dims[j] != 0 else 1) for j in range(len(self.in_dims))]
+                in_dims_temp = [self.category_len[i]] + latent_dims[:-1] + [latent_dims[-1] * 2]
+                encoders.append(MLPLayers(in_dims_temp, activation=self.act_func))
+                decode_dim.append(latent_dims)
+            self.encoder = nn.ModuleList(encoders)
+            None
+            self.decode_dim = [decode_dim[i][::-1] for i in range(len(decode_dim))]
+            if len(out_dims) == 0:
+                out_dim = self.in_dims[-1]
+                self.decoder = MLPLayers([out_dim, self.n_item], activation=None)
+            else:
+                decoders = []
+                for i in range(n_cate):
+                    out_dims_temp = self.decode_dim[i] + [self.category_len[i]]
+                    decoders.append(MLPLayers(out_dims_temp, activation=self.act_func, last_activation=False))
+                self.decoder = nn.ModuleList(decoders)
+        self.apply(xavier_normal_initialization)
+
+    def Encode(self, batch):
+        batch = self.dropout(batch)
+        if self.n_cate == 1:
+            hidden = self.encoder(batch)
+            mu = hidden[:, :self.in_dims[-1]]
+            logvar = hidden[:, self.in_dims[-1]:]
+            if self.training and self.reparam:
+                latent = self.reparamterization(mu, logvar)
+            else:
+                latent = mu
+            kl_divergence = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+            return batch, latent, kl_divergence
+        else:
+            batch_cate = []
+            for i in range(self.n_cate):
+                batch_cate.append(batch[:, self.category_idx[i]])
+            latent_mu = []
+            latent_logvar = []
+            for i in range(self.n_cate):
+                hidden = self.encoder[i](batch_cate[i])
+                latent_mu.append(hidden[:, :self.decode_dim[i][0]])
+                latent_logvar.append(hidden[:, self.decode_dim[i][0]:])
+            mu = torch.cat(tuple(latent_mu), dim=-1)
+            logvar = torch.cat(tuple(latent_logvar), dim=-1)
+            if self.training and self.reparam:
+                latent = self.reparamterization(mu, logvar)
+            else:
+                latent = mu
+            kl_divergence = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+            return torch.cat(tuple(batch_cate), dim=-1), latent, kl_divergence
+
+    def reparamterization(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps.mul(std).add_(mu)
+
+    def Decode(self, batch):
+        if len(self.out_dims) == 0 or self.n_cate == 1:
+            return self.decoder(batch)
+        else:
+            batch_cate = []
+            start = 0
+            for i in range(self.n_cate):
+                end = start + self.decode_dim[i][0]
+                batch_cate.append(batch[:, start:end])
+                start = end
+            pred_cate = []
+            for i in range(self.n_cate):
+                pred_cate.append(self.decoder[i](batch_cate[i]))
+            pred = torch.cat(tuple(pred_cate), dim=-1)
+            return pred
+
+
+def compute_loss(recon_x, x):
+    return -torch.mean(torch.sum(F.log_softmax(recon_x, 1) * x, -1))
 
 
 def xavier_uniform_initialization(module):
@@ -2849,6 +3252,594 @@ class InterestExtractorNetwork(nn.Module):
         return loss
 
 
+class HybridAttention(nn.Module):
+    """
+    Hybrid Attention layer: combine time domain self-attention layer and frequency domain attention layer.
+
+    Args:
+        input_tensor (torch.Tensor): the input of the multi-head Hybrid Attention layer
+        attention_mask (torch.Tensor): the attention mask for input tensor
+
+    Returns:
+        hidden_states (torch.Tensor): the output of the multi-head Hybrid Attention layer
+
+    """
+
+    def __init__(self, n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps, i, config):
+        super(HybridAttention, self).__init__()
+        if hidden_size % n_heads != 0:
+            raise ValueError('The hidden size (%d) is not a multiple of the number of attention heads (%d)' % (hidden_size, n_heads))
+        self.factor = config['topk_factor']
+        self.scale = None
+        self.mask_flag = True
+        self.output_attention = False
+        self.dropout = nn.Dropout(0.1)
+        self.config = config
+        self.num_attention_heads = n_heads
+        self.attention_head_size = int(hidden_size / n_heads)
+        self.all_head_size = self.num_attention_heads * self.attention_head_size
+        self.query_layer = nn.Linear(hidden_size, self.all_head_size)
+        self.key_layer = nn.Linear(hidden_size, self.all_head_size)
+        self.value_layer = nn.Linear(hidden_size, self.all_head_size)
+        self.attn_dropout = nn.Dropout(attn_dropout_prob)
+        self.dense = nn.Linear(hidden_size, hidden_size)
+        self.LayerNorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+        self.out_dropout = nn.Dropout(hidden_dropout_prob)
+        self.filter_mixer = None
+        self.global_ratio = config['global_ratio']
+        self.n_layers = config['n_layers']
+        if self.global_ratio > 1 / self.n_layers:
+            None
+            self.filter_mixer = 'G'
+        else:
+            None
+            self.filter_mixer = 'L'
+        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
+        self.dual_domain = config['dual_domain']
+        self.slide_step = (self.max_item_list_length // 2 + 1) * (1 - self.global_ratio) // (self.n_layers - 1)
+        self.local_ratio = 1 / self.n_layers
+        self.filter_size = self.local_ratio * (self.max_item_list_length // 2 + 1)
+        if self.filter_mixer == 'G':
+            self.w = self.global_ratio
+            self.s = self.slide_step
+        if self.filter_mixer == 'L':
+            self.w = self.local_ratio
+            self.s = self.filter_size
+        self.left = int((self.max_item_list_length // 2 + 1) * (1 - self.w) - i * self.s)
+        self.right = int(self.max_item_list_length // 2 + 1 - i * self.s)
+        self.q_index = list(range(self.left, self.right))
+        self.k_index = list(range(self.left, self.right))
+        self.v_index = list(range(self.left, self.right))
+        self.std = config['std']
+        if self.std:
+            self.time_q_index = self.q_index
+            self.time_k_index = self.k_index
+            self.time_v_index = self.v_index
+        else:
+            self.time_q_index = list(range(self.max_item_list_length // 2 + 1))
+            self.time_k_index = list(range(self.max_item_list_length // 2 + 1))
+            self.time_v_index = list(range(self.max_item_list_length // 2 + 1))
+        None
+        None
+        None
+        if self.config['dual_domain']:
+            self.spatial_ratio = self.config['spatial_ratio']
+
+    def transpose_for_scores(self, x):
+        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        x = x.view(*new_x_shape)
+        return x
+
+    def time_delay_agg_training(self, values, corr):
+        """
+        SpeedUp version of Autocorrelation (a batch-normalization style design)
+        This is for the training phase.
+        """
+        head = values.shape[1]
+        channel = values.shape[2]
+        length = values.shape[3]
+        top_k = int(self.factor * math.log(length))
+        mean_value = torch.mean(torch.mean(corr, dim=1), dim=1)
+        index = torch.topk(torch.mean(mean_value, dim=0), top_k, dim=-1)[1]
+        weights = torch.stack([mean_value[:, index[i]] for i in range(top_k)], dim=-1)
+        tmp_corr = torch.softmax(weights, dim=-1)
+        tmp_values = values
+        delays_agg = torch.zeros_like(values).float()
+        for i in range(top_k):
+            pattern = torch.roll(tmp_values, -int(index[i]), -1)
+            delays_agg = delays_agg + pattern * tmp_corr[:, i].unsqueeze(1).unsqueeze(1).unsqueeze(1).repeat(1, head, channel, length)
+        return delays_agg
+
+    def time_delay_agg_inference(self, values, corr):
+        """
+        SpeedUp version of Autocorrelation (a batch-normalization style design)
+        This is for the inference phase.
+        """
+        batch = values.shape[0]
+        head = values.shape[1]
+        channel = values.shape[2]
+        length = values.shape[3]
+        init_index = torch.arange(length).unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch, head, channel, 1)
+        top_k = int(self.factor * math.log(length))
+        mean_value = torch.mean(torch.mean(corr, dim=1), dim=1)
+        weights, delay = torch.topk(mean_value, top_k, dim=-1)
+        tmp_corr = torch.softmax(weights, dim=-1)
+        tmp_values = values.repeat(1, 1, 1, 2)
+        delays_agg = torch.zeros_like(values).float()
+        for i in range(top_k):
+            tmp_delay = init_index + delay[:, i].unsqueeze(1).unsqueeze(1).unsqueeze(1).repeat(1, head, channel, length)
+            pattern = torch.gather(tmp_values, dim=-1, index=tmp_delay)
+            delays_agg = delays_agg + pattern * tmp_corr[:, i].unsqueeze(1).unsqueeze(1).unsqueeze(1).repeat(1, head, channel, length)
+        return delays_agg
+
+    def forward(self, input_tensor, attention_mask):
+        mixed_query_layer = self.query_layer(input_tensor)
+        mixed_key_layer = self.key_layer(input_tensor)
+        mixed_value_layer = self.value_layer(input_tensor)
+        queries = self.transpose_for_scores(mixed_query_layer)
+        keys = self.transpose_for_scores(mixed_key_layer)
+        values = self.transpose_for_scores(mixed_value_layer)
+        B, L, H, E = queries.shape
+        _, S, _, D = values.shape
+        if L > S:
+            zeros = torch.zeros_like(queries[:, :L - S, :]).float()
+            values = torch.cat([values, zeros], dim=1)
+            keys = torch.cat([keys, zeros], dim=1)
+        else:
+            values = values[:, :L, :, :]
+            keys = keys[:, :L, :, :]
+        q_fft = torch.fft.rfft(queries.permute(0, 2, 3, 1).contiguous(), dim=-1)
+        k_fft = torch.fft.rfft(keys.permute(0, 2, 3, 1).contiguous(), dim=-1)
+        q_fft_box = torch.zeros(B, H, E, len(self.q_index), device=q_fft.device, dtype=torch.cfloat)
+        q_fft_box = q_fft[:, :, :, self.q_index]
+        k_fft_box = torch.zeros(B, H, E, len(self.k_index), device=q_fft.device, dtype=torch.cfloat)
+        k_fft_box = k_fft[:, :, :, self.q_index]
+        res = q_fft_box * torch.conj(k_fft_box)
+        if self.config['use_filter']:
+            weight = torch.view_as_complex(self.complex_weight)
+            res = res * weight
+        box_res = torch.zeros(B, H, E, L // 2 + 1, device=q_fft.device, dtype=torch.cfloat)
+        box_res[:, :, :, self.q_index] = res
+        corr = torch.fft.irfft(box_res, dim=-1)
+        if self.training:
+            V = self.time_delay_agg_training(values.permute(0, 2, 3, 1).contiguous(), corr).permute(0, 3, 1, 2)
+        else:
+            V = self.time_delay_agg_inference(values.permute(0, 2, 3, 1).contiguous(), corr).permute(0, 3, 1, 2)
+        new_context_layer_shape = V.size()[:-2] + (self.all_head_size,)
+        context_layer = V.view(*new_context_layer_shape)
+        if self.dual_domain:
+            q_fft_box = torch.zeros(B, H, E, len(self.time_q_index), device=q_fft.device, dtype=torch.cfloat)
+            q_fft_box = q_fft[:, :, :, self.time_q_index]
+            spatial_q = torch.zeros(B, H, E, L // 2 + 1, device=q_fft.device, dtype=torch.cfloat)
+            spatial_q[:, :, :, self.time_q_index] = q_fft_box
+            k_fft_box = torch.zeros(B, H, E, len(self.time_k_index), device=q_fft.device, dtype=torch.cfloat)
+            k_fft_box = k_fft[:, :, :, self.time_k_index]
+            spatial_k = torch.zeros(B, H, E, L // 2 + 1, device=k_fft.device, dtype=torch.cfloat)
+            spatial_k[:, :, :, self.time_k_index] = k_fft_box
+            v_fft = torch.fft.rfft(values.permute(0, 2, 3, 1).contiguous(), dim=-1)
+            v_fft_box = torch.zeros(B, H, E, len(self.time_v_index), device=v_fft.device, dtype=torch.cfloat)
+            v_fft_box = v_fft[:, :, :, self.time_v_index]
+            spatial_v = torch.zeros(B, H, E, L // 2 + 1, device=v_fft.device, dtype=torch.cfloat)
+            spatial_v[:, :, :, self.time_v_index] = v_fft_box
+            queries = torch.fft.irfft(spatial_q, dim=-1)
+            keys = torch.fft.irfft(spatial_k, dim=-1)
+            values = torch.fft.irfft(spatial_v, dim=-1)
+            queries = queries.permute(0, 1, 3, 2)
+            keys = keys.permute(0, 1, 3, 2)
+            values = values.permute(0, 1, 3, 2)
+            attention_scores = torch.matmul(queries, keys.transpose(-1, -2))
+            attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+            attention_scores = attention_scores + attention_mask
+            attention_probs = nn.Softmax(dim=-1)(attention_scores)
+            attention_probs = self.attn_dropout(attention_probs)
+            qkv = torch.matmul(attention_probs, values)
+            context_layer_spatial = qkv.permute(0, 2, 1, 3).contiguous()
+            new_context_layer_shape = context_layer_spatial.size()[:-2] + (self.all_head_size,)
+            context_layer_spatial = context_layer_spatial.view(*new_context_layer_shape)
+            context_layer = (1 - self.spatial_ratio) * context_layer + self.spatial_ratio * context_layer_spatial
+        hidden_states = self.dense(context_layer)
+        hidden_states = self.out_dropout(hidden_states)
+        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        return hidden_states
+
+
+class FEABlock(nn.Module):
+    """
+    One transformer layer consists of a multi-head self-attention layer and a point-wise feed-forward layer.
+
+    Args:
+        hidden_states (torch.Tensor): the input of the multi-head self-attention sublayer
+        attention_mask (torch.Tensor): the attention mask for the multi-head self-attention sublayer
+
+    Returns:
+        feedforward_output (torch.Tensor): The output of the point-wise feed-forward sublayer,
+                                           is the output of the transformer layer.
+
+    """
+
+    def __init__(self, n_heads, hidden_size, intermediate_size, hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps, n, config):
+        super(FEABlock, self).__init__()
+        self.hybrid_attention = HybridAttention(n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps, n, config)
+        self.feed_forward = FeedForward(hidden_size, intermediate_size, hidden_dropout_prob, hidden_act, layer_norm_eps)
+
+    def forward(self, hidden_states, attention_mask):
+        attention_output = self.hybrid_attention(hidden_states, attention_mask)
+        feedforward_output = self.feed_forward(attention_output)
+        return feedforward_output
+
+
+class FEAEncoder(nn.Module):
+    """One TransformerEncoder consists of several TransformerLayers.
+
+    - n_layers(num): num of transformer layers in transformer encoder. Default: 2
+    - n_heads(num): num of attention heads for multi-head attention layer. Default: 2
+    - hidden_size(num): the input and output hidden size. Default: 64
+    - inner_size(num): the dimensionality in feed-forward layer. Default: 256
+    - hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
+    - attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
+    - hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
+                  candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
+    - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
+
+    """
+
+    def __init__(self, n_layers=2, n_heads=2, hidden_size=64, inner_size=256, hidden_dropout_prob=0.5, attn_dropout_prob=0.5, hidden_act='gelu', layer_norm_eps=1e-12, config=None):
+        super(FEAEncoder, self).__init__()
+        self.n_layers = n_layers
+        self.layer = nn.ModuleList()
+        for n in range(self.n_layers):
+            self.layer_ramp = FEABlock(n_heads, hidden_size, inner_size, hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps, n, config)
+            self.layer.append(self.layer_ramp)
+
+    def forward(self, hidden_states, attention_mask, output_all_encoded_layers=True):
+        """
+        Args:
+            hidden_states (torch.Tensor): the input of the TransformerEncoder
+            attention_mask (torch.Tensor): the attention mask for the input hidden_states
+            output_all_encoded_layers (Bool): whether output all transformer layers' output
+
+        Returns:
+            all_encoder_layers (list): if output_all_encoded_layers is True, return a list consists of all transformer
+            layers' output, otherwise return a list only consists of the output of last transformer layer.
+
+        """
+        all_encoder_layers = []
+        for layer_module in self.layer:
+            hidden_states = layer_module(hidden_states, attention_mask)
+            if output_all_encoded_layers:
+                all_encoder_layers.append(hidden_states)
+        if not output_all_encoded_layers:
+            all_encoder_layers.append(hidden_states)
+        return all_encoder_layers
+
+
+def _convert_to_tensor(data):
+    """This function can convert common data types (list, pandas.Series, numpy.ndarray, torch.Tensor) into torch.Tensor.
+
+    Args:
+        data (list, pandas.Series, numpy.ndarray, torch.Tensor): Origin data.
+
+    Returns:
+        torch.Tensor: Converted tensor from `data`.
+    """
+    elem = data[0]
+    if isinstance(elem, (float, int, np.float, np.int64)):
+        new_data = torch.as_tensor(data)
+    elif isinstance(elem, (list, tuple, pd.Series, np.ndarray, torch.Tensor)):
+        seq_data = [torch.as_tensor(d) for d in data]
+        new_data = rnn_utils.pad_sequence(seq_data, batch_first=True)
+    else:
+        raise ValueError(f'[{type(elem)}] is not supported!')
+    if new_data.dtype == torch.float64:
+        new_data = new_data.float()
+    return new_data
+
+
+class Interaction(object):
+    """The basic class representing a batch of interaction records.
+
+    Note:
+        While training, there is no strict rules for data in one Interaction object.
+
+        While testing, it should be guaranteed that all interaction records of one single
+        user will not appear in different Interaction object, and records of the same user
+        should be continuous. Meanwhile, the positive cases of one user always need to occur
+        **earlier** than this user's negative cases.
+
+        A correct example:
+            =======     =======     =======
+            user_id     item_id     label
+            =======     =======     =======
+            1           2           1
+            1           6           1
+            1           3           1
+            1           1           0
+            2           3           1
+            ...         ...         ...
+            =======     =======     =======
+
+        Some wrong examples for Interaction objects used in testing:
+
+        1.
+            =======     =======     =======     ============
+            user_id     item_id     label
+            =======     =======     =======     ============
+            1           2           1
+            1           6           0           # positive cases of one user always need to
+
+                                                occur earlier than this user's negative cases
+            1           3           1
+            1           1           0
+            2           3           1
+            ...         ...         ...
+            =======     =======     =======     ============
+
+        2.
+            =======     =======     =======     ========
+            user_id     item_id     label
+            =======     =======     =======     ========
+            1           2           1
+            1           6           1
+            1           3           1
+            2           3           1           # records of the same user should be continuous.
+            1           1           0
+            ...         ...         ...
+            =======     =======     =======     ========
+
+    Attributes:
+        interaction (dict or pandas.DataFrame): keys are meaningful str (also can be called field name),
+            and values are Torch Tensor of numpy Array with shape (batch_size, \\*).
+    """
+
+    def __init__(self, interaction):
+        self.interaction = dict()
+        if isinstance(interaction, dict):
+            for key, value in interaction.items():
+                if isinstance(value, (list, np.ndarray)):
+                    self.interaction[key] = _convert_to_tensor(value)
+                elif isinstance(value, torch.Tensor):
+                    self.interaction[key] = value
+                else:
+                    raise ValueError(f'The type of {key}[{type(value)}] is not supported!')
+        elif isinstance(interaction, pd.DataFrame):
+            for key in interaction:
+                value = interaction[key].values
+                self.interaction[key] = _convert_to_tensor(value)
+        else:
+            raise ValueError(f'[{type(interaction)}] is not supported for initialize `Interaction`!')
+        self.length = -1
+        for k in self.interaction:
+            self.length = max(self.length, self.interaction[k].unsqueeze(-1).shape[0])
+
+    def __iter__(self):
+        return self.interaction.__iter__()
+
+    def __getattr__(self, item):
+        if 'interaction' not in self.__dict__:
+            raise AttributeError(f"'Interaction' object has no attribute 'interaction'")
+        if item in self.interaction:
+            return self.interaction[item]
+        raise AttributeError(f"'Interaction' object has no attribute '{item}'")
+
+    def __getitem__(self, index):
+        if isinstance(index, str):
+            return self.interaction[index]
+        if isinstance(index, (np.ndarray, torch.Tensor)):
+            index = index.tolist()
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k][index]
+        return Interaction(ret)
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise KeyError(f'{type(key)} object does not support item assigment')
+        self.interaction[key] = value
+
+    def __delitem__(self, key):
+        if key not in self.interaction:
+            raise KeyError(f'{type(key)} object does not in this interaction')
+        del self.interaction[key]
+
+    def __contains__(self, item):
+        return item in self.interaction
+
+    def __len__(self):
+        return self.length
+
+    def __str__(self):
+        info = [f'The batch_size of interaction: {self.length}']
+        for k in self.interaction:
+            inter = self.interaction[k]
+            temp_str = f'    {k}, {inter.shape}, {inter.device.type}, {inter.dtype}'
+            info.append(temp_str)
+        info.append('\n')
+        return '\n'.join(info)
+
+    def __repr__(self):
+        return self.__str__()
+
+    @property
+    def columns(self):
+        """
+        Returns:
+            list of str: The columns of interaction.
+        """
+        return list(self.interaction.keys())
+
+    def to(self, device, selected_field=None):
+        """Transfer Tensors in this Interaction object to the specified device.
+
+        Args:
+            device (torch.device): target device.
+            selected_field (str or iterable object, optional): if specified, only Tensors
+            with keys in selected_field will be sent to device.
+
+        Returns:
+            Interaction: a coped Interaction object with Tensors which are sent to
+            the specified device.
+        """
+        ret = {}
+        if isinstance(selected_field, str):
+            selected_field = [selected_field]
+        if selected_field is not None:
+            selected_field = set(selected_field)
+            for k in self.interaction:
+                if k in selected_field:
+                    ret[k] = self.interaction[k]
+                else:
+                    ret[k] = self.interaction[k]
+        else:
+            for k in self.interaction:
+                ret[k] = self.interaction[k]
+        return Interaction(ret)
+
+    def cpu(self):
+        """Transfer Tensors in this Interaction object to cpu.
+
+        Returns:
+            Interaction: a coped Interaction object with Tensors which are sent to cpu.
+        """
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].cpu()
+        return Interaction(ret)
+
+    def numpy(self):
+        """Transfer Tensors to numpy arrays.
+
+        Returns:
+            dict: keys the same as Interaction object, are values are corresponding numpy
+            arrays transformed from Tensor.
+        """
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].numpy()
+        return ret
+
+    def repeat(self, sizes):
+        """Repeats each tensor along the batch dim.
+
+        Args:
+            sizes (int): repeat times.
+
+        Example:
+            >>> a = Interaction({'k': torch.zeros(4)})
+            >>> a.repeat(3)
+            The batch_size of interaction: 12
+                k, torch.Size([12]), cpu
+
+            >>> a = Interaction({'k': torch.zeros(4, 7)})
+            >>> a.repeat(3)
+            The batch_size of interaction: 12
+                k, torch.Size([12, 7]), cpu
+
+        Returns:
+            a copyed Interaction object with repeated Tensors.
+        """
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].repeat([sizes] + [1] * (len(self.interaction[k].shape) - 1))
+        return Interaction(ret)
+
+    def repeat_interleave(self, repeats, dim=0):
+        """Similar to repeat_interleave of PyTorch.
+
+        Details can be found in:
+
+            https://pytorch.org/docs/stable/tensors.html?highlight=repeat#torch.Tensor.repeat_interleave
+
+        Note:
+            ``torch.repeat_interleave()`` is supported in PyTorch >= 1.2.0.
+        """
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].repeat_interleave(repeats, dim=dim)
+        return Interaction(ret)
+
+    def update(self, new_inter):
+        """Similar to ``dict.update()``
+
+        Args:
+            new_inter (Interaction): current interaction will be updated by new_inter.
+        """
+        for k in new_inter.interaction:
+            self.interaction[k] = new_inter.interaction[k]
+
+    def drop(self, column):
+        """Drop column in interaction.
+
+        Args:
+            column (str): the column to be dropped.
+        """
+        if column not in self.interaction:
+            raise ValueError(f'Column [{column}] is not in [{self}].')
+        del self.interaction[column]
+
+    def _reindex(self, index):
+        """Reset the index of interaction inplace.
+
+        Args:
+            index: the new index of current interaction.
+        """
+        for k in self.interaction:
+            self.interaction[k] = self.interaction[k][index]
+
+    def shuffle(self):
+        """Shuffle current interaction inplace."""
+        index = torch.randperm(self.length)
+        self._reindex(index)
+
+    def sort(self, by, ascending=True):
+        """Sort the current interaction inplace.
+
+        Args:
+            by (str or list of str): Field that as the key in the sorting process.
+            ascending (bool or list of bool, optional): Results are ascending if ``True``, otherwise descending.
+                Defaults to ``True``
+        """
+        if isinstance(by, str):
+            if by not in self.interaction:
+                raise ValueError(f'[{by}] is not exist in interaction [{self}].')
+            by = [by]
+        elif isinstance(by, (list, tuple)):
+            for b in by:
+                if b not in self.interaction:
+                    raise ValueError(f'[{b}] is not exist in interaction [{self}].')
+        else:
+            raise TypeError(f'Wrong type of by [{by}].')
+        if isinstance(ascending, bool):
+            ascending = [ascending]
+        elif isinstance(ascending, (list, tuple)):
+            for a in ascending:
+                if not isinstance(a, bool):
+                    raise TypeError(f'Wrong type of ascending [{ascending}].')
+        else:
+            raise TypeError(f'Wrong type of ascending [{ascending}].')
+        if len(by) != len(ascending):
+            if len(ascending) == 1:
+                ascending = ascending * len(by)
+            else:
+                raise ValueError(f'by [{by}] and ascending [{ascending}] should have same length.')
+        for b, a in zip(by[::-1], ascending[::-1]):
+            if len(self.interaction[b].shape) == 1:
+                key = self.interaction[b]
+            else:
+                key = self.interaction[b][..., 0]
+            index = np.argsort(key, kind='stable')
+            if not a:
+                index = torch.tensor(np.array(index)[::-1])
+            self._reindex(index)
+
+    def add_prefix(self, prefix):
+        """Add prefix to current interaction's columns.
+
+        Args:
+            prefix (str): The prefix to be added.
+        """
+        self.interaction = {(prefix + key): value for key, value in self.interaction.items()}
+
+
 class GNN(nn.Module):
     """Graph neural networks are well-suited for session-based recommendation,
     because it can automatically extract features of session graphs with considerations of rich node connections.
@@ -2899,6 +3890,10 @@ class GNN(nn.Module):
         for i in range(self.step):
             hidden = self.GNNCell(A, hidden)
         return hidden
+
+
+def gelu(x):
+    return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
 
 
 class ResidualBlock_b(nn.Module):
@@ -2977,45 +3972,6 @@ class ResidualBlock_a(nn.Module):
         return inputs_pad
 
 
-def build_map(b_map, device, max_index=None):
-    """
-    project the b_map to the place where it in should be like this:
-        item_seq A: [3,4,5]   n_items: 6
-
-        after map: A
-
-        [0,0,1,0,0,0]
-
-        [0,0,0,1,0,0]
-
-        [0,0,0,0,1,0]
-
-        batch_size * seq_len ==>> batch_size * seq_len * n_item
-
-    use in RepeatNet:
-
-    [3,4,5] matmul [0,0,1,0,0,0]
-
-                   [0,0,0,1,0,0]
-
-                   [0,0,0,0,1,0]
-
-    ==>>> [0,0,3,4,5,0] it works in the RepeatNet when project the seq item into all items
-
-    batch_size * 1 * seq_len matmul batch_size * seq_len * n_item ==>> batch_size * 1 * n_item
-    """
-    batch_size, b_len = b_map.size()
-    if max_index is None:
-        max_index = b_map.max() + 1
-    if torch.cuda.is_available():
-        b_map_ = torch.FloatTensor(batch_size, b_len, max_index).fill_(0)
-    else:
-        b_map_ = torch.zeros(batch_size, b_len, max_index)
-    b_map_.scatter_(2, b_map.unsqueeze(2), 1.0)
-    b_map_.requires_grad = False
-    return b_map_
-
-
 class Explore_Recommendation_Decoder(nn.Module):
 
     def __init__(self, hidden_size, seq_len, num_item, device, dropout_prob):
@@ -3050,9 +4006,10 @@ class Explore_Recommendation_Decoder(nn.Module):
         output_e = (alpha_e * all_memory_values).sum(dim=1)
         output_e = torch.cat([output_e, last_memory_values], dim=1)
         output_e = self.dropout(self.matrix_for_explore(output_e))
-        map_matrix = build_map(item_seq, self.device, max_index=self.num_item)
-        explore_mask = torch.bmm((item_seq > 0).float().unsqueeze(1), map_matrix).squeeze(1)
-        output_e = output_e.masked_fill(explore_mask.bool(), float('-inf'))
+        item_seq_first = item_seq[:, 0].unsqueeze(1).expand_as(item_seq)
+        item_seq_first = item_seq_first.masked_fill(item_seq > 0, 0)
+        item_seq_first.requires_grad_(False)
+        output_e.scatter_add_(1, item_seq + item_seq_first, float('-inf') * torch.ones_like(item_seq))
         explore_recommendation_decoder = nn.Softmax(1)(output_e)
         return explore_recommendation_decoder
 
@@ -3118,10 +4075,9 @@ class Repeat_Recommendation_Decoder(nn.Module):
         if mask is not None:
             output_er.masked_fill_(mask, -1000000000.0)
         output_er = nn.Softmax(dim=-1)(output_er)
-        output_er = output_er.unsqueeze(1)
-        map_matrix = build_map(item_seq, self.device, max_index=self.num_item)
-        output_er = torch.matmul(output_er, map_matrix).squeeze(1)
-        repeat_recommendation_decoder = output_er.squeeze(1)
+        batch_size, b_len = item_seq.size()
+        repeat_recommendation_decoder = torch.zeros([batch_size, self.num_item], device=self.device)
+        repeat_recommendation_decoder.scatter_add_(1, item_seq, output_er)
         return repeat_recommendation_decoder
 
 
@@ -3156,17 +4112,25 @@ TESTCASES = [
      lambda: ([], {'in_dim': 4, 'out_dim': 4}),
      lambda: ([torch.rand([4, 4]), torch.rand([4, 4]), torch.rand([4, 4])], {}),
      True),
+    (CINComp,
+     lambda: ([], {'indim': 4, 'outdim': 4, 'config': _mock_config(feature_num=4)}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     True),
     (ConvNCFBPRLoss,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      True),
+    (CrossNet,
+     lambda: ([], {'config': _mock_config(depth=1, embedding_size=4, feature_num=4)}),
+     lambda: ([torch.rand([4, 4, 4])], {}),
+     False),
     (Dice,
      lambda: ([], {'emb_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
     (Explore_Recommendation_Decoder,
      lambda: ([], {'hidden_size': 4, 'seq_len': 4, 'num_item': 4, 'device': 0, 'dropout_prob': 0.5}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4]), torch.ones([4, 4], dtype=torch.int64)], {}),
+     lambda: ([torch.rand([4, 4]), torch.rand([4, 4]), torch.ones([4, 4], dtype=torch.int64)], {}),
      False),
     (GraphLayer,
      lambda: ([], {'num_fields': 4, 'embedding_size': 4}),
@@ -3207,10 +4171,6 @@ TESTCASES = [
     (Repeat_Explore_Mechanism,
      lambda: ([], {'device': 0, 'hidden_size': 4, 'seq_len': 4, 'dropout_prob': 0.5}),
      lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4])], {}),
-     False),
-    (Repeat_Recommendation_Decoder,
-     lambda: ([], {'device': 0, 'hidden_size': 4, 'seq_len': 4, 'num_item': 4, 'dropout_prob': 0.5}),
-     lambda: ([torch.rand([4, 4]), torch.rand([4, 4]), torch.ones([4, 4], dtype=torch.int64)], {}),
      False),
     (SparseDropout,
      lambda: ([], {}),
@@ -3288,4 +4248,7 @@ class Test_RUCAIBox_RecBole(_paritybench_base):
 
     def test_021(self):
         self._check(*TESTCASES[21])
+
+    def test_022(self):
+        self._check(*TESTCASES[22])
 

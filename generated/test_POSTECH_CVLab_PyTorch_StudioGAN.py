@@ -60,7 +60,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -698,7 +700,7 @@ class WindowAttention(nn.Module):
         return flops
 
 
-def drop_path(x, drop_prob: float=0.0, training: bool=False):
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
     if drop_prob == 0.0 or not training:
         return x
     keep_prob = 1 - drop_prob

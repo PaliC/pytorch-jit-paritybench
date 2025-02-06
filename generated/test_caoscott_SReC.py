@@ -26,7 +26,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -117,7 +119,7 @@ from torch import optim
 from torch.utils import tensorboard
 
 
-def get_act(act: str, n_feats: int=0) ->nn.Module:
+def get_act(act: 'str', n_feats: 'int'=0) ->nn.Module:
     """ param act: Name of activation used.
         n_feats: channel size.
         returns the respective activation module, or raise
@@ -137,7 +139,7 @@ def get_act(act: str, n_feats: int=0) ->nn.Module:
 class ResBlock(nn.Module):
     """ Implementation for ResNet block. """
 
-    def __init__(self, n_feats: int, kernel_size: int, act: str='leaky_relu', atrous: int=1, bn: bool=False) ->None:
+    def __init__(self, n_feats: 'int', kernel_size: 'int', act: 'str'='leaky_relu', atrous: 'int'=1, bn: 'bool'=False) ->None:
         """ param n_feats: Channel size.
             param kernel_size: kernel size.
             param act: string of activation to use.
@@ -145,7 +147,7 @@ class ResBlock(nn.Module):
             param bn: Turns on batch norm. 
         """
         super().__init__()
-        m: List[nn.Module] = []
+        m: 'List[nn.Module]' = []
         _repr = []
         for i in range(2):
             atrous_rate = 1 if i == 0 else atrous
@@ -161,7 +163,7 @@ class ResBlock(nn.Module):
         self.body = nn.Sequential(*m)
         self._repr = '/'.join(_repr)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         res = self.body(x)
         res += x
         return res
@@ -172,8 +174,8 @@ class ResBlock(nn.Module):
 
 class Upsampler(nn.Sequential):
 
-    def __init__(self, scale: int, n_feats: int, bn: bool=False, act: str='none', bias: bool=True) ->None:
-        m: List[nn.Module] = []
+    def __init__(self, scale: 'int', n_feats: 'int', bn: 'bool'=False, act: 'str'='none', bias: 'bool'=True) ->None:
+        m: 'List[nn.Module]' = []
         if scale & scale - 1 == 0:
             for _ in range(int(math.log(scale, 2))):
                 m.append(util.conv(n_feats, 4 * n_feats, 3, bias))
@@ -194,13 +196,13 @@ class Upsampler(nn.Sequential):
 
 class EDSRDec(nn.Module):
 
-    def __init__(self, in_ch: int, out_ch: int, resblocks: int=8, kernel_size: int=3, tail: str='none', channel_attention: bool=False) ->None:
+    def __init__(self, in_ch: 'int', out_ch: 'int', resblocks: 'int'=8, kernel_size: 'int'=3, tail: 'str'='none', channel_attention: 'bool'=False) ->None:
         super().__init__()
         self.head = util.conv(in_ch, out_ch, 1)
-        m_body: List[nn.Module] = [ResBlock(out_ch, kernel_size) for _ in range(resblocks)]
+        m_body: 'List[nn.Module]' = [ResBlock(out_ch, kernel_size) for _ in range(resblocks)]
         m_body.append(util.conv(out_ch, out_ch, kernel_size))
         self.body = nn.Sequential(*m_body)
-        self.tail: nn.Module
+        self.tail: 'nn.Module'
         if tail == 'conv':
             self.tail = util.conv(out_ch, out_ch, 1)
         elif tail == 'none':
@@ -210,7 +212,7 @@ class EDSRDec(nn.Module):
         else:
             raise NotImplementedError(f'{tail} is not implemented.')
 
-    def forward(self, x: torch.Tensor, features_to_fuse: torch.Tensor=0.0) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', features_to_fuse: 'torch.Tensor'=0.0) ->torch.Tensor:
         """
         :param x: N C H W
         :return: N C" H W
@@ -223,11 +225,11 @@ class EDSRDec(nn.Module):
 
 
 class CDFOut(NamedTuple):
-    logit_probs_c_sm: torch.Tensor
-    means_c: torch.Tensor
-    log_scales_c: torch.Tensor
-    K: int
-    targets: torch.Tensor
+    logit_probs_c_sm: 'torch.Tensor'
+    means_c: 'torch.Tensor'
+    log_scales_c: 'torch.Tensor'
+    K: 'int'
+    targets: 'torch.Tensor'
 
 
 _LOG_SCALES_MIN = -7.0
@@ -239,14 +241,14 @@ _NUM_PARAMS_OTHER = 3
 _NUM_PARAMS_RGB = 4
 
 
-def non_shared_get_K(Kp: int, C: int, num_params: int) ->int:
+def non_shared_get_K(Kp: 'int', C: 'int', num_params: 'int') ->int:
     """ Inverse of non_shared_get_Kp, get back K=number of mixtures """
     return Kp // (num_params * C)
 
 
 class DiscretizedMixLogisticLoss(nn.Module):
 
-    def __init__(self, rgb_scale: bool, x_min=0, x_max=255, L=256):
+    def __init__(self, rgb_scale: 'bool', x_min=0, x_max=255, L=256):
         """
         :param rgb_scale: Whether this is the loss for the RGB scale. In that case,
             use_coeffs=True
@@ -308,7 +310,7 @@ class DiscretizedMixLogisticLoss(nn.Module):
         assert not torch.any(log_cdf_delta > 1e-06), f'{log_cdf_delta[log_cdf_delta > 1e-06]}'
         return log_cdf_delta
 
-    def forward(self, x: torch.Tensor, l: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', l: 'torch.Tensor') ->torch.Tensor:
         """
         :param x: labels, i.e., NCHW, float
         :param l: predicted distribution, i.e., NKpHW, see above
@@ -352,7 +354,7 @@ class DiscretizedMixLogisticLoss(nn.Module):
         assert means.shape == (N, C, K, H, W), (means.shape, (N, C, K, H, W))
         return x, logit_probs, means, log_scales, K
 
-    def _extract_non_shared_c(self, c: int, C: int, l: torch.Tensor, x: Optional[torch.Tensor]=None) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, int]:
+    def _extract_non_shared_c(self, c: 'int', C: 'int', l: 'torch.Tensor', x: 'Optional[torch.Tensor]'=None) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, int]:
         """
         Same as _extract_non_shared but only for c-th channel, used to get CDF
         """
@@ -409,7 +411,7 @@ class DiscretizedMixLogisticLoss(nn.Module):
 
 class StackedAtrousConvs(nn.Module):
 
-    def __init__(self, atrous_rates_str: Union[str, int], Cin: int, Cout: int, bias: bool=True, kernel_size: int=3) ->None:
+    def __init__(self, atrous_rates_str: 'Union[str, int]', Cin: 'int', Cout: 'int', bias: 'bool'=True, kernel_size: 'int'=3) ->None:
         super(StackedAtrousConvs, self).__init__()
         atrous_rates = self._parse_atrous_rates_str(atrous_rates_str)
         self.atrous = nn.ModuleList([util.conv(Cin, Cin, kernel_size, rate=rate) for rate in atrous_rates])
@@ -417,7 +419,7 @@ class StackedAtrousConvs(nn.Module):
         self._extra_repr = 'rates={}'.format(atrous_rates)
 
     @staticmethod
-    def _parse_atrous_rates_str(atrous_rates_str: Union[str, int]) ->List[int]:
+    def _parse_atrous_rates_str(atrous_rates_str: 'Union[str, int]') ->List[int]:
         if isinstance(atrous_rates_str, int):
             return [atrous_rates_str]
         else:
@@ -426,7 +428,7 @@ class StackedAtrousConvs(nn.Module):
     def extra_repr(self) ->str:
         return self._extra_repr
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         x = torch.cat([atrous(x) for atrous in self.atrous], dim=1)
         x = self.lin(x)
         return x
@@ -440,7 +442,7 @@ def non_shared_get_Kp(K, C, num_params):
 
 class AtrousProbabilityClassifier(nn.Module):
 
-    def __init__(self, in_ch: int, C: int, num_params: int, K: int=10, kernel_size: int=3, atrous_rates_str: str='1,2,4') ->None:
+    def __init__(self, in_ch: 'int', C: 'int', num_params: 'int', K: 'int'=10, kernel_size: 'int'=3, atrous_rates_str: 'str'='1,2,4') ->None:
         super(AtrousProbabilityClassifier, self).__init__()
         Kp = non_shared_get_Kp(K, C, num_params)
         self.atrous = StackedAtrousConvs(atrous_rates_str, in_ch, Kp, kernel_size=kernel_size)
@@ -449,7 +451,7 @@ class AtrousProbabilityClassifier(nn.Module):
     def __repr__(self) ->str:
         return f'AtrousProbabilityClassifier({self._repr})'
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         :param x: N C H W
         :return: N Kp H W
@@ -457,18 +459,85 @@ class AtrousProbabilityClassifier(nn.Module):
         return self.atrous(x)
 
 
+class Bits:
+    """
+    Tracks bpsps from different parts of the pipeline for one forward pass.
+    """
+
+    def __init__(self) ->None:
+        assert configs.collect_probs or configs.log_likelihood, (configs.collect_probs, configs.log_likelihood)
+        self.key_to_bits: 'DefaultDict[str, torch.Tensor]' = defaultdict(float)
+        self.key_to_sizes: 'DefaultDict[str, int]' = defaultdict(int)
+        self.probs: 'List[Probs]' = []
+
+    def add_with_size(self, key: 'str', nll_sum: 'torch.Tensor', size: 'int') ->None:
+        if configs.log_likelihood:
+            assert key not in self.key_to_bits, f'{key} already exists'
+            self.key_to_bits[key] = nll_sum / np.log(2)
+            self.key_to_sizes[key] = size
+
+    def add(self, key: 'str', nll: 'torch.Tensor') ->None:
+        self.add_with_size(key, nll.sum(), np.prod(nll.size()))
+
+    def add_lm(self, y_i: 'torch.Tensor', lm_probs: 'LogisticMixtureProbability', loss_fn: 'lm.DiscretizedMixLogisticLoss') ->None:
+        assert lm_probs.probs.shape[-2:] == y_i.shape[-2:], (lm_probs.probs.shape, y_i.shape)
+        if configs.log_likelihood:
+            nll = loss_fn(y_i, lm_probs.probs)
+            self.add(lm_probs.name, nll)
+        if configs.collect_probs:
+            self.probs.append((y_i, lm_probs, -1))
+
+    def add_uniform(self, key: 'str', y_i: 'torch.Tensor', levels: 'int'=256) ->None:
+        if configs.log_likelihood:
+            size = np.prod(y_i.size())
+            nll_sum = np.log(levels) * size
+            self.add_with_size(key, nll_sum, size)
+        if configs.collect_probs:
+            self.probs.append((y_i, None, levels))
+
+    def get_bits(self, key: 'str') ->torch.Tensor:
+        return self.key_to_bits[key]
+
+    def get_size(self, key: 'str') ->int:
+        return self.key_to_sizes[key]
+
+    def get_keys(self) ->KeysView:
+        return self.key_to_bits.keys()
+
+    def get_self_bpsp(self, key: 'str') ->torch.Tensor:
+        return self.key_to_bits[key] / self.key_to_sizes[key]
+
+    def get_scaled_bpsp(self, key: 'str', inp_size: 'int') ->torch.Tensor:
+        return self.key_to_bits[key] / inp_size
+
+    def get_total_bpsp(self, inp_size: 'int') ->torch.Tensor:
+        return sum(self.key_to_bits.values()) / inp_size
+
+    def update(self, other: "'Bits'") ->'Bits':
+        assert len(self.get_keys() & other.get_keys()) == 0, f'{self.get_keys()} and {other.get_keys()} intersect.'
+        self.key_to_bits.update(other.key_to_bits)
+        self.key_to_sizes.update(other.key_to_sizes)
+        self.probs += other.probs
+        return self
+
+    def add_bits(self, other: "'Bits'") ->'Bits':
+        keys = other.get_keys()
+        assert keys == self.get_keys() or len(self.get_keys()) == 0, f'{self.get_keys()} != {keys}'
+        for key in keys:
+            self.key_to_bits[key] += other.get_bits(key)
+            self.key_to_sizes[key] += other.get_size(key)
+        return self
+
+
 class LogisticMixtureProbability(NamedTuple):
-    name: str
-    pixel_index: int
-    probs: torch.Tensor
-    lower: torch.Tensor
-    upper: torch.Tensor
+    name: 'str'
+    pixel_index: 'int'
+    probs: 'torch.Tensor'
+    lower: 'torch.Tensor'
+    upper: 'torch.Tensor'
 
 
-Probs = Tuple[torch.Tensor, Optional[LogisticMixtureProbability], int]
-
-
-def group_2x2(x: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+def group_2x2(x: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """ Group 2x2 patches of x on its own channel
         param x: N C H W
         returns: Tuple[N 4 C H/2 W/2]
@@ -477,4 +546,99 @@ def group_2x2(x: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
     x_even_height = x[:, :, 0:h:2, :]
     x_odd_height = x[:, :, 1:h:2, :]
     return x_even_height[:, :, :, 0:w:2], x_even_height[:, :, :, 1:w:2], x_odd_height[:, :, :, 0:w:2], x_odd_height[:, :, :, 1:w:2]
+
+
+class PixDecoder(nn.Module):
+    """ Super-resolution based decoder for pixel-based factorization. """
+
+    def __init__(self, scale: 'int') ->None:
+        super().__init__()
+        self.loss_fn = lm.DiscretizedMixLogisticLoss(rgb_scale=True)
+        self.scale = scale
+
+    def forward_probs(self, x: 'torch.Tensor', ctx: 'torch.Tensor') ->Generator[LogisticMixtureProbability, torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        raise NotImplementedError
+
+    def forward(self, x: 'torch.Tensor', y: 'torch.Tensor', ctx: 'torch.Tensor') ->Tuple[Bits, torch.Tensor]:
+        bits = Bits()
+        if __debug__:
+            not_int = y.long().float() != y
+            assert not torch.any(not_int), y[not_int]
+        mode = 'train' if self.training else 'eval'
+        deltas = x - util.tensor_round(x)
+        bits.add_uniform(f'{mode}/{self.scale}_rounding', quantizer.to_sym(deltas, x_min=-0.25, x_max=0.5, L=4), levels=4)
+        _, _, x_h, x_w = x.size()
+        if not isinstance(ctx, float):
+            ctx = ctx[..., :x_h, :x_w]
+        y_slices = group_2x2(y)
+        gen = self.forward_probs(x, ctx)
+        try:
+            for i, y_slice in enumerate(y_slices):
+                if i == 0:
+                    lm_probs = next(gen)
+                else:
+                    lm_probs = gen.send(y_slices[i - 1])
+                _, _, h, w = y_slice.size()
+                lm_probs = LogisticMixtureProbability(name=lm_probs.name, pixel_index=lm_probs.pixel_index, probs=lm_probs.probs[..., :h, :w], lower=lm_probs.lower[..., :h, :w], upper=lm_probs.upper[..., :h, :w])
+                bits.add_lm(y_slice, lm_probs, self.loss_fn)
+        except StopIteration as e:
+            last_pixels, ctx = e.value
+            last_slice = y_slices[-1]
+            _, _, last_h, last_w = last_slice.size()
+            last_pixels = last_pixels[..., :last_h, :last_w]
+            assert torch.all(last_pixels == last_slice), (last_pixels[last_pixels != last_slice], last_slice[last_pixels != last_slice])
+        return bits, ctx
+
+
+class StrongPixDecoder(PixDecoder):
+
+    def __init__(self, scale: 'int') ->None:
+        super().__init__(scale)
+        self.rgb_decs = nn.ModuleList([edsr.EDSRDec(3 * i, configs.n_feats, resblocks=configs.resblocks, tail='conv') for i in range(1, 4)])
+        self.mix_logits_prob_clf = nn.ModuleList([prob_clf.AtrousProbabilityClassifier(configs.n_feats, C=3, K=configs.K, num_params=self.loss_fn._num_params) for _ in range(1, 4)])
+        self.feat_convs = nn.ModuleList([util.conv(configs.n_feats, configs.n_feats, 3) for _ in range(1, 4)])
+        assert len(self.rgb_decs) == len(self.mix_logits_prob_clf) == len(self.feat_convs), f'{len(self.rgb_decs)}, {len(self.mix_logits_prob_clf)}, {len(self.feat_convs)}'
+
+    def forward_probs(self, x: 'torch.Tensor', ctx: 'torch.Tensor') ->Generator[LogisticMixtureProbability, torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        mode = 'train' if self.training else 'eval'
+        pix_sum = x * 4
+        xy_normalized = x / 127.5 - 1
+        y_i = torch.tensor([], device=x.device)
+        z: 'torch.Tensor' = 0.0
+        for i, (rgb_dec, clf, feat_conv) in enumerate(zip(self.rgb_decs, self.mix_logits_prob_clf, self.feat_convs)):
+            xy_normalized = torch.cat((xy_normalized, y_i / 127.5 - 1), dim=1)
+            z = rgb_dec(xy_normalized, ctx)
+            ctx = feat_conv(z)
+            probs = clf(z)
+            lower = torch.max(pix_sum - (3 - i) * 255, torch.tensor(0.0, device=x.device))
+            upper = torch.min(pix_sum, torch.tensor(255.0, device=x.device))
+            y_i = yield LogisticMixtureProbability(f'{mode}/{self.scale}_{i}', i, probs, lower, upper)
+            y_i = data.pad(y_i, x.shape[-2], x.shape[-1])
+            pix_sum -= y_i
+        return pix_sum, ctx
+
+
+class Compressor(nn.Module):
+
+    def __init__(self) ->None:
+        super().__init__()
+        assert configs.scale >= 0, configs.scale
+        self.loss_fn = lm.DiscretizedMixLogisticLoss(rgb_scale=True)
+        self.ctx_upsamplers = nn.ModuleList([nn.Identity(), *[edsr.Upsampler(scale=2, n_feats=configs.n_feats) for _ in range(configs.scale - 1)]] if configs.scale > 0 else [])
+        self.decs = nn.ModuleList([StrongPixDecoder(i) for i in range(configs.scale)])
+        assert len(self.ctx_upsamplers) == len(self.decs), f'{len(self.ctx_upsamplers)}, {len(self.decs)}'
+        self.nets = nn.ModuleList([self.ctx_upsamplers, self.decs])
+
+    def forward(self, x: 'torch.Tensor') ->Bits:
+        downsampled = data.average_downsamples(x)
+        assert len(downsampled) - 1 == len(self.decs), f'{len(downsampled) - 1}, {len(self.decs)}'
+        mode = 'train' if self.training else 'eval'
+        bits = Bits()
+        bits.add_uniform(f'{mode}/codes_0', util.tensor_round(downsampled[-1]))
+        ctx = 0.0
+        for dec, ctx_upsampler, x, y in zip(self.decs, self.ctx_upsamplers, downsampled[::-1], downsampled[-2::-1]):
+            ctx = ctx_upsampler(ctx)
+            dec_bits, ctx = dec(x, util.tensor_round(y), ctx)
+            bits.update(dec_bits)
+        return bits
 

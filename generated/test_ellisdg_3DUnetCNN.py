@@ -1,56 +1,20 @@
 import sys
 _module = sys.modules[__name__]
 del sys
-augmentation = _module
-segment = _module
-autoimplant_augmentation = _module
-submit_augmentations = _module
-brats = _module
-evaluate = _module
-original_unet_train = _module
-predict = _module
-preprocess = _module
-train = _module
-test_brats = _module
-test_generator = _module
-test_metrics = _module
-test_model = _module
-test_predict = _module
-test_training = _module
-test_utils = _module
-unet3dlegacy = _module
-augment = _module
-data = _module
-generator = _module
-metrics = _module
-model = _module
-isensee2017 = _module
-unet = _module
-normalize = _module
-prediction = _module
-training = _module
-utils = _module
-nilearn_custom_utils = _module
-nilearn_utils = _module
-patches = _module
-sitk_utils = _module
+process = _module
 test_augment = _module
 test_segment = _module
+test_utils = _module
 unet3d = _module
-dti = _module
+datasets = _module
+segmentation = _module
+losses = _module
 models = _module
-keras = _module
 build = _module
-load = _module
-resnet = _module
-senet = _module
-se = _module
-se_resnet = _module
 pytorch = _module
 autoencoder = _module
 variational = _module
 vqvae2 = _module
-build = _module
 classification = _module
 custom = _module
 decoder = _module
@@ -62,36 +26,44 @@ graph = _module
 graph_cmr_layers = _module
 graph_cmr_net = _module
 utils = _module
-segmentation = _module
 unet = _module
 predict = _module
 utils = _module
 volumetric = _module
 scripts = _module
-make_whole_brain_predictions = _module
+make_gif = _module
 script_utils = _module
-pytorch = _module
-pytorch_training_utils = _module
+segment = _module
+train = _module
+train = _module
+training_utils = _module
+transforms = _module
+one_hot = _module
 affine = _module
+augment = _module
+cifti = _module
 filenames = _module
-hcp = _module
+image = _module
+nilearn_custom_utils = _module
+nilearn_utils = _module
 nipy = _module
 empirical_pvalue = _module
 ggmixture = _module
-dataset = _module
-functions = _module
-pt3dunet = _module
-ssim = _module
+normalize = _module
+one_hot = _module
 radiomic_utils = _module
 resample = _module
-sequences = _module
+threshold = _module
+utils = _module
 wquantiles = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -107,6 +79,15 @@ xrange = range
 wraps = functools.wraps
 
 
+import math
+
+
+import torch
+
+
+import torch.nn
+
+
 from functools import partial
 
 
@@ -116,19 +97,10 @@ import numpy as np
 import torch.nn as nn
 
 
-import torch
-
-
 from torch import nn
 
 
 from torch.nn import functional as F
-
-
-import math
-
-
-import torch.nn
 
 
 from torch import nn as nn
@@ -140,13 +112,16 @@ import torch.nn.functional as F
 from itertools import permutations
 
 
-import pandas as pd
+import logging
 
 
 import warnings
 
 
-from torch.utils.data import DataLoader
+from copy import deepcopy
+
+
+import pandas as pd
 
 
 import time
@@ -164,13 +139,25 @@ import torch.utils.data
 import torch.utils.data.distributed
 
 
-from torch.utils.data import Dataset
+import random
 
 
-from torch.nn.functional import l1_loss
+import itertools
 
 
-from torch.nn.functional import mse_loss
+from collections.abc import Iterable
+
+
+from scipy.ndimage.interpolation import map_coordinates
+
+
+from scipy.ndimage.filters import gaussian_filter
+
+
+from scipy.ndimage import binary_erosion
+
+
+from torch.nn import ReplicationPad3d
 
 
 class VariationalBlock(nn.Module):
@@ -1155,19 +1142,23 @@ class UNetDecoder(MirroredDecoder):
             x = lay(x)
             x = pre(x)
             x = up(x)
+            diffZ = inputs[i + 1].size()[2] - x.size()[2]
+            diffY = inputs[i + 1].size()[3] - x.size()[3]
+            diffX = inputs[i + 1].size()[4] - x.size()[4]
+            x = F.pad(x, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2, diffZ // 2, diffZ - diffZ // 2])
             x = torch.cat((x, inputs[i + 1]), 1)
         x = self.layers[-1](x)
         return x
 
 
-class UNet(ConvolutionalAutoEncoder):
+class UNet3D(ConvolutionalAutoEncoder):
 
     def __init__(self, *args, encoder_class=UNetEncoder, decoder_class=UNetDecoder, n_outputs=1, **kwargs):
         super().__init__(*args, encoder_class=encoder_class, decoder_class=decoder_class, n_outputs=n_outputs, **kwargs)
         self.set_final_convolution(n_outputs=n_outputs)
 
 
-class AutocastUNet(UNet):
+class AutocastUNet(UNet3D):
 
     def forward(self, *args, **kwargs):
         from torch.cuda.amp import autocast
@@ -1176,7 +1167,7 @@ class AutocastUNet(UNet):
         return output
 
 
-class AutoImplantUNet(UNet):
+class AutoImplantUNet(UNet3D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1187,240 +1178,6 @@ class AutoImplantUNet(UNet):
 
     def test(self, x):
         return super(AutoImplantUNet, self).forward(x)
-
-
-def _fspecial_gauss_1d(size, sigma):
-    """Create 1-D gauss kernel
-    Args:
-        size (int): the size of gauss kernel
-        sigma (float): sigma of normal distribution
-
-    Returns:
-        torch.Tensor: 1D kernel
-    """
-    coords = torch.arange(size)
-    coords -= size // 2
-    g = torch.exp(-coords ** 2 / (2 * sigma ** 2))
-    g /= g.sum()
-    return g.unsqueeze(0).unsqueeze(0)
-
-
-def gaussian_filter(input, win):
-    """ Blur input with 1-D kernel
-    Args:
-        input (torch.Tensor): a batch of tensors to be blured
-        window (torch.Tensor): 1-D gauss kernel
-
-    Returns:
-        torch.Tensor: blured tensors
-    """
-    N, C, H, W = input.shape
-    out = F.conv2d(input, win, stride=1, padding=0, groups=C)
-    out = F.conv2d(out, win.transpose(2, 3), stride=1, padding=0, groups=C)
-    return out
-
-
-def _ssim(X, Y, win, data_range=255, size_average=True, full=False, K=(0.01, 0.03)):
-    """ Calculate ssim index for X and Y
-    Args:
-        X (torch.Tensor): images
-        Y (torch.Tensor): images
-        win (torch.Tensor): 1-D gauss kernel
-        data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
-        size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-        full (bool, optional): return sc or not
-
-    Returns:
-        torch.Tensor: ssim results
-    """
-    K1, K2 = K
-    batch, channel, height, width = X.shape
-    compensation = 1.0
-    C1 = (K1 * data_range) ** 2
-    C2 = (K2 * data_range) ** 2
-    win = win
-    mu1 = gaussian_filter(X, win)
-    mu2 = gaussian_filter(Y, win)
-    mu1_sq = mu1.pow(2)
-    mu2_sq = mu2.pow(2)
-    mu1_mu2 = mu1 * mu2
-    sigma1_sq = compensation * (gaussian_filter(X * X, win) - mu1_sq)
-    sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
-    sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
-    cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)
-    ssim_map = (2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1) * cs_map
-    if size_average:
-        ssim_val = ssim_map.mean()
-        cs = cs_map.mean()
-    else:
-        ssim_val = ssim_map.mean(-1).mean(-1).mean(-1)
-        cs = cs_map.mean(-1).mean(-1).mean(-1)
-    if full:
-        return ssim_val, cs
-    else:
-        return ssim_val
-
-
-def ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_average=True, full=False, K=(0.01, 0.03)):
-    """ interface of ssim
-    Args:
-        X (torch.Tensor): a batch of images, (N,C,H,W)
-        Y (torch.Tensor): a batch of images, (N,C,H,W)
-        win_size: (int, optional): the size of gauss kernel
-        win_sigma: (float, optional): sigma of normal distribution
-        win (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to win_size and win_sigma
-        data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
-        size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-        full (bool, optional): return sc or not
-        K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
-
-    Returns:
-        torch.Tensor: ssim results
-    """
-    if len(X.shape) != 4:
-        raise ValueError('Input images must be 4-d tensors.')
-    if not X.type() == Y.type():
-        raise ValueError('Input images must have the same dtype.')
-    if not X.shape == Y.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    if not win_size % 2 == 1:
-        raise ValueError('Window size must be odd.')
-    win_sigma = win_sigma
-    if win is None:
-        win = _fspecial_gauss_1d(win_size, win_sigma)
-        win = win.repeat(X.shape[1], 1, 1, 1)
-    else:
-        win_size = win.shape[-1]
-    ssim_val, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, full=True, K=K)
-    if size_average:
-        ssim_val = ssim_val.mean()
-        cs = cs.mean()
-    if full:
-        return ssim_val, cs
-    else:
-        return ssim_val
-
-
-class SSIM(torch.nn.Module):
-
-    def __init__(self, win_size=11, win_sigma=1.5, data_range=None, size_average=True, channel=3, K=(0.01, 0.03)):
-        """ class for ssim
-        Args:
-            win_size: (int, optional): the size of gauss kernel
-            win_sigma: (float, optional): sigma of normal distribution
-            data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
-            size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-            channel (int, optional): input channels (default: 3)
-            K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a
-            negative or NaN results.
-        """
-        super(SSIM, self).__init__()
-        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
-        self.size_average = size_average
-        self.data_range = data_range
-        self.K = K
-
-    def forward(self, X, Y):
-        return ssim(X, Y, win=self.win, data_range=self.data_range, size_average=self.size_average, K=self.K)
-
-
-def ms_ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_average=True, full=False, weights=None, K=(0.01, 0.03)):
-    """ interface of ms-ssim
-    Args:
-        X (torch.Tensor): a batch of images, (N,C,H,W)
-        Y (torch.Tensor): a batch of images, (N,C,H,W)
-        win_size: (int, optional): the size of gauss kernel
-        win_sigma: (float, optional): sigma of normal distribution
-        win (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to win_size and win_sigma
-        data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
-        size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-        full (bool, optional): return sc or not
-        weights (list, optional): weights for different levels
-        K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
-
-    Returns:
-        torch.Tensor: ms-ssim results
-    """
-    if len(X.shape) != 4:
-        raise ValueError('Input images must be 4-obj tensors.')
-    if not X.type() == Y.type():
-        raise ValueError('Input images must have the same dtype.')
-    if not X.shape == Y.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    if not win_size % 2 == 1:
-        raise ValueError('Window size must be odd.')
-    if weights is None:
-        weights = torch.FloatTensor([0.0448, 0.2856, 0.3001, 0.2363, 0.1333])
-    win_sigma = win_sigma
-    if win is None:
-        win = _fspecial_gauss_1d(win_size, win_sigma)
-        win = win.repeat(X.shape[1], 1, 1, 1)
-    else:
-        win_size = win.shape[-1]
-    levels = weights.shape[0]
-    mcs = []
-    for _ in range(levels):
-        ssim_val, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, full=True, K=K)
-        mcs.append(cs)
-        padding = X.shape[2] % 2, X.shape[3] % 2
-        X = F.avg_pool2d(X, kernel_size=2, padding=padding)
-        Y = F.avg_pool2d(Y, kernel_size=2, padding=padding)
-    mcs = torch.stack(mcs, dim=0)
-    msssim_val = torch.prod(mcs[:-1] ** weights[:-1].unsqueeze(1) * ssim_val ** weights[-1], dim=0)
-    if size_average:
-        msssim_val = msssim_val.mean()
-    return msssim_val
-
-
-class MS_SSIM(torch.nn.Module):
-
-    def __init__(self, win_size=11, win_sigma=1.5, data_range=None, size_average=True, channel=3, weights=None, K=(0.01, 0.03)):
-        """ class for ms-ssim
-        Args:
-            win_size: (int, optional): the size of gauss kernel
-            win_sigma: (float, optional): sigma of normal distribution
-            data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
-            size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-            channel (int, optional): input channels (default: 3)
-            weights (list, optional): weights for different levels
-            K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a
-            negative or NaN results.
-        """
-        super(MS_SSIM, self).__init__()
-        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
-        self.size_average = size_average
-        self.data_range = data_range
-        self.weights = weights
-        self.K = K
-
-    def forward(self, X, Y):
-        return ms_ssim(X, Y, win=self.win, size_average=self.size_average, data_range=self.data_range, weights=self.weights, K=self.K)
-
-
-class SSIMLoss5d(SSIM):
-
-    def __init__(self, *args, transpose=(-1, -3), **kwargs):
-        super(SSIMLoss5d, self).__init__(*args, **kwargs)
-        self.transpose = transpose
-
-    def forward(self, x, y):
-        if self.transpose:
-            x = x.transpose(*self.transpose)
-            y = y.transpose(*self.transpose)
-        return super(SSIMLoss5d, self).forward(x.view(-1, x.shape[-3], x.shape[-2], x.shape[-1]), y.view(-1, y.shape[-3], y.shape[-2], y.shape[-1]))
-
-
-class MSSSIMLoss5d(MS_SSIM):
-
-    def __init__(self, *args, transpose=(-1, -3), **kwargs):
-        super(MSSSIMLoss5d, self).__init__(*args, **kwargs)
-        self.transpose = transpose
-
-    def forward(self, x, y):
-        if self.transpose:
-            x = x.transpose(*self.transpose)
-            y = y.transpose(*self.transpose)
-        return super(MSSSIMLoss5d, self).forward(x.view(-1, x.shape[-3], x.shape[-2], x.shape[-1]), y.view(-1, y.shape[-3], y.shape[-2], y.shape[-1]))
 
 
 import torch

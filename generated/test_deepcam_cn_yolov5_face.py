@@ -42,7 +42,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -901,6 +903,43 @@ def initialize_weights(model):
 logger = logging.getLogger(__name__)
 
 
+def time_synchronized():
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return time.time()
+
+
+def profile(x, ops, n=100, device=None):
+    device = device or torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    x = x
+    x.requires_grad = True
+    None
+    None
+    for m in (ops if isinstance(ops, list) else [ops]):
+        m = m if hasattr(m, 'to') else m
+        m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m
+        dtf, dtb, t = 0.0, 0.0, [0.0, 0.0, 0.0]
+        try:
+            flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1000000000.0 * 2
+        except:
+            flops = 0
+        for _ in range(n):
+            t[0] = time_synchronized()
+            y = m(x)
+            t[1] = time_synchronized()
+            try:
+                _ = y.sum().backward()
+                t[2] = time_synchronized()
+            except:
+                t[2] = float('nan')
+            dtf += (t[1] - t[0]) * 1000 / n
+            dtb += (t[2] - t[1]) * 1000 / n
+        s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
+        s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
+        p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0
+        None
+
+
 def model_info(model, verbose=False, img_size=640):
     n_p = sum(x.numel() for x in model.parameters())
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)
@@ -972,12 +1011,6 @@ def scale_img(img, ratio=1.0, same_shape=False, gs=32):
         if not same_shape:
             h, w = [(math.ceil(x * ratio / gs) * gs) for x in (h, w)]
         return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)
-
-
-def time_synchronized():
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    return time.time()
 
 
 class Model(nn.Module):

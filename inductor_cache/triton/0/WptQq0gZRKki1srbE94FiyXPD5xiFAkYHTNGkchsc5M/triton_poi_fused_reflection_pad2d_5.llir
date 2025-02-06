@@ -1,0 +1,96 @@
+; ModuleID = 'LLVMDialectModule'
+source_filename = "LLVMDialectModule"
+target datalayout = "e-p3:32:32-p4:32:32-p5:32:32-i64:64-i128:128-v16:16-v32:32-n16:32:64"
+
+define void @triton_poi_fused_reflection_pad2d_5(ptr addrspace(1) %0, ptr addrspace(1) %1, i32 %2) local_unnamed_addr !dbg !7 {
+  %4 = tail call i32 asm "mov.u32 $0, %ctaid.x;", "=r"() #2, !dbg !10
+  %5 = shl i32 %4, 9, !dbg !11
+  %6 = tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg !12
+  %7 = shl i32 %6, 1, !dbg !12
+  %8 = and i32 %7, 510, !dbg !12
+  %9 = or disjoint i32 %5, %8, !dbg !13
+  %10 = or disjoint i32 %9, 1, !dbg !13
+  %11 = icmp slt i32 %9, 1115136, !dbg !14
+  %12 = srem i32 %10, 66, !dbg !15
+  %13 = sdiv i32 %9, 66, !dbg !16
+  %14 = sdiv i32 %9, 4356, !dbg !17
+  %15 = add nsw i32 %12, -1, !dbg !18
+  %16 = tail call i32 @llvm.abs.i32(i32 %15, i1 true), !dbg !19
+  %17 = add nsw i32 %16, -63, !dbg !20
+  %18 = tail call i32 @llvm.abs.i32(i32 %17, i1 true), !dbg !21
+  %19 = shl nsw i32 %14, 12, !dbg !22
+  %reass.sub = or disjoint i32 %19, 4095, !dbg !23
+  %20 = insertelement <2 x i32> poison, i32 %9, i64 0, !dbg !15
+  %21 = insertelement <2 x i32> %20, i32 %13, i64 1, !dbg !15
+  %22 = srem <2 x i32> %21, splat (i32 66), !dbg !15
+  %23 = add nsw <2 x i32> %22, splat (i32 -1), !dbg !18
+  %24 = tail call <2 x i32> @llvm.abs.v2i32(<2 x i32> %23, i1 true), !dbg !19
+  %25 = add nsw <2 x i32> %24, splat (i32 -63), !dbg !20
+  %26 = tail call <2 x i32> @llvm.abs.v2i32(<2 x i32> %25, i1 true), !dbg !21
+  %27 = extractelement <2 x i32> %26, i64 0, !dbg !24
+  %28 = sub nuw i32 %reass.sub, %27, !dbg !24
+  %29 = extractelement <2 x i32> %26, i64 1, !dbg !24
+  %30 = mul nsw i32 %29, -64, !dbg !24
+  %31 = add i32 %28, %30, !dbg !24
+  %32 = sub nuw i32 %reass.sub, %18, !dbg !23
+  %33 = add i32 %32, %30, !dbg !24
+  %34 = sext i32 %31 to i64, !dbg !25
+  %35 = getelementptr float, ptr addrspace(1) %0, i64 %34, !dbg !25
+  %36 = sext i32 %33 to i64, !dbg !25
+  %37 = getelementptr float, ptr addrspace(1) %0, i64 %36, !dbg !25
+  %38 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];", "=r,l,b"(ptr addrspace(1) %35, i1 %11) #2, !dbg !26
+  %39 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.L1::evict_last.b32 { $0 }, [ $1 + 0 ];", "=r,l,b"(ptr addrspace(1) %37, i1 %11) #2, !dbg !26
+  %40 = sext i32 %9 to i64, !dbg !27
+  %41 = getelementptr float, ptr addrspace(1) %1, i64 %40, !dbg !27
+  tail call void asm sideeffect "@$3 st.global.v2.b32 [ $2 + 0 ], { $0, $1 };", "r,r,l,b"(i32 %38, i32 %39, ptr addrspace(1) %41, i1 %11) #2, !dbg !28
+  ret void, !dbg !29
+}
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i32 @llvm.abs.i32(i32, i1 immarg) #0
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare <2 x i32> @llvm.abs.v2i32(<2 x i32>, i1 immarg) #1
+
+attributes #0 = { mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { nounwind }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+!nvvm.annotations = !{!4, !5}
+!llvm.ident = !{!6}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = !{i32 4, !"nvvm-reflect-ftz", i32 1}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "triton", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
+!3 = !DIFile(filename: "cmab6q66qu72s4atpcqclvrfpfy4ghp2bgteq5euzvu5ntreso6g.py", directory: "inductor_cache/ma")
+!4 = !{ptr @triton_poi_fused_reflection_pad2d_5, !"kernel", i32 1}
+!5 = !{ptr @triton_poi_fused_reflection_pad2d_5, !"reqntidx", i32 256}
+!6 = !{!"clang version 3.8.0 (tags/RELEASE_380/final)"}
+!7 = distinct !DISubprogram(name: "triton_poi_fused_reflection_pad2d_5", linkageName: "triton_poi_fused_reflection_pad2d_5", scope: !3, file: !3, line: 19, type: !8, scopeLine: 19, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !2)
+!8 = !DISubroutineType(cc: DW_CC_normal, types: !9)
+!9 = !{}
+!10 = !DILocation(line: 21, column: 28, scope: !7)
+!11 = !DILocation(line: 21, column: 33, scope: !7)
+!12 = !DILocation(line: 22, column: 36, scope: !7)
+!13 = !DILocation(line: 22, column: 23, scope: !7)
+!14 = !DILocation(line: 23, column: 21, scope: !7)
+!15 = !DILocation(line: 24, column: 19, scope: !7)
+!16 = !DILocation(line: 25, column: 21, scope: !7)
+!17 = !DILocation(line: 26, column: 19, scope: !7)
+!18 = !DILocation(line: 28, column: 82, scope: !7)
+!19 = !DILocation(line: 28, column: 75, scope: !7)
+!20 = !DILocation(line: 28, column: 63, scope: !7)
+!21 = !DILocation(line: 28, column: 55, scope: !7)
+!22 = !DILocation(line: 28, column: 149, scope: !7)
+!23 = !DILocation(line: 28, column: 91, scope: !7)
+!24 = !DILocation(line: 28, column: 144, scope: !7)
+!25 = !DILocation(line: 28, column: 30, scope: !7)
+!26 = !DILocation(line: 28, column: 154, scope: !7)
+!27 = !DILocation(line: 29, column: 25, scope: !7)
+!28 = !DILocation(line: 29, column: 36, scope: !7)
+!29 = !DILocation(line: 29, column: 4, scope: !7)

@@ -20,16 +20,18 @@ car_on_hill_fqi = _module
 cartpole_lspi = _module
 double_chain_q_learning = _module
 double_chain = _module
-get_env_info = _module
 grid_world_td = _module
+gym_recurrent_ppo = _module
 habitat = _module
 habitat_nav_dqn = _module
 habitat_rearrange_sac = _module
 igibson_dqn = _module
+isaac_example = _module
 lqr_bbo = _module
 lqr_pg = _module
 minigrid_dqn = _module
 mountain_car_sarsa = _module
+mujoco_air_hockey_sac = _module
 pendulum_a2c = _module
 pendulum_ac = _module
 pendulum_ddpg = _module
@@ -38,10 +40,13 @@ pendulum_sac = _module
 pendulum_trust_region = _module
 plotting_and_normalization = _module
 puddle_world_sarsa = _module
-segway_test_bbo = _module
+segway_bbo = _module
+segway_eppo = _module
 ship_steering_bbo = _module
 simple_chain_qlearning = _module
 taxi_mellow = _module
+vectorized_core = _module
+pendulum_trust_region = _module
 walker_stand_ddpg = _module
 walker_stand_ddpg_shared_net = _module
 mushroom_rl = _module
@@ -54,12 +59,15 @@ deep_actor_critic = _module
 a2c = _module
 deep_actor_critic = _module
 ppo = _module
+ppo_bptt = _module
 sac = _module
 td3 = _module
 trpo = _module
 policy_search = _module
 black_box_optimization = _module
 constrained_reps = _module
+context_builder = _module
+eppo = _module
 more = _module
 pgpe = _module
 reps = _module
@@ -100,22 +108,38 @@ weighted_q_learning = _module
 approximators = _module
 _implementations = _module
 action_regressor = _module
-ensemble = _module
 q_regressor = _module
+ensemble = _module
+ensemble_table = _module
 parametric = _module
 cmac = _module
 linear = _module
+networks = _module
+linear_network = _module
 torch_approximator = _module
 regressor = _module
+table = _module
 core = _module
+_impl = _module
+core_logic = _module
+list_dataset = _module
+numpy_dataset = _module
+torch_dataset = _module
+vectorized_core_logic = _module
 agent = _module
+array_backend = _module
+dataset = _module
 environment = _module
+extra_info = _module
 console_logger = _module
 data_logger = _module
+multiprocess_environment = _module
 serialization = _module
+vectorized_env = _module
 distributions = _module
 distribution = _module
 gaussian = _module
+torch_distribution = _module
 environments = _module
 atari = _module
 car_on_hill = _module
@@ -127,9 +151,12 @@ grid_world = _module
 simple_chain = _module
 taxi = _module
 gym_env = _module
+gymnasium_atari = _module
+gymnasium_env = _module
 habitat_env = _module
 igibson_env = _module
 inverted_pendulum = _module
+isaac_env = _module
 lqr = _module
 minigrid_env = _module
 mujoco = _module
@@ -161,17 +188,31 @@ fourier = _module
 gaussian_rbf = _module
 polynomial = _module
 tensors = _module
+basis_tensor = _module
 constant_tensor = _module
-gaussian_tensor = _module
 random_fourier_tensor = _module
 tiles = _module
 voronoi = _module
 policy = _module
 deterministic_policy = _module
+dmp = _module
 gaussian_policy = _module
 noise_policy = _module
+promps = _module
+recurrent_torch_policy = _module
 td_policy = _module
 torch_policy = _module
+vector_policy = _module
+rl_utils = _module
+eligibility_trace = _module
+optimizers = _module
+parameters = _module
+preprocessors = _module
+replay_memory = _module
+running_stats = _module
+spaces = _module
+value_functions = _module
+variance_parameters = _module
 solvers = _module
 dynamic_programming = _module
 utils = _module
@@ -183,33 +224,25 @@ collect_max_q = _module
 collect_parameters = _module
 collect_q = _module
 plot_dataset = _module
-dataset = _module
-eligibility_trace = _module
-folder = _module
+episodes = _module
 frames = _module
+isaac_utils = _module
 minibatches = _module
+kinematics = _module
 observation_helper = _module
 viewer = _module
 numerical_gradient = _module
-optimizers = _module
-parameters = _module
 plot = _module
 plots = _module
 common_plots = _module
 databuffer = _module
 plot_item_buffer = _module
 window = _module
-preprocessors = _module
 contacts = _module
 index_map = _module
 joints_helper = _module
 observation = _module
-replay_memory = _module
-running_stats = _module
-spaces = _module
-table = _module
-value_functions = _module
-variance_parameters = _module
+record = _module
 setup = _module
 utils = _module
 test_a2c = _module
@@ -227,8 +260,13 @@ test_trust_region = _module
 test_cmac_approximator = _module
 test_linear_approximator = _module
 test_torch_approximator = _module
+test_array_backend = _module
 test_core = _module
+test_dataset = _module
+test_extra_info = _module
 test_logger = _module
+test_serialization = _module
+test_vectorized_core = _module
 test_distribution_interface = _module
 test_gaussian_distribution = _module
 test_air_hockey = _module
@@ -243,20 +281,22 @@ test_noise_policy = _module
 test_policy_interface = _module
 test_td_policy = _module
 test_torch_policy = _module
+test_value_functions = _module
 test_car_on_hill = _module
 test_dynamic_programming = _module
 test_lqr = _module
 test_imports = _module
 test_callbacks = _module
-test_dataset = _module
-test_folder = _module
+test_episodes = _module
 test_preprocessors = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -287,6 +327,12 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 
+from torch import optim
+
+
+from torch import nn
+
+
 from copy import deepcopy
 
 
@@ -299,7 +345,22 @@ from torch.nn.parameter import Parameter
 from sklearn.exceptions import NotFittedError
 
 
+from collections import deque
+
+
+import math
+
+
+from collections import defaultdict
+
+
 import warnings
+
+
+from collections import UserDict
+
+
+import numbers
 
 
 from sklearn.ensemble import ExtraTreesRegressor
@@ -308,10 +369,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 import itertools
 
 
-from torch import optim
-
-
-from torch import nn
+import numpy.random
 
 
 class CriticNetwork(nn.Module):
@@ -371,6 +429,111 @@ class FeatureNetwork(nn.Module):
         return torch.squeeze(state, 1).float()
 
 
+def get_recurrent_network(rnn_type):
+    if rnn_type == 'vanilla':
+        return torch.nn.RNN
+    elif rnn_type == 'gru':
+        return torch.nn.GRU
+    else:
+        raise ValueError('Unknown RNN type %s.' % rnn_type)
+
+
+class PPOCriticBPTTNetwork(torch.nn.Module):
+
+    def __init__(self, input_shape, output_shape, dim_env_state, dim_action, rnn_type, n_hidden_features=128, n_features=128, num_hidden_layers=1, hidden_state_treatment='zero_initial', **kwargs):
+        super().__init__()
+        assert hidden_state_treatment in ['zero_initial', 'use_policy_hidden_state']
+        self._input_shape = input_shape
+        self._output_shape = output_shape
+        self._dim_env_state = dim_env_state
+        self._dim_action = dim_action
+        self._use_policy_hidden_states = True if hidden_state_treatment == 'use_policy_hidden_state' else False
+        rnn = get_recurrent_network(rnn_type)
+        self._h1_o = torch.nn.Linear(dim_env_state, n_features)
+        self._h1_o_post_rnn = torch.nn.Linear(dim_env_state, n_features)
+        self._rnn = rnn(input_size=n_features, hidden_size=n_hidden_features, num_layers=num_hidden_layers, batch_first=True)
+        self._hq_1 = torch.nn.Linear(n_hidden_features + n_features, n_features)
+        self._hq_2 = torch.nn.Linear(n_features, 1)
+        self._act_func = torch.nn.ReLU()
+        torch.nn.init.xavier_uniform_(self._h1_o.weight, gain=torch.nn.init.calculate_gain('relu'))
+        torch.nn.init.xavier_uniform_(self._h1_o_post_rnn.weight, gain=torch.nn.init.calculate_gain('relu'))
+        torch.nn.init.xavier_uniform_(self._hq_1.weight, gain=torch.nn.init.calculate_gain('relu'))
+        torch.nn.init.xavier_uniform_(self._hq_2.weight, gain=torch.nn.init.calculate_gain('relu'))
+
+    def forward(self, state, policy_state, lengths):
+        input_rnn = self._act_func(self._h1_o(state))
+        packed_seq = torch.nn.utils.rnn.pack_padded_sequence(input_rnn, lengths, enforce_sorted=False, batch_first=True)
+        if self._use_policy_hidden_states:
+            policy_state_reshaped = policy_state.view(-1, self._num_hidden_layers, self._n_hidden_features)
+            policy_state_reshaped = torch.swapaxes(policy_state_reshaped, 0, 1)
+            out_rnn, _ = self._rnn(packed_seq, policy_state_reshaped)
+        else:
+            out_rnn, _ = self._rnn(packed_seq)
+        features_rnn, _ = torch.nn.utils.rnn.pad_packed_sequence(out_rnn, batch_first=True)
+        rel_indices = lengths.view(-1, 1, 1) - 1
+        features_rnn = torch.squeeze(torch.take_along_dim(features_rnn, rel_indices, dim=1), dim=1)
+        last_state = torch.squeeze(torch.take_along_dim(state, rel_indices, dim=1), dim=1)
+        feature_s = self._act_func(self._h1_o_post_rnn(last_state))
+        input_last_layer = torch.concat([feature_s, features_rnn], dim=1)
+        q = self._hq_2(self._act_func(self._hq_1(input_last_layer)))
+        return torch.squeeze(q)
+
+
+class PPOActorBPTTNetwork(torch.nn.Module):
+
+    def __init__(self, input_shape, output_shape, n_features, dim_env_state, rnn_type, n_hidden_features, num_hidden_layers=1, **kwargs):
+        super().__init__()
+        dim_state = input_shape[0]
+        dim_action = output_shape[0]
+        self._dim_env_state = dim_env_state
+        self._num_hidden_layers = num_hidden_layers
+        self._n_hidden_features = n_hidden_features
+        rnn = get_recurrent_network(rnn_type)
+        self._h1_o = torch.nn.Linear(dim_env_state, n_features)
+        self._h1_o_post_rnn = torch.nn.Linear(dim_env_state, n_features)
+        self._rnn = rnn(input_size=n_features, hidden_size=n_hidden_features, num_layers=num_hidden_layers, batch_first=True)
+        self._h3 = torch.nn.Linear(n_hidden_features + n_features, dim_action)
+        self._act_func = torch.nn.ReLU()
+        self._tanh = torch.nn.Tanh()
+        torch.nn.init.xavier_uniform_(self._h1_o.weight, gain=torch.nn.init.calculate_gain('relu') * 0.05)
+        torch.nn.init.xavier_uniform_(self._h1_o_post_rnn.weight, gain=torch.nn.init.calculate_gain('relu') * 0.05)
+        torch.nn.init.xavier_uniform_(self._h3.weight, gain=torch.nn.init.calculate_gain('relu') * 0.05)
+
+    def forward(self, state, policy_state, lengths):
+        input_rnn = self._act_func(self._h1_o(state))
+        packed_seq = torch.nn.utils.rnn.pack_padded_sequence(input_rnn, lengths, enforce_sorted=False, batch_first=True)
+        policy_state_reshaped = policy_state.view(-1, self._num_hidden_layers, self._n_hidden_features)
+        policy_state_reshaped = torch.swapaxes(policy_state_reshaped, 0, 1)
+        out_rnn, next_hidden = self._rnn(packed_seq, policy_state_reshaped)
+        features_rnn, _ = torch.nn.utils.rnn.pad_packed_sequence(out_rnn, batch_first=True)
+        rel_indices = lengths.view(-1, 1, 1) - 1
+        features_rnn = torch.squeeze(torch.take_along_dim(features_rnn, rel_indices, dim=1), dim=1)
+        last_state = torch.squeeze(torch.take_along_dim(state, rel_indices, dim=1), dim=1)
+        feature_sa = self._act_func(self._h1_o_post_rnn(last_state))
+        input_last_layer = torch.concat([feature_sa, features_rnn], dim=1)
+        a = self._h3(input_last_layer)
+        return a, torch.swapaxes(next_hidden, 0, 1)
+
+
+class LinearNetwork(nn.Module):
+
+    def __init__(self, input_shape, output_shape, **kwargs):
+        super().__init__()
+        n_input = input_shape[-1]
+        n_output = output_shape[0]
+        self._h1 = nn.Linear(n_input, n_output)
+        nn.init.xavier_uniform_(self._h1.weight, gain=nn.init.calculate_gain('relu'))
+
+    def forward(self, state, action=None):
+        q = F.relu(self._h1(torch.squeeze(state, 1).float()))
+        if action is None:
+            return q
+        else:
+            action = action.long()
+            q_acted = torch.squeeze(q.gather(1, action))
+            return q_acted
+
+
 class StateEmbedding(nn.Module):
 
     def __init__(self, input_shape):
@@ -394,12 +557,141 @@ class StateEmbedding(nn.Module):
         return h
 
 
+class TorchUtils(object):
+    _default_device = 'cpu'
+
+    @classmethod
+    def set_default_device(cls, device):
+        cls._default_device = device
+
+    @classmethod
+    def get_device(cls, device=None):
+        return cls._default_device if device is None else device
+
+    @classmethod
+    def set_weights(cls, parameters, weights, device=None):
+        """
+        Function used to set the value of a set of torch parameters given a
+        vector of values.
+
+        Args:
+            parameters (list): list of parameters to be considered;
+            weights (numpy.ndarray): array of the new values for
+                the parameters;
+            device (str, None): device to use to store the tensor.
+
+        """
+        idx = 0
+        for p in parameters:
+            shape = p.data.shape
+            c = 1
+            for s in shape:
+                c *= s
+            w = weights[idx:idx + c].reshape(shape)
+            w_tensor = torch.as_tensor(w, device=cls.get_device(device)).type(p.data.dtype)
+            p.data = w_tensor
+            idx += c
+
+    @staticmethod
+    def get_weights(parameters):
+        """
+        Function used to get the value of a set of torch parameters as
+        a single vector of values.
+
+        Args:
+            parameters (list): list of parameters to be considered.
+
+        Returns:
+            A numpy vector consisting of all the values of the vectors.
+
+        """
+        weights = list()
+        for p in parameters:
+            w = p.data.detach()
+            weights.append(w.flatten())
+        weights = torch.concatenate(weights)
+        return weights
+
+    @staticmethod
+    def zero_grad(parameters):
+        """
+        Function used to set to zero the value of the gradient of a set
+        of torch parameters.
+
+        Args:
+            parameters (list): list of parameters to be considered.
+
+        """
+        for p in parameters:
+            if p.grad is not None:
+                p.grad.detach_()
+                p.grad.zero_()
+
+    @staticmethod
+    def get_gradient(params):
+        """
+        Function used to get the value of the gradient of a set of
+        torch parameters.
+
+        Args:
+            parameters (list): list of parameters to be considered.
+
+        """
+        views = []
+        for p in params:
+            if p.grad is None:
+                view = p.new(p.numel()).zero_()
+            else:
+                view = p.grad.view(-1)
+            views.append(view)
+        return torch.cat(views, 0)
+
+    @classmethod
+    def to_float_tensor(cls, x, device=None):
+        """
+        Function used to convert a numpy array to a float torch tensor.
+
+        Args:
+            x (np.ndarray): numpy array to be converted as torch tensor;
+            device (str, None): device to use to store the tensor.
+
+        Returns:
+            A float tensor build from the values contained in the input array.
+
+        """
+        return torch.as_tensor(x, device=cls.get_device(device), dtype=torch.float)
+
+    @classmethod
+    def to_int_tensor(cls, x, device=None):
+        """
+        Function used to convert a numpy array to a float torch tensor.
+
+        Args:
+            x (np.ndarray): numpy array to be converted as torch tensor;
+            device (str, None): device to use to store the tensor.
+
+        Returns:
+            A float tensor build from the values contained in the input array.
+
+        """
+        return torch.as_tensor(x, device=cls.get_device(device), dtype=torch.int)
+
+    @staticmethod
+    def update_optimizer_parameters(optimizer, new_parameters):
+        if len(optimizer.state) > 0:
+            for p_old, p_new in zip(optimizer.param_groups[0]['params'], new_parameters):
+                data = optimizer.state[p_old]
+                del optimizer.state[p_old]
+                optimizer.state[p_new] = data
+        optimizer.param_groups[0]['params'] = new_parameters
+
+
 eps = torch.finfo(torch.float32).eps
 
 
 class CategoricalNetwork(nn.Module):
 
-    def __init__(self, input_shape, output_shape, features_network, n_atoms, v_min, v_max, n_features, use_cuda, **kwargs):
+    def __init__(self, input_shape, output_shape, features_network, n_atoms, v_min, v_max, n_features, **kwargs):
         super().__init__()
         self._n_output = output_shape[0]
         self._phi = features_network(input_shape, (n_features,), n_features=n_features, **kwargs)
@@ -407,9 +699,7 @@ class CategoricalNetwork(nn.Module):
         self._v_min = v_min
         self._v_max = v_max
         delta = (self._v_max - self._v_min) / (self._n_atoms - 1)
-        self._a_values = torch.arange(self._v_min, self._v_max + eps, delta)
-        if use_cuda:
-            self._a_values = self._a_values
+        self._a_values = torch.arange(self._v_min, self._v_max + eps, delta, device=TorchUtils.get_device())
         self._p = nn.ModuleList([nn.Linear(n_features, n_atoms) for _ in range(self._n_output)])
         for i in range(self._n_output):
             nn.init.xavier_uniform_(self._p[i].weight, gain=nn.init.calculate_gain('linear'))
@@ -467,7 +757,7 @@ class NoisyNetwork(nn.Module):
     class NoisyLinear(nn.Module):
         __constants__ = ['in_features', 'out_features']
 
-        def __init__(self, in_features, out_features, use_cuda, sigma_coeff=0.5, bias=True):
+        def __init__(self, in_features, out_features, sigma_coeff=0.5, bias=True):
             super().__init__()
             self.in_features = in_features
             self.out_features = out_features
@@ -478,7 +768,6 @@ class NoisyNetwork(nn.Module):
                 self.sigma_bias = Parameter(torch.Tensor(out_features))
             else:
                 self.register_parameter('bias', None)
-            self._use_cuda = use_cuda
             self._sigma_coeff = sigma_coeff
             self.reset_parameters()
 
@@ -494,11 +783,8 @@ class NoisyNetwork(nn.Module):
                 nn.init.constant_(self.sigma_bias, bound_sigma)
 
         def forward(self, input):
-            eps_output = torch.rand(self.mu_weight.shape[0], 1)
-            eps_input = torch.rand(1, self.mu_weight.shape[1])
-            if self._use_cuda:
-                eps_output = eps_output
-                eps_input = eps_input
+            eps_output = torch.rand(self.mu_weight.shape[0], 1, device=TorchUtils.get_device())
+            eps_input = torch.rand(1, self.mu_weight.shape[1], device=TorchUtils.get_device())
             eps_dot = torch.matmul(self._noise(eps_output), self._noise(eps_input))
             weight = self.mu_weight + self.sigma_weight * eps_dot
             if hasattr(self, 'mu_bias'):
@@ -512,11 +798,11 @@ class NoisyNetwork(nn.Module):
         def extra_repr(self):
             return 'in_features={}, out_features={}, mu_bias={}, sigma_bias={}'.format(self.in_features, self.out_features, self.mu_bias, self.sigma_bias is not None)
 
-    def __init__(self, input_shape, output_shape, features_network, n_features, use_cuda, **kwargs):
+    def __init__(self, input_shape, output_shape, features_network, n_features, **kwargs):
         super().__init__()
         self._n_output = output_shape[0]
         self._phi = features_network(input_shape, (n_features,), n_features=n_features, **kwargs)
-        self._Q = self.NoisyLinear(n_features, self._n_output, use_cuda)
+        self._Q = self.NoisyLinear(n_features, self._n_output)
 
     def forward(self, state, action=None):
         features = self._phi(state)
@@ -558,7 +844,7 @@ class QuantileNetwork(nn.Module):
 
 class RainbowNetwork(nn.Module):
 
-    def __init__(self, input_shape, output_shape, features_network, n_atoms, v_min, v_max, n_features, use_cuda, sigma_coeff, **kwargs):
+    def __init__(self, input_shape, output_shape, features_network, n_atoms, v_min, v_max, n_features, sigma_coeff, **kwargs):
         super().__init__()
         self._n_output = output_shape[0]
         self._phi = features_network(input_shape, (n_features,), n_features=n_features, **kwargs)
@@ -566,11 +852,9 @@ class RainbowNetwork(nn.Module):
         self._v_min = v_min
         self._v_max = v_max
         delta = (self._v_max - self._v_min) / (self._n_atoms - 1)
-        self._a_values = torch.arange(self._v_min, self._v_max + eps, delta)
-        if use_cuda:
-            self._a_values = self._a_values
-        self._pv = NoisyNetwork.NoisyLinear(n_features, n_atoms, use_cuda, sigma_coeff)
-        self._pa = nn.ModuleList([NoisyNetwork.NoisyLinear(n_features, n_atoms, use_cuda, sigma_coeff) for _ in range(self._n_output)])
+        self._a_values = torch.arange(self._v_min, self._v_max + eps, delta, device=TorchUtils.get_device())
+        self._pv = NoisyNetwork.NoisyLinear(n_features, n_atoms, sigma_coeff)
+        self._pa = nn.ModuleList([NoisyNetwork.NoisyLinear(n_features, n_atoms, sigma_coeff) for _ in range(self._n_output)])
 
     def forward(self, state, action=None, get_distribution=False):
         features = self._phi(state)
@@ -595,82 +879,43 @@ class RainbowNetwork(nn.Module):
             return softmax
 
 
-class ConstantTensor(nn.Module):
-    """
-    Pytorch module to implement a constant function (always one).
-
-    """
-
-    def forward(self, x):
-        return torch.ones(x.shape[0], 1)
-
-    @property
-    def size(self):
-        return 1
-
-
-def to_float_tensor(x, use_cuda=False):
-    """
-    Function used to convert a numpy array to a float torch tensor.
-
-    Args:
-        x (np.ndarray): numpy array to be converted as torch tensor;
-        use_cuda (bool): whether to build a cuda tensors or not.
-
-    Returns:
-        A float tensor build from the values contained in the input array.
-
-    """
-    x = torch.tensor(x, dtype=torch.float)
-    return x if use_cuda else x
-
-
-def to_int_tensor(x, use_cuda=False):
-    """
-    Function used to convert a numpy array to a float torch tensor.
-
-    Args:
-        x (np.ndarray): numpy array to be converted as torch tensor;
-        use_cuda (bool): whether to build a cuda tensors or not.
-
-    Returns:
-        A float tensor build from the values contained in the input array.
-
-    """
-    x = torch.tensor(x, dtype=torch.int)
-    return x if use_cuda else x
-
-
-def uniform_grid(n_centers, low, high):
+def uniform_grid(n_centers, low, high, eta=0.25, cyclic=False):
     """
     This function is used to create the parameters of uniformly spaced radial
-    basis functions with 25% of overlap. It creates a uniformly spaced grid of
-    ``n_centers[i]`` points in each ``ranges[i]``. Also returns a vector
-    containing the appropriate scales of the radial basis functions.
+    basis functions with `eta` of overlap. It creates a uniformly spaced grid of
+    ``n_centers[i]`` points in each dimension i. Also returns a vector
+    containing the appropriate width of the radial basis functions.
 
     Args:
          n_centers (list): number of centers of each dimension;
          low (np.ndarray): lowest value for each dimension;
-         high (np.ndarray): highest value for each dimension.
+         high (np.ndarray): highest value for each dimension;
+         eta (float, 0.25): overlap between two radial basis functions;
+         cyclic (bool, False): whether the state space is a ring or not
 
     Returns:
-        The uniformly spaced grid and the scale vector.
+        The uniformly spaced grid and the width vector.
 
     """
+    assert 0 < eta < 1.0
     n_features = len(low)
-    b = np.zeros(n_features)
+    w = np.zeros(n_features)
     c = list()
     tot_points = 1
     for i, n in enumerate(n_centers):
         start = low[i]
         end = high[i]
-        b[i] = (end - start) ** 2 / n ** 3
-        m = abs(start - end) / n
         if n == 1:
+            w[i] = abs(end - start) / 2
             c_i = (start + end) / 2.0
             c.append(np.array([c_i]))
         else:
-            c_i = np.linspace(start - m * 0.1, end + m * 0.1, n)
+            if cyclic:
+                end_new = end - abs(end - start) / n
+            else:
+                end_new = end
+            w[i] = (1 + eta) * abs(end_new - start) / n
+            c_i = np.linspace(start, end_new, n)
             c.append(c_i)
         tot_points *= n
     n_rows = 1
@@ -688,70 +933,108 @@ def uniform_grid(n_centers, low, high):
             i1 += 1
         n_cols += 1
         n_rows *= len(discrete_values)
-    return grid, b
+    return grid, w
 
 
-class GaussianRBFTensor(nn.Module):
+class GenericBasisTensor(nn.Module):
     """
-    Pytorch module to implement a gaussian radial basis function.
+    Abstract Pytorch module to implement a generic basis function.
+    All the basis function generated by this module are
 
     """
 
-    def __init__(self, mu, scale, dim, use_cuda):
+    def __init__(self, mu, scale, dim=None, normalized=False):
         """
         Constructor.
 
         Args:
             mu (np.ndarray): centers of the gaussian RBFs;
             scale (np.ndarray): scales for the RBFs;
-            dim (np.ndarray): list of dimension to be considered for the computation of the features;
-            use_cuda (bool): whether to use cuda for the computation or not.
+            dim (np.ndarray, None): list of dimension to be considered for the computation of the features. If None, all
+                dimension are used to compute the features;
+            normalized (bool, False): whether the features need to be normalized to sum to one or not;
 
         """
-        self._mu = to_float_tensor(mu, use_cuda)
-        self._scale = to_float_tensor(scale, use_cuda)
+        self._mu = TorchUtils.to_float_tensor(mu)
+        self._scale = TorchUtils.to_float_tensor(scale)
         if dim is not None:
-            self._dim = to_int_tensor(dim, use_cuda)
+            self._dim = TorchUtils.to_int_tensor(dim)
         else:
             self._dim = None
-        self._use_cuda = use_cuda
+        self._normalized = normalized
+        super().__init__()
 
     def forward(self, x):
-        if self._use_cuda:
-            x = x
         if self._dim is not None:
             x = torch.index_select(x, 1, self._dim)
         x = x.unsqueeze(1).repeat(1, self._mu.shape[0], 1)
         delta = x - self._mu.repeat(x.shape[0], 1, 1)
-        return torch.exp(-torch.sum(delta ** 2 / self._scale, -1)).squeeze(-1)
+        phi = self._basis_function(delta, self._scale)
+        if self._normalized:
+            return self._normalize(phi).squeeze(-1)
+        else:
+            return phi.squeeze(-1)
+
+    def _basis_function(self, delta, scale):
+        raise NotImplementedError
 
     @staticmethod
-    def generate(n_centers, low, high, dimensions=None, use_cuda=False):
+    def _convert_to_scale(w):
         """
-        Factory method that generates the list of dictionaries to build the
-        tensors representing a set of uniformly spaced Gaussian radial basis
-        functions with a 25% overlap.
+        Converts width of a basis function to scale
 
         Args:
-            n_centers (list): list of the number of radial basis functions to be
-                              used for each dimension;
-            low (np.ndarray): lowest value for each dimension;
-            high (np.ndarray): highest value for each dimension;
-            dimensions (list, None): list of the dimensions of the input to be
-                considered by the feature. The number of dimensions must match
-                the number of elements in ``n_centers`` and ``low``;
-            use_cuda (bool): whether to use cuda for the computation or not.
+            w (np.ndarray): array of widths of basis function for every dimension
 
         Returns:
-            The list of dictionaries as described above.
+            The array of scales for each basis function in any given dimension
+
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _normalize(raw_phi):
+        if len(raw_phi.shape) == 1:
+            return torch.nan_to_num(raw_phi / torch.sum(raw_phi, -1), 0.0)
+        else:
+            return torch.nan_to_num(raw_phi / torch.sum(raw_phi, -1).unsqueeze(1))
+
+    @classmethod
+    def is_cyclic(cls):
+        """
+        Method used to change the basis generation in case of cyclic features.
+        Returns:
+            Whether the space we consider is cyclic or not.
+
+        """
+        return False
+
+    @classmethod
+    def generate(cls, n_centers, low, high, dimensions=None, eta=0.25, normalized=False):
+        """
+        Factory method that generates the list of dictionaries to build the tensors representing a set of uniformly
+        spaced radial basis functions with `eta` overlap.
+
+        Args:
+            n_centers (list): list of the number of radial basis functions to be used for each dimension;
+            low (np.ndarray): lowest value for each dimension;
+            high (np.ndarray): highest value for each dimension;
+            dimensions (list, None): list of the dimensions of the input to be considered by the feature. The number of
+                dimensions must match the number of elements in ``high`` and ``low``;
+            eta (float, 0.25): percentage of overlap between the features;
+            normalized (bool, False): whether the features need to be normalized to sum to one or not.
+
+        Returns:
+            The tensor list.
 
         """
         n_features = len(low)
         assert len(n_centers) == n_features
         assert len(low) == len(high)
         assert dimensions is None or n_features == len(dimensions)
-        mu, scale = uniform_grid(n_centers, low, high)
-        tensor_list = [GaussianRBFTensor(mu, scale, dimensions, use_cuda)]
+        mu, w = uniform_grid(n_centers, low, high, eta, cls.is_cyclic())
+        scale = cls._convert_to_scale(w)
+        tensor_list = [cls(mu, scale, dimensions, normalized)]
         return tensor_list
 
     @property
@@ -759,53 +1042,86 @@ class GaussianRBFTensor(nn.Module):
         return self._mu.shape[0]
 
 
+class GaussianRBFTensor(GenericBasisTensor):
+
+    def _basis_function(self, delta, scale):
+        return torch.exp(-torch.sum(delta ** 2 / scale, -1))
+
+    @staticmethod
+    def _convert_to_scale(w):
+        return 2 * (w / 3) ** 2
+
+
+class VonMisesBFTensor(GenericBasisTensor):
+
+    def _basis_function(self, delta, scale):
+        return torch.exp(torch.sum(torch.cos(2 * np.pi * delta) / scale, -1) - torch.sum(1 / scale))
+
+    @classmethod
+    def is_cyclic(cls):
+        return True
+
+    @staticmethod
+    def _convert_to_scale(w):
+        return w
+
+
+class ConstantTensor(nn.Module):
+    """
+    Pytorch module to implement a constant function (always one).
+
+    """
+
+    def forward(self, x):
+        return torch.ones(x.shape[0], 1)
+
+    @property
+    def size(self):
+        return 1
+
+
 class RandomFourierBasis(nn.Module):
     """
-    Class implementing Random Fourier basis functions. The value of the feature
-    is computed using the formula:
+    Class implementing Random Fourier basis functions. The value of the feature is computed using the formula:
 
     .. math::
         \\sin{\\dfrac{PX}{\\nu}+\\varphi}
 
-    where X is the input, m is the vector of the minumum input values (for each
-    dimensions) , \\Delta is the vector of maximum
 
-    This features have been presented in:
+    where :math:`X` is the input, :math:`P` is a random weights matrix, :math:`\\nu` is the bandwidth parameter and
+    :math:`\\varphi` is a bias vector.
 
-    "Towards generalization and simplicity in continuous control". Rajeswaran A. et Al..
-    2017.
+    These features have been presented in:
+
+    "Towards generalization and simplicity in continuous control". Rajeswaran A. et Al.. 2017.
 
     """
 
-    def __init__(self, P, phi, nu, use_cuda):
+    def __init__(self, P, phi, nu):
         """
         Constructor.
 
         Args:
             P (np.ndarray): weights matrix, every weight should be drawn from a normal distribution;
             phi (np.ndarray): bias vector, every weight should be drawn from a uniform distribution in the interval
-                [-\\pi, \\pi);
-             values of the input variables, i.e. delta = high - low;
+                :math: `[-\\pi, \\pi)`;
             nu (float):  bandwidth parameter, it should be chosen approximately as the average pairwise distances
-                between different observation vectors;
-            use_cuda (bool): whether to use cuda for the computation or not.
+                between different observation vectors.
 
         """
-        self._P = to_float_tensor(P, use_cuda)
-        self._phi = to_float_tensor(phi, use_cuda)
+        self._P = TorchUtils.to_float_tensor(P)
+        self._phi = TorchUtils.to_float_tensor(phi)
         self._nu = nu
-        self._use_cuda = use_cuda
+        super().__init__()
 
     def forward(self, x):
-        if self._use_cuda:
-            x = x
         return torch.sin(x @ self._P / self._nu + self._phi)
 
     def __str__(self):
         return str(self._P) + ' ' + str(self._phi)
 
     @staticmethod
-    def generate(nu, n_output, input_size, use_cuda=False, use_bias=True):
+    def generate(nu, n_output, input_size, use_bias=True):
         """
         Factory method to build random fourier basis. Includes a constant tensor into the output.
 
@@ -813,8 +1129,7 @@ class RandomFourierBasis(nn.Module):
             nu (float):  bandwidth parameter, it should be chosen approximately as the average pairwise distances
                 between different observation vectors.
             n_output (int): number of basis to use;
-            input_size (int): size of the input;
-            use_cuda (bool): whether to use cuda for the computation or not.
+            input_size (int): size of the input.
 
         Returns:
             The list of the generated fourier basis functions.
@@ -824,7 +1139,7 @@ class RandomFourierBasis(nn.Module):
             n_output -= 1
         P = np.random.randn(input_size, n_output)
         phi = np.random.uniform(-np.pi, np.pi, n_output)
-        tensor_list = [RandomFourierBasis(P, phi, nu, use_cuda)]
+        tensor_list = [RandomFourierBasis(P, phi, nu)]
         if use_bias:
             tensor_list.append(ConstantTensor())
         return tensor_list
@@ -852,23 +1167,14 @@ class ExampleNet(nn.Module):
             return q_acted
 
 
-class LinearNetwork(nn.Module):
+class Net(torch.nn.Module):
 
     def __init__(self, input_shape, output_shape, **kwargs):
         super().__init__()
-        n_input = input_shape[-1]
-        n_output = output_shape[0]
-        self._h1 = nn.Linear(n_input, n_output)
-        nn.init.xavier_uniform_(self._h1.weight, gain=nn.init.calculate_gain('relu'))
+        self._q = torch.nn.Linear(input_shape[0], output_shape[0])
 
-    def forward(self, state, action=None):
-        q = F.relu(self._h1(torch.squeeze(state, 1).float()))
-        if action is None:
-            return q
-        else:
-            action = action.long()
-            q_acted = torch.squeeze(q.gather(1, action))
-            return q_acted
+    def forward(self, x):
+        return self._q(x.float())
 
 
 import torch
@@ -902,6 +1208,10 @@ TESTCASES = [
      lambda: ([], {'input_shape': [4, 4], 'output_shape': [4, 4]}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (Net,
+     lambda: ([], {'input_shape': [4, 4], 'output_shape': [4, 4]}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (Network,
      lambda: ([], {'input_shape': [4, 4], 'output_shape': [4, 4], 'n_features': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -929,4 +1239,7 @@ class Test_MushroomRL_mushroom_rl(_paritybench_base):
 
     def test_006(self):
         self._check(*TESTCASES[6])
+
+    def test_007(self):
+        self._check(*TESTCASES[7])
 

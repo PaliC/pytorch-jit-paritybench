@@ -117,7 +117,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -211,9 +213,6 @@ from torch.nn import Module
 import re
 
 
-from torch._six import string_classes
-
-
 import numpy.random as npr
 
 
@@ -224,9 +223,6 @@ import torch.utils.data.sampler as torch_sampler
 
 
 from torch.utils.data.dataloader import default_collate
-
-
-from collections import Iterable
 
 
 from copy import deepcopy
@@ -2271,251 +2267,4 @@ class BilinearInterpolation2d(nn.Module):
 
     def forward(self, x):
         return self.upconv(x)
-
-
-class Gather(Function):
-
-    @staticmethod
-    def forward(ctx, target_device, dim, *inputs):
-        ctx.target_device = target_device
-        ctx.dim = dim
-        ctx.input_gpus = tuple(map(lambda i: i.get_device(), inputs))
-        ctx.input_sizes = tuple(map(lambda i: i.size(ctx.dim), inputs))
-        return comm.gather(inputs, ctx.dim, ctx.target_device)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        return (None, None) + Scatter.apply(ctx.input_gpus, ctx.input_sizes, ctx.dim, grad_output)
-
-
-def _get_stream(device):
-    """Gets a background stream for copying between CPU and GPU"""
-    global _streams
-    if device == -1:
-        return None
-    if _streams is None:
-        _streams = [None] * torch.cuda.device_count()
-    if _streams[device] is None:
-        _streams[device] = torch.Stream(device)
-    return _streams[device]
-
-
-class Scatter(Function):
-
-    @staticmethod
-    def forward(ctx, target_gpus, chunk_sizes, dim, input):
-        ctx.target_gpus = target_gpus
-        ctx.chunk_sizes = chunk_sizes
-        ctx.dim = dim
-        ctx.input_device = input.get_device() if input.is_cuda else -1
-        streams = None
-        if ctx.input_device == -1:
-            streams = [_get_stream(device) for device in ctx.target_gpus]
-        outputs = comm.scatter(input, ctx.target_gpus, ctx.chunk_sizes, ctx.dim, streams)
-        if streams is not None:
-            for i, output in enumerate(outputs):
-                with torch.device(ctx.target_gpus[i]):
-                    main_stream = torch.cuda.current_stream()
-                    main_stream.wait_stream(streams[i])
-                    output.record_stream(main_stream)
-        return outputs
-
-    @staticmethod
-    def backward(ctx, *grad_output):
-        return None, None, None, Gather.apply(ctx.input_device, ctx.dim, *grad_output)
-
-
-def scatter(inputs, target_gpus, dim=0):
-    """
-    Slices variables into approximately equal chunks and
-    distributes them across given GPUs. Duplicates
-    references to objects that are not variables. Does not
-    support Tensors.
-    """
-
-    def scatter_map(obj):
-        if isinstance(obj, Variable):
-            return Scatter.apply(target_gpus, None, dim, obj)
-        assert not torch.is_tensor(obj), 'Tensors not supported in scatter.'
-        if isinstance(obj, tuple) and len(obj) > 0:
-            return list(zip(*map(scatter_map, obj)))
-        if isinstance(obj, list) and len(obj) > 0:
-            return list(map(list, zip(*map(scatter_map, obj))))
-        if isinstance(obj, dict) and len(obj) > 0:
-            return list(map(type(obj), zip(*map(scatter_map, obj.items()))))
-        return [obj for targets in target_gpus]
-    try:
-        return scatter_map(inputs)
-    finally:
-        scatter_map = None
-
-
-def scatter_kwargs(inputs, kwargs, target_gpus, dim=0):
-    """Scatter with support for kwargs dictionary"""
-    inputs = scatter(inputs, target_gpus, dim) if inputs else []
-    kwargs = scatter(kwargs, target_gpus, dim) if kwargs else []
-    if len(inputs) < len(kwargs):
-        inputs.extend([() for _ in range(len(kwargs) - len(inputs))])
-    elif len(kwargs) < len(inputs):
-        kwargs.extend([{} for _ in range(len(inputs) - len(kwargs))])
-    inputs = tuple(inputs)
-    kwargs = tuple(kwargs)
-    return inputs, kwargs
-
-
-class DataParallel(Module):
-    """Implements data parallelism at the module level.
-
-    This container parallelizes the application of the given module by
-    splitting the input across the specified devices by chunking in the batch
-    dimension. In the forward pass, the module is replicated on each device,
-    and each replica handles a portion of the input. During the backwards
-    pass, gradients from each replica are summed into the original module.
-
-    The batch size should be larger than the number of GPUs used. It should
-    also be an integer multiple of the number of GPUs so that each chunk is the
-    same size (so that each GPU processes the same number of samples).
-
-    See also: :ref:`cuda-nn-dataparallel-instead`
-
-    Arbitrary positional and keyword inputs are allowed to be passed into
-    DataParallel EXCEPT Tensors. All variables will be scattered on dim
-    specified (default 0). Primitive types will be broadcasted, but all
-    other types will be a shallow copy and can be corrupted if written to in
-    the model's forward pass.
-
-    .. warning::
-        Forward and backwrad hooks defined on :attr:`module` and its submodules
-        won't be invoked anymore, unless the hooks are initialized in the
-        :meth:`forward` method.
-
-    Args:
-        module: module to be parallelized
-        device_ids: CUDA devices (default: all devices)
-        output_device: device location of output (default: device_ids[0])
-        cpu_keywords: list of argument keywords that could be used in `forward` to
-            indicating not moving the argument to gpu. Currently, only support
-            argument of type: Variable
-
-    Example::
-
-        >>> net = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
-        >>> output = net(input_var)
-    """
-
-    def __init__(self, module, device_ids=None, output_device=None, dim=0, cpu_keywords=[], minibatch=False, batch_outputs=True):
-        super(DataParallel, self).__init__()
-        if not torch.cuda.is_available():
-            self.module = module
-            self.device_ids = []
-            return
-        if device_ids is None:
-            device_ids = list(range(torch.cuda.device_count()))
-        if output_device is None:
-            output_device = device_ids[0]
-        self.dim = dim
-        self.module = module
-        self.device_ids = device_ids
-        self.output_device = output_device
-        if len(self.device_ids) == 1:
-            self.module
-        self.cpu_keywords = cpu_keywords
-        self.minibatch = minibatch
-        self.batch_outputs = batch_outputs
-
-    def forward(self, *inputs, **kwargs):
-        if not self.device_ids:
-            return self.module(*inputs, **kwargs)
-        if self.minibatch:
-            inputs_list, kwargs_list = [], []
-            for i, device_id in enumerate(self.device_ids):
-                mini_inputs = [x[i] for x in inputs]
-                mini_kwargs = dict([(k, v[i]) for k, v in kwargs.items()])
-                a, b = self._minibatch_scatter(device_id, *mini_inputs, **mini_kwargs)
-                inputs_list.append(a)
-                kwargs_list.append(b)
-            inputs = inputs_list
-            kwargs = kwargs_list
-        else:
-            kwargs_cpu = {}
-            for k in kwargs:
-                if k in self.cpu_keywords:
-                    v = kwargs[k]
-                    kwargs_cpu[k] = v
-            for k in self.cpu_keywords:
-                kwargs.pop(k, None)
-            inputs, kwargs = self.scatter(inputs, kwargs, self.device_ids)
-            for k, v in kwargs_cpu.items():
-                split_size = v.size(self.dim) / len(self.device_ids)
-                assert split_size.is_integer()
-                kwargs_cpu[k] = list(map(Variable, torch.split(v.data, int(split_size), self.dim)))
-            kwargs_cpu = list(map(dict, zip(*[[(k, v) for v in vs] for k, vs in kwargs_cpu.items()])))
-            for d_gpu, d_cpu in zip(kwargs, kwargs_cpu):
-                d_gpu.update(d_cpu)
-        if len(self.device_ids) == 1:
-            outputs = [self.module(*inputs[0], **kwargs[0])]
-        else:
-            replicas = self.replicate(self.module, self.device_ids[:len(inputs)])
-            outputs = self.parallel_apply(replicas, inputs, kwargs)
-        if self.batch_outputs:
-            return self.gather(outputs, self.output_device)
-        else:
-            return [self.gather([x], self.output_device) for x in outputs]
-
-    def _minibatch_scatter(self, device_id, *inputs, **kwargs):
-        kwargs_cpu = {}
-        for k in kwargs:
-            if k in self.cpu_keywords:
-                kwargs_cpu[k] = kwargs[k]
-        for k in self.cpu_keywords:
-            kwargs.pop(k, None)
-        inputs, kwargs = self.scatter(inputs, kwargs, [device_id])
-        kwargs_cpu = [kwargs_cpu]
-        for d_gpu, d_cpu in zip(kwargs, kwargs_cpu):
-            d_gpu.update(d_cpu)
-        return inputs[0], kwargs[0]
-
-    def replicate(self, module, device_ids):
-        return replicate(module, device_ids)
-
-    def scatter(self, inputs, kwargs, device_ids):
-        return scatter_kwargs(inputs, kwargs, device_ids, dim=self.dim)
-
-    def parallel_apply(self, replicas, inputs, kwargs):
-        return parallel_apply(replicas, inputs, kwargs, self.device_ids[:len(replicas)])
-
-    def gather(self, outputs, output_device):
-        return gather(outputs, output_device, dim=self.dim)
-
-
-import torch
-from torch.nn import MSELoss, ReLU
-from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
-
-
-TESTCASES = [
-    # (nn.Module, init_args, forward_args, jit_compiles)
-    (AffineChannel2d,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Depth3DGridGen,
-     lambda: ([], {'height': 4, 'width': 4}),
-     lambda: ([torch.rand([256, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (Depth3DGridGen_with_mask,
-     lambda: ([], {'height': 4, 'width': 4}),
-     lambda: ([torch.rand([256, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     False),
-]
-
-class Test_generalized_iou_Detectron_pytorch(_paritybench_base):
-    def test_000(self):
-        self._check(*TESTCASES[0])
-
-    def test_001(self):
-        self._check(*TESTCASES[1])
-
-    def test_002(self):
-        self._check(*TESTCASES[2])
 

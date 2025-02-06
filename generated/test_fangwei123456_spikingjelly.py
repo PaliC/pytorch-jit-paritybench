@@ -31,20 +31,45 @@ cfunction = _module
 example = _module
 generator = _module
 neuron_kernel = _module
+ss_neuron_kernel = _module
 base = _module
 cuda_utils = _module
 encoding = _module
 A2C = _module
 DQN_state = _module
+ptan = _module
+actions = _module
+agent = _module
+common = _module
+runfile = _module
+utils = _module
+wrappers = _module
+wrappers_simple = _module
+experience = _module
+ignite = _module
+train = _module
+atari_wrappers = _module
+common = _module
+model = _module
+core_cuda = _module
+hybrid_td3_cuda_norm = _module
+ilcsan = _module
+replay_buffer_norm = _module
+test_hybrid_td3_cpu = _module
+core_cuda = _module
+hybrid_td3_cuda_norm = _module
+noisysan = _module
+replay_buffer_norm = _module
+test_hybrid_td3_cpu = _module
 PPO = _module
 Spiking_A2C = _module
 Spiking_DQN_state = _module
 Spiking_PPO = _module
 cifar10_r11_enabling_spikebased_backpropagation = _module
 classify_dvsg = _module
-common = _module
 multiprocessing_env = _module
 conv_fashion_mnist = _module
+lava_mnist = _module
 lif_fc_mnist = _module
 lynxi_fmnist_inference = _module
 mstdp = _module
@@ -59,11 +84,13 @@ lava_exchange = _module
 layer = _module
 learning = _module
 lynxi_exchange = _module
-model = _module
 parametric_lif_net = _module
 sew_resnet = _module
+snas_net = _module
+spike_dhs = _module
 spiking_resnet = _module
 spiking_vgg = _module
+spiking_vggws_ottt = _module
 train_classify = _module
 train_imagenet_example = _module
 tv_ref_classify = _module
@@ -82,8 +109,10 @@ tensor_cache = _module
 configure = _module
 datasets = _module
 asl_dvs = _module
+bullying10k = _module
 cifar10_dvs = _module
 dvs128_gesture = _module
+dvs_lip = _module
 es_imagenet = _module
 hardvs = _module
 n_caltech101 = _module
@@ -102,7 +131,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -181,6 +212,9 @@ import copy
 from typing import Callable
 
 
+from typing import Optional
+
+
 import math
 
 
@@ -188,6 +222,9 @@ from abc import abstractmethod
 
 
 import time
+
+
+from typing import Union
 
 
 import random
@@ -211,6 +248,27 @@ from itertools import count
 import torchvision.transforms as T
 
 
+import collections
+
+
+from torch.autograd import Variable
+
+
+from collections import deque
+
+
+from copy import deepcopy
+
+
+import itertools
+
+
+from torch.optim import Adam
+
+
+from collections import OrderedDict
+
+
 from torch.distributions import Normal
 
 
@@ -226,6 +284,9 @@ from torch.cuda import amp
 from torch.utils.data import DataLoader
 
 
+from torchvision import transforms
+
+
 import torch.utils.data as data
 
 
@@ -238,9 +299,6 @@ from torch import Tensor
 from torch import nn
 
 
-from torch.optim import Adam
-
-
 from torchaudio.transforms import Spectrogram
 
 
@@ -250,16 +308,10 @@ from scipy.signal import savgol_filter
 from sklearn.metrics import confusion_matrix
 
 
-from typing import Optional
-
-
 import matplotlib.ticker as ticker
 
 
 import string
-
-
-from typing import Union
 
 
 from torch.nn.common_types import _size_any_t
@@ -274,13 +326,28 @@ from torch.nn.common_types import _size_2_t
 from torch.nn.common_types import _size_3_t
 
 
+from torch.nn.common_types import _ratio_any_t
+
+
 from typing import List
 
 
 from torch.nn.modules.batchnorm import _BatchNorm
 
 
-from copy import deepcopy
+from torch.nn.utils.fusion import *
+
+
+from torch.autograd import Function
+
+
+from torch.nn.functional import interpolate
+
+
+from math import tanh
+
+
+from torch.jit import script
 
 
 import warnings
@@ -310,10 +377,31 @@ from torchvision.transforms import functional as F
 from collections import defaultdict
 
 
-from collections import deque
+from numpy import sqrt
 
 
-from collections import OrderedDict
+from numpy import newaxis
+
+
+from numpy import integer
+
+
+from numpy.fft import irfft
+
+
+from numpy.fft import rfftfreq
+
+
+from numpy.random import default_rng
+
+
+from numpy.random import Generator
+
+
+from numpy.random import RandomState
+
+
+from numpy import sum as npsum
 
 
 from torch.utils.cpp_extension import load_inline
@@ -349,9 +437,6 @@ import scipy.io
 from torchvision.datasets import utils
 
 
-from torchvision import transforms
-
-
 from torch.utils.data import Dataset
 
 
@@ -359,6 +444,9 @@ from torchvision.datasets.utils import extract_archive
 
 
 import torchaudio
+
+
+from torchvision.datasets.utils import download_url
 
 
 from torchvision.datasets.utils import verify_str_arg
@@ -579,7 +667,7 @@ class Converter(nn.Module):
         self.device = device
         self.momentum = momentum
 
-    def forward(self, ann: nn.Module):
+    def forward(self, ann: 'nn.Module'):
         """
         * :ref:`API in English <Converter.forward-en>`
 
@@ -630,7 +718,7 @@ class Converter(nn.Module):
             raise NotImplementedError(err_msg)
 
     @staticmethod
-    def fuse(fx_model: torch.fx.GraphModule, fuse_flag: bool=True) ->torch.fx.GraphModule:
+    def fuse(fx_model: 'torch.fx.GraphModule', fuse_flag: 'bool'=True) ->torch.fx.GraphModule:
         """
         * :ref:`API in English <Converter.fuse-en>`
 
@@ -660,10 +748,10 @@ class Converter(nn.Module):
 
         """
 
-        def matches_module_pattern(pattern: Iterable[Type], node: fx.Node, modules: Dict[str, Any]) ->bool:
+        def matches_module_pattern(pattern: 'Iterable[Type]', node: 'fx.Node', modules: 'Dict[str, Any]') ->bool:
             if len(node.args) == 0:
                 return False
-            nodes: Tuple[Any, fx.Node] = (node.args[0], node)
+            nodes: 'Tuple[Any, fx.Node]' = (node.args[0], node)
             for expected_type, current_node in zip(pattern, nodes):
                 if not isinstance(current_node, fx.Node):
                     return False
@@ -677,9 +765,9 @@ class Converter(nn.Module):
                     return False
             return True
 
-        def replace_node_module(node: fx.Node, modules: Dict[str, Any], new_module: torch.nn.Module):
+        def replace_node_module(node: 'fx.Node', modules: 'Dict[str, Any]', new_module: 'torch.nn.Module'):
 
-            def parent_name(target: str) ->Tuple[str, str]:
+            def parent_name(target: 'str') ->Tuple[str, str]:
                 """
                 Splits a qualname into parent path and last atom.
                 For example, `foo.bar.baz` -> (`foo.bar`, `baz`)
@@ -711,7 +799,7 @@ class Converter(nn.Module):
         return fx_model
 
     @staticmethod
-    def set_voltagehook(fx_model: torch.fx.GraphModule, mode='Max', momentum=0.1) ->torch.fx.GraphModule:
+    def set_voltagehook(fx_model: 'torch.fx.GraphModule', mode='Max', momentum=0.1) ->torch.fx.GraphModule:
         """
         * :ref:`API in English <Converter.set_voltagehook-en>`
 
@@ -758,7 +846,7 @@ class Converter(nn.Module):
         return fx_model
 
     @staticmethod
-    def replace_by_ifnode(fx_model: torch.fx.GraphModule) ->torch.fx.GraphModule:
+    def replace_by_ifnode(fx_model: 'torch.fx.GraphModule') ->torch.fx.GraphModule:
         """
         * :ref:`API in English <Converter.replace_by_ifnode-en>`
 
@@ -814,7 +902,7 @@ class Converter(nn.Module):
         return fx_model
 
     @staticmethod
-    def _add_module_and_node(fx_model: fx.GraphModule, target: str, after: fx.Node, m: nn.Module, args: Tuple) ->fx.Node:
+    def _add_module_and_node(fx_model: 'fx.GraphModule', target: 'str', after: 'fx.Node', m: 'nn.Module', args: 'Tuple') ->fx.Node:
         fx_model.add_submodule(target=target, m=m)
         with fx_model.graph.inserting_after(n=after):
             new_node = fx_model.graph.call_module(module_name=target, args=args)
@@ -829,7 +917,7 @@ def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1, norm_layer=None, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1, norm_layer=None, spiking_neuron: 'callable'=None, **kwargs):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
             norm_layer = layer.BatchNorm2d
@@ -868,7 +956,7 @@ def conv1x1(in_planes, out_planes, stride=1):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1, norm_layer=None, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1, norm_layer=None, spiking_neuron: 'callable'=None, **kwargs):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = layer.BatchNorm2d
@@ -991,7 +1079,7 @@ class StepModule:
         return self._step_mode
 
     @step_mode.setter
-    def step_mode(self, value: str):
+    def step_mode(self, value: 'str'):
         """
         * :ref:`API in English <StepModule.step_mode-setter-en>`
 
@@ -1017,7 +1105,7 @@ class StepModule:
         self._step_mode = value
 
 
-def check_backend_library(backend: str):
+def check_backend_library(backend: 'str'):
     """
     * :ref:`API in English <check_backend_library-en>`
 
@@ -1046,7 +1134,7 @@ def check_backend_library(backend: str):
         if slayer is None:
             raise ImportError('Lava-DL is not installed! You can install it from "https://github.com/lava-nc/lava-dl". ')
     else:
-        raise NotImplementedError(backend)
+        pass
 
 
 class MemoryModule(nn.Module, StepModule):
@@ -1101,14 +1189,14 @@ class MemoryModule(nn.Module, StepModule):
         return self._backend
 
     @backend.setter
-    def backend(self, value: str):
+    def backend(self, value: 'str'):
         if value not in self.supported_backends:
             raise NotImplementedError(f'{value} is not a supported backend of {self._get_name()}!')
         check_backend_library(value)
         self._backend = value
 
     @abstractmethod
-    def single_step_forward(self, x: torch.Tensor, *args, **kwargs):
+    def single_step_forward(self, x: 'torch.Tensor', *args, **kwargs):
         """
         * :ref:`API in English <MemoryModule.single_step_forward-en>`
 
@@ -1132,14 +1220,14 @@ class MemoryModule(nn.Module, StepModule):
         """
         pass
 
-    def multi_step_forward(self, x_seq: torch.Tensor, *args, **kwargs):
+    def multi_step_forward(self, x_seq: 'torch.Tensor', *args, **kwargs):
         """
         * :ref:`API in English <MemoryModule.multi_step_forward-en>`
 
         .. _MemoryModule.multi_step_forward-cn:
 
-        :param x: input tensor with ``shape = [T, N, *] ``
-        :type x: torch.Tensor
+        :param x_seq: input tensor with ``shape = [T, N, *] ``
+        :type x_seq: torch.Tensor
 
         本模块的多步的前向传播函数，通过调用 ``T`` 次 ``single_step_forward(x[t], *args, **kwargs)`` 实现
 
@@ -1148,10 +1236,10 @@ class MemoryModule(nn.Module, StepModule):
 
         .. _MemoryModule.multi_step_forward-en:
 
-        :param x: input tensor with ``shape = [T, N, *] ``
-        :type x: torch.Tensor
+        :param x_seq: input tensor with ``shape = [T, N, *] ``
+        :type x_seq: torch.Tensor
 
-        The multi-step forward function for this module, which is implementd by calling ``single_step_forward(x[t], *args, **kwargs)`` over ``T`` times
+        The multi-step forward function for this module, which is implemented by calling ``single_step_forward(x[t], *args, **kwargs)`` over ``T`` times
 
         """
         T = x_seq.shape[0]
@@ -1172,7 +1260,7 @@ class MemoryModule(nn.Module, StepModule):
     def extra_repr(self):
         return f'step_mode={self.step_mode}, backend={self.backend}'
 
-    def register_memory(self, name: str, value):
+    def register_memory(self, name: 'str', value):
         """
         * :ref:`API in English <MemoryModule.register_memory-en>`
 
@@ -1221,17 +1309,17 @@ class MemoryModule(nn.Module, StepModule):
         for key in self._memories.keys():
             self._memories[key] = copy.deepcopy(self._memories_rv[key])
 
-    def set_reset_value(self, name: str, value):
+    def set_reset_value(self, name: 'str', value):
         self._memories_rv[name] = copy.deepcopy(value)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: 'str'):
         if '_memories' in self.__dict__:
             memories = self.__dict__['_memories']
             if name in memories:
                 return memories[name]
         return super().__getattr__(name)
 
-    def __setattr__(self, name: str, value) ->None:
+    def __setattr__(self, name: 'str', value) ->None:
         _memories = self.__dict__.get('_memories')
         if _memories is not None and name in _memories:
             _memories[name] = value
@@ -1357,7 +1445,7 @@ class StatelessEncoder(nn.Module, base.StepModule):
         self.step_mode = step_mode
 
     @abstractmethod
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         """
         * :ref:`API in English <StatelessEncoder.forward-en>`
 
@@ -1382,7 +1470,7 @@ class StatelessEncoder(nn.Module, base.StepModule):
 
 class StatefulEncoder(base.MemoryModule):
 
-    def __init__(self, T: int, step_mode='s'):
+    def __init__(self, T: 'int', step_mode='s'):
         """
         * :ref:`API in English <StatefulEncoder.__init__-en>`
 
@@ -1425,7 +1513,7 @@ class StatefulEncoder(base.MemoryModule):
         self.register_memory('spike', None)
         self.register_memory('t', 0)
 
-    def single_step_forward(self, x: torch.Tensor=None):
+    def single_step_forward(self, x: 'torch.Tensor'=None):
         """
         * :ref:`API in English <StatefulEncoder.forward-en>`
 
@@ -1454,7 +1542,7 @@ class StatefulEncoder(base.MemoryModule):
         return self.spike[t]
 
     @abstractmethod
-    def single_step_encode(self, x: torch.Tensor):
+    def single_step_encode(self, x: 'torch.Tensor'):
         """
         * :ref:`API in English <StatefulEncoder.single_step_encode-en>`
 
@@ -1482,7 +1570,7 @@ class StatefulEncoder(base.MemoryModule):
 
 class PeriodicEncoder(StatefulEncoder):
 
-    def __init__(self, spike: torch.Tensor, step_mode='s'):
+    def __init__(self, spike: 'torch.Tensor', step_mode='s'):
         """
         * :ref:`API in English <PeriodicEncoder.__init__-en>`
 
@@ -1516,14 +1604,14 @@ class PeriodicEncoder(StatefulEncoder):
         """
         super().__init__(spike.shape[0], step_mode)
 
-    def single_step_encode(self, spike: torch.Tensor):
+    def single_step_encode(self, spike: 'torch.Tensor'):
         self.spike = spike
         self.T = spike.shape[0]
 
 
 class LatencyEncoder(StatefulEncoder):
 
-    def __init__(self, T: int, enc_function='linear', step_mode='s'):
+    def __init__(self, T: 'int', enc_function='linear', step_mode='s'):
         """
         * :ref:`API in English <LatencyEncoder.__init__-en>`
 
@@ -1617,7 +1705,7 @@ class LatencyEncoder(StatefulEncoder):
             raise NotImplementedError
         self.enc_function = enc_function
 
-    def single_step_encode(self, x: torch.Tensor):
+    def single_step_encode(self, x: 'torch.Tensor'):
         if self.enc_function == 'log':
             t_f = (self.T - 1.0 - torch.log(self.alpha * x + 1.0)).round().long()
         else:
@@ -1655,14 +1743,14 @@ class PoissonEncoder(StatelessEncoder):
         """
         super().__init__(step_mode)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         out_spike = torch.rand_like(x).le(x)
         return out_spike
 
 
 class WeightedPhaseEncoder(StatefulEncoder):
 
-    def __init__(self, K: int, step_mode='s'):
+    def __init__(self, K: 'int', step_mode='s'):
         """
         * :ref:`API in English <WeightedPhaseEncoder.__init__-en>`
 
@@ -1730,7 +1818,7 @@ class WeightedPhaseEncoder(StatefulEncoder):
         """
         super().__init__(K, step_mode)
 
-    def single_step_encode(self, x: torch.Tensor):
+    def single_step_encode(self, x: 'torch.Tensor'):
         assert (x >= 0).all() and (x <= 1 - 2 ** -self.T).all()
         inputs = x.clone()
         self.spike = torch.empty((self.T,) + x.shape, device=x.device)
@@ -1739,6 +1827,88 @@ class WeightedPhaseEncoder(StatefulEncoder):
             self.spike[i] = inputs >= w
             inputs -= w * self.spike[i]
             w *= 0.5
+
+
+class PopSpikeEncoderDeterministic(nn.Module):
+    """ Learnable Population Coding Spike Encoder with Deterministic Spike Trains"""
+
+    def __init__(self, obs_dim, pop_dim, spike_ts, mean_range, std):
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.pop_dim = pop_dim
+        self.encoder_neuron_num = obs_dim * pop_dim
+        self.spike_ts = spike_ts
+        tmp_mean = torch.zeros(1, obs_dim, pop_dim)
+        delta_mean = (mean_range[1] - mean_range[0]) / (pop_dim - 1)
+        for num in range(pop_dim):
+            tmp_mean[0, :, num] = mean_range[0] + delta_mean * num
+        tmp_std = torch.zeros(1, obs_dim, pop_dim) + std
+        self.mean = nn.Parameter(tmp_mean)
+        self.std = nn.Parameter(tmp_std)
+        self.neurons = neuron.IFNode(v_threshold=0.999, v_reset=None, surrogate_function=surrogate.DeterministicPass(), detach_reset=True)
+        functional.set_step_mode(self, step_mode='m')
+        functional.set_backend(self, backend='torch')
+
+    def forward(self, obs):
+        obs = obs.view(-1, self.obs_dim, 1)
+        pop_act = torch.exp(-(1.0 / 2.0) * (obs - self.mean).pow(2) / self.std.pow(2)).view(-1, self.encoder_neuron_num)
+        pop_act = pop_act.unsqueeze(0).repeat(self.spike_ts, 1, 1)
+        return self.neurons(pop_act)
+
+
+class PopSpikeEncoderRandom(nn.Module):
+    """ Learnable Population Coding Spike Encoder with Random Spike Trains """
+
+    def __init__(self, obs_dim, pop_dim, spike_ts, mean_range, std):
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.pop_dim = pop_dim
+        self.encoder_neuron_num = obs_dim * pop_dim
+        self.spike_ts = spike_ts
+        tmp_mean = torch.zeros(1, obs_dim, pop_dim)
+        delta_mean = (mean_range[1] - mean_range[0]) / (pop_dim - 1)
+        for num in range(pop_dim):
+            tmp_mean[0, :, num] = mean_range[0] + delta_mean * num
+        tmp_std = torch.zeros(1, obs_dim, pop_dim) + std
+        self.mean = nn.Parameter(tmp_mean)
+        self.std = nn.Parameter(tmp_std)
+        self.pseudo_spike = surrogate.poisson_pass.apply
+
+    def forward(self, obs):
+        obs = obs.view(-1, self.obs_dim, 1)
+        batch_size = obs.shape[0]
+        pop_act = torch.exp(-(1.0 / 2.0) * (obs - self.mean).pow(2) / self.std.pow(2)).view(-1, self.encoder_neuron_num)
+        pop_spikes = torch.zeros(self.spike_ts, batch_size, self.encoder_neuron_num, device=obs.device)
+        for step in range(self.spike_ts):
+            pop_spikes[step, :, :] = self.pseudo_spike(pop_act)
+        return pop_spikes
+
+
+class PopEncoder(nn.Module):
+    """ Learnable Population Coding Encoder """
+
+    def __init__(self, obs_dim, pop_dim, spike_ts, mean_range, std):
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.pop_dim = pop_dim
+        self.encoder_neuron_num = obs_dim * pop_dim
+        self.spike_ts = spike_ts
+        tmp_mean = torch.zeros(1, obs_dim, pop_dim)
+        delta_mean = (mean_range[1] - mean_range[0]) / (pop_dim - 1)
+        for num in range(pop_dim):
+            tmp_mean[0, :, num] = mean_range[0] + delta_mean * num
+        tmp_std = torch.zeros(1, obs_dim, pop_dim) + std
+        self.mean = nn.Parameter(tmp_mean)
+        self.std = nn.Parameter(tmp_std)
+
+    def forward(self, obs):
+        obs = obs.view(-1, self.obs_dim, 1)
+        batch_size = obs.shape[0]
+        pop_act = torch.exp(-(1.0 / 2.0) * (obs - self.mean).pow(2) / self.std.pow(2)).view(-1, self.encoder_neuron_num)
+        pop_inputs = torch.zeros(self.spike_ts, batch_size, self.encoder_neuron_num, device=obs.device)
+        for step in range(self.spike_ts):
+            pop_inputs[step, :, :] = pop_act
+        return pop_inputs
 
 
 class DQN(nn.Module):
@@ -1751,6 +1921,292 @@ class DQN(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc1(x))
         return self.fc2(x)
+
+
+class WeightedMSELoss(nn.Module):
+
+    def __init__(self, size_average=True):
+        super(WeightedMSELoss, self).__init__()
+        self.size_average = size_average
+
+    def forward(self, input, target, weights=None):
+        if weights is None:
+            return nn.MSELoss(self.size_average)(input, target)
+        loss_rows = (input - target) ** 2
+        if len(loss_rows.size()) != 1:
+            loss_rows = torch.sum(loss_rows, dim=1)
+        res = (weights * loss_rows).sum()
+        if self.size_average:
+            res /= len(weights)
+        return res
+
+
+class DSQN(nn.Module):
+
+    def __init__(self, input_shape, n_actions, T=5, dec_type='max-mem', use_cuda=False):
+        super(DSQN, self).__init__()
+        self.model_name = 'spiking_dqn'
+        self.dec_type = dec_type
+        if 'mem' in dec_type:
+            self.network = nn.Sequential(layer.Conv2d(input_shape[0], 32, kernel_size=8, stride=4), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Conv2d(32, 64, kernel_size=4, stride=2), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Conv2d(64, 64, kernel_size=3, stride=1), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Flatten(), layer.Linear(64 * 7 * 7, 512), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Linear(512, n_actions), neuron.NonSpikingLIFNode(decode=dec_type))
+        else:
+            self.network = nn.Sequential(layer.Conv2d(input_shape[0], 32, kernel_size=8, stride=4), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Conv2d(32, 64, kernel_size=4, stride=2), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Conv2d(64, 64, kernel_size=3, stride=1), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True), layer.Flatten(), layer.Linear(64 * 7 * 7, 512), neuron.LIFNode(surrogate_function=surrogate.ATan(), detach_reset=True))
+            self.decoder = nn.Linear(512, n_actions)
+        self.T = T
+        functional.set_step_mode(self.network, step_mode='m')
+        if use_cuda:
+            functional.set_backend(self.network, backend='cupy')
+
+    def forward(self, x):
+        x_seq = x.unsqueeze(0).repeat(self.T, 1, 1, 1, 1)
+        if 'mem' in self.dec_type:
+            return self.network(x_seq)
+        x_seq = self.network(x_seq)
+        fr = x_seq.mean(0)
+        return self.decoder(fr)
+
+
+def mlp(sizes, activation, output_activation=nn.Identity):
+    layers = []
+    for j in range(len(sizes) - 1):
+        act = activation if j < len(sizes) - 2 else output_activation
+        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    return nn.Sequential(*layers)
+
+
+class MLPQFunction(nn.Module):
+
+    def __init__(self, obs_dim, act_dim, hidden_sizes, activation):
+        super().__init__()
+        self.q = mlp([obs_dim + act_dim] + list(hidden_sizes) + [1], activation)
+
+    def forward(self, obs, act):
+        q = self.q(torch.cat([obs, act], dim=-1))
+        return torch.squeeze(q, -1)
+
+
+class NoisyPopSpikeDecoder(nn.Module):
+
+    def __init__(self, act_dim, pop_dim, spike_ts, beta, sigma_init):
+        super().__init__()
+        self.act_dim = act_dim
+        self.pop_dim = pop_dim
+        self.spike_ts = spike_ts
+        self.group_fc = layer.Conv1d(act_dim, act_dim, pop_dim, groups=act_dim)
+        self.decoder = neuron.NoisyNonSpikingIFNode(act_dim, T=spike_ts, sigma_init=sigma_init, beta=beta, decode='last-mem')
+        functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, out_pop_spikes):
+        out_pop_spikes = out_pop_spikes.view(self.spike_ts, -1, self.act_dim, self.pop_dim)
+        return self.decoder(self.group_fc(out_pop_spikes).view(self.spike_ts, -1, self.act_dim))
+
+    def use_noise(self, is_training=True):
+        self.decoder.is_training = is_training
+
+    def reset_noise(self, num_steps):
+        self.decoder.reset_noise(num_steps)
+
+    def get_colored_noise(self):
+        return self.decoder.get_colored_noise()
+
+    def get_colored_noise_length(self):
+        return self.act_dim
+
+    def load_colored_noise(self, cn):
+        self.decoder.load_colored_noise(cn)
+
+    def cancel_load(self):
+        self.decoder.cancel_load()
+
+    def get_noise_sigma(self):
+        return self.decoder.sigma.mean()
+
+
+class NoisySpikeMLP(nn.Module):
+
+    def __init__(self, in_pop_dim, act_dim, dec_pop_dim, hidden_sizes, spike_ts, beta, sigma_init):
+        super().__init__()
+        hidden_num = len(hidden_sizes)
+        hidden_layers = OrderedDict([('linear0', layer.Linear(in_pop_dim, hidden_sizes[0])), ('sn0', neuron.NoisyCLIFNode(hidden_sizes[0], T=spike_ts, sigma_init=sigma_init, beta=beta))])
+        if hidden_num > 1:
+            for hidden_layer in range(1, hidden_num):
+                hidden_layers['linear' + str(hidden_layer)] = layer.Linear(hidden_sizes[hidden_layer - 1], hidden_sizes[hidden_layer])
+                hidden_layers['sn' + str(hidden_layer)] = neuron.NoisyCLIFNode(hidden_sizes[hidden_layer], T=spike_ts, sigma_init=sigma_init, beta=beta)
+        hidden_layers['linear' + str(hidden_num)] = layer.Linear(hidden_sizes[-1], act_dim * dec_pop_dim)
+        hidden_layers['sn' + str(hidden_num)] = neuron.NoisyILCCLIFNode(act_dim, dec_pop_dim, T=spike_ts, sigma_init=sigma_init, beta=beta)
+        self.hidden_layers = nn.Sequential(hidden_layers)
+        functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, in_pop_spikes):
+        return self.hidden_layers(in_pop_spikes)
+
+    def use_noise(self, is_training=True):
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                module.is_training = is_training
+
+    def reset_noise(self, num_steps):
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                module.reset_noise(num_steps)
+
+    def get_colored_noise(self):
+        cn = []
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                cn.append(module.get_colored_noise())
+        cn = torch.cat(cn, dim=1)
+        return cn
+
+    def get_colored_noise_length(self):
+        length = 0
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                length += module.num_node * 2
+        self.cn_length = length
+        return length
+
+    def load_colored_noise(self, cn):
+        start_idx = 0
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                length = module.num_node * 2
+                module.load_colored_noise(cn[:, :, start_idx:start_idx + length])
+                start_idx += length
+
+    def cancel_load(self):
+        for name, module in self.hidden_layers.named_modules():
+            if not isinstance(module, layer.Linear):
+                module.cancel_load()
+
+
+class NoisyPopSpikeActor(nn.Module):
+
+    def __init__(self, obs_dim, act_dim, enc_pop_dim, dec_pop_dim, hidden_sizes, mean_range, std, spike_ts, act_limit, beta, sigma_init):
+        super().__init__()
+        self.act_limit = act_limit
+        self.encoder = encoding.PopSpikeEncoderDeterministic(obs_dim, enc_pop_dim, spike_ts, mean_range, std)
+        self.snn = NoisySpikeMLP(obs_dim * enc_pop_dim, act_dim, dec_pop_dim, hidden_sizes, spike_ts, beta, sigma_init)
+        self.decoder = NoisyPopSpikeDecoder(act_dim, dec_pop_dim, spike_ts, beta, sigma_init)
+
+    def forward(self, obs):
+        in_pop_spikes = self.encoder(obs)
+        out_pop_spikes = self.snn(in_pop_spikes)
+        return self.act_limit * torch.tanh(self.decoder(out_pop_spikes))
+
+    def act(self, obs):
+        self.use_noise(False)
+        in_pop_spikes = self.encoder(obs)
+        out_pop_spikes = self.snn(in_pop_spikes)
+        action = self.act_limit * torch.tanh(self.decoder(out_pop_spikes))
+        self.use_noise(True)
+        return action
+
+    def use_noise(self, is_training=True):
+        self.snn.use_noise(is_training)
+        self.decoder.use_noise(is_training)
+
+    def reset_noise(self, num_steps):
+        self.snn.reset_noise(num_steps)
+        self.decoder.reset_noise(num_steps)
+
+    def get_colored_noise(self):
+        cn = [self.snn.get_colored_noise(), self.decoder.get_colored_noise()]
+        return torch.cat(cn, dim=1).cpu().numpy()
+
+    def get_colored_noise_length(self):
+        return self.snn.get_colored_noise_length() + self.decoder.get_colored_noise_length()
+
+    def load_colored_noise(self, cn):
+        self.snn.load_colored_noise(cn[:, :, :self.snn.cn_length])
+        self.decoder.load_colored_noise(cn[:, :, self.snn.cn_length:])
+
+    def cancel_load(self):
+        self.snn.cancel_load()
+        self.decoder.cancel_load()
+
+    def get_noise_sigma(self):
+        return self.decoder.get_noise_sigma()
+
+
+class SpikeActorDeepCritic(nn.Module):
+
+    def __init__(self, observation_space, action_space, encoder_pop_dim, decoder_pop_dim, mean_range, std, spike_ts, beta, sigma_init, hidden_sizes=(256, 256), activation=nn.ReLU):
+        super().__init__()
+        obs_dim = observation_space.shape[0]
+        act_dim = action_space.shape[0]
+        act_limit = action_space.high[0]
+        self.san = NoisyPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes, mean_range, std, spike_ts, act_limit, beta, sigma_init)
+        self.q1 = MLPQFunction(obs_dim, act_dim, hidden_sizes, activation)
+        self.q2 = MLPQFunction(obs_dim, act_dim, hidden_sizes, activation)
+
+    def act(self, obs, use_noise=True):
+        with torch.no_grad():
+            action = self.san.act(obs).cpu().numpy() if not use_noise else self.san(obs).cpu().numpy()
+            functional.reset_net(self.san)
+            return action
+
+
+class SpikeMLP(nn.Module):
+
+    def __init__(self, in_pop_dim, act_dim, dec_pop_dim, hidden_sizes):
+        super().__init__()
+        hidden_num = len(hidden_sizes)
+        hidden_layers = OrderedDict([('Linear0', layer.Linear(in_pop_dim, hidden_sizes[0])), (neuron_type + '0', neuron.CLIFNode(surrogate_function=surrogate.Rect()))])
+        if hidden_num > 1:
+            for hidden_layer in range(1, hidden_num):
+                hidden_layers['Linear' + str(hidden_layer)] = layer.Linear(hidden_sizes[hidden_layer - 1], hidden_sizes[hidden_layer])
+                hidden_layers[neuron_type + str(hidden_layer)] = neuron.CLIFNode(surrogate_function=surrogate.Rect())
+        hidden_layers['Linear' + str(hidden_num)] = layer.Linear(hidden_sizes[-1], act_dim * dec_pop_dim)
+        hidden_layers[neuron_type + str(hidden_num)] = neuron.ILCCLIFNode(act_dim, dec_pop_dim, surrogate_function=surrogate.Rect())
+        self.hidden_layers = nn.Sequential(hidden_layers)
+        functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, in_pop_spikes):
+        return self.hidden_layers(in_pop_spikes)
+
+
+class PopDecoder(nn.Module):
+    """ Learnable Population Coding Decoder """
+
+    def __init__(self, act_dim, pop_dim, spike_ts, decode='last-mem'):
+        super().__init__()
+        self.act_dim = act_dim
+        self.pop_dim = pop_dim
+        self.spike_ts = spike_ts
+        self.decode = decode
+        if decode == 'fr-mlp':
+            self.decoder = nn.Conv1d(act_dim, act_dim, pop_dim, groups=act_dim)
+        else:
+            self.decoder = nn.Sequential(layer.Conv1d(act_dim, act_dim, pop_dim, groups=act_dim), neuron.NonSpikingIFNode(decode=decode))
+            functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, out_pop_spikes):
+        if self.decode == 'fr-mlp':
+            out_pop_fr = out_pop_spikes.mean(dim=0).view(-1, self.act_dim, self.pop_dim)
+            return self.decoder(out_pop_fr).view(-1, self.act_dim)
+        out_pop_spikes = out_pop_spikes.view(self.spike_ts, -1, self.act_dim, self.pop_dim)
+        return self.decoder(out_pop_spikes).view(-1, self.act_dim)
+
+
+class PopSpikeActor(nn.Module):
+
+    def __init__(self, obs_dim, act_dim, enc_pop_dim, dec_pop_dim, hidden_sizes, mean_range, std, spike_ts, encode, decode, act_limit):
+        super().__init__()
+        self.act_limit = act_limit
+        if encode == 'pop-det':
+            self.encoder = encoding.PopSpikeEncoderDeterministic(obs_dim, enc_pop_dim, spike_ts, mean_range, std)
+        elif encode == 'pop-ran':
+            self.encoder = encoding.PopSpikeEncoderRandom(obs_dim, enc_pop_dim, spike_ts, mean_range, std)
+        else:
+            self.encoder = encoding.PopEncoder(obs_dim, enc_pop_dim, spike_ts, mean_range, std)
+        self.snn = SpikeMLP(obs_dim * enc_pop_dim, act_dim, dec_pop_dim, hidden_sizes)
+        self.decoder = PopDecoder(act_dim, dec_pop_dim, spike_ts, decode)
+
+    def forward(self, obs):
+        in_pop_vals = self.encoder(obs)
+        out_pop_spikes = self.snn(in_pop_vals)
+        return self.act_limit * torch.tanh(self.decoder(out_pop_spikes))
 
 
 class ActorCritic(nn.Module):
@@ -1846,7 +2302,7 @@ class ResNet11(nn.Module):
 
 class CSNN(nn.Module):
 
-    def __init__(self, T: int, channels: int, use_cupy=False):
+    def __init__(self, T: 'int', channels: 'int', use_cupy=False):
         super().__init__()
         self.T = T
         self.conv_fc = nn.Sequential(layer.Conv2d(1, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), neuron.IFNode(surrogate_function=surrogate.ATan()), layer.MaxPool2d(2, 2), layer.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), neuron.IFNode(surrogate_function=surrogate.ATan()), layer.MaxPool2d(2, 2), layer.Flatten(), layer.Linear(channels * 7 * 7, channels * 4 * 4, bias=False), neuron.IFNode(surrogate_function=surrogate.ATan()), layer.Linear(channels * 4 * 4, 10, bias=False), neuron.IFNode(surrogate_function=surrogate.ATan()))
@@ -1854,7 +2310,7 @@ class CSNN(nn.Module):
         if use_cupy:
             functional.set_backend(self, backend='cupy')
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         x_seq = x.unsqueeze(0).repeat(self.T, 1, 1, 1, 1)
         x_seq = self.conv_fc(x_seq)
         fr = x_seq.mean(0)
@@ -1864,24 +2320,34 @@ class CSNN(nn.Module):
         return self.conv_fc[0:3]
 
 
+class MNISTNet(nn.Module):
+
+    def __init__(self, channels=128, spiking_neuron: 'callable'=None, **kwargs):
+        super().__init__()
+        self.conv_fc = nn.Sequential(layer.Conv2d(1, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), spiking_neuron(**deepcopy(kwargs)), layer.MaxPool2d(2, 2), layer.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), spiking_neuron(**deepcopy(kwargs)), layer.MaxPool2d(2, 2), layer.Flatten(), layer.Dropout(0.5), layer.Linear(channels * 7 * 7, 2048), spiking_neuron(**deepcopy(kwargs)), layer.Dropout(0.5), layer.Linear(2048, 100), spiking_neuron(**deepcopy(kwargs)), layer.VotingLayer())
+
+    def forward(self, x: 'torch.Tensor'):
+        return self.conv_fc(x)
+
+
 class SNN(nn.Module):
 
     def __init__(self, tau):
         super().__init__()
         self.layer = nn.Sequential(layer.Flatten(), layer.Linear(28 * 28, 10, bias=False), neuron.LIFNode(tau=tau, surrogate_function=surrogate.ATan()))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.layer(x)
 
 
 class InferenceNet(nn.Module):
 
-    def __init__(self, T: int, modules_list: list):
+    def __init__(self, T: 'int', modules_list: 'list'):
         super().__init__()
         self.T = T
         self.module_list = nn.Sequential(*modules_list)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         x = x.repeat(self.T, 1, 1, 1)
         x = self.module_list(x)
         x = x.reshape(self.T, x.shape[0] // self.T, -1)
@@ -1894,7 +2360,7 @@ class PlainNet(nn.Module):
         super().__init__()
         self.fc = nn.Sequential(layer.Linear(28, 32), neuron.IFNode(surrogate_function=surrogate.ATan()), layer.Linear(32, 10), neuron.IFNode(surrogate_function=surrogate.ATan()))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.fc(x).mean(0)
 
 
@@ -1904,7 +2370,7 @@ class StatefulSynapseNet(nn.Module):
         super().__init__()
         self.fc = nn.Sequential(layer.Linear(28, 32), neuron.IFNode(surrogate_function=surrogate.ATan()), layer.SynapseFilter(tau=2.0, learnable=True), layer.Linear(32, 10), neuron.IFNode(surrogate_function=surrogate.ATan()))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.fc(x).mean(0)
 
 
@@ -1914,7 +2380,7 @@ class FeedBackNet(nn.Module):
         super().__init__()
         self.fc = nn.Sequential(layer.Linear(28, 32), layer.LinearRecurrentContainer(neuron.IFNode(surrogate_function=surrogate.ATan(), detach_reset=True), in_features=32, out_features=32, bias=True), layer.Linear(32, 10), neuron.IFNode(surrogate_function=surrogate.ATan()))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.fc(x).mean(0)
 
 
@@ -1954,7 +2420,7 @@ def mel_to_hz(mels, dct_type):
     return freqs
 
 
-def create_fb_matrix(n_freqs: int, f_min: float, f_max: float, n_mels: int, sample_rate: int, dct_type: Optional[str]='slaney') ->Tensor:
+def create_fb_matrix(n_freqs: 'int', f_min: 'float', f_max: 'float', n_mels: 'int', sample_rate: 'int', dct_type: 'Optional[str]'='slaney') ->Tensor:
     if dct_type != 'htk' and dct_type != 'slaney':
         raise ValueError("DCT type must be either 'htk' or 'slaney'")
     all_freqs = torch.linspace(0, sample_rate // 2, n_freqs)
@@ -1977,7 +2443,7 @@ def create_fb_matrix(n_freqs: int, f_min: float, f_max: float, n_mels: int, samp
 class MelScaleDelta(nn.Module):
     __constants__ = ['n_mels', 'sample_rate', 'f_min', 'f_max']
 
-    def __init__(self, order, n_mels: int=128, sample_rate: int=16000, f_min: float=0.0, f_max: Optional[float]=None, n_stft: Optional[int]=None, dct_type: Optional[str]='slaney') ->None:
+    def __init__(self, order, n_mels: 'int'=128, sample_rate: 'int'=16000, f_min: 'float'=0.0, f_max: 'Optional[float]'=None, n_stft: 'Optional[int]'=None, dct_type: 'Optional[str]'='slaney') ->None:
         super(MelScaleDelta, self).__init__()
         self.order = order
         self.n_mels = n_mels
@@ -1989,7 +2455,7 @@ class MelScaleDelta(nn.Module):
         fb = torch.empty(0) if n_stft is None else create_fb_matrix(n_stft, self.f_min, self.f_max, self.n_mels, self.sample_rate, self.dct_type)
         self.register_buffer('fb', fb)
 
-    def forward(self, specgram: Tensor) ->Tensor:
+    def forward(self, specgram: 'Tensor') ->Tensor:
         shape = specgram.size()
         specgram = specgram.reshape(-1, shape[-2], shape[-1])
         if self.fb.numel() == 0:
@@ -2016,7 +2482,7 @@ class LIFWrapper(nn.Module):
         self.module = module
         self.flatten = flatten
 
-    def forward(self, x_seq: torch.Tensor):
+    def forward(self, x_seq: 'torch.Tensor'):
         """
         :param x_seq: shape=[batch size, channel, T, n_mel]
         :type x_seq: torch.Tensor
@@ -2038,7 +2504,7 @@ class Net(nn.Module):
         super().__init__()
         self.tempotron = neuron.Tempotron(28 * 28 * m, 10, T)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.tempotron(x, 'v_max')
 
 
@@ -2070,7 +2536,7 @@ class BatchNorm2d(nn.BatchNorm2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             return super().forward(x)
         elif self.step_mode == 'm':
@@ -2083,7 +2549,7 @@ _hw_bits = 12
 
 
 @torch.jit.script
-def _listep_backward(grad_output: torch.Tensor, decay: torch.Tensor, state: torch.Tensor, hw_bits: int=12):
+def _listep_backward(grad_output: 'torch.Tensor', decay: 'torch.Tensor', state: 'torch.Tensor', hw_bits: 'int'=12):
     grad_state = (1 - decay / (1 << hw_bits)) * grad_output
     grad_decay = -state / (1 << hw_bits) * grad_output
     grad_decay = grad_decay.sum()
@@ -2091,14 +2557,14 @@ def _listep_backward(grad_output: torch.Tensor, decay: torch.Tensor, state: torc
 
 
 @torch.jit.script
-def right_shift_to_zero(x: torch.Tensor, bits: int):
+def right_shift_to_zero(x: 'torch.Tensor', bits: 'int'):
     dtype = x.dtype
     assert dtype in (torch.int32, torch.int64)
     return torch.sign(x) * (torch.abs(x) >> bits)
 
 
 @torch.jit.script
-def _listep_forward(x: torch.Tensor, decay: torch.Tensor, state: torch.Tensor, w_scale: int, dtype: torch.dtype=torch.int32, hw_bits: int=12):
+def _listep_forward(x: 'torch.Tensor', decay: 'torch.Tensor', state: 'torch.Tensor', w_scale: 'int', dtype: 'torch.dtype'=torch.int32, hw_bits: 'int'=12):
     scaled_state = state * w_scale
     decay_int = (1 << hw_bits) - decay
     output = right_shift_to_zero(scaled_state * decay_int, hw_bits) + w_scale * x
@@ -2122,23 +2588,23 @@ class LeakyIntegratorStep(torch.autograd.Function):
 
 
 @torch.jit.script
-def step_quantize_forward(x: torch.Tensor, step: float):
+def step_quantize_forward(x: 'torch.Tensor', step: 'float'):
     return torch.round_(x / step) * step
 
 
 class step_quantize_atgf(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x: torch.Tensor, step: float):
+    def forward(ctx, x: 'torch.Tensor', step: 'float'):
         return step_quantize_forward(x, step)
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx, grad_output: 'torch.Tensor'):
         return grad_output, None
 
 
 @torch.jit.ignore
-def step_quantize(x: torch.Tensor, step: float):
+def step_quantize(x: 'torch.Tensor', step: 'float'):
     """
     :param x: the input tensor
     :type x: torch.Tensor
@@ -2170,7 +2636,7 @@ def quantize_8b(x, scale, descale=False):
 
 class StepModeContainer(nn.Sequential, base.StepModule):
 
-    def __init__(self, stateful: bool, *args):
+    def __init__(self, stateful: 'bool', *args):
         super().__init__(*args)
         self.stateful = stateful
         for m in self:
@@ -2180,7 +2646,7 @@ class StepModeContainer(nn.Sequential, base.StepModule):
                     logging.warning(f"{m} supports for step_mode == 's', which should not be contained by StepModeContainer!")
         self.step_mode = 's'
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         if self.step_mode == 's':
             return super().forward(x)
         elif self.step_mode == 'm':
@@ -2192,7 +2658,7 @@ class StepModeContainer(nn.Sequential, base.StepModule):
 
 class Conv1d(nn.Conv1d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_1_t, stride: _size_1_t=1, padding: Union[str, _size_1_t]=0, dilation: _size_1_t=1, groups: int=1, bias: bool=True, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_1_t', stride: '_size_1_t'=1, padding: 'Union[str, _size_1_t]'=0, dilation: '_size_1_t'=1, groups: 'int'=1, bias: 'bool'=True, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <Conv1d-en>`
 
@@ -2218,7 +2684,7 @@ class Conv1d(nn.Conv1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2230,7 +2696,7 @@ class Conv1d(nn.Conv1d, base.StepModule):
 
 class Conv2d(nn.Conv2d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_2_t, stride: _size_2_t=1, padding: Union[str, _size_2_t]=0, dilation: _size_2_t=1, groups: int=1, bias: bool=True, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_2_t', stride: '_size_2_t'=1, padding: 'Union[str, _size_2_t]'=0, dilation: '_size_2_t'=1, groups: 'int'=1, bias: 'bool'=True, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <Conv2d-en>`
 
@@ -2256,7 +2722,7 @@ class Conv2d(nn.Conv2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2268,7 +2734,7 @@ class Conv2d(nn.Conv2d, base.StepModule):
 
 class Conv3d(nn.Conv3d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_3_t, stride: _size_3_t=1, padding: Union[str, _size_3_t]=0, dilation: _size_3_t=1, groups: int=1, bias: bool=True, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_3_t', stride: '_size_3_t'=1, padding: 'Union[str, _size_3_t]'=0, dilation: '_size_3_t'=1, groups: 'int'=1, bias: 'bool'=True, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <Conv3d-en>`
 
@@ -2294,7 +2760,7 @@ class Conv3d(nn.Conv3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2304,9 +2770,45 @@ class Conv3d(nn.Conv3d, base.StepModule):
         return x
 
 
+class Upsample(nn.Upsample, base.StepModule):
+
+    def __init__(self, size: 'Optional[_size_any_t]'=None, scale_factor: 'Optional[_ratio_any_t]'=None, mode: 'str'='nearest', align_corners: 'Optional[bool]'=None, recompute_scale_factor: 'Optional[bool]'=None, step_mode: 'str'='s') ->None:
+        """
+        * :ref:`API in English <Upsample-en>`
+
+        .. _Upsample-cn:
+
+        :param step_mode: 步进模式，可以为 `'s'` (单步) 或 `'m'` (多步)
+        :type step_mode: str
+
+        其他的参数API参见 :class:`torch.nn.Upsample`
+
+        * :ref:`中文 API <Upsample-cn>`
+
+        .. _Upsample-en:
+
+        :param step_mode: the step mode, which can be `s` (single-step) or `m` (multi-step)
+        :type step_mode: str
+
+        Refer to :class:`torch.nn.Upsample` for other parameters' API
+        """
+        super().__init__(size, scale_factor, mode, align_corners, recompute_scale_factor)
+        self.step_mode = step_mode
+
+    def extra_repr(self):
+        return super().extra_repr() + f', step_mode={self.step_mode}'
+
+    def forward(self, x: 'Tensor') ->Tensor:
+        if self.step_mode == 's':
+            x = super().forward(x)
+        elif self.step_mode == 'm':
+            x = functional.seq_to_ann_forward(x, super().forward)
+        return x
+
+
 class ConvTranspose1d(nn.ConvTranspose1d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_1_t, stride: _size_1_t=1, padding: _size_1_t=0, output_padding: _size_1_t=0, groups: int=1, bias: bool=True, dilation: _size_1_t=1, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_1_t', stride: '_size_1_t'=1, padding: '_size_1_t'=0, output_padding: '_size_1_t'=0, groups: 'int'=1, bias: 'bool'=True, dilation: '_size_1_t'=1, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <ConvTranspose1d-en>`
 
@@ -2332,7 +2834,7 @@ class ConvTranspose1d(nn.ConvTranspose1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2344,7 +2846,7 @@ class ConvTranspose1d(nn.ConvTranspose1d, base.StepModule):
 
 class ConvTranspose2d(nn.ConvTranspose2d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_2_t, stride: _size_2_t=1, padding: _size_2_t=0, output_padding: _size_2_t=0, groups: int=1, bias: bool=True, dilation: int=1, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_2_t', stride: '_size_2_t'=1, padding: '_size_2_t'=0, output_padding: '_size_2_t'=0, groups: 'int'=1, bias: 'bool'=True, dilation: 'int'=1, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <ConvTranspose2d-en>`
 
@@ -2370,7 +2872,7 @@ class ConvTranspose2d(nn.ConvTranspose2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2382,7 +2884,7 @@ class ConvTranspose2d(nn.ConvTranspose2d, base.StepModule):
 
 class ConvTranspose3d(nn.ConvTranspose3d, base.StepModule):
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: _size_3_t, stride: _size_3_t=1, padding: _size_3_t=0, output_padding: _size_3_t=0, groups: int=1, bias: bool=True, dilation: _size_3_t=1, padding_mode: str='zeros', step_mode: str='s') ->None:
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_3_t', stride: '_size_3_t'=1, padding: '_size_3_t'=0, output_padding: '_size_3_t'=0, groups: 'int'=1, bias: 'bool'=True, dilation: '_size_3_t'=1, padding_mode: 'str'='zeros', step_mode: 'str'='s') ->None:
         """
         * :ref:`API in English <ConvTranspose3d-en>`
 
@@ -2408,7 +2910,7 @@ class ConvTranspose3d(nn.ConvTranspose3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2446,12 +2948,12 @@ class BatchNorm1d(nn.BatchNorm1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             return super().forward(x)
         elif self.step_mode == 'm':
-            if x.dim() != 4:
-                raise ValueError(f'expected x with shape [T, N, C, L], but got x with shape {x.shape}!')
+            if x.dim() != 4 and x.dim() != 3:
+                raise ValueError(f'expected x with shape [T, N, C, L] or [T, N, C], but got x with shape {x.shape}!')
             return functional.seq_to_ann_forward(x, super().forward)
 
 
@@ -2483,7 +2985,7 @@ class BatchNorm3d(nn.BatchNorm3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             return super().forward(x)
         elif self.step_mode == 'm':
@@ -2494,7 +2996,7 @@ class BatchNorm3d(nn.BatchNorm3d, base.StepModule):
 
 class GroupNorm(nn.GroupNorm, base.StepModule):
 
-    def __init__(self, num_groups: int, num_channels: int, eps: float=1e-05, affine: bool=True, step_mode='s'):
+    def __init__(self, num_groups: 'int', num_channels: 'int', eps: 'float'=1e-05, affine: 'bool'=True, step_mode='s'):
         """
         * :ref:`API in English <GroupNorm-en>`
 
@@ -2520,7 +3022,7 @@ class GroupNorm(nn.GroupNorm, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             return super().forward(x)
         elif self.step_mode == 'm':
@@ -2529,7 +3031,7 @@ class GroupNorm(nn.GroupNorm, base.StepModule):
 
 class MaxPool1d(nn.MaxPool1d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_1_t, stride: Optional[_size_1_t]=None, padding: _size_1_t=0, dilation: _size_1_t=1, return_indices: bool=False, ceil_mode: bool=False, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_1_t', stride: 'Optional[_size_1_t]'=None, padding: '_size_1_t'=0, dilation: '_size_1_t'=1, return_indices: 'bool'=False, ceil_mode: 'bool'=False, step_mode='s') ->None:
         """
         * :ref:`API in English <MaxPool1d-en>`
 
@@ -2555,7 +3057,7 @@ class MaxPool1d(nn.MaxPool1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2567,7 +3069,7 @@ class MaxPool1d(nn.MaxPool1d, base.StepModule):
 
 class MaxPool2d(nn.MaxPool2d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_2_t, stride: Optional[_size_2_t]=None, padding: _size_2_t=0, dilation: _size_2_t=1, return_indices: bool=False, ceil_mode: bool=False, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_2_t', stride: 'Optional[_size_2_t]'=None, padding: '_size_2_t'=0, dilation: '_size_2_t'=1, return_indices: 'bool'=False, ceil_mode: 'bool'=False, step_mode='s') ->None:
         """
         * :ref:`API in English <MaxPool2d-en>`
 
@@ -2593,7 +3095,7 @@ class MaxPool2d(nn.MaxPool2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2605,7 +3107,7 @@ class MaxPool2d(nn.MaxPool2d, base.StepModule):
 
 class MaxPool3d(nn.MaxPool3d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_3_t, stride: Optional[_size_3_t]=None, padding: _size_3_t=0, dilation: _size_3_t=1, return_indices: bool=False, ceil_mode: bool=False, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_3_t', stride: 'Optional[_size_3_t]'=None, padding: '_size_3_t'=0, dilation: '_size_3_t'=1, return_indices: 'bool'=False, ceil_mode: 'bool'=False, step_mode='s') ->None:
         """
         * :ref:`API in English <MaxPool3d-en>`
 
@@ -2631,7 +3133,7 @@ class MaxPool3d(nn.MaxPool3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2643,7 +3145,7 @@ class MaxPool3d(nn.MaxPool3d, base.StepModule):
 
 class AvgPool1d(nn.AvgPool1d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_1_t, stride: _size_1_t=None, padding: _size_1_t=0, ceil_mode: bool=False, count_include_pad: bool=True, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_1_t', stride: '_size_1_t'=None, padding: '_size_1_t'=0, ceil_mode: 'bool'=False, count_include_pad: 'bool'=True, step_mode='s') ->None:
         """
         * :ref:`API in English <AvgPool1d-en>`
 
@@ -2669,7 +3171,7 @@ class AvgPool1d(nn.AvgPool1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2681,7 +3183,7 @@ class AvgPool1d(nn.AvgPool1d, base.StepModule):
 
 class AvgPool2d(nn.AvgPool2d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_2_t, stride: Optional[_size_2_t]=None, padding: _size_2_t=0, ceil_mode: bool=False, count_include_pad: bool=True, divisor_override: Optional[int]=None, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_2_t', stride: 'Optional[_size_2_t]'=None, padding: '_size_2_t'=0, ceil_mode: 'bool'=False, count_include_pad: 'bool'=True, divisor_override: 'Optional[int]'=None, step_mode='s') ->None:
         """
         * :ref:`API in English <AvgPool2d-en>`
 
@@ -2707,7 +3209,7 @@ class AvgPool2d(nn.AvgPool2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2719,7 +3221,7 @@ class AvgPool2d(nn.AvgPool2d, base.StepModule):
 
 class AvgPool3d(nn.AvgPool3d, base.StepModule):
 
-    def __init__(self, kernel_size: _size_3_t, stride: Optional[_size_3_t]=None, padding: _size_3_t=0, ceil_mode: bool=False, count_include_pad: bool=True, divisor_override: Optional[int]=None, step_mode='s') ->None:
+    def __init__(self, kernel_size: '_size_3_t', stride: 'Optional[_size_3_t]'=None, padding: '_size_3_t'=0, ceil_mode: 'bool'=False, count_include_pad: 'bool'=True, divisor_override: 'Optional[int]'=None, step_mode='s') ->None:
         """
         * :ref:`API in English <AvgPool3d-en>`
 
@@ -2745,7 +3247,7 @@ class AvgPool3d(nn.AvgPool3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2783,7 +3285,7 @@ class AdaptiveAvgPool1d(nn.AdaptiveAvgPool1d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2821,7 +3323,7 @@ class AdaptiveAvgPool2d(nn.AdaptiveAvgPool2d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2859,7 +3361,7 @@ class AdaptiveAvgPool3d(nn.AdaptiveAvgPool3d, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -2871,7 +3373,7 @@ class AdaptiveAvgPool3d(nn.AdaptiveAvgPool3d, base.StepModule):
 
 class Linear(nn.Linear, base.StepModule):
 
-    def __init__(self, in_features: int, out_features: int, bias: bool=True, step_mode='s') ->None:
+    def __init__(self, in_features: 'int', out_features: 'int', bias: 'bool'=True, step_mode='s') ->None:
         """
         * :ref:`API in English <Linear-en>`
 
@@ -2897,7 +3399,7 @@ class Linear(nn.Linear, base.StepModule):
 
 class Flatten(nn.Flatten, base.StepModule):
 
-    def __init__(self, start_dim: int=1, end_dim: int=-1, step_mode='s') ->None:
+    def __init__(self, start_dim: 'int'=1, end_dim: 'int'=-1, step_mode='s') ->None:
         """
         * :ref:`API in English <Flatten-en>`
 
@@ -2923,7 +3425,7 @@ class Flatten(nn.Flatten, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f', step_mode={self.step_mode}'
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         if self.step_mode == 's':
             x = super().forward(x)
         elif self.step_mode == 'm':
@@ -3009,7 +3511,7 @@ class NeuNorm(base.MemoryModule):
             self.w = nn.Parameter(Tensor(in_channels, height, width))
         nn.init.kaiming_uniform_(self.w, a=math.sqrt(5))
 
-    def single_step_forward(self, in_spikes: Tensor):
+    def single_step_forward(self, in_spikes: 'Tensor'):
         self.x = self.k0 * self.x + self.k1 * in_spikes.sum(dim=1, keepdim=True)
         return in_spikes - self.w * self.x
 
@@ -3092,10 +3594,10 @@ class Dropout(base.MemoryModule):
     def extra_repr(self):
         return f'p={self.p}'
 
-    def create_mask(self, x: Tensor):
+    def create_mask(self, x: 'Tensor'):
         self.mask = F.dropout(torch.ones_like(x.data), self.p, training=True)
 
-    def single_step_forward(self, x: Tensor):
+    def single_step_forward(self, x: 'Tensor'):
         if self.training:
             if self.mask is None:
                 self.create_mask(x)
@@ -3103,7 +3605,7 @@ class Dropout(base.MemoryModule):
         else:
             return x
 
-    def multi_step_forward(self, x_seq: Tensor):
+    def multi_step_forward(self, x_seq: 'Tensor'):
         if self.training:
             if self.mask is None:
                 self.create_mask(x_seq[0])
@@ -3147,7 +3649,7 @@ class Dropout2d(Dropout):
         """
         super().__init__(p, step_mode)
 
-    def create_mask(self, x: Tensor):
+    def create_mask(self, x: 'Tensor'):
         self.mask = F.dropout2d(torch.ones_like(x.data), self.p, training=True)
 
 
@@ -3311,19 +3813,19 @@ class SynapseFilter(base.MemoryModule):
 
     @staticmethod
     @torch.jit.script
-    def js_single_step_forward_learnable(x: torch.Tensor, w: torch.Tensor, out_i: torch.Tensor):
+    def js_single_step_forward_learnable(x: 'torch.Tensor', w: 'torch.Tensor', out_i: 'torch.Tensor'):
         inv_tau = w.sigmoid()
         out_i = out_i - (1.0 - x) * out_i * inv_tau + x
         return out_i
 
     @staticmethod
     @torch.jit.script
-    def js_single_step_forward(x: torch.Tensor, tau: float, out_i: torch.Tensor):
+    def js_single_step_forward(x: 'torch.Tensor', tau: 'float', out_i: 'torch.Tensor'):
         inv_tau = 1.0 / tau
         out_i = out_i - (1.0 - x) * out_i * inv_tau + x
         return out_i
 
-    def single_step_forward(self, x: Tensor):
+    def single_step_forward(self, x: 'Tensor'):
         if isinstance(self.out_i, float):
             out_i_init = self.out_i
             self.out_i = torch.zeros_like(x.data)
@@ -3338,7 +3840,7 @@ class SynapseFilter(base.MemoryModule):
 
 class DropConnectLinear(base.MemoryModule):
 
-    def __init__(self, in_features: int, out_features: int, bias: bool=True, p: float=0.5, samples_num: int=1024, invariant: bool=False, activation: (None or nn.Module)=nn.ReLU(), state_mode='s') ->None:
+    def __init__(self, in_features: 'int', out_features: 'int', bias: 'bool'=True, p: 'float'=0.5, samples_num: 'int'=1024, invariant: 'bool'=False, activation: 'Optional[nn.Module]'=nn.ReLU(), step_mode='s') ->None:
         """
         * :ref:`API in English <DropConnectLinear.__init__-en>`
 
@@ -3362,7 +3864,7 @@ class DropConnectLinear(base.MemoryModule):
             默认为 ``False``
         :type invariant: bool
         :param activation: 在线性层后的激活层
-        :type activation: None or nn.Module
+        :type activation: Optional[nn.Module]
         :param step_mode: 步进模式，可以为 `'s'` (单步) 或 `'m'` (多步)
         :type step_mode: str
 
@@ -3397,7 +3899,7 @@ class DropConnectLinear(base.MemoryModule):
             for more information to understand this parameter. Default: ``False``
         :type invariant: bool
         :param activation: the activation layer after the linear layer
-        :type activation: None or nn.Module
+        :type activation: Optional[nn.Module]
         :param step_mode: the step mode, which can be `s` (single-step) or `m` (multi-step)
         :type step_mode: str
 
@@ -3415,7 +3917,7 @@ class DropConnectLinear(base.MemoryModule):
             ``activation`` as a member variable of this module.
         """
         super().__init__()
-        self.state_mode = state_mode
+        self.step_mode = step_mode
         self.in_features = in_features
         self.out_features = out_features
         self.weight = nn.Parameter(Tensor(out_features, in_features))
@@ -3483,14 +3985,14 @@ class DropConnectLinear(base.MemoryModule):
         if hasattr(self.activation, 'reset'):
             self.activation.reset()
 
-    def drop(self, batch_size: int):
+    def drop(self, batch_size: 'int'):
         mask_w = torch.rand_like(self.weight.unsqueeze(0).repeat([batch_size] + [1] * self.weight.dim())) > self.p
         self.dropped_w = self.weight * mask_w
         if self.bias is not None:
             mask_b = torch.rand_like(self.bias.unsqueeze(0).repeat([batch_size] + [1] * self.bias.dim())) > self.p
             self.dropped_b = self.bias * mask_b
 
-    def single_step_forward(self, input: Tensor) ->Tensor:
+    def single_step_forward(self, input: 'Tensor') ->Tensor:
         if self.training:
             if self.invariant:
                 if self.dropped_w is None:
@@ -3549,14 +4051,14 @@ class PrintShapeModule(nn.Module):
         super().__init__()
         self.ext_str = ext_str
 
-    def forward(self, x: Tensor):
+    def forward(self, x: 'Tensor'):
         None
         return x
 
 
 class ElementWiseRecurrentContainer(base.MemoryModule):
 
-    def __init__(self, sub_module: nn.Module, element_wise_function: Callable, step_mode='s'):
+    def __init__(self, sub_module: 'nn.Module', element_wise_function: 'Callable', step_mode='s'):
         """
         * :ref:`API in English <ElementWiseRecurrentContainer-en>`
 
@@ -3645,7 +4147,7 @@ class ElementWiseRecurrentContainer(base.MemoryModule):
         self.element_wise_function = element_wise_function
         self.register_memory('y', None)
 
-    def single_step_forward(self, x: Tensor):
+    def single_step_forward(self, x: 'Tensor'):
         if self.y is None:
             self.y = torch.zeros_like(x.data)
         self.y = self.sub_module(self.element_wise_function(self.y, x))
@@ -3657,7 +4159,7 @@ class ElementWiseRecurrentContainer(base.MemoryModule):
 
 class LinearRecurrentContainer(base.MemoryModule):
 
-    def __init__(self, sub_module: nn.Module, in_features: int, out_features: int, bias: bool=True, step_mode='s') ->None:
+    def __init__(self, sub_module: 'nn.Module', in_features: 'int', out_features: 'int', bias: 'bool'=True, step_mode='s') ->None:
         """
         * :ref:`API in English <LinearRecurrentContainer-en>`
 
@@ -3768,7 +4270,7 @@ class LinearRecurrentContainer(base.MemoryModule):
         self.sub_module = sub_module
         self.register_memory('y', None)
 
-    def single_step_forward(self, x: Tensor):
+    def single_step_forward(self, x: 'Tensor'):
         if self.y is None:
             if x.ndim == 2:
                 self.y = torch.zeros([x.shape[0], self.sub_module_out_features])
@@ -3787,7 +4289,7 @@ class LinearRecurrentContainer(base.MemoryModule):
 
 class VotingLayer(nn.Module, base.StepModule):
 
-    def __init__(self, voting_size: int=10, step_mode='s'):
+    def __init__(self, voting_size: 'int'=10, step_mode='s'):
         """
         * :ref:`API in English <VotingLayer-en>`
 
@@ -3819,10 +4321,10 @@ class VotingLayer(nn.Module, base.StepModule):
     def extra_repr(self):
         return super().extra_repr() + f'voting_size={self.voting_size}, step_mode={self.step_mode}'
 
-    def single_step_forward(self, x: torch.Tensor):
+    def single_step_forward(self, x: 'torch.Tensor'):
         return F.avg_pool1d(x.unsqueeze(1), self.voting_size, self.voting_size).squeeze(1)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         if self.step_mode == 's':
             return self.single_step_forward(x)
         elif self.step_mode == 'm':
@@ -3831,7 +4333,7 @@ class VotingLayer(nn.Module, base.StepModule):
 
 class Delay(base.MemoryModule):
 
-    def __init__(self, delay_steps: int, step_mode='s'):
+    def __init__(self, delay_steps: 'int', step_mode='s'):
         """
         * :ref:`API in English <Delay.__init__-en>`
 
@@ -3946,18 +4448,351 @@ class Delay(base.MemoryModule):
     def delay_steps(self):
         return self._delay_steps
 
-    def single_step_forward(self, x: torch.Tensor):
+    def single_step_forward(self, x: 'torch.Tensor'):
         self.queue.append(x)
         if self.queue.__len__() > self.delay_steps:
             return self.queue.pop(0)
         else:
             return torch.zeros_like(x)
 
-    def multi_step_forward(self, x_seq: torch.Tensor):
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
         return functional.delay(x_seq, self.delay_steps)
 
 
-def stdp_conv1d_single_step(conv: nn.Conv1d, in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[torch.Tensor, None], trace_post: Union[torch.Tensor, None], tau_pre: float, tau_post: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+class TemporalEffectiveBatchNormNd(base.MemoryModule):
+    bn_instance = _BatchNorm
+
+    def __init__(self, T: 'int', num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, step_mode='s'):
+        super().__init__()
+        self.bn = self.bn_instance(num_features, eps, momentum, affine, track_running_stats, step_mode)
+        self.scale = nn.Parameter(torch.ones([T]))
+        self.register_memory('t', 0)
+
+    def single_step_forward(self, x: 'torch.Tensor'):
+        return self.bn(x) * self.scale[self.t]
+
+
+class TemporalEffectiveBatchNorm1d(TemporalEffectiveBatchNormNd):
+    bn_instance = BatchNorm1d
+
+    def __init__(self, T: 'int', num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, step_mode='s'):
+        """
+        * :ref:`API in English <TemporalEffectiveBatchNorm1d-en>`
+
+        .. _TemporalEffectiveBatchNorm1d-cn:
+
+        :param T: 总时间步数
+        :type T: int
+
+        其他参数的API参见 :class:`BatchNorm1d`
+
+        `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_ 一文提出的Temporal Effective Batch Normalization (TEBN)。
+
+        TEBN给每个时刻的输出增加一个缩放。若普通的BN在 ``t`` 时刻的输出是 ``y[t]``，则TEBN的输出为 ``k[t] * y[t]``，其中 ``k[t]`` 是可
+        学习的参数。
+
+        * :ref:`中文 API <TemporalEffectiveBatchNorm1d-cn>`
+
+        .. _TemporalEffectiveBatchNorm1d-en:
+
+        :param T: the number of time-steps
+        :type T: int
+
+        Refer to :class:`BatchNorm1d` for other parameters' API
+
+        Temporal Effective Batch Normalization (TEBN) proposed by `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_.
+
+        TEBN adds a scale on outputs of each time-step from the native BN. Denote the output at time-step ``t`` of the native BN as ``y[t]``, then the output of TEBN is ``k[t] * y[t]``, where ``k[t]`` is the learnable scale.
+
+        """
+        super().__init__(T, num_features, eps, momentum, affine, track_running_stats, step_mode)
+
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
+        return self.bn(x_seq) * self.scale.view(-1, 1, 1, 1)
+
+
+class TemporalEffectiveBatchNorm2d(TemporalEffectiveBatchNormNd):
+    bn_instance = BatchNorm2d
+
+    def __init__(self, T: 'int', num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, step_mode='s'):
+        """
+        * :ref:`API in English <TemporalEffectiveBatchNorm2d-en>`
+
+        .. _TemporalEffectiveBatchNorm2d-cn:
+
+        :param T: 总时间步数
+        :type T: int
+
+        其他参数的API参见 :class:`BatchNorm2d`
+
+        `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_ 一文提出的Temporal Effective Batch Normalization (TEBN)。
+
+        TEBN给每个时刻的输出增加一个缩放。若普通的BN在 ``t`` 时刻的输出是 ``y[t]``，则TEBN的输出为 ``k[t] * y[t]``，其中 ``k[t]`` 是可
+        学习的参数。
+
+        * :ref:`中文 API <TemporalEffectiveBatchNorm2d-cn>`
+
+        .. _TemporalEffectiveBatchNorm2d-en:
+
+        :param T: the number of time-steps
+        :type T: int
+
+        Refer to :class:`BatchNorm2d` for other parameters' API
+
+        Temporal Effective Batch Normalization (TEBN) proposed by `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_.
+
+        TEBN adds a scale on outputs of each time-step from the native BN. Denote the output at time-step ``t`` of the native BN as ``y[t]``, then the output of TEBN is ``k[t] * y[t]``, where ``k[t]`` is the learnable scale.
+
+        """
+        super().__init__(T, num_features, eps, momentum, affine, track_running_stats, step_mode)
+
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
+        return self.bn(x_seq) * self.scale.view(-1, 1, 1, 1, 1)
+
+
+class TemporalEffectiveBatchNorm3d(TemporalEffectiveBatchNormNd):
+    bn_instance = BatchNorm3d
+
+    def __init__(self, T: 'int', num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, step_mode='s'):
+        """
+        * :ref:`API in English <TemporalEffectiveBatchNorm3d-en>`
+
+        .. _TemporalEffectiveBatchNorm3d-cn:
+
+        :param T: 总时间步数
+        :type T: int
+
+        其他参数的API参见 :class:`BatchNorm3d`
+
+        `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_ 一文提出的Temporal Effective Batch Normalization (TEBN)。
+
+        TEBN给每个时刻的输出增加一个缩放。若普通的BN在 ``t`` 时刻的输出是 ``y[t]``，则TEBN的输出为 ``k[t] * y[t]``，其中 ``k[t]`` 是可
+        学习的参数。
+
+        * :ref:`中文 API <TemporalEffectiveBatchNorm3d-cn>`
+
+        .. _TemporalEffectiveBatchNorm3d-en:
+
+        :param T: the number of time-steps
+        :type T: int
+
+        Refer to :class:`BatchNorm3d` for other parameters' API
+
+        Temporal Effective Batch Normalization (TEBN) proposed by `Temporal Effective Batch Normalization in Spiking Neural Networks <https://openreview.net/forum?id=fLIgyyQiJqz>`_.
+
+        TEBN adds a scale on outputs of each time-step from the native BN. Denote the output at time-step ``t`` of the native BN as ``y[t]``, then the output of TEBN is ``k[t] * y[t]``, where ``k[t]`` is the learnable scale.
+
+        """
+        super().__init__(T, num_features, eps, momentum, affine, track_running_stats, step_mode)
+
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
+        return self.bn(x_seq) * self.scale.view(-1, 1, 1, 1, 1, 1)
+
+
+class ReplaceforGrad(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, x_r):
+        return x_r
+
+    @staticmethod
+    def backward(ctx, grad):
+        return grad, grad
+
+
+class GradwithTrace(nn.Module):
+
+    def __init__(self, module):
+        """
+        * :ref:`API in English <GradwithTrace-en>`
+
+        .. _GradwithTrace-cn:
+
+        :param module: 需要包装的模块
+
+        用于随时间在线训练时，根据神经元的迹计算梯度
+        出处：'Online Training Through Time for Spiking Neural Networks <https://openreview.net/forum?id=Siv3nHYHheI>'
+
+        * :ref:`中文 API <GradwithTrace-cn>`
+
+        .. _GradwithTrace-en:
+
+        :param module: the module that requires wrapping
+
+        Used for online training through time, calculate gradients by the traces of neurons
+        Reference: 'Online Training Through Time for Spiking Neural Networks <https://openreview.net/forum?id=Siv3nHYHheI>'
+
+        """
+        super().__init__()
+        self.module = module
+
+    def forward(self, x: 'Tensor'):
+        spike, trace = x[0], x[1]
+        with torch.no_grad():
+            out = self.module(spike).detach()
+        in_for_grad = ReplaceforGrad.apply(spike, trace)
+        out_for_grad = self.module(in_for_grad)
+        x = ReplaceforGrad.apply(out_for_grad, out)
+        return x
+
+
+class SpikeTraceOp(nn.Module):
+
+    def __init__(self, module):
+        """
+        * :ref:`API in English <SpikeTraceOp-en>`
+
+        .. _SpikeTraceOp-cn:
+
+        :param module: 需要包装的模块
+
+        对脉冲和迹进行相同的运算，如Dropout，AvgPool等
+
+        * :ref:`中文 API <GradwithTrace-cn>`
+
+        .. _SpikeTraceOp-en:
+
+        :param module: the module that requires wrapping
+
+        perform the same operations for spike and trace, such as Dropout, Avgpool, etc.
+
+        """
+        super().__init__()
+        self.module = module
+
+    def forward(self, x: 'Tensor'):
+        spike, trace = x[0], x[1]
+        spike = self.module(spike)
+        with torch.no_grad():
+            trace = self.module(trace)
+        x = [spike, trace]
+        return x
+
+
+class OTTTSequential(nn.Sequential):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+    def forward(self, input):
+        for module in self:
+            if not isinstance(input, list):
+                input = module(input)
+            else:
+                if len(list(module.parameters())) > 0:
+                    module = GradwithTrace(module)
+                else:
+                    module = SpikeTraceOp(module)
+                input = module(input)
+        return input
+
+
+class WSConv2d(Conv2d):
+
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: '_size_2_t', stride: '_size_2_t'=1, padding: 'Union[str, _size_2_t]'=0, dilation: '_size_2_t'=1, groups: 'int'=1, bias: 'bool'=True, padding_mode: 'str'='zeros', step_mode: 'str'='s', gain: 'bool'=True, eps: 'float'=0.0001) ->None:
+        """
+        * :ref:`API in English <WSConv2d-en>`
+
+        .. _WSConv2d-cn:
+
+        :param gain: 是否对权重引入可学习的缩放系数
+        :type gain: bool
+
+        :param eps: 预防数值问题的小量
+        :type eps: float
+
+        其他的参数API参见 :class:`Conv2d`
+
+        * :ref:`中文 API <WSConv2d-cn>`
+
+        .. _WSConv2d-en:
+
+        :param gain: whether introduce learnable scale factors for weights
+        :type step_mode: bool
+
+        :param eps: a small number to prevent numerical problems
+        :type eps: float
+
+        Refer to :class:`Conv2d` for other parameters' API
+        """
+        super().__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode, step_mode)
+        if gain:
+            self.gain = nn.Parameter(torch.ones(self.out_channels, 1, 1, 1))
+        else:
+            self.gain = None
+        self.eps = eps
+
+    def get_weight(self):
+        fan_in = np.prod(self.weight.shape[1:])
+        mean = torch.mean(self.weight, axis=[1, 2, 3], keepdims=True)
+        var = torch.var(self.weight, axis=[1, 2, 3], keepdims=True)
+        weight = (self.weight - mean) / (var * fan_in + self.eps) ** 0.5
+        if self.gain is not None:
+            weight = weight * self.gain
+        return weight
+
+    def _forward(self, x: 'Tensor'):
+        return F.conv2d(x, self.get_weight(), self.bias, self.stride, self.padding, self.dilation, self.groups)
+
+    def forward(self, x: 'Tensor'):
+        if self.step_mode == 's':
+            x = self._forward(x)
+        elif self.step_mode == 'm':
+            if x.dim() != 5:
+                raise ValueError(f'expected x with shape [T, N, C, H, W], but got x with shape {x.shape}!')
+            x = functional.seq_to_ann_forward(x, self._forward)
+        return x
+
+
+class WSLinear(Linear):
+
+    def __init__(self, in_features: 'int', out_features: 'int', bias: 'bool'=True, step_mode='s', gain=True, eps=0.0001) ->None:
+        """
+        * :ref:`API in English <WSLinear-en>`
+
+        .. _WSLinear-cn:
+
+        :param gain: 是否对权重引入可学习的缩放系数
+        :type gain: bool
+
+        :param eps: 预防数值问题的小量
+        :type eps: float
+
+        其他的参数API参见 :class:`Linear`
+
+        * :ref:`中文 API <WSLinear-cn>`
+
+        .. _WSLinear-en:
+
+        :param gain: whether introduce learnable scale factors for weights
+        :type step_mode: bool
+
+        :param eps: a small number to prevent numerical problems
+        :type eps: float
+
+        Refer to :class:`Linear` for other parameters' API
+        """
+        super().__init__(in_features, out_features, bias, step_mode)
+        if gain:
+            self.gain = nn.Parameter(torch.ones(self.out_channels, 1))
+        else:
+            self.gain = None
+        self.eps = eps
+
+    def get_weight(self):
+        fan_in = np.prod(self.weight.shape[1:])
+        mean = torch.mean(self.weight, axis=[1], keepdims=True)
+        var = torch.var(self.weight, axis=[1], keepdims=True)
+        weight = (self.weight - mean) / (var * fan_in + self.eps) ** 0.5
+        if self.gain is not None:
+            weight = weight * self.gain
+        return weight
+
+    def forward(self, x: 'Tensor'):
+        return F.linear(x, self.get_weight(), self.bias)
+
+
+def stdp_conv1d_single_step(conv: 'nn.Conv1d', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[torch.Tensor, None]', trace_post: 'Union[torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     if conv.dilation != (1,):
         raise NotImplementedError('STDP with dilation != 1 for Conv1d has not been implemented!')
     if conv.groups != 1:
@@ -3991,7 +4826,7 @@ def stdp_conv1d_single_step(conv: nn.Conv1d, in_spike: torch.Tensor, out_spike: 
     return trace_pre, trace_post, delta_w
 
 
-def stdp_conv2d_single_step(conv: nn.Conv2d, in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[torch.Tensor, None], trace_post: Union[torch.Tensor, None], tau_pre: float, tau_post: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+def stdp_conv2d_single_step(conv: 'nn.Conv2d', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[torch.Tensor, None]', trace_post: 'Union[torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     if conv.dilation != (1, 1):
         raise NotImplementedError('STDP with dilation != 1 for Conv2d has not been implemented!')
     if conv.groups != 1:
@@ -4029,7 +4864,7 @@ def stdp_conv2d_single_step(conv: nn.Conv2d, in_spike: torch.Tensor, out_spike: 
     return trace_pre, trace_post, delta_w
 
 
-def stdp_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[float, torch.Tensor, None], trace_post: Union[float, torch.Tensor, None], tau_pre: float, tau_post: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+def stdp_linear_single_step(fc: 'nn.Linear', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[float, torch.Tensor, None]', trace_post: 'Union[float, torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     if trace_pre is None:
         trace_pre = 0.0
     if trace_post is None:
@@ -4042,7 +4877,7 @@ def stdp_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike: to
     return trace_pre, trace_post, delta_w_pre + delta_w_post
 
 
-def stdp_multi_step(layer: Union[nn.Linear, nn.Conv1d, nn.Conv2d], in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[float, torch.Tensor, None], trace_post: Union[float, torch.Tensor, None], tau_pre: float, tau_post: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+def stdp_multi_step(layer: 'Union[nn.Linear, nn.Conv1d, nn.Conv2d]', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[float, torch.Tensor, None]', trace_post: 'Union[float, torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     weight = layer.weight.data
     delta_w = torch.zeros_like(weight)
     T = in_spike.shape[0]
@@ -4058,7 +4893,70 @@ def stdp_multi_step(layer: Union[nn.Linear, nn.Conv1d, nn.Conv2d], in_spike: tor
     return trace_pre, trace_post, delta_w
 
 
-def mstdp_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[float, torch.Tensor, None], trace_post: Union[float, torch.Tensor, None], tau_pre: float, tau_post: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+class STDPLearner(base.MemoryModule):
+
+    def __init__(self, step_mode: 'str', synapse: 'Union[nn.Conv2d, nn.Linear]', sn: 'neuron.BaseNode', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
+        super().__init__()
+        self.step_mode = step_mode
+        self.tau_pre = tau_pre
+        self.tau_post = tau_post
+        self.f_pre = f_pre
+        self.f_post = f_post
+        self.synapse = synapse
+        self.in_spike_monitor = monitor.InputMonitor(synapse)
+        self.out_spike_monitor = monitor.OutputMonitor(sn)
+        self.register_memory('trace_pre', None)
+        self.register_memory('trace_post', None)
+
+    def reset(self):
+        super(STDPLearner, self).reset()
+        self.in_spike_monitor.clear_recorded_data()
+        self.out_spike_monitor.clear_recorded_data()
+
+    def disable(self):
+        self.in_spike_monitor.disable()
+        self.out_spike_monitor.disable()
+
+    def enable(self):
+        self.in_spike_monitor.enable()
+        self.out_spike_monitor.enable()
+
+    def step(self, on_grad: 'bool'=True, scale: 'float'=1.0):
+        length = self.in_spike_monitor.records.__len__()
+        delta_w = None
+        if self.step_mode == 's':
+            if isinstance(self.synapse, nn.Linear):
+                stdp_f = stdp_linear_single_step
+            elif isinstance(self.synapse, nn.Conv2d):
+                stdp_f = stdp_conv2d_single_step
+            elif isinstance(self.synapse, nn.Conv1d):
+                stdp_f = stdp_conv1d_single_step
+            else:
+                raise NotImplementedError(self.synapse)
+        elif self.step_mode == 'm':
+            if isinstance(self.synapse, (nn.Linear, nn.Conv1d, nn.Conv2d)):
+                stdp_f = stdp_multi_step
+            else:
+                raise NotImplementedError(self.synapse)
+        else:
+            raise ValueError(self.step_mode)
+        for _ in range(length):
+            in_spike = self.in_spike_monitor.records.pop(0)
+            out_spike = self.out_spike_monitor.records.pop(0)
+            self.trace_pre, self.trace_post, dw = stdp_f(self.synapse, in_spike, out_spike, self.trace_pre, self.trace_post, self.tau_pre, self.tau_post, self.f_pre, self.f_post)
+            if scale != 1.0:
+                dw *= scale
+            delta_w = dw if delta_w is None else delta_w + dw
+        if on_grad:
+            if self.synapse.weight.grad is None:
+                self.synapse.weight.grad = -delta_w
+            else:
+                self.synapse.weight.grad = self.synapse.weight.grad - delta_w
+        else:
+            return delta_w
+
+
+def mstdp_linear_single_step(fc: 'nn.Linear', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[float, torch.Tensor, None]', trace_post: 'Union[float, torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     if trace_pre is None:
         trace_pre = 0.0
     if trace_post is None:
@@ -4070,7 +4968,72 @@ def mstdp_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike: t
     return trace_pre, trace_post, eligibility
 
 
-def mstdpet_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike: torch.Tensor, trace_pre: Union[float, torch.Tensor, None], trace_post: Union[float, torch.Tensor, None], tau_pre: float, tau_post: float, tau_trace: float, f_pre: Callable=lambda x: x, f_post: Callable=lambda x: x):
+class MSTDPLearner(base.MemoryModule):
+
+    def __init__(self, step_mode: 'str', batch_size: 'float', synapse: 'Union[nn.Conv2d, nn.Linear]', sn: 'neuron.BaseNode', tau_pre: 'float', tau_post: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
+        super().__init__()
+        self.step_mode = step_mode
+        self.batch_size = batch_size
+        self.tau_pre = tau_pre
+        self.tau_post = tau_post
+        self.f_pre = f_pre
+        self.f_post = f_post
+        self.synapse = synapse
+        self.in_spike_monitor = monitor.InputMonitor(synapse)
+        self.out_spike_monitor = monitor.OutputMonitor(sn)
+        self.register_memory('trace_pre', None)
+        self.register_memory('trace_post', None)
+
+    def reset(self):
+        super(MSTDPLearner, self).reset()
+        self.in_spike_monitor.clear_recorded_data()
+        self.out_spike_monitor.clear_recorded_data()
+
+    def disable(self):
+        self.in_spike_monitor.disable()
+        self.out_spike_monitor.disable()
+
+    def enable(self):
+        self.in_spike_monitor.enable()
+        self.out_spike_monitor.enable()
+
+    def step(self, reward, on_grad: 'bool'=True, scale: 'float'=1.0):
+        length = self.in_spike_monitor.records.__len__()
+        delta_w = None
+        if self.step_mode == 's':
+            if isinstance(self.synapse, nn.Conv2d):
+                raise NotImplementedError(self.synapse)
+            elif isinstance(self.synapse, nn.Linear):
+                stdp_f = mstdp_linear_single_step
+            else:
+                raise NotImplementedError(self.synapse)
+        elif self.step_mode == 'm':
+            if isinstance(self.synapse, nn.Conv2d) or isinstance(self.synapse, nn.Linear):
+                raise NotImplementedError(self.synapse)
+            else:
+                raise NotImplementedError(self.synapse)
+        else:
+            raise ValueError(self.step_mode)
+        for _ in range(length):
+            if not hasattr(self, 'eligibility'):
+                self.eligibility = torch.zeros(self.batch_size, *self.synapse.weight.shape, device=self.synapse.weight.device)
+            dw = (reward.view(-1, 1, 1) * self.eligibility).sum(0)
+            if scale != 1.0:
+                dw *= scale
+            delta_w = dw if delta_w is None else delta_w + dw
+            in_spike = self.in_spike_monitor.records.pop(0)
+            out_spike = self.out_spike_monitor.records.pop(0)
+            self.trace_pre, self.trace_post, self.eligibility = stdp_f(self.synapse, in_spike, out_spike, self.trace_pre, self.trace_post, self.tau_pre, self.tau_post, self.f_pre, self.f_post)
+        if on_grad:
+            if self.synapse.weight.grad is None:
+                self.synapse.weight.grad = -delta_w
+            else:
+                self.synapse.weight.grad = self.synapse.weight.grad - delta_w
+        else:
+            return delta_w
+
+
+def mstdpet_linear_single_step(fc: 'nn.Linear', in_spike: 'torch.Tensor', out_spike: 'torch.Tensor', trace_pre: 'Union[float, torch.Tensor, None]', trace_post: 'Union[float, torch.Tensor, None]', tau_pre: 'float', tau_post: 'float', tau_trace: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
     if trace_pre is None:
         trace_pre = 0.0
     if trace_post is None:
@@ -4082,14 +5045,73 @@ def mstdpet_linear_single_step(fc: nn.Linear, in_spike: torch.Tensor, out_spike:
     return trace_pre, trace_post, eligibility
 
 
-class MNISTNet(nn.Module):
+class MSTDPETLearner(base.MemoryModule):
 
-    def __init__(self, channels=128, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, step_mode: 'str', synapse: 'Union[nn.Conv2d, nn.Linear]', sn: 'neuron.BaseNode', tau_pre: 'float', tau_post: 'float', tau_trace: 'float', f_pre: 'Callable'=lambda x: x, f_post: 'Callable'=lambda x: x):
         super().__init__()
-        self.conv_fc = nn.Sequential(layer.Conv2d(1, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), spiking_neuron(**deepcopy(kwargs)), layer.MaxPool2d(2, 2), layer.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False), layer.BatchNorm2d(channels), spiking_neuron(**deepcopy(kwargs)), layer.MaxPool2d(2, 2), layer.Flatten(), layer.Dropout(0.5), layer.Linear(channels * 7 * 7, 2048), spiking_neuron(**deepcopy(kwargs)), layer.Dropout(0.5), layer.Linear(2048, 100), spiking_neuron(**deepcopy(kwargs)), layer.VotingLayer())
+        self.step_mode = step_mode
+        self.tau_pre = tau_pre
+        self.tau_post = tau_post
+        self.tau_trace = tau_trace
+        self.f_pre = f_pre
+        self.f_post = f_post
+        self.synapse = synapse
+        self.in_spike_monitor = monitor.InputMonitor(synapse)
+        self.out_spike_monitor = monitor.OutputMonitor(sn)
+        self.register_memory('trace_pre', None)
+        self.register_memory('trace_post', None)
+        self.register_memory('trace_e', None)
 
-    def forward(self, x: torch.Tensor):
-        return self.conv_fc(x)
+    def reset(self):
+        super(MSTDPETLearner, self).reset()
+        self.in_spike_monitor.clear_recorded_data()
+        self.out_spike_monitor.clear_recorded_data()
+
+    def disable(self):
+        self.in_spike_monitor.disable()
+        self.out_spike_monitor.disable()
+
+    def enable(self):
+        self.in_spike_monitor.enable()
+        self.out_spike_monitor.enable()
+
+    def step(self, reward, on_grad: 'bool'=True, scale: 'float'=1.0):
+        length = self.in_spike_monitor.records.__len__()
+        delta_w = None
+        if self.step_mode == 's':
+            if isinstance(self.synapse, nn.Conv2d):
+                raise NotImplementedError(self.synapse)
+            elif isinstance(self.synapse, nn.Linear):
+                stdp_f = mstdpet_linear_single_step
+            else:
+                raise NotImplementedError(self.synapse)
+        elif self.step_mode == 'm':
+            if isinstance(self.synapse, nn.Conv2d) or isinstance(self.synapse, nn.Linear):
+                raise NotImplementedError(self.synapse)
+            else:
+                raise NotImplementedError(self.synapse)
+        else:
+            raise ValueError(self.step_mode)
+        for _ in range(length):
+            if not hasattr(self, 'eligibility'):
+                self.eligibility = torch.zeros(*self.synapse.weight.shape, device=self.synapse.weight.device)
+            if self.trace_e is None:
+                self.trace_e = 0.0
+            self.trace_e = self.trace_e * math.exp(-1 / self.tau_trace) + self.eligibility / self.tau_trace
+            dw = reward * self.trace_e
+            if scale != 1.0:
+                dw *= scale
+            delta_w = dw if delta_w is None else delta_w + dw
+            in_spike = self.in_spike_monitor.records.pop(0)
+            out_spike = self.out_spike_monitor.records.pop(0)
+            self.trace_pre, self.trace_post, self.eligibility = stdp_f(self.synapse, in_spike, out_spike, self.trace_pre, self.trace_post, self.tau_pre, self.tau_post, self.tau_trace, self.f_pre, self.f_post)
+        if on_grad:
+            if self.synapse.weight.grad is None:
+                self.synapse.weight.grad = -delta_w
+            else:
+                self.synapse.weight.grad = self.synapse.weight.grad - delta_w
+        else:
+            return delta_w
 
 
 class FashionMNISTNet(MNISTNet):
@@ -4098,7 +5120,7 @@ class FashionMNISTNet(MNISTNet):
 
 class NMNISTNet(MNISTNet):
 
-    def __init__(self, channels=128, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, channels=128, spiking_neuron: 'callable'=None, **kwargs):
         super().__init__(channels, spiking_neuron, **kwargs)
         self.conv_fc[0] = layer.Conv2d(2, channels, kernel_size=3, padding=1, bias=False)
         self.conv_fc[-6] = layer.Linear(channels * 8 * 8, 2048)
@@ -4106,7 +5128,7 @@ class NMNISTNet(MNISTNet):
 
 class CIFAR10Net(nn.Module):
 
-    def __init__(self, channels=256, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, channels=256, spiking_neuron: 'callable'=None, **kwargs):
         super().__init__()
         conv = []
         for i in range(2):
@@ -4127,7 +5149,7 @@ class CIFAR10Net(nn.Module):
 
 class CIFAR10DVSNet(nn.Module):
 
-    def __init__(self, channels=128, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, channels=128, spiking_neuron: 'callable'=None, **kwargs):
         super().__init__()
         conv = []
         for i in range(4):
@@ -4141,13 +5163,13 @@ class CIFAR10DVSNet(nn.Module):
             conv.append(layer.MaxPool2d(2, 2))
         self.conv_fc = nn.Sequential(*conv, layer.Flatten(), layer.Dropout(0.5), layer.Linear(channels * 8 * 8, 512), spiking_neuron(**deepcopy(kwargs)), layer.Dropout(0.5), layer.Linear(512, 100), spiking_neuron(**deepcopy(kwargs)), layer.VotingLayer(10))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.conv_fc(x)
 
 
 class DVSGestureNet(nn.Module):
 
-    def __init__(self, channels=128, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, channels=128, spiking_neuron: 'callable'=None, **kwargs):
         super().__init__()
         conv = []
         for i in range(5):
@@ -4161,13 +5183,13 @@ class DVSGestureNet(nn.Module):
             conv.append(layer.MaxPool2d(2, 2))
         self.conv_fc = nn.Sequential(*conv, layer.Flatten(), layer.Dropout(0.5), layer.Linear(channels * 4 * 4, 512), spiking_neuron(**deepcopy(kwargs)), layer.Dropout(0.5), layer.Linear(512, 110), spiking_neuron(**deepcopy(kwargs)), layer.VotingLayer(10))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.conv_fc(x)
 
 
 class SEWResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None, norm_layer=None, cnf: str=None, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None, norm_layer=None, cnf: 'str'=None, spiking_neuron: 'callable'=None, **kwargs):
         super().__init__()
         if norm_layer is None:
             norm_layer = layer.BatchNorm2d
@@ -4203,7 +5225,7 @@ class SEWResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, cnf: str=None, spiking_neuron: callable=None, **kwargs):
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, cnf: 'str'=None, spiking_neuron: 'callable'=None, **kwargs):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -4240,9 +5262,801 @@ class SEWResNet(nn.Module):
         return self._forward_impl(x)
 
 
+class ScaleLayer(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.scale = torch.tensor(0.0)
+
+    def forward(self, input):
+        return input * self.scale
+
+
+class Neuronal_Cell(nn.Module):
+
+    def __init__(self, args, in_channel, out_channel, con_mat):
+        """
+        :param args: additional arguments
+        :param in_channel: input channel
+        :type in_channel: int
+        :param out_channel: output channel
+        :type out_channel: int
+        :param con_mat: connection matrix
+        :type con_mat: torch.Tensor
+
+        Neuronal forward cell.
+
+        """
+        super(Neuronal_Cell, self).__init__()
+        self.cell_architecture = nn.ModuleList([])
+        self.con_mat = con_mat
+        for col in range(1, 4):
+            for row in range(col):
+                op = con_mat[row, col]
+                if op == 0:
+                    self.cell_architecture.append(ScaleLayer())
+                elif op == 1:
+                    self.cell_architecture.append(nn.Identity())
+                elif op == 2:
+                    self.cell_architecture.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(1, 1), stride=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 3:
+                    self.cell_architecture.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 4:
+                    self.cell_architecture.append(nn.AvgPool2d(kernel_size=3, stride=1, padding=1))
+
+    def forward(self, x_in):
+        x_1 = self.cell_architecture[0](x_in)
+        x_2 = self.cell_architecture[1](x_in) + self.cell_architecture[2](x_1)
+        x_3 = self.cell_architecture[3](x_in) + self.cell_architecture[4](x_1) + self.cell_architecture[5](x_2)
+        return x_3
+
+
+class Neuronal_Cell_backward(nn.Module):
+
+    def __init__(self, args, in_channel, out_channel, con_mat):
+        """
+        :param args: additional arguments
+        :param in_channel: input channel
+        :type in_channel: int
+        :param out_channel: output channel
+        :type out_channel: int
+        :param con_mat: connection matrix
+        :type con_mat: torch.Tensor
+
+        Neuronal backward cell.
+
+        """
+        super(Neuronal_Cell_backward, self).__init__()
+        self.cell_architecture = nn.ModuleList([])
+        self.con_mat = con_mat
+        self.cell_architecture_back = nn.ModuleList([])
+        self.last_xin = 0.0
+        self.last_x1 = 0.0
+        self.last_x2 = 0.0
+        for col in range(1, 4):
+            for row in range(col):
+                op = con_mat[row, col]
+                if op == 0:
+                    self.cell_architecture.append(ScaleLayer())
+                elif op == 1:
+                    self.cell_architecture.append(nn.Identity())
+                elif op == 2:
+                    self.cell_architecture.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(1, 1), stride=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 3:
+                    self.cell_architecture.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 4:
+                    self.cell_architecture.append(nn.AvgPool2d(kernel_size=3, stride=1, padding=1))
+        for col in range(0, 3):
+            for row in range(col + 1, 4):
+                op = con_mat[row, col]
+                if op == 0:
+                    self.cell_architecture_back.append(ScaleLayer())
+                elif op == 1:
+                    self.cell_architecture_back.append(nn.Identity())
+                elif op == 2:
+                    self.cell_architecture_back.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(1, 1), stride=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 3:
+                    self.cell_architecture_back.append(nn.Sequential(neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(in_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False), nn.BatchNorm2d(out_channel, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)))
+                elif op == 4:
+                    self.cell_architecture_back.append(nn.AvgPool2d(kernel_size=3, stride=1, padding=1))
+
+    def forward(self, x_in):
+        x_1 = self.cell_architecture[0](x_in + self.last_xin)
+        x_2 = self.cell_architecture[1](x_in + self.last_xin) + self.cell_architecture[2](x_1 + self.last_x1)
+        x_3 = self.cell_architecture[3](x_in + self.last_xin) + self.cell_architecture[4](x_1 + self.last_x1) + self.cell_architecture[5](x_2 + self.last_x2)
+        self.last_xin = self.cell_architecture_back[0](x_1 + self.last_x1) + self.cell_architecture_back[1](x_2 + self.last_x2) + self.cell_architecture_back[2](x_3)
+        self.last_x1 = self.cell_architecture_back[3](x_2 + self.last_x2) + self.cell_architecture_back[4](x_3)
+        self.last_x2 = self.cell_architecture_back[5](x_3)
+        return x_3
+
+
+class SNASNet(nn.Module):
+
+    def __init__(self, args, con_mat):
+        """
+        :param args: additional arguments
+        :param con_mat: connection matrix
+        :type con_mat: torch.Tensor
+
+        The SNASNet `Neural Architecture Search for Spiking Neural Networks <https://arxiv.org/abs/2201.10355>`_ implementation by Spikingjelly.
+
+        """
+        super(SNASNet, self).__init__()
+        self.con_mat = con_mat
+        self.total_timestep = args.timestep
+        self.second_avgpooling = args.second_avgpooling
+        if args.dataset == 'cifar10':
+            self.num_class = 10
+            self.num_final_neuron = 100
+            self.num_cluster = 10
+            self.in_channel = 3
+            self.img_size = 32
+            self.first_out_channel = 128
+            self.channel_ratio = 2
+            self.spatial_decay = 2 * self.second_avgpooling
+            self.classifier_inter_ch = 1024
+            self.stem_stride = 1
+        elif args.dataset == 'cifar100':
+            self.num_class = 100
+            self.num_final_neuron = 500
+            self.num_cluster = 5
+            self.in_channel = 3
+            self.img_size = 32
+            self.channel_ratio = 1
+            self.first_out_channel = 128
+            self.spatial_decay = 2 * self.second_avgpooling
+            self.classifier_inter_ch = 1024
+            self.stem_stride = 1
+        elif args.dataset == 'tinyimagenet':
+            self.num_class = 200
+            self.num_final_neuron = 1000
+            self.num_cluster = 5
+            self.in_channel = 3
+            self.img_size = 64
+            self.first_out_channel = 128
+            self.channel_ratio = 1
+            self.spatial_decay = 4 * self.second_avgpooling
+            self.classifier_inter_ch = 4096
+            self.stem_stride = 2
+        self.stem = nn.Sequential(nn.Conv2d(self.in_channel, self.first_out_channel * self.channel_ratio, kernel_size=3, stride=self.stem_stride, padding=1, bias=False), nn.BatchNorm2d(self.first_out_channel * self.channel_ratio, affine=True))
+        if args.celltype == 'forward':
+            self.cell1 = Neuronal_Cell(args, self.first_out_channel * self.channel_ratio, self.first_out_channel * self.channel_ratio, self.con_mat)
+        elif args.celltype == 'backward':
+            self.cell1 = Neuronal_Cell_backward(args, self.first_out_channel * self.channel_ratio, self.first_out_channel * self.channel_ratio, self.con_mat)
+        else:
+            None
+            exit()
+        self.downconv1 = nn.Sequential(nn.BatchNorm2d(128 * self.channel_ratio, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True), neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Conv2d(128 * self.channel_ratio, 256 * self.channel_ratio, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False), nn.BatchNorm2d(256 * self.channel_ratio, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True))
+        self.resdownsample1 = nn.AvgPool2d(2, 2)
+        if args.celltype == 'forward':
+            self.cell2 = Neuronal_Cell(args, 256 * self.channel_ratio, 256 * self.channel_ratio, self.con_mat)
+        elif args.celltype == 'backward':
+            self.cell2 = Neuronal_Cell_backward(args, 256 * self.channel_ratio, 256 * self.channel_ratio, self.con_mat)
+        else:
+            None
+            exit()
+        self.last_act = nn.Sequential(nn.BatchNorm2d(256 * self.channel_ratio, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True), neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True))
+        self.resdownsample2 = nn.AvgPool2d(self.second_avgpooling, self.second_avgpooling)
+        self.classifier = nn.Sequential(layer.Dropout(0.5), nn.Linear(256 * self.channel_ratio * (self.img_size // self.spatial_decay) * (self.img_size // self.spatial_decay), self.classifier_inter_ch, bias=False), neuron.LIFNode(v_threshold=args.threshold, v_reset=0.0, tau=args.tau, surrogate_function=surrogate.ATan(), detach_reset=True), nn.Linear(self.classifier_inter_ch, self.num_final_neuron, bias=True))
+        self.boost = nn.AvgPool1d(self.num_cluster, self.num_cluster)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_uniform_(m.weight, a=2)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+
+    def forward(self, input):
+        self.neuron_init()
+        acc_voltage = 0
+        batch_size = input.size(0)
+        static_x = self.stem(input)
+        for t in range(self.total_timestep):
+            x = self.cell1(static_x)
+            x = self.downconv1(x)
+            x = self.resdownsample1(x)
+            x = self.cell2(x)
+            x = self.last_act(x)
+            x = self.resdownsample2(x)
+            x = x.view(batch_size, -1)
+            x = self.classifier(x)
+            acc_voltage = acc_voltage + self.boost(x.unsqueeze(1)).squeeze(1)
+        acc_voltage = acc_voltage / self.total_timestep
+        return acc_voltage
+
+    def neuron_init(self):
+        self.cell1.last_xin = 0.0
+        self.cell1.last_x1 = 0.0
+        self.cell1.last_x2 = 0.0
+        self.cell2.last_xin = 0.0
+        self.cell2.last_x1 = 0.0
+        self.cell2.last_x2 = 0.0
+
+
+class Identity(nn.Module):
+
+    def __init__(self, C_in, C_out, signal):
+        super(Identity, self).__init__()
+        self.signal = signal
+
+    def forward(self, x):
+        return x
+
+
+class SurrogateFunctionBase(nn.Module):
+
+    def __init__(self, alpha, spiking=True):
+        super().__init__()
+        self.spiking = spiking
+        self.alpha = alpha
+
+    def set_spiking_mode(self, spiking: 'bool'):
+        self.spiking = spiking
+
+    def extra_repr(self):
+        return f'alpha={self.alpha}, spiking={self.spiking}'
+
+    @staticmethod
+    def spiking_function(x, alpha):
+        raise NotImplementedError
+
+    @staticmethod
+    def primitive_function(x, alpha):
+        raise NotImplementedError
+
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
+        raise NotImplementedError
+
+    def cuda_code_start_comments(self):
+        return f'// start: spikingjelly.activation_based.surrogate.{self._get_name()}.cuda_code'
+
+    def cuda_code_end_comments(self):
+        return f'// end: spikingjelly.activation_based.surrogate.{self._get_name()}.cuda_code'
+
+    def forward(self, x: 'torch.Tensor'):
+        if self.spiking:
+            return self.spiking_function(x, self.alpha)
+        else:
+            return self.primitive_function(x, self.alpha)
+
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
+        raise NotImplementedError
+
+
+@script
+def dSpike_backward(grad_output: 'Tensor', x: 'Tensor', alpha: 'float'):
+    mask = x.abs() > 0.5
+    const = alpha / (2.0 * tanh(alpha / 2.0))
+    grad_x = (grad_output * const / (alpha * x).cosh_().square_()).masked_fill_(mask, 0)
+    return grad_x, None
+
+
+@torch.jit.script
+def heaviside(x: 'torch.Tensor'):
+    """
+    * :ref:`API in English <heaviside.__init__-en>`
+    .. _heaviside.__init__-cn:
+
+    :param x: 输入tensor
+    :return: 输出tensor
+
+    heaviside阶跃函数，定义为
+
+    .. math::
+        g(x) =
+        \\begin{cases}
+        1, & x \\geq 0 \\\\
+        0, & x < 0 \\\\
+        \\end{cases}
+
+    阅读 `HeavisideStepFunction <https://mathworld.wolfram.com/HeavisideStepFunction.html>`_ 以获得更多信息。
+
+    * :ref:`中文API <heaviside.__init__-cn>`
+    .. _heaviside.__init__-en:
+
+    :param x: the input tensor
+    :return: the output tensor
+
+    The heaviside function, which is defined by
+
+    .. math::
+        g(x) =
+        \\begin{cases}
+        1, & x \\geq 0 \\\\
+        0, & x < 0 \\\\
+        \\end{cases}
+
+    For more information, see `HeavisideStepFunction <https://mathworld.wolfram.com/HeavisideStepFunction.html>`_.
+
+    """
+    return x >= 0
+
+
+class dSpike(Function):
+
+    @staticmethod
+    def forward(ctx, x: 'Tensor', alpha: 'float') ->Tensor:
+        if x.requires_grad:
+            ctx.save_for_backward(x)
+            ctx.alpha = alpha
+        return heaviside(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return dSpike_backward(grad_output, ctx.saved_tensors[0], ctx.alpha)
+
+
+class DSpike(SurrogateFunctionBase):
+
+    def __init__(self, alpha: 'float'=3, spiking=True):
+        super().__init__(alpha, spiking)
+        assert alpha > 0, 'alpha must be lager than 0.'
+
+    @staticmethod
+    def spiking_function(x: 'Tensor', alpha: 'float'):
+        return dSpike.apply(x, alpha)
+
+
+def getSpikingNode(v_threshold=0.5):
+    return LIFNode(tau=1.25, decay_input=False, v_threshold=v_threshold, detach_reset=True, surrogate_function=DSpike())
+
+
+class SpikingConv2d(nn.Module):
+
+    def __init__(self, input_c, output_c, kernel_size=3, stride=1, padding=1, b=3, spiking=True, v_threshold=0.5):
+        super(SpikingConv2d, self).__init__()
+        self.conv = layer.Conv2d(input_c, output_c, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.bn = layer.BatchNorm2d(output_c)
+        self.spiking = spiking
+        if self.spiking:
+            self.spike = getSpikingNode(v_threshold=v_threshold)
+
+    def forward(self, x):
+        x = self.bn(self.conv(x))
+        if self.spiking:
+            x = self.spike(x)
+        return x
+
+
+def get_save_v_SpikingNode(v_threshold=0.5):
+    return save_v_LIFNode(tau=1.25, decay_input=False, v_threshold=v_threshold, detach_reset=True, surrogate_function=DSpike())
+
+
+class SearchSpikingConv2d_stem(nn.Module):
+
+    def __init__(self, input_c, output_c, kernel_size=3, stride=1, padding=1, b=3, spiking=True, v_threshold=0.5):
+        super(SearchSpikingConv2d_stem, self).__init__()
+        self.conv_m = layer.Conv2d(input_c, output_c, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv_b = layer.Conv2d(input_c, output_c, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv_s = layer.Conv2d(input_c, output_c, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.bn_m = layer.BatchNorm2d(output_c)
+        self.bn_b = layer.BatchNorm2d(output_c)
+        self.bn_s = layer.BatchNorm2d(output_c)
+        self.spike_m = get_save_v_SpikingNode()
+        self.spike_b = get_save_v_SpikingNode()
+        self.spike_s = get_save_v_SpikingNode()
+        self.is_DGS = False
+        self.dgs_alpha = nn.Parameter(0.001 * torch.ones(3), requires_grad=True)
+        self.dgs_step = 0.2
+
+    def dgs_init_stage(self):
+        self.is_DGS = True
+        self.conv_s.load_state_dict(self.conv_m.state_dict())
+        self.conv_b.load_state_dict(self.conv_m.state_dict())
+        self.bn_s.load_state_dict(self.bn_m.state_dict())
+        self.bn_b.load_state_dict(self.bn_m.state_dict())
+        self.spike_s.surrogate_function.alpha = self.spike_m.surrogate_function.alpha - self.dgs_step
+        self.spike_b.surrogate_function.alpha = self.spike_m.surrogate_function.alpha + self.dgs_step
+        self.dgs_alpha = nn.Parameter(0.001 * torch.ones(3), requires_grad=True)
+        for name, value in self.named_parameters():
+            value.requires_grad_(True)
+
+    def dgs_finish_stage(self, dgs_direction):
+        self.is_DGS = False
+        value_list = [-self.dgs_step, 0, self.dgs_step]
+        value = value_list[dgs_direction]
+        self.spike_m.surrogate_function.alpha += value
+        if self.spike_m.surrogate_function.alpha < 0.2:
+            self.spike_m.surrogate_function.alpha = 0.2
+
+    def forward(self, x):
+        if self.is_DGS:
+            n_a = F.softmax(self.dgs_alpha, dim=0)
+            x = n_a[0] * self.spike_s(self.bn_s(self.conv_s(x))) + n_a[1] * self.spike_m(self.bn_m(self.conv_m(x))) + n_a[2] * self.spike_b(self.bn_b(self.conv_b(x)))
+        else:
+            x = self.spike_m(self.bn_m(self.conv_m(x)))
+        return x
+
+
+class SearchSpikingConv2d_cell(nn.Module):
+
+    def __init__(self, io_c, kernel_size=3, stride=1, padding=1, b=3, spiking=True, v_threshold=0.5):
+        super(SearchSpikingConv2d_cell, self).__init__()
+        [input_c1, output_c1, primitive1], [input_c2, output_c2, primitive2] = io_c
+        self.conv1_m = layer.Conv2d(input_c1, output_c1, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv1_b = layer.Conv2d(input_c1, output_c1, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv1_s = layer.Conv2d(input_c1, output_c1, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.bn1_m = layer.BatchNorm2d(output_c1)
+        self.bn1_b = layer.BatchNorm2d(output_c1)
+        self.bn1_s = layer.BatchNorm2d(output_c1)
+        self.conv2_m = layer.Conv2d(input_c2, output_c2, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv2_b = layer.Conv2d(input_c2, output_c2, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv2_s = layer.Conv2d(input_c2, output_c2, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.bn2_m = layer.BatchNorm2d(output_c2)
+        self.bn2_b = layer.BatchNorm2d(output_c2)
+        self.bn2_s = layer.BatchNorm2d(output_c2)
+        self.spike_m = get_save_v_SpikingNode()
+        self.spike_b = get_save_v_SpikingNode()
+        self.spike_s = get_save_v_SpikingNode()
+        self.is_DGS = False
+        self.dgs_alpha = nn.Parameter(0.001 * torch.ones(3), requires_grad=True)
+        self.dgs_step = 0.2
+
+    def dgs_init_stage(self):
+        self.is_DGS = True
+        self.conv1_s.load_state_dict(self.conv1_m.state_dict())
+        self.conv1_b.load_state_dict(self.conv1_m.state_dict())
+        self.bn1_s.load_state_dict(self.bn1_m.state_dict())
+        self.bn1_b.load_state_dict(self.bn1_m.state_dict())
+        self.conv2_s.load_state_dict(self.conv2_m.state_dict())
+        self.conv2_b.load_state_dict(self.conv2_m.state_dict())
+        self.bn2_s.load_state_dict(self.bn2_m.state_dict())
+        self.bn2_b.load_state_dict(self.bn2_m.state_dict())
+        self.spike_s.surrogate_function.alpha = self.spike_m.surrogate_function.alpha - self.dgs_step
+        self.spike_b.surrogate_function.alpha = self.spike_m.surrogate_function.alpha + self.dgs_step
+        self.dgs_alpha = nn.Parameter(0.001 * torch.ones(3), requires_grad=True)
+        for name, value in self.named_parameters():
+            value.requires_grad_(True)
+
+    def dgs_finish_stage(self, dgs_direction):
+        self.is_DGS = False
+        value_list = [-self.dgs_step, 0, self.dgs_step]
+        value = value_list[dgs_direction]
+        self.spike_m.surrogate_function.alpha += value
+        if self.spike_m.surrogate_function.alpha < 0.2:
+            self.spike_m.surrogate_function.alpha = 0.2
+
+    def forward(self, x1, x2):
+        if self.is_DGS:
+            n_a = F.softmax(self.dgs_alpha, dim=0)
+            x = n_a[0] * self.spike_s(self.bn1_s(self.conv1_s(x1)) + self.bn2_s(self.conv2_s(x2))) + n_a[1] * self.spike_m(self.bn1_m(self.conv1_m(x1)) + self.bn2_m(self.conv2_m(x2))) + n_a[2] * self.spike_b(self.bn1_b(self.conv1_b(x1)) + self.bn2_b(self.conv2_b(x2)))
+        else:
+            x = self.spike_m(self.bn1_m(self.conv1_m(x1)) + self.bn2_m(self.conv2_m(x2)))
+        return x
+
+
+class SpikingLinear(nn.Module):
+
+    def __init__(self, input_c, output_c, spiking=True):
+        super(SpikingLinear, self).__init__()
+        self.linear = layer.Linear(input_c, output_c)
+        self.bn = layer.SeqToANNContainer(nn.BatchNorm1d(output_c))
+        self.spiking = spiking
+        if self.spiking:
+            self.spike = getSpikingNode()
+
+    def forward(self, x):
+        x = self.bn(self.linear(x))
+        if self.spiking:
+            x = self.spike(x)
+        return x
+
+
+class SpikingAvgPool2d(nn.Module):
+
+    def __init__(self, kernel_size=5, stride=3, padding=0, b=3, spiking=True):
+        super(SpikingAvgPool2d, self).__init__()
+        self.pooling = layer.SeqToANNContainer(nn.AvgPool2d(kernel_size=kernel_size, stride=stride, padding=padding, count_include_pad=False))
+        self.spike = getSpikingNode()
+
+    def forward(self, x):
+        return self.spike(self.pooling(x))
+
+
+class SpikingAdaptiveAvgPool2d(nn.Module):
+
+    def __init__(self, dimension, b=3, spiking=True):
+        super(SpikingAdaptiveAvgPool2d, self).__init__()
+        self.pooling = layer.SeqToANNContainer(nn.AdaptiveAvgPool2d(dimension))
+        self.spike = getSpikingNode()
+
+    def forward(self, x):
+        return self.spike(self.pooling(x))
+
+
+class Nearest(nn.Module):
+
+    def __init__(self, shape) ->None:
+        super().__init__()
+        self._shape = shape
+
+    def forward(self, x):
+        return interpolate(x, self._shape, mode='nearest')
+
+
+PRIMITIVES = ['skip_connect', 'snn_b3', 'snn_b5']
+
+
+class Cell(nn.Module):
+
+    def __init__(self, steps, block_multiplier, prev_prev_fmultiplier, prev_filter_multiplier, cell_arch, network_arch, filter_multiplier, downup_sample, args=None):
+        """
+        :param steps: number of nodes
+        :type steps: int
+        :param block_multiplier: The change factor for the channel for current node
+        :type block_multiplier: int
+        :param prev_prev_fmultiplier: The change factor for the channel for previous previous node
+        :type prev_prev_fmultiplier: int
+        :param prev_filter_multiplier: The change factor for the channel for previous node
+        :type prev_filter_multiplier: int
+        :param cell_arch: cell level architecture
+        :type cell_arch: numpy.ndarray
+        :param network_arch: layer level architecture
+        :type network_arch: numpy.ndarray
+        :param filter_multiplier: filter channel multiplier
+        :type filter_multiplier: int
+        :param downup_sample: sample rate, -1:downsample, 1:upsample, 0: no change
+        :type downup_sample: int
+        :param args: additional arguments
+
+        A cell is defined as a repeated and searchable unit, which is a directed acyclic graph with N nodes.
+        """
+        super(Cell, self).__init__()
+        self.cell_arch = cell_arch
+        self.C_in = block_multiplier * filter_multiplier
+        self.C_out = filter_multiplier
+        self.C_prev = int(block_multiplier * prev_filter_multiplier)
+        self.C_prev_prev = int(block_multiplier * prev_prev_fmultiplier)
+        self.downup_sample = downup_sample
+        self._steps = steps
+        self.block_multiplier = block_multiplier
+        self._ops = nn.ModuleList()
+        if downup_sample == -1:
+            self.scale = 0.5
+        elif downup_sample == 1:
+            self.scale = 2
+        self.cell_arch = torch.sort(self.cell_arch, dim=0)[0]
+        C_out = self.C_out
+        ops_channel = []
+        for i, x in enumerate(self.cell_arch):
+            primitive = PRIMITIVES[x[1]]
+            if x[0] in [0, 2, 5]:
+                C_in = self.C_prev_prev
+            elif x[0] in [1, 3, 6]:
+                C_in = self.C_prev
+            else:
+                C_in = self.C_out
+            ops_channel.append([C_in, C_out, primitive])
+            if i % 2 == 1:
+                op = SearchSpikingConv2d_cell(io_c=ops_channel)
+                self._ops.append(op)
+                ops_channel = []
+        self.spikes = nn.ModuleList([getSpikingNode() for _ in range(self._steps)])
+
+    def scale_dimension(self, dim, scale):
+        return int((float(dim) - 1.0) * scale + 1.0) if dim % 2 == 1 else int(float(dim) * scale)
+
+    def forward(self, prev_prev_input, prev_input):
+        s0 = prev_prev_input
+        s1 = prev_input
+        if self.downup_sample != 0:
+            feature_size_h = self.scale_dimension(s1.shape[3], self.scale)
+            feature_size_w = self.scale_dimension(s1.shape[4], self.scale)
+            interpolate = layer.SeqToANNContainer(Nearest([feature_size_h, feature_size_w]))
+            s1 = interpolate(s1)
+        if s0.shape[3] != s1.shape[3] or s0.shape[4] != s1.shape[4]:
+            interpolate = layer.SeqToANNContainer(Nearest([s1.shape[3], s1.shape[4]]))
+            s0 = interpolate(s0)
+        device = prev_input.device
+        states = [s0, s1]
+        spike = self._ops[0](states[0], states[1])
+        states.append(spike)
+        spike = self._ops[1](states[0], states[1])
+        states.append(spike)
+        spike = self._ops[2](states[2], states[3])
+        states.append(spike)
+        concat_feature = torch.cat(states[-self.block_multiplier:], dim=2)
+        return prev_input, concat_feature
+
+
+class AuxiliaryHeadCIFAR(nn.Module):
+
+    def __init__(self, C, num_classes):
+        """assuming input size 8x8"""
+        super(AuxiliaryHeadCIFAR, self).__init__()
+        self.pooling = SpikingAvgPool2d(kernel_size=5, stride=3, padding=0)
+        self.conv1 = SpikingConv2d(C, 128, 1, padding=0, b=3)
+        self.conv2 = SpikingConv2d(128, 768, 2, padding=0, b=3)
+        self.classifier = SpikingLinear(768, num_classes, spiking=False)
+
+    def forward(self, x):
+        x = self.pooling(x)
+        spike1 = self.conv1(x)
+        spike2 = self.conv2(spike1)
+        shape = spike2.shape[:2]
+        result = self.classifier(spike2.view(*shape, -1))
+        return result
+
+
+class newFeature(nn.Module):
+
+    def __init__(self, frame_rate, network_arch, cell_arch, cell=Cell, args=None):
+        """
+        :param frame_rate: input channel
+        :type frame_rate: int
+        :param network_arch: layer level architecture
+        :type network_arch: numpy.ndarray
+        :param cell_arch: cell level architecture
+        :type cell_arch: numpy.ndarray
+        :param cell: choice the type of cell, defaults to Cell
+        :type cell: Cell class
+        :param args: additional arguments
+
+        newFeature is used to extract feature.
+        """
+        super(newFeature, self).__init__()
+        self.args = args
+        self.cells = nn.ModuleList()
+        self.network_arch = torch.from_numpy(network_arch)
+        self.cell_arch = torch.from_numpy(cell_arch)
+        self._step = args.fea_step
+        self._num_layers = args.fea_num_layers
+        self._block_multiplier = args.fea_block_multiplier
+        self._filter_multiplier = args.fea_filter_multiplier
+        f_initial = int(self._filter_multiplier)
+        half_f_initial = int(f_initial / 2)
+        self._num_end = self._filter_multiplier * self._block_multiplier
+        self.stem0 = SearchSpikingConv2d_stem(frame_rate, f_initial * self._block_multiplier, kernel_size=3, stride=1, padding=1, b=3)
+        self.auxiliary_head = AuxiliaryHeadCIFAR(576, 100)
+        filter_param_dict = {(0): 1, (1): 2, (2): 4, (3): 8}
+        for i in range(self._num_layers):
+            level_option = torch.sum(self.network_arch[i], dim=1)
+            prev_level_option = torch.sum(self.network_arch[i - 1], dim=1)
+            prev_prev_level_option = torch.sum(self.network_arch[i - 2], dim=1)
+            level = torch.argmax(level_option).item()
+            prev_level = torch.argmax(prev_level_option).item()
+            prev_prev_level = torch.argmax(prev_prev_level_option).item()
+            if i == 0:
+                downup_sample = -torch.argmax(torch.sum(self.network_arch[0], dim=1))
+                _cell = cell(self._step, self._block_multiplier, self._filter_multiplier, self._filter_multiplier, self.cell_arch, self.network_arch[i], int(self._filter_multiplier * filter_param_dict[level]), downup_sample, self.args)
+            else:
+                three_branch_options = torch.sum(self.network_arch[i], dim=0)
+                downup_sample = torch.argmax(three_branch_options).item() - 1
+                if i == 1:
+                    _cell = cell(self._step, self._block_multiplier, self._filter_multiplier, int(self._filter_multiplier * filter_param_dict[prev_level]), self.cell_arch, self.network_arch[i], int(self._filter_multiplier * filter_param_dict[level]), downup_sample, self.args)
+                else:
+                    _cell = cell(self._step, self._block_multiplier, int(self._filter_multiplier * filter_param_dict[prev_prev_level]), int(self._filter_multiplier * filter_param_dict[prev_level]), self.cell_arch, self.network_arch[i], int(self._filter_multiplier * filter_param_dict[level]), downup_sample, self.args)
+            self.cells += [_cell]
+
+    def forward(self, x):
+        stem0 = self.stem0(x)
+        stem1 = stem0
+        out = stem0, stem1
+        for i in range(self._num_layers):
+            out = self.cells[i](out[0], out[1])
+            """
+            cell torch.Size([50, 144, 32, 32])
+            cell torch.Size([50, 144, 32, 32])
+            cell torch.Size([50, 288, 16, 16])
+            cell torch.Size([50, 288, 16, 16])
+            cell torch.Size([50, 288, 16, 16])
+            cell torch.Size([50, 576, 8, 8] -> auxiliary [50, 10]
+            cell torch.Size([50, 576, 8, 8])
+            cell torch.Size([50, 576, 8, 8])
+            """
+            if i == 2 * 8 // 3:
+                if self.training:
+                    logits_aux = self.auxiliary_head(out[-1])
+        last_output = out[-1]
+        if self.training:
+            return last_output, logits_aux
+        else:
+            return last_output, None
+
+    def get_params(self):
+        bn_params = []
+        non_bn_params = []
+        for name, param in self.named_parameters():
+            if 'bn' in name or 'downsample.1' in name:
+                bn_params.append(param)
+            else:
+                bn_params.append(param)
+        return bn_params, non_bn_params
+
+
+def network_layer_to_space(net_arch):
+    """
+    :param net_arch: network level sample rate
+        0: down 1: None 2: Up
+    :type net_arch: numpy.ndarray
+    :return: network level architecture
+        network_space[layer][level][sample]:
+        layer: 0 - 8
+        level: sample_level {0: 1, 1: 2, 2: 4, 3: 8}
+        sample: 0: down 1: None 2: Up
+    :rtype: numpy.ndarray
+
+    Convert network level sample rate like [0,0,1,1,1,2,2,2] to network architecture.
+    """
+    for i, layer in enumerate(net_arch):
+        if i == 0:
+            space = np.zeros((1, 4, 3))
+            space[0][layer][0] = 1
+            prev = layer
+        else:
+            if layer == prev + 1:
+                sample = 0
+            elif layer == prev:
+                sample = 1
+            elif layer == prev - 1:
+                sample = 2
+            space1 = np.zeros((1, 4, 3))
+            space1[0][layer][sample] = 1
+            space = np.concatenate([space, space1], axis=0)
+            prev = layer
+    return space
+
+
+class SpikeDHS(nn.Module):
+
+    def __init__(self, init_channels=3, args=None):
+        """
+        :param init_channels: channel size, defaults to 3
+        :type init_channels: int
+        :param args: additional arguments
+
+        The SpikeDHS `Auto-Spikformer: Spikformer Architecture Search <https://arxiv.org/abs/2306.00807>`_ implementation by Spikingjelly.
+
+        """
+        super(SpikeDHS, self).__init__()
+        p = 0.0
+        network_path_fea = [0, 0, 1, 1, 1, 2, 2, 2]
+        network_path_fea = np.array(network_path_fea)
+        network_arch_fea = network_layer_to_space(network_path_fea)
+        cell_arch_fea = [[1, 1], [0, 1], [3, 2], [2, 1], [7, 1], [8, 1]]
+        cell_arch_fea = np.array(cell_arch_fea)
+        self.feature = newFeature(init_channels, network_arch_fea, cell_arch_fea, args=args)
+        self.global_pooling = SpikingAdaptiveAvgPool2d(1)
+        self.classifier = SpikingLinear(576, 100, spiking=False)
+        self._time_step = 6
+
+    def weight_parameters(self):
+        return [param for name, param in self.named_parameters()]
+
+    def forward(self, input):
+        input = input.expand(self._time_step, -1, -1, -1, -1)
+        shape = input.shape[:2]
+        feature_out, logits_aux = self.feature(input)
+        pooling_out = self.global_pooling(feature_out)
+        shape = pooling_out.shape[:2]
+        logits_buf = self.classifier(pooling_out.view(*shape, -1))
+        logits = logits_buf.mean(0)
+        if logits_aux is not None:
+            logits_aux = logits_aux.mean(0)
+        if self.training:
+            return logits, logits_aux
+        else:
+            return logits, None
+
+    def dgs_freeze_weights(self):
+        for name, value in self.named_parameters():
+            value.requires_grad_(False)
+
+    def dgs_unfreeze_weights(self):
+        for name, value in self.named_parameters():
+            value.requires_grad_(True)
+
+
 class SpikingResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None, norm_layer=None, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None, norm_layer=None, spiking_neuron: 'callable'=None, **kwargs):
         super(SpikingResNet, self).__init__()
         if norm_layer is None:
             norm_layer = layer.BatchNorm2d
@@ -4278,7 +6092,7 @@ class SpikingResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, spiking_neuron: callable=None, **kwargs):
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, spiking_neuron: 'callable'=None, **kwargs):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -4317,7 +6131,7 @@ class SpikingResNet(nn.Module):
 
 class SpikingVGG(nn.Module):
 
-    def __init__(self, cfg, batch_norm=False, norm_layer=None, num_classes=1000, init_weights=True, spiking_neuron: callable=None, **kwargs):
+    def __init__(self, cfg, batch_norm=False, norm_layer=None, num_classes=1000, init_weights=True, spiking_neuron: 'callable'=None, **kwargs):
         super(SpikingVGG, self).__init__()
         self.features = self.make_layers(cfg=cfg, batch_norm=batch_norm, norm_layer=norm_layer, neuron=spiking_neuron, **kwargs)
         self.avgpool = layer.AdaptiveAvgPool2d((7, 7))
@@ -4349,7 +6163,7 @@ class SpikingVGG(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     @staticmethod
-    def make_layers(cfg, batch_norm=False, norm_layer=None, neuron: callable=None, **kwargs):
+    def make_layers(cfg, batch_norm=False, norm_layer=None, neuron: 'callable'=None, **kwargs):
         if norm_layer is None:
             norm_layer = layer.BatchNorm2d
         layers = []
@@ -4367,6 +6181,74 @@ class SpikingVGG(nn.Module):
         return nn.Sequential(*layers)
 
 
+class Scale(nn.Module):
+
+    def __init__(self, scale):
+        super(Scale, self).__init__()
+        self.scale = scale
+
+    def forward(self, x):
+        return x * self.scale
+
+
+class OTTTSpikingVGG(nn.Module):
+
+    def __init__(self, cfg, weight_standardization=True, num_classes=1000, init_weights=True, spiking_neuron: 'callable'=None, light_classifier=True, drop_rate=0.0, **kwargs):
+        super(OTTTSpikingVGG, self).__init__()
+        self.fc_hw = kwargs.get('fc_hw', 1)
+        if weight_standardization:
+            ws_scale = 2.74
+        else:
+            ws_scale = 1.0
+        self.neuron = spiking_neuron
+        self.features = self.make_layers(cfg=cfg, weight_standardization=weight_standardization, neuron=spiking_neuron, drop_rate=0.0, **kwargs)
+        if light_classifier:
+            self.classifier = layer.OTTTSequential(layer.AdaptiveAvgPool2d((self.fc_hw, self.fc_hw)), layer.Flatten(1), layer.Linear(512 * self.fc_hw ** 2, num_classes))
+        else:
+            Linear = layer.WSLinear if weight_standardization else layer.Linear
+            self.classifier = layer.OTTTSequential(layer.AdaptiveAvgPool2d((7, 7)), layer.Flatten(1), Linear(512 * 7 * 7, 4096), spiking_neuron(**deepcopy(kwargs)), Scale(ws_scale), layer.Dropout(), Linear(4096, 4096), spiking_neuron(**deepcopy(kwargs)), Scale(ws_scale), layer.Dropout(), layer.Linear(4096, num_classes))
+        if init_weights:
+            self._initialize_weights()
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, layer.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, layer.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, layer.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
+
+    @staticmethod
+    def make_layers(cfg, weight_standardization=True, neuron: 'callable'=None, drop_rate=0.0, **kwargs):
+        layers = []
+        in_channels = 3
+        Conv2d = layer.WSConv2d if weight_standardization else layer.Conv2d
+        for v in cfg:
+            if v == 'M':
+                layers += [layer.MaxPool2d(kernel_size=2, stride=2)]
+            elif v == 'A':
+                layers += [layer.AvgPool2d(kernel_size=2, stride=2)]
+            else:
+                conv2d = Conv2d(in_channels, v, kernel_size=3, padding=1)
+                layers += [conv2d, neuron(**deepcopy(kwargs))]
+                if weight_standardization:
+                    layers += [Scale(2.74)]
+                in_channels = v
+                if drop_rate > 0.0:
+                    layers += [layer.Dropout(drop_rate)]
+        return layer.OTTTSequential(*layers)
+
+
 class RandomMixup(torch.nn.Module):
     """Randomly apply Mixup to the provided batch and targets.
     The class implements the data augmentations as described in the paper
@@ -4380,7 +6262,7 @@ class RandomMixup(torch.nn.Module):
         inplace (bool): boolean to make this transform inplace. Default set to False.
     """
 
-    def __init__(self, num_classes: int, p: float=0.5, alpha: float=1.0, inplace: bool=False) ->None:
+    def __init__(self, num_classes: 'int', p: 'float'=0.5, alpha: 'float'=1.0, inplace: 'bool'=False) ->None:
         super().__init__()
         assert num_classes > 0, 'Please provide a valid positive value for the num_classes.'
         assert alpha > 0, "Alpha param can't be zero."
@@ -4389,7 +6271,7 @@ class RandomMixup(torch.nn.Module):
         self.alpha = alpha
         self.inplace = inplace
 
-    def forward(self, batch: Tensor, target: Tensor) ->Tuple[Tensor, Tensor]:
+    def forward(self, batch: 'Tensor', target: 'Tensor') ->Tuple[Tensor, Tensor]:
         """
         Args:
             batch (Tensor): Float tensor of size (B, C, H, W)
@@ -4441,7 +6323,7 @@ class RandomCutmix(torch.nn.Module):
         inplace (bool): boolean to make this transform inplace. Default set to False.
     """
 
-    def __init__(self, num_classes: int, p: float=0.5, alpha: float=1.0, inplace: bool=False) ->None:
+    def __init__(self, num_classes: 'int', p: 'float'=0.5, alpha: 'float'=1.0, inplace: 'bool'=False) ->None:
         super().__init__()
         assert num_classes > 0, 'Please provide a valid positive value for the num_classes.'
         assert alpha > 0, "Alpha param can't be zero."
@@ -4450,7 +6332,7 @@ class RandomCutmix(torch.nn.Module):
         self.alpha = alpha
         self.inplace = inplace
 
-    def forward(self, batch: Tensor, target: Tensor) ->Tuple[Tensor, Tensor]:
+    def forward(self, batch: 'Tensor', target: 'Tensor') ->Tuple[Tensor, Tensor]:
         """
         Args:
             batch (Tensor): Float tensor of size (B, C, H, W)
@@ -4522,9 +6404,442 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
         self.n_averaged += 1
 
 
+class DSRIFNode(base.MemoryModule):
+
+    def __init__(self, T: 'int'=20, v_threshold: 'float'=6.0, alpha: 'float'=0.5, v_threshold_training: 'bool'=True, v_threshold_grad_scaling: 'float'=1.0, v_threshold_lower_bound: 'float'=0.01, step_mode='m', backend='torch', **kwargs):
+        """
+        * :ref:`中文API <DSRIFNode.__init__-cn>`
+
+        .. _DSRIFNode.__init__-cn:
+
+        :param T: 时间步长
+        :type T: int
+
+        :param v_threshold: 神经元的阈值电压初始值
+        :type v_threshold: float
+
+        :param alpha: 放电阈值的缩放因子
+        :type alpha: float
+
+        :param v_threshold_training: 是否将阈值电压设置为可学习参数，默认为`'True'`
+        :type v_threshold_training: bool
+
+        :param v_threshold_grad_scaling: 对放电阈值的梯度进行缩放的缩放因子
+        :type v_threshold_grad_scaling: float
+
+        :param v_threshold_lower_bound: 训练过程中，阈值电压能取到的最小值
+        :type v_threshold_lower_bound: float
+
+        :param step_mode: 步进模式，只支持 `'m'` (多步)
+        :type step_mode: str
+
+        :param backend: 使用哪种后端。不同的 ``step_mode`` 可能会带有不同的后端。可以通过打印 ``self.supported_backends`` 查看当前
+            使用的步进模式支持的后端。在支持的情况下，使用 ``'cupy'`` 后端是速度最快的。DSR-IF只支持torch
+        :type backend: str
+
+        模型出处：`Training High-Performance Low-Latency Spiking Neural Networks by Differentiation on Spike Representation
+         <https://arxiv.org/pdf/2205.00459.pdf>`.
+
+
+        * :ref:`API in English <DSRIFNode.__init__-en>`
+
+        .. _DSRIFNode.__init__-en:
+
+        :param T: time-step
+        :type T: int
+
+        :param v_threshold: initial menbrane potential threshold
+        :type v_threshold: float
+
+        :param alpha: the scaling factor for the menbrane potential threshold
+        :type alpha: float
+
+        :param v_threshold_training: whether the menbrane potential threshold is trained, default: `'True'`
+        :type v_threshold_training: bool
+
+        :param v_threshold_grad_scaling: the scaling factor for the gradient of the menbrane potential threshold
+        :type v_threshold_grad_scaling: float
+
+        :param v_threshold_lower_bound: the minimum of the menbrane potential threshold during training
+        :type v_threshold_lower_bound: float
+
+        :param step_mode: step mode, only support `'m'` (multi-step)
+        :type step_mode: str
+
+        :param backend: backend fot this neuron layer, which can be "gemm" or "conv". This option only works for the multi-step mode
+        :type backend: str
+
+
+        DSR IF neuron refers to `Training High-Performance Low-Latency Spiking Neural Networks by Differentiation on Spike Representation
+         <https://arxiv.org/pdf/2205.00459.pdf>`.
+        """
+        assert isinstance(T, int) and T is not None
+        assert isinstance(v_threshold, float) and v_threshold >= v_threshold_lower_bound
+        assert isinstance(alpha, float) and alpha > 0.0 and alpha <= 1.0
+        assert isinstance(v_threshold_lower_bound, float) and v_threshold_lower_bound > 0.0
+        assert step_mode == 'm'
+        super().__init__()
+        self.backend = backend
+        self.step_mode = step_mode
+        self.T = T
+        if v_threshold_training:
+            self.v_threshold = nn.Parameter(torch.tensor(v_threshold))
+        else:
+            self.v_threshold = torch.tensor(v_threshold)
+        self.alpha = alpha
+        self.v_threshold_lower_bound = v_threshold_lower_bound
+        self.v_threshold_grad_scaling = v_threshold_grad_scaling
+
+    @property
+    def supported_backends(self):
+        return 'torch'
+
+    def extra_repr(self):
+        with torch.no_grad():
+            T = self.T
+            v_threshold = self.v_threshold
+            alpha = self.alpha
+            v_threshold_lower_bound = self.v_threshold_lower_bound
+            v_threshold_grad_scaling = self.v_threshold_grad_scaling
+        return f', T={T}' + f', init_vth={v_threshold}' + f', alpha={alpha}' + f', vth_bound={v_threshold_lower_bound}' + f', vth_g_scale={v_threshold_grad_scaling}'
+
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
+        with torch.no_grad():
+            self.v_threshold.copy_(F.relu(self.v_threshold - self.v_threshold_lower_bound) + self.v_threshold_lower_bound)
+        iffunc = self.DSRIFFunction.apply
+        y_seq = iffunc(x_seq, self.T, self.v_threshold, self.alpha, self.v_threshold_grad_scaling)
+        return y_seq
+
+
+    class DSRIFFunction(torch.autograd.Function):
+
+        @staticmethod
+        def forward(ctx, inp, T=10, v_threshold=1.0, alpha=0.5, v_threshold_grad_scaling=1.0):
+            ctx.save_for_backward(inp)
+            mem_potential = torch.zeros_like(inp[0])
+            spikes = []
+            for t in range(inp.size(0)):
+                mem_potential = mem_potential + inp[t]
+                spike = ((mem_potential >= alpha * v_threshold).float() * v_threshold).float()
+                mem_potential = mem_potential - spike
+                spikes.append(spike)
+            output = torch.stack(spikes)
+            ctx.T = T
+            ctx.v_threshold = v_threshold
+            ctx.v_threshold_grad_scaling = v_threshold_grad_scaling
+            return output
+
+        @staticmethod
+        def backward(ctx, grad_output):
+            with torch.no_grad():
+                inp = ctx.saved_tensors[0]
+                T = ctx.T
+                v_threshold = ctx.v_threshold
+                v_threshold_grad_scaling = ctx.v_threshold_grad_scaling
+                input_rate_coding = torch.mean(inp, 0)
+                grad_output_coding = torch.mean(grad_output, 0) * T
+                input_grad = grad_output_coding.clone()
+                input_grad[(input_rate_coding < 0) | (input_rate_coding > v_threshold)] = 0
+                input_grad = torch.stack([input_grad for _ in range(T)]) / T
+                v_threshold_grad = grad_output_coding.clone()
+                v_threshold_grad[input_rate_coding <= v_threshold] = 0
+                v_threshold_grad = torch.sum(v_threshold_grad) * v_threshold_grad_scaling
+                if v_threshold_grad.is_cuda and torch.cuda.device_count() != 1:
+                    try:
+                        dist.all_reduce(v_threshold_grad, op=dist.ReduceOp.SUM)
+                    except:
+                        raise RuntimeWarning('Something wrong with the `all_reduce` operation when summing up the gradient of v_threshold from multiple gpus. Better check the gpu status and try DistributedDataParallel.')
+                return input_grad, None, v_threshold_grad, None, None
+
+
+class DSRLIFNode(base.MemoryModule):
+
+    def __init__(self, T: 'int'=20, v_threshold: 'float'=1.0, tau: 'float'=2.0, delta_t: 'float'=0.05, alpha: 'float'=0.3, v_threshold_training: 'bool'=True, v_threshold_grad_scaling: 'float'=1.0, v_threshold_lower_bound: 'float'=0.1, step_mode='m', backend='torch', **kwargs):
+        """
+        * :ref:`中文API <DSRLIFNode.__init__-cn>`
+
+        .. _DSRLIFNode.__init__-cn:
+
+        :param T: 时间步长
+        :type T: int
+
+        :param v_threshold: 神经元的阈值电压初始值
+        :type v_threshold: float
+
+        :param tau: 膜电位时间常数
+        :type tau: float
+
+        :param delta_t: 对微分方程形式的LIF模型进行离散化的步长
+        :type delta_t: float
+
+        :param alpha: 放电阈值的缩放因子
+        :type alpha: float
+
+        :param v_threshold_training: 是否将阈值电压设置为可学习参数，默认为`'True'`
+        :type v_threshold_training: bool
+
+        :param v_threshold_grad_scaling: 对放电阈值的梯度进行缩放的缩放因子
+        :type v_threshold_grad_scaling: float
+
+        :param v_threshold_lower_bound: 训练过程中，阈值电压能取到的最小值
+        :type v_threshold_lower_bound: float
+
+        :param step_mode: 步进模式，只支持 `'m'` (多步)
+        :type step_mode: str
+
+        :param backend: 使用哪种后端。不同的 ``step_mode`` 可能会带有不同的后端。可以通过打印 ``self.supported_backends`` 查看当前
+            使用的步进模式支持的后端。在支持的情况下，使用 ``'cupy'`` 后端是速度最快的。DSR-IF只支持torch
+        :type backend: str
+
+        模型出处：`Training High-Performance Low-Latency Spiking Neural Networks by Differentiation on Spike Representation
+         <https://arxiv.org/pdf/2205.00459.pdf>`.
+
+
+        * :ref:`API in English <DSRLIFNode.__init__-en>`
+
+        .. _DSRLIFNode.__init__-en:
+
+        :param T: time-step
+        :type T: int
+
+        :param v_threshold: initial menbrane potential threshold
+        :type v_threshold: float
+
+        :param tau: membrane time constant
+        :type tau: float
+
+        :param delta_t: discretization step for discretizing the ODE version of the LIF model
+        :type delta_t: float
+
+        :param alpha: the scaling factor for the menbrane potential threshold
+        :type alpha: float
+
+        :param v_threshold_training: whether the menbrane potential threshold is trained, default: `'True'`
+        :type v_threshold_training: bool
+
+        :param v_threshold_grad_scaling: the scaling factor for the gradient of the menbrane potential threshold
+        :type v_threshold_grad_scaling: float
+
+        :param v_threshold_lower_bound: the minimum of the menbrane potential threshold during training
+        :type v_threshold_lower_bound: float
+
+        :param step_mode: step mode, only support `'m'` (multi-step)
+        :type step_mode: str
+
+        :param backend: backend fot this neuron layer, which can be "gemm" or "conv". This option only works for the multi-step mode
+        :type backend: str
+
+
+        DSR LIF neuron refers to `Training High-Performance Low-Latency Spiking Neural Networks by Differentiation on Spike Representation
+         <https://arxiv.org/pdf/2205.00459.pdf>`.
+        """
+        assert isinstance(T, int) and T is not None
+        assert isinstance(v_threshold, float) and v_threshold >= v_threshold_lower_bound
+        assert isinstance(alpha, float) and alpha > 0.0 and alpha <= 1.0
+        assert isinstance(v_threshold_lower_bound, float) and v_threshold_lower_bound > 0.0
+        assert step_mode == 'm'
+        super().__init__()
+        self.backend = backend
+        self.step_mode = step_mode
+        self.T = T
+        if v_threshold_training:
+            self.v_threshold = nn.Parameter(torch.tensor(v_threshold))
+        else:
+            self.v_threshold = torch.tensor(v_threshold)
+        self.tau = tau
+        self.delta_t = delta_t
+        self.alpha = alpha
+        self.v_threshold_lower_bound = v_threshold_lower_bound
+        self.v_threshold_grad_scaling = v_threshold_grad_scaling
+
+    @property
+    def supported_backends(self):
+        return 'torch'
+
+    def extra_repr(self):
+        with torch.no_grad():
+            T = self.T
+            v_threshold = self.v_threshold
+            tau = self.tau
+            delta_t = self.delta_t
+            alpha = self.alpha
+            v_threshold_lower_bound = self.v_threshold_lower_bound
+            v_threshold_grad_scaling = self.v_threshold_grad_scaling
+        return f', T={T}' + f', init_vth={v_threshold}' + f', tau={tau}' + f', dt={delta_t}' + f', alpha={alpha}' + f', vth_bound={v_threshold_lower_bound}' + f', vth_g_scale={v_threshold_grad_scaling}'
+
+    def multi_step_forward(self, x_seq: 'torch.Tensor'):
+        with torch.no_grad():
+            self.v_threshold.copy_(F.relu(self.v_threshold - self.v_threshold_lower_bound) + self.v_threshold_lower_bound)
+        liffunc = self.DSRLIFFunction.apply
+        y_seq = liffunc(x_seq, self.T, self.v_threshold, self.tau, self.delta_t, self.alpha, self.v_threshold_grad_scaling)
+        return y_seq
+
+    @classmethod
+    def weight_rate_spikes(cls, data, tau, delta_t):
+        T = data.shape[0]
+        chw = data.size()[2:]
+        data_reshape = data.permute(list(range(1, len(chw) + 2)) + [0])
+        weight = torch.tensor([math.exp(-1 / tau * (delta_t * T - ii * delta_t)) for ii in range(1, T + 1)])
+        return (weight * data_reshape).sum(dim=len(chw) + 1) / weight.sum()
+
+
+    class DSRLIFFunction(torch.autograd.Function):
+
+        @staticmethod
+        def forward(ctx, inp, T, v_threshold, tau, delta_t=0.05, alpha=0.3, v_threshold_grad_scaling=1.0):
+            ctx.save_for_backward(inp)
+            mem_potential = torch.zeros_like(inp[0])
+            beta = math.exp(-delta_t / tau)
+            spikes = []
+            for t in range(inp.size(0)):
+                mem_potential = beta * mem_potential + (1 - beta) * inp[t]
+                spike = ((mem_potential >= alpha * v_threshold).float() * v_threshold).float()
+                mem_potential = mem_potential - spike
+                spikes.append(spike / delta_t)
+            output = torch.stack(spikes)
+            ctx.T = T
+            ctx.v_threshold = v_threshold
+            ctx.tau = tau
+            ctx.delta_t = delta_t
+            ctx.v_threshold_grad_scaling = v_threshold_grad_scaling
+            return output
+
+        @staticmethod
+        def backward(ctx, grad_output):
+            inp = ctx.saved_tensors[0]
+            T = ctx.T
+            v_threshold = ctx.v_threshold
+            delta_t = ctx.delta_t
+            tau = ctx.tau
+            v_threshold_grad_scaling = ctx.v_threshold_grad_scaling
+            input_rate_coding = DSRLIFNode.weight_rate_spikes(inp, tau, delta_t)
+            grad_output_coding = DSRLIFNode.weight_rate_spikes(grad_output, tau, delta_t) * T
+            indexes = (input_rate_coding > 0) & (input_rate_coding < v_threshold / delta_t * tau)
+            input_grad = torch.zeros_like(grad_output_coding)
+            input_grad[indexes] = grad_output_coding[indexes].clone() / tau
+            input_grad = torch.stack([input_grad for _ in range(T)]) / T
+            v_threshold_grad = grad_output_coding.clone()
+            v_threshold_grad[input_rate_coding <= v_threshold / delta_t * tau] = 0
+            v_threshold_grad = torch.sum(v_threshold_grad) * delta_t * v_threshold_grad_scaling
+            if v_threshold_grad.is_cuda and torch.cuda.device_count() != 1:
+                try:
+                    dist.all_reduce(v_threshold_grad, op=dist.ReduceOp.SUM)
+                except:
+                    raise RuntimeWarning('Something wrong with the `all_reduce` operation when summing up the gradient of v_threshold from multiple gpus. Better check the gpu status and try DistributedDataParallel.')
+            return input_grad, None, v_threshold_grad, None, None, None, None
+
+
+def _get_normal_distribution(random_state: 'Optional[Union[int, Generator, RandomState]]'):
+    normal_dist = None
+    if isinstance(random_state, (integer, int)) or random_state is None:
+        random_state = default_rng(random_state)
+        normal_dist = random_state.normal
+    elif isinstance(random_state, (Generator, RandomState)):
+        normal_dist = random_state.normal
+    else:
+        raise ValueError('random_state must be one of integer, numpy.random.Generator, numpy.random.Randomstate')
+    return normal_dist
+
+
+def powerlaw_psd_gaussian(exponent: 'float', size: 'Union[int, Iterable[int]]', fmin: 'float'=0.0, random_state: 'Optional[Union[int, Generator, RandomState]]'=None):
+    """Gaussian (1/f)**beta noise.
+
+    Based on the algorithm in:
+    Timmer, J. and Koenig, M.:
+    On generating power law noise.
+    Astron. Astrophys. 300, 707-710 (1995)
+
+    Normalised to unit variance
+
+    Parameters:
+    -----------
+
+    exponent : float
+        The power-spectrum of the generated noise is proportional to
+
+        S(f) = (1 / f)**beta
+        flicker / pink noise:   exponent beta = 1
+        brown noise:            exponent beta = 2
+
+        Furthermore, the autocorrelation decays proportional to lag**-gamma
+        with gamma = 1 - beta for 0 < beta < 1.
+        There may be finite-size issues for beta close to one.
+
+    size : Union[int, Iterable[int]]
+        The output has the given shape, and the desired power spectrum in
+        the last coordinate. That is, the last dimension is taken as time,
+        and all other components are independent.
+
+    fmin : float, optional
+        Low-frequency cutoff.
+        Default: 0 corresponds to original paper. 
+        
+        The power-spectrum below fmin is flat. fmin is defined relative
+        to a unit sampling rate (see numpy's rfftfreq). For convenience,
+        the passed value is mapped to max(fmin, 1/samples) internally
+        since 1/samples is the lowest possible finite frequency in the
+        sample. The largest possible value is fmin = 0.5, the Nyquist
+        frequency. The output for this value is white noise.
+
+    random_state :  int, numpy.integer, numpy.random.Generator, numpy.random.RandomState, 
+                    optional
+        Optionally sets the state of NumPy's underlying random number generator.
+        Integer-compatible values or None are passed to np.random.default_rng.
+        np.random.RandomState or np.random.Generator are used directly.
+        Default: None.
+
+    Returns
+    -------
+    out : array
+        The samples.
+
+
+    Examples:
+    ---------
+
+    # generate 1/f noise == pink noise == flicker noise
+    >>> import colorednoise as cn
+    >>> y = cn.powerlaw_psd_gaussian(1, 5)
+    """
+    if isinstance(size, (integer, int)):
+        size = [size]
+    elif isinstance(size, Iterable):
+        size = list(size)
+    else:
+        raise ValueError('Size must be of type int or Iterable[int]')
+    samples = size[-1]
+    f = rfftfreq(samples)
+    if 0 <= fmin <= 0.5:
+        fmin = max(fmin, 1.0 / samples)
+    else:
+        raise ValueError('fmin must be chosen between 0 and 0.5.')
+    s_scale = f
+    ix = npsum(s_scale < fmin)
+    if ix and ix < len(s_scale):
+        s_scale[:ix] = s_scale[ix]
+    s_scale = s_scale ** (-exponent / 2.0)
+    w = s_scale[1:].copy()
+    w[-1] *= (1 + samples % 2) / 2.0
+    sigma = 2 * sqrt(npsum(w ** 2)) / samples
+    size[-1] = len(f)
+    dims_to_add = len(size) - 1
+    s_scale = s_scale[(newaxis,) * dims_to_add + (Ellipsis,)]
+    normal_dist = _get_normal_distribution(random_state)
+    sr = normal_dist(scale=s_scale, size=size)
+    si = normal_dist(scale=s_scale, size=size)
+    if not samples % 2:
+        si[..., -1] = 0
+        sr[..., -1] *= sqrt(2)
+    si[..., 0] = 0
+    sr[..., 0] *= sqrt(2)
+    s = sr + 1.0j * si
+    y = irfft(s, n=samples, axis=-1) / sigma
+    return y
+
+
 class SpikingRNNCellBase(nn.Module):
 
-    def __init__(self, input_size: int, hidden_size: int, bias=True):
+    def __init__(self, input_size: 'int', hidden_size: 'int', bias=True):
         """
         * :ref:`API in English <SpikingRNNCellBase.__init__-en>`
 
@@ -4665,7 +6980,7 @@ class SpikingRNNCellBase(nn.Module):
         return self.linear_hh.bias
 
 
-def bidirectional_rnn_cell_forward(cell: nn.Module, cell_reverse: nn.Module, x: torch.Tensor, states: torch.Tensor, states_reverse: torch.Tensor):
+def bidirectional_rnn_cell_forward(cell: 'nn.Module', cell_reverse: 'nn.Module', x: 'torch.Tensor', states: 'torch.Tensor', states_reverse: 'torch.Tensor'):
     """
     :param cell: 正向RNN cell，输入是正向序列
     :type cell: nn.Module
@@ -4711,6 +7026,19 @@ def bidirectional_rnn_cell_forward(cell: nn.Module, cell_reverse: nn.Module, x: 
     for t in range(T):
         ret.append(torch.cat((output[t], output_r[T - t - 1]), dim=-1))
     return torch.stack(ret), ss, ss_r
+
+
+def directional_rnn_cell_forward(cell: 'nn.Module', x: 'torch.Tensor', states: 'torch.Tensor'):
+    T = x.shape[0]
+    ss = states
+    output = []
+    for t in range(T):
+        ss = cell(x[t], ss)
+        if states.dim() == 2:
+            output.append(ss)
+        elif states.dim() == 3:
+            output.append(ss[0])
+    return torch.stack(output), ss
 
 
 class SpikingRNNBase(nn.Module):
@@ -4864,7 +7192,7 @@ class SpikingRNNBase(nn.Module):
         """
         raise NotImplementedError
 
-    def forward(self, x: torch.Tensor, states=None):
+    def forward(self, x: 'torch.Tensor', states=None):
         """
         * :ref:`API in English <SpikingRNNBase.forward-en>`
 
@@ -4876,11 +7204,11 @@ class SpikingRNNBase(nn.Module):
             所有的tensor的尺寸均为 ``shape = [num_layers * num_directions, batch, hidden_size]``, 包含 ``self.states_num()``
             个初始状态
             如果RNN是双向的, ``num_directions`` 为 ``2``, 否则为 ``1``
-        :type states: torch.Tensor or tuple
+        :type states: Union[torch.Tensor, tuple]
         :return: output, output_states
             output: torch.Tensor
                 ``shape = [T, batch, num_directions * hidden_size]``，最后一层在所有时刻的输出
-            output_states: torch.Tensor or tuple
+            output_states: Union[torch.Tensor, tuple]
                 ``self.states_num()`` 为 ``1`` 时是单个tensor, 否则是一个tuple，包含 ``self.states_num()`` 个tensors。
                 所有的tensor的尺寸均为 ``shape = [num_layers * num_directions, batch, hidden_size]``, 包含 ``self.states_num()``
                 个最后时刻的状态
@@ -4896,12 +7224,12 @@ class SpikingRNNBase(nn.Module):
             ``shape = [num_layers * num_directions, batch, hidden_size]`` for all tensors, containing the ``self.states_num()``
             initial states for each element in the batch.
             If the RNN is bidirectional, ``num_directions`` should be ``2``, else it should be ``1``
-        :type states: torch.Tensor or tuple
+        :type states: Union[torch.Tensor, tuple]
         :return: output, output_states
             output: torch.Tensor
                 ``shape = [T, batch, num_directions * hidden_size]``, tensor containing the output features from the last
                 layer of the RNN, for each ``t``
-            output_states: torch.Tensor or tuple
+            output_states: Union[torch.Tensor, tuple]
                 a single tensor when ``self.states_num()`` is ``1``, otherwise a tuple with ``self.states_num()``
                 tensors.
                 ``shape = [num_layers * num_directions, batch, hidden_size]`` for all tensors, containing the ``self.states_num()``
@@ -4912,15 +7240,20 @@ class SpikingRNNBase(nn.Module):
         if isinstance(states, tuple):
             states_list = torch.stack(states)
         elif isinstance(states, torch.Tensor):
-            states_list = states
-        elif states is None:
-            if self.bidirectional:
-                states_list = torch.zeros(size=[self.states_num(), self.num_layers * 2, batch_size, self.hidden_size]).squeeze(0)
+            if states.dim() == 3:
+                states_list = states
             else:
-                states_list = torch.zeros(size=[self.states_num(), self.num_layers, batch_size, self.hidden_size]).squeeze(0)
+                raise TypeError
+        elif states == None:
+            if self.bidirectional == True:
+                states_list = torch.zeros(size=[self.states_num(), self.num_layers * 2, x.shape[1], self.hidden_size], dtype=torch.float, device=x.device).squeeze(0)
+            else:
+                states_list = torch.zeros(size=[self.states_num(), self.num_layers, x.shape[1], self.hidden_size], dtype=torch.float, device=x.device).squeeze(0)
         else:
             raise TypeError
         if self.bidirectional:
+            if states_list.dim() == 4 and states_list.shape[1] != 2 * self.num_layers or states_list.dim() == 3 and states_list.shape[0] != 2 * self.num_layers:
+                raise ValueError
             y = x.clone()
             if self.training and self.dropout_p > 0 and self.invariant_dropout_mask:
                 mask = F.dropout(torch.ones(size=[self.num_layers - 1, batch_size, self.hidden_size * 2]), p=self.dropout_p, training=True, inplace=True)
@@ -4949,37 +7282,35 @@ class SpikingRNNBase(nn.Module):
             if self.states_num() == 1:
                 return y, new_states_list
             else:
-                return y, torch.split(new_states_list, 1, dim=0)
+                return y, tuple(new_states_list)
         else:
+            if states_list.dim() == 4 and states_list.shape[1] != self.num_layers or states_list.dim() == 3 and states_list.shape[0] != self.num_layers:
+                raise ValueError
+            y = x.clone()
             if self.training and self.dropout_p > 0 and self.invariant_dropout_mask:
-                mask = F.dropout(torch.ones(size=[self.num_layers - 1, batch_size, self.hidden_size]), p=self.dropout_p, training=True, inplace=True)
-            output = []
-            for t in range(T):
+                mask = F.dropout(torch.ones(size=[self.num_layers - 1, batch_size, self.hidden_size * 2]), p=self.dropout_p, training=True, inplace=True)
+            for i in range(self.num_layers):
                 new_states_list = torch.zeros_like(states_list.data)
                 if self.states_num() == 1:
-                    new_states_list[0] = self.cells[0](x[t], states_list[0])
+                    cell_init_states = states_list[i]
                 else:
-                    new_states_list[:, 0] = torch.stack(self.cells[0](x[t], states_list[:, 0]))
-                for i in range(1, self.num_layers):
-                    y = states_list[0, i - 1]
-                    if self.training and self.dropout_p > 0:
+                    cell_init_states = states_list[:, i]
+                if self.training and self.dropout_p > 0:
+                    if i > 1:
                         if self.invariant_dropout_mask:
                             y = y * mask[i - 1]
                         else:
                             y = F.dropout(y, p=self.dropout_p, training=True)
-                    if self.states_num() == 1:
-                        new_states_list[i] = self.cells[i](y, states_list[i])
-                    else:
-                        new_states_list[:, i] = torch.stack(self.cells[i](y, states_list[:, i]))
+                y, ss = directional_rnn_cell_forward(self.cells[i], y, cell_init_states)
                 if self.states_num() == 1:
-                    output.append(new_states_list[-1].clone().unsqueeze(0))
+                    new_states_list[i] = ss
                 else:
-                    output.append(new_states_list[0, -1].clone().unsqueeze(0))
+                    new_states_list[:, i] = torch.stack(ss)
                 states_list = new_states_list.clone()
             if self.states_num() == 1:
-                return torch.cat(output, dim=0), new_states_list
+                return y, new_states_list
             else:
-                return torch.cat(output, dim=0), torch.split(new_states_list, 1, dim=0)
+                return y, tuple(new_states_list)
 
 
 class spikeLinear(torch.autograd.Function):
@@ -5015,7 +7346,7 @@ class spikeLinear(torch.autograd.Function):
         return grad_spike, grad_weight, grad_bias
 
 
-def spike_linear(spike: Tensor, weight: Tensor, bias: Optional[Tensor]=None) ->Tensor:
+def spike_linear(spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'=None) ->Tensor:
     """
     * :ref:`API in English <spike_linear-en>`
 
@@ -5086,7 +7417,7 @@ class SpikeLinear(nn.Linear):
         Any element in `spike` must be 0 or 1.
     """
 
-    def forward(self, spike: Tensor) ->Tensor:
+    def forward(self, spike: 'Tensor') ->Tensor:
         return spike_linear(spike, self.weight, self.bias)
 
 
@@ -5137,7 +7468,7 @@ class spikeConvolution(torch.autograd.Function):
         return grad_spike, grad_weight, grad_bias, None, None, None, None
 
 
-def spike_conv1d(spike: Tensor, weight: Tensor, bias: Tensor=None, stride: Union[_int, _size]=1, padding: str='valid', dilation: Union[_int, _size]=1, groups: _int=1) ->Tensor:
+def spike_conv1d(spike: 'Tensor', weight: 'Tensor', bias: 'Tensor'=None, stride: 'Union[_int, _size]'=1, padding: 'str'='valid', dilation: 'Union[_int, _size]'=1, groups: '_int'=1) ->Tensor:
     """
     * :ref:`API in English <spike_conv1d-en>`
 
@@ -5208,13 +7539,13 @@ class SpikeConv1d(nn.Conv1d):
         Any element in `spike` must be 0 or 1.
     """
 
-    def _conv_forward(self, spike: Tensor, weight: Tensor, bias: Optional[Tensor]):
+    def _conv_forward(self, spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'):
         if self.padding_mode != 'zeros':
             return spike_conv1d(F.pad(spike, self._reversed_padding_repeated_twice, mode=self.padding_mode), weight, bias, self.stride, _single(0), self.dilation, self.groups)
         return spike_conv1d(spike, weight, bias, self.stride, self.padding, self.dilation, self.groups)
 
 
-def spike_conv2d(spike: Tensor, weight: Tensor, bias: Optional[Tensor]=None, stride: Union[_int, _size]=1, padding: str='valid', dilation: Union[_int, _size]=1, groups: _int=1) ->Tensor:
+def spike_conv2d(spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'=None, stride: 'Union[_int, _size]'=1, padding: 'str'='valid', dilation: 'Union[_int, _size]'=1, groups: '_int'=1) ->Tensor:
     """
     * :ref:`API in English <spike_conv2d-en>`
 
@@ -5285,13 +7616,13 @@ class SpikeConv2d(nn.Conv2d):
         Any element in `spike` must be 0 or 1.
     """
 
-    def _conv_forward(self, spike: Tensor, weight: Tensor, bias: Optional[Tensor]):
+    def _conv_forward(self, spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'):
         if self.padding_mode != 'zeros':
             return spike_conv2d(F.pad(spike, self._reversed_padding_repeated_twice, mode=self.padding_mode), weight, bias, self.stride, _pair(0), self.dilation, self.groups)
         return spike_conv2d(spike, weight, bias, self.stride, self.padding, self.dilation, self.groups)
 
 
-def spike_conv3d(spike: Tensor, weight: Tensor, bias: Optional[Tensor]=None, stride: Union[_int, _size]=1, padding: str='valid', dilation: Union[_int, _size]=1, groups: _int=1) ->Tensor:
+def spike_conv3d(spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'=None, stride: 'Union[_int, _size]'=1, padding: 'str'='valid', dilation: 'Union[_int, _size]'=1, groups: '_int'=1) ->Tensor:
     """
     * :ref:`API in English <spike_conv3d-en>`
 
@@ -5362,62 +7693,22 @@ class SpikeConv3d(nn.Conv3d):
         Any element in `spike` must be 0 or 1.
     """
 
-    def _conv_forward(self, spike: Tensor, weight: Tensor, bias: Optional[Tensor]):
+    def _conv_forward(self, spike: 'Tensor', weight: 'Tensor', bias: 'Optional[Tensor]'):
         if self.padding_mode != 'zeros':
             return spike_conv3d(F.pad(spike, self._reversed_padding_repeated_twice, mode=self.padding_mode), weight, bias, self.stride, _triple(0), self.dilation, self.groups)
         return spike_conv3d(spike, weight, bias, self.stride, self.padding, self.dilation, self.groups)
 
 
-class SurrogateFunctionBase(nn.Module):
-
-    def __init__(self, alpha, spiking=True):
-        super().__init__()
-        self.spiking = spiking
-        self.alpha = alpha
-
-    def set_spiking_mode(self, spiking: bool):
-        self.spiking = spiking
-
-    def extra_repr(self):
-        return f'alpha={self.alpha}, spiking={self.spiking}'
-
-    @staticmethod
-    def spiking_function(x, alpha):
-        raise NotImplementedError
-
-    @staticmethod
-    def primitive_function(x, alpha):
-        raise NotImplementedError
-
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
-        raise NotImplementedError
-
-    def cuda_code_start_comments(self):
-        return f'// start: spikingjelly.activation_based.surrogate.{self._get_name()}.cuda_code'
-
-    def cuda_code_end_comments(self):
-        return f'// end: spikingjelly.activation_based.surrogate.{self._get_name()}.cuda_code'
-
-    def forward(self, x: torch.Tensor):
-        if self.spiking:
-            return self.spiking_function(x, self.alpha)
-        else:
-            return self.primitive_function(x, self.alpha)
-
-    def cuda_codes(self, y: str, x: str, dtype: str):
-        raise NotImplementedError
-
-
 class MultiArgsSurrogateFunctionBase(nn.Module):
 
-    def __init__(self, spiking: bool, *args, **kwargs):
+    def __init__(self, spiking: 'bool', *args, **kwargs):
         super().__init__()
         self.spiking = spiking
 
-    def set_spiking_mode(self, spiking: bool):
+    def set_spiking_mode(self, spiking: 'bool'):
         self.spiking = spiking
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         raise NotImplementedError
 
     def cuda_code_start_comments(self):
@@ -5426,53 +7717,12 @@ class MultiArgsSurrogateFunctionBase(nn.Module):
     def cuda_code_end_comments(self):
         return f'// end: spikingjelly.activation_based.surrogate.{self._get_name()}.cuda_code'
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         raise NotImplementedError
 
 
 @torch.jit.script
-def heaviside(x: torch.Tensor):
-    """
-    * :ref:`API in English <heaviside.__init__-en>`
-    .. _heaviside.__init__-cn:
-
-    :param x: 输入tensor
-    :return: 输出tensor
-
-    heaviside阶跃函数，定义为
-
-    .. math::
-        g(x) =
-        \\begin{cases}
-        1, & x \\geq 0 \\\\
-        0, & x < 0 \\\\
-        \\end{cases}
-
-    阅读 `HeavisideStepFunction <https://mathworld.wolfram.com/HeavisideStepFunction.html>`_ 以获得更多信息。
-
-    * :ref:`中文API <heaviside.__init__-cn>`
-    .. _heaviside.__init__-en:
-
-    :param x: the input tensor
-    :return: the output tensor
-
-    The heaviside function, which is defined by
-
-    .. math::
-        g(x) =
-        \\begin{cases}
-        1, & x \\geq 0 \\\\
-        0, & x < 0 \\\\
-        \\end{cases}
-
-    For more information, see `HeavisideStepFunction <https://mathworld.wolfram.com/HeavisideStepFunction.html>`_.
-
-    """
-    return x >= 0
-
-
-@torch.jit.script
-def piecewise_quadratic_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def piecewise_quadratic_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     x_abs = x.abs()
     mask = x_abs > 1 / alpha
     grad_x = (grad_output * (-alpha ** 2 * x_abs + alpha)).masked_fill_(mask, 0)
@@ -5569,14 +7819,18 @@ class PiecewiseQuadratic(SurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         mask0 = x > 1.0 / alpha
         mask1 = x.abs() <= 1.0 / alpha
         return mask0 + mask1 * (-alpha ** 2 / 2 * x.square() * x.sign() + alpha * x + 0.5)
 
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return piecewise_quadratic_backward(grad_output, x, alpha)[0]
+
 
 @torch.jit.script
-def piecewise_exp_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def piecewise_exp_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     return alpha / 2 * (-alpha * x.abs()).exp_() * grad_output, None
 
 
@@ -5659,15 +7913,19 @@ class PiecewiseExp(SurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         mask_nonnegative = heaviside(x)
         mask_sign = mask_nonnegative * 2.0 - 1.0
         exp_x = (mask_sign * x * -alpha).exp_() / 2.0
         return mask_nonnegative - exp_x * mask_sign
 
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return piecewise_exp_backward(grad_output, x, alpha)[0]
+
 
 @torch.jit.script
-def sigmoid_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def sigmoid_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     sgax = (x * alpha).sigmoid_()
     return grad_output * (1.0 - sgax) * sgax * alpha, None
 
@@ -5746,10 +8004,14 @@ class Sigmoid(SurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         return (x * alpha).sigmoid()
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return sigmoid_backward(grad_output, x, alpha)[0]
+
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         alpha = str(self.alpha) + 'f'
         code = f"""
@@ -5773,12 +8035,12 @@ class Sigmoid(SurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.sigmoid_backward(y=y, x=x, alpha=self.alpha, dtype=dtype)
 
 
 @torch.jit.script
-def soft_sign_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def soft_sign_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     return grad_output / (2 * alpha * (1 / alpha + x.abs()).pow_(2)), None
 
 
@@ -5797,7 +8059,7 @@ class soft_sign(torch.autograd.Function):
 
 
 @torch.jit.script
-def atan_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def atan_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     return alpha / 2 / (1 + (math.pi / 2 * alpha * x).pow_(2)) * grad_output, None
 
 
@@ -5813,6 +8075,54 @@ class atan(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         return atan_backward(grad_output, ctx.saved_tensors[0], ctx.alpha)
+
+
+@torch.jit.script
+def super_spike_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
+    return alpha * grad_output / torch.pow(torch.abs(x) + 1.0, 2), None
+
+
+class SuperSpike(SurrogateFunctionBase):
+
+    def __init__(self, alpha=1.0, spiking=True):
+        """
+        * :ref:`API in English <SuperSpike.__init__-en>`
+        .. _SuperSpike.__init__-cn:
+    
+        `SuperSpike: Supervised learning in multi-layer spiking neural networks <https://arxiv.org/abs/1705.11146>`_ 提出的反向传播时使用SuperSpike的梯度的脉冲发放函数。反向传播为
+
+        .. math::
+            g'(x) = \\frac{\\alpha}{(1 + (|x|))^2}
+
+
+        * :ref:`中文API <SuperSpike.__init__-cn>`
+        .. _SuperSpike.__init__-en:
+
+        The SuperSpike surrogate spiking function proposed by `SuperSpike: Supervised learning in multi-layer spiking neural networks <https://arxiv.org/abs/1705.11146>`_. The gradient is defined by
+
+        .. math::
+            g'(x) = \\frac{\\alpha}{(1 + (|x|))^2}
+        """
+        super().__init__(alpha, spiking)
+
+    @staticmethod
+    def spiking_function(x, alpha):
+        return atan.apply(x, alpha)
+
+    @staticmethod
+    @torch.jit.script
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
+        raise NotImplementedError
+
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return super_spike_backward(grad_output, x, alpha)[0]
+
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
+        raise NotImplementedError
+
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
+        raise NotImplementedError
 
 
 class ATan(SurrogateFunctionBase):
@@ -5859,10 +8169,14 @@ class ATan(SurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         return (math.pi / 2 * alpha * x).atan_() / math.pi + 0.5
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return atan_backward(grad_output, x, alpha)[0]
+
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         alpha = str(self.alpha) + 'f'
         code = f"""
@@ -5886,12 +8200,12 @@ class ATan(SurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.atan_backward(y=y, x=x, alpha=self.alpha, dtype=dtype)
 
 
 @torch.jit.script
-def nonzero_sign_log_abs_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def nonzero_sign_log_abs_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     return grad_output / (1 / alpha + x.abs()), None
 
 
@@ -5989,14 +8303,18 @@ class NonzeroSignLogAbs(SurrogateFunctionBase):
         return nonzero_sign_log_abs.apply(x, alpha)
 
     @staticmethod
+    def backward(grad_output, x, alpha):
+        return nonzero_sign_log_abs_backward(grad_output, x, alpha)[0]
+
+    @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         mask_p = heaviside(x) * 2.0 - 1.0
         return mask_p * (alpha * mask_p * x + 1).log()
 
 
 @torch.jit.script
-def erf_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def erf_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     return grad_output * (-(x * alpha).pow_(2)).exp_() * (alpha / math.sqrt(math.pi)), None
 
 
@@ -6083,8 +8401,12 @@ class Erf(SurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         return torch.erfc_(-alpha * x) / 2.0
+
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return erf_backward(grad_output, x, alpha)[0]
 
 
 curly_bracket_l = '{'
@@ -6094,16 +8416,16 @@ curly_bracket_r = '}'
 
 
 @torch.jit.script
-def piecewise_leaky_relu_backward(grad_output: torch.Tensor, x: torch.Tensor, w: float, c: float):
+def piecewise_leaky_relu_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', w: 'float', c: 'float'):
     mask_width = x.abs() < w
     mask_c = mask_width.logical_not()
-    return grad_output * x.masked_fill(mask_width, 1 / w).masked_fill(mask_c, c), None, None
+    return grad_output * x.masked_fill(mask_width, 1 / (2 * w)).masked_fill(mask_c, c), None, None
 
 
 class piecewise_leaky_relu(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x: torch.Tensor, w=1, c=0.01):
+    def forward(ctx, x: 'torch.Tensor', w=1, c=0.01):
         if x.requires_grad:
             ctx.save_for_backward(x)
             ctx.w = w
@@ -6132,7 +8454,7 @@ class PiecewiseLeakyReLU(MultiArgsSurrogateFunctionBase):
         .. math::
             g'(x) =
             \\begin{cases}
-            \\frac{1}{w}, & -w \\leq x \\leq w \\\\
+            \\frac{1}{2w}, & -w \\leq x \\leq w \\\\
             c, & x < -w ~or~ x > w
             \\end{cases}
 
@@ -6165,7 +8487,7 @@ class PiecewiseLeakyReLU(MultiArgsSurrogateFunctionBase):
         .. math::
             g'(x) =
             \\begin{cases}
-            \\frac{1}{w}, & -w \\leq x \\leq w \\\\
+            \\frac{1}{2w}, & -w \\leq x \\leq w \\\\
             c, & x < -w ~or~ x > w
             \\end{cases}
 
@@ -6198,12 +8520,16 @@ class PiecewiseLeakyReLU(MultiArgsSurrogateFunctionBase):
         return f(x, self.w, self.c)
 
     @staticmethod
-    def spiking_function(x: torch.Tensor, w, c):
+    def spiking_function(x: 'torch.Tensor', w, c):
         return piecewise_leaky_relu.apply(x, w, c)
 
     @staticmethod
+    def backward(grad_output, x, w, c):
+        return piecewise_leaky_relu_backward(grad_output, x, w, c)[0]
+
+    @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, w: float, c: float):
+    def primitive_function(x: 'torch.Tensor', w: 'float', c: 'float'):
         mask0 = x < -w
         mask1 = x > w
         mask2 = torch.ones_like(x.data) - mask0 - mask1
@@ -6213,7 +8539,7 @@ class PiecewiseLeakyReLU(MultiArgsSurrogateFunctionBase):
             cw = c * w
             return mask0 * (c * x + cw) + mask1 * (c * x + (-cw + 1)) + mask2 * (x / (2 * w) + 1 / 2)
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         w = str(self.w) + 'f'
         w_inv = str(1.0 / self.w) + 'f'
@@ -6247,14 +8573,14 @@ class PiecewiseLeakyReLU(MultiArgsSurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.piecewise_leaky_relu_backward(y=y, x=x, w=self.w, c=self.c, dtype=dtype)
 
 
 class squarewave_fourier_series(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x: torch.Tensor, n: int, T_period: float):
+    def forward(ctx, x: 'torch.Tensor', n: 'int', T_period: 'float'):
         if x.requires_grad:
             ctx.save_for_backward(x)
             ctx.n = n
@@ -6275,7 +8601,7 @@ class squarewave_fourier_series(torch.autograd.Function):
 
 class SquarewaveFourierSeries(MultiArgsSurrogateFunctionBase):
 
-    def __init__(self, n: int=2, T_period: float=8, spiking=True):
+    def __init__(self, n: 'int'=2, T_period: 'float'=8, spiking=True):
         super().__init__(spiking)
         assert isinstance(n, int) and T_period > 0.0
         self.n = n
@@ -6290,11 +8616,11 @@ class SquarewaveFourierSeries(MultiArgsSurrogateFunctionBase):
         return f(x, self.n, self.T_period)
 
     @staticmethod
-    def spiking_function(x: torch.Tensor, w, c):
+    def spiking_function(x: 'torch.Tensor', w, c):
         return squarewave_fourier_series.apply(x, w, c)
 
     @staticmethod
-    def primitive_function(x: torch.Tensor, n: int, T_period: float):
+    def primitive_function(x: 'torch.Tensor', n: 'int', T_period: 'float'):
         w = math.pi * 2.0 / T_period
         ret = torch.zeros_like(x.data)
         for i in range(1, n):
@@ -6302,7 +8628,7 @@ class SquarewaveFourierSeries(MultiArgsSurrogateFunctionBase):
             ret += torch.sin(c * w * x) / c
         return 0.5 + 2.0 / math.pi * ret
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         w = str(self.w) + 'f'
         w_inv = str(1.0 / self.w) + 'f'
@@ -6325,7 +8651,7 @@ class SquarewaveFourierSeries(MultiArgsSurrogateFunctionBase):
 class s2nn(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x: torch.Tensor, alpha: float, beta: float):
+    def forward(ctx, x: 'torch.Tensor', alpha: 'float', beta: 'float'):
         if x.requires_grad:
             ctx.save_for_backward(x)
             ctx.alpha = alpha
@@ -6413,14 +8739,14 @@ class S2NN(MultiArgsSurrogateFunctionBase):
         return f(x, self.alpha, self.beta)
 
     @staticmethod
-    def spiking_function(x: torch.Tensor, alpha, beta):
+    def spiking_function(x: 'torch.Tensor', alpha, beta):
         return s2nn.apply(x, alpha, beta)
 
     @staticmethod
-    def primitive_function(x: torch.Tensor, alpha: float, beta: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float', beta: 'float'):
         return torch.where(x < 0.0, torch.sigmoid(x * alpha), beta * torch.log((x + 1.0).abs_() + 1e-05) + 0.5)
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         alpha = str(self.alpha) + 'f'
         beta = str(self.beta) + 'f'
@@ -6447,7 +8773,7 @@ class S2NN(MultiArgsSurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.s2nn_backward(y=y, x=x, alpha=self.alpha, beta=self.beta, dtype=dtype)
 
 
@@ -6533,12 +8859,12 @@ class QPseudoSpike(SurrogateFunctionBase):
         return q_pseudo_spike.apply(x, alpha)
 
     @staticmethod
-    def primitive_function(x: torch.Tensor, alpha: float):
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
         mask_nonnegative = heaviside(x)
         mask_sign = mask_nonnegative * 2.0 - 1.0
         return mask_nonnegative - mask_sign * (0.5 * (1.0 + 2.0 / (alpha - 1.0) * x * mask_sign).pow_(1.0 - alpha))
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         alpha = str(self.alpha) + 'f'
         code = f"""
@@ -6562,12 +8888,12 @@ class QPseudoSpike(SurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.q_pseudo_spike_backward(y=y, x=x, alpha=self.alpha, dtype=dtype)
 
 
 @torch.jit.script
-def leaky_k_relu_backward(grad_output: torch.Tensor, x: torch.Tensor, leak: float, k: float):
+def leaky_k_relu_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', leak: 'float', k: 'float'):
     mask1 = x >= 0.0
     grad_x = mask1 * k + (1.0 - mask1) * leak
     return grad_output * grad_x, None, None
@@ -6590,7 +8916,7 @@ class leaky_k_relu(torch.autograd.Function):
 
 class LeakyKReLU(MultiArgsSurrogateFunctionBase):
 
-    def __init__(self, spiking=True, leak: float=0.0, k: float=1.0):
+    def __init__(self, spiking=True, leak: 'float'=0.0, k: 'float'=1.0):
         """
         * :ref:`API in English <LeakyKReLU.__init__-en>`
         .. _LeakyKReLU.__init__-cn:
@@ -6668,9 +8994,13 @@ class LeakyKReLU(MultiArgsSurrogateFunctionBase):
 
     @staticmethod
     @torch.jit.script
-    def primitive_function(x: torch.Tensor, leak: float, k: float):
+    def primitive_function(x: 'torch.Tensor', leak: 'float', k: 'float'):
         mask1 = x >= 0.0
         return (leak * (1.0 - mask1) + k * mask1) * x
+
+    @staticmethod
+    def backward(grad_output, x, leak, k):
+        return leaky_k_relu_backward(grad_output, x, leak, k)[0]
 
     def forward(self, x):
         if self.spiking:
@@ -6679,7 +9009,7 @@ class LeakyKReLU(MultiArgsSurrogateFunctionBase):
             f = self.primitive_function
         return f(x, self.leak, self.k)
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         leak = str(self.leak) + 'f'
         k = str(self.k) + 'f'
@@ -6703,12 +9033,12 @@ class LeakyKReLU(MultiArgsSurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.leaky_k_relu_backward(y=y, x=x, leak=self.leak, k=self.k, dtype=dtype)
 
 
 @torch.jit.script
-def fake_numerical_gradient_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def fake_numerical_gradient_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     grad_x = torch.clamp_max(((x >= 0.0) * 2.0 - 1.0) / x, alpha)
     return grad_output * grad_x, None
 
@@ -6736,7 +9066,11 @@ class FakeNumericalGradient(SurrogateFunctionBase):
     def spiking_function(x, alpha):
         return fake_numerical_gradient.apply(x, alpha)
 
-    def cuda_code(self, x: str, y: str, dtype='fp32'):
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return fake_numerical_gradient_backward(grad_output, x, alpha)[0]
+
+    def cuda_code(self, x: 'str', y: 'str', dtype='fp32'):
         sg_name = 'sg_' + self._get_name()
         alpha = str(self.alpha) + 'f'
         code = f"""
@@ -6765,12 +9099,12 @@ class FakeNumericalGradient(SurrogateFunctionBase):
         """
         return code
 
-    def cuda_codes(self, y: str, x: str, dtype: str):
+    def cuda_codes(self, y: 'str', x: 'str', dtype: 'str'):
         return cfunction.fake_numerical_gradient_backward(y=y, x=x, alpha=self.alpha, dtype=dtype)
 
 
 @torch.jit.script
-def log_tailed_relu_backward(grad_output: torch.Tensor, x: torch.Tensor, alpha: float):
+def log_tailed_relu_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
     mask_gt1 = x > 1.0
     mask_le0 = x <= 0.0
     grad_x = torch.ones_like(grad_output)
@@ -6793,16 +9127,92 @@ class log_tailed_relu(torch.autograd.Function):
         return log_tailed_relu_backward(grad_output, ctx.saved_tensors[0], ctx.alpha)
 
 
-def random_temporal_delete(x_seq: (torch.Tensor or np.ndarray), T_remain: int, batch_first):
+@torch.jit.script
+def deterministic_pass_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
+    return grad_output, None
+
+
+class deterministic_pass(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, alpha):
+        if x.requires_grad:
+            ctx.save_for_backward(x)
+            ctx.alpha = alpha
+        return heaviside(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return deterministic_pass_backward(grad_output, ctx.saved_tensors[0], ctx.alpha)
+
+
+class DeterministicPass(SurrogateFunctionBase):
+
+    def __init__(self, alpha=1.0, spiking=True):
+        super().__init__(alpha, spiking)
+
+    @staticmethod
+    def spiking_function(x, alpha):
+        return deterministic_pass.apply(x, alpha)
+
+    @staticmethod
+    @torch.jit.script
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
+        return x
+
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return deterministic_pass_backward(grad_output, x, alpha)[0]
+
+
+@torch.jit.script
+def rect_backward(grad_output: 'torch.Tensor', x: 'torch.Tensor', alpha: 'float'):
+    return alpha * (x.abs() < 0.5 / alpha) * grad_output, None
+
+
+class rect(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, alpha):
+        if x.requires_grad:
+            ctx.save_for_backward(x)
+            ctx.alpha = alpha
+        return heaviside(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return rect_backward(grad_output, ctx.saved_tensors[0], ctx.alpha)
+
+
+class Rect(SurrogateFunctionBase):
+
+    def __init__(self, alpha=1.0, spiking=True):
+        super().__init__(alpha, spiking)
+
+    @staticmethod
+    def spiking_function(x, alpha):
+        return rect.apply(x, alpha)
+
+    @staticmethod
+    @torch.jit.script
+    def primitive_function(x: 'torch.Tensor', alpha: 'float'):
+        return torch.clamp(alpha * x + 0.5, min=0.0, max=1.0)
+
+    @staticmethod
+    def backward(grad_output, x, alpha):
+        return rect_backward(grad_output, x, alpha)[0]
+
+
+def random_temporal_delete(x_seq: 'Union[torch.Tensor, np.ndarray]', T_remain: 'int', batch_first):
     """
     :param x_seq: a sequence with `shape = [T, N, *]`, where `T` is the sequence length and `N` is the batch size
-    :type x_seq: torch.Tensor or np.ndarray
+    :type x_seq: Union[torch.Tensor, np.ndarray]
     :param T_remain: the remained length
     :type T_remain: int
     :param batch_first: if `True`, `x_seq` will be regarded as `shape = [N, T, *]`
     :type batch_first: bool
     :return: the sequence with length `T_remain`, which is obtained by randomly removing `T - T_remain` slices
-    :rtype: torch.Tensor or np.ndarray
+    :rtype: Union[torch.Tensor, np.ndarray]
     The random temporal delete data augmentation used in `Deep Residual Learning in Spiking Neural Networks <https://arxiv.org/abs/2102.04159>`_.
     Codes example:
 
@@ -6845,7 +9255,7 @@ def random_temporal_delete(x_seq: (torch.Tensor or np.ndarray), T_remain: int, b
 
 class RandomTemporalDelete(torch.nn.Module):
 
-    def __init__(self, T_remain: int, batch_first: bool):
+    def __init__(self, T_remain: 'int', batch_first: 'bool'):
         """
         :param T_remain: the remained length
         :type T_remain: int
@@ -6858,7 +9268,7 @@ class RandomTemporalDelete(torch.nn.Module):
         self.T_remain = T_remain
         self.batch_first = batch_first
 
-    def forward(self, x_seq: (torch.Tensor or np.ndarray)):
+    def forward(self, x_seq: 'Union[torch.Tensor, np.ndarray]'):
         return random_temporal_delete(x_seq, self.T_remain, self.batch_first)
 
 
@@ -6886,7 +9296,7 @@ class Tempotron(nn.Module):
         self.v0 = self.v_threshold / (math.exp(-t_max / tau) - math.exp(-t_max / tau_s))
 
     @staticmethod
-    def psp_kernel(t: torch.Tensor, tau, tau_s):
+    def psp_kernel(t: 'torch.Tensor', tau, tau_s):
         """
         :param t: 表示时刻的tensor
         :param tau: LIF神经元的积分时间常数
@@ -6907,7 +9317,7 @@ class Tempotron(nn.Module):
         wrong_mask = ((v_max >= v_threshold).float() != F.one_hot(label, num_classes)).float()
         return torch.sum(torch.pow((v_max - v_threshold) * wrong_mask, 2)) / label.shape[0]
 
-    def forward(self, in_spikes: torch.Tensor, ret_type):
+    def forward(self, in_spikes: 'torch.Tensor', ret_type):
         """
         :param in_spikes: shape=[batch_size, in_features]
 
@@ -7017,9 +9427,17 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (DSpike,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (Delay,
      lambda: ([], {'delay_steps': 4}),
      lambda: ([], {'x': torch.rand([4, 4])}),
+     False),
+    (DeterministicPass,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
     (Dropout,
      lambda: ([], {}),
@@ -7041,10 +9459,18 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (GradwithTrace,
+     lambda: ([], {'module': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (GroupNorm,
      lambda: ([], {'num_groups': 1, 'num_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (Identity,
+     lambda: ([], {'C_in': 4, 'C_out': 4, 'signal': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (LIFWrapper,
      lambda: ([], {'module': _mock_layer()}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -7077,10 +9503,18 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([], {'x': 4}),
      False),
+    (Nearest,
+     lambda: ([], {'shape': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (NonzeroSignLogAbs,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (OTTTSequential,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (PiecewiseExp,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -7109,20 +9543,40 @@ TESTCASES = [
      lambda: ([], {'T_remain': 4, 'batch_first': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (Rect,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
     (S2NN,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (Scale,
+     lambda: ([], {'scale': 1.0}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (ScaleLayer,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (Sigmoid,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (SpikeTraceOp,
+     lambda: ([], {'module': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (SquarewaveFourierSeries,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
     (StepModeContainer,
      lambda: ([], {'stateful': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (SuperSpike,
+     lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
     (VoltageHook,
@@ -7132,6 +9586,10 @@ TESTCASES = [
     (VoltageScaler,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (WeightedMSELoss,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
      True),
 ]
 
@@ -7270,4 +9728,40 @@ class Test_fangwei123456_spikingjelly(_paritybench_base):
 
     def test_044(self):
         self._check(*TESTCASES[44])
+
+    def test_045(self):
+        self._check(*TESTCASES[45])
+
+    def test_046(self):
+        self._check(*TESTCASES[46])
+
+    def test_047(self):
+        self._check(*TESTCASES[47])
+
+    def test_048(self):
+        self._check(*TESTCASES[48])
+
+    def test_049(self):
+        self._check(*TESTCASES[49])
+
+    def test_050(self):
+        self._check(*TESTCASES[50])
+
+    def test_051(self):
+        self._check(*TESTCASES[51])
+
+    def test_052(self):
+        self._check(*TESTCASES[52])
+
+    def test_053(self):
+        self._check(*TESTCASES[53])
+
+    def test_054(self):
+        self._check(*TESTCASES[54])
+
+    def test_055(self):
+        self._check(*TESTCASES[55])
+
+    def test_056(self):
+        self._check(*TESTCASES[56])
 

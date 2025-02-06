@@ -11,7 +11,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -61,13 +63,13 @@ class Attention(nn.Module):
 
     def __init__(self):
         super(Attention, self).__init__()
-        self.L = 500
-        self.D = 128
-        self.K = 1
+        self.M = 500
+        self.L = 128
+        self.ATTENTION_BRANCHES = 1
         self.feature_extractor_part1 = nn.Sequential(nn.Conv2d(1, 20, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2, stride=2), nn.Conv2d(20, 50, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2, stride=2))
-        self.feature_extractor_part2 = nn.Sequential(nn.Linear(50 * 4 * 4, self.L), nn.ReLU())
-        self.attention = nn.Sequential(nn.Linear(self.L, self.D), nn.Tanh(), nn.Linear(self.D, self.K))
-        self.classifier = nn.Sequential(nn.Linear(self.L * self.K, 1), nn.Sigmoid())
+        self.feature_extractor_part2 = nn.Sequential(nn.Linear(50 * 4 * 4, self.M), nn.ReLU())
+        self.attention = nn.Sequential(nn.Linear(self.M, self.L), nn.Tanh(), nn.Linear(self.L, self.ATTENTION_BRANCHES))
+        self.classifier = nn.Sequential(nn.Linear(self.M * self.ATTENTION_BRANCHES, 1), nn.Sigmoid())
 
     def forward(self, x):
         x = x.squeeze(0)
@@ -77,8 +79,8 @@ class Attention(nn.Module):
         A = self.attention(H)
         A = torch.transpose(A, 1, 0)
         A = F.softmax(A, dim=1)
-        M = torch.mm(A, H)
-        Y_prob = self.classifier(M)
+        Z = torch.mm(A, H)
+        Y_prob = self.classifier(Z)
         Y_hat = torch.ge(Y_prob, 0.5).float()
         return Y_prob, Y_hat, A
 
@@ -100,15 +102,15 @@ class GatedAttention(nn.Module):
 
     def __init__(self):
         super(GatedAttention, self).__init__()
-        self.L = 500
-        self.D = 128
-        self.K = 1
+        self.M = 500
+        self.L = 128
+        self.ATTENTION_BRANCHES = 1
         self.feature_extractor_part1 = nn.Sequential(nn.Conv2d(1, 20, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2, stride=2), nn.Conv2d(20, 50, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2, stride=2))
-        self.feature_extractor_part2 = nn.Sequential(nn.Linear(50 * 4 * 4, self.L), nn.ReLU())
-        self.attention_V = nn.Sequential(nn.Linear(self.L, self.D), nn.Tanh())
-        self.attention_U = nn.Sequential(nn.Linear(self.L, self.D), nn.Sigmoid())
-        self.attention_weights = nn.Linear(self.D, self.K)
-        self.classifier = nn.Sequential(nn.Linear(self.L * self.K, 1), nn.Sigmoid())
+        self.feature_extractor_part2 = nn.Sequential(nn.Linear(50 * 4 * 4, self.M), nn.ReLU())
+        self.attention_V = nn.Sequential(nn.Linear(self.M, self.L), nn.Tanh())
+        self.attention_U = nn.Sequential(nn.Linear(self.M, self.L), nn.Sigmoid())
+        self.attention_w = nn.Linear(self.L, self.ATTENTION_BRANCHES)
+        self.classifier = nn.Sequential(nn.Linear(self.M * self.ATTENTION_BRANCHES, 1), nn.Sigmoid())
 
     def forward(self, x):
         x = x.squeeze(0)
@@ -117,11 +119,11 @@ class GatedAttention(nn.Module):
         H = self.feature_extractor_part2(H)
         A_V = self.attention_V(H)
         A_U = self.attention_U(H)
-        A = self.attention_weights(A_V * A_U)
+        A = self.attention_w(A_V * A_U)
         A = torch.transpose(A, 1, 0)
         A = F.softmax(A, dim=1)
-        M = torch.mm(A, H)
-        Y_prob = self.classifier(M)
+        Z = torch.mm(A, H)
+        Y_prob = self.classifier(Z)
         Y_hat = torch.ge(Y_prob, 0.5).float()
         return Y_prob, Y_hat, A
 

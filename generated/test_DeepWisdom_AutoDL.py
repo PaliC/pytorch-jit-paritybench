@@ -141,7 +141,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -173,9 +175,6 @@ import torchvision.models as models
 
 
 from torch.utils import model_zoo
-
-
-from torchvision.models.resnet import model_urls
 
 
 import torch.nn as nn
@@ -760,7 +759,7 @@ class TabularModel(nn.Module):
         x = torch.sigmoid(x)
         return x
 
-    def bn_drop_lin(self, n_in: int, n_out: int, bn: bool=True, p: float=0.0, actn=None):
+    def bn_drop_lin(self, n_in: 'int', n_out: 'int', bn: 'bool'=True, p: 'float'=0.0, actn=None):
         """Sequence of batchnorm (if `bn`), dropout (with `p`) and linear (`n_in`,`n_out`) layers followed by `actn`."""
         layers = [nn.BatchNorm1d(n_in)] if bn else []
         if p != 0:

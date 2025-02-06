@@ -2,9 +2,10 @@ import sys
 _module = sys.modules[__name__]
 del sys
 main = _module
-app_utils = _module
-cuda_guard = _module
-main_interactive = _module
+main_image = _module
+main_nerf = _module
+main_nglod = _module
+conf = _module
 demo_app = _module
 funny_neural_field = _module
 main_demo = _module
@@ -13,16 +14,27 @@ main_spc_browser = _module
 mesh2spc = _module
 widget_spc_selector = _module
 setup = _module
-template_app = _module
-template_main = _module
-template_neural_field = _module
-template_trainer = _module
+tests = _module
+conftest = _module
+test_latent_nerf = _module
+test_nerf = _module
+test_grid_interpolation = _module
+test_hashgrid_query = _module
 test_packed_rf_tracer = _module
+test_utils = _module
+install_torchvision = _module
 wisp = _module
 accelstructs = _module
 aabb_as = _module
+base_as = _module
 octree_as = _module
-config_parser = _module
+app_utils = _module
+config = _module
+_exceptions = _module
+_hydrazen = _module
+_tyro = _module
+presets = _module
+utils = _module
 core = _module
 channel_fn = _module
 channels = _module
@@ -31,13 +43,17 @@ primitives = _module
 rays = _module
 render_buffer = _module
 transforms = _module
+wisp_module = _module
 datasets = _module
+base_datasets = _module
+batch = _module
 formats = _module
-nerf_standard = _module
-rtmv = _module
-multiview_dataset = _module
+mesh_sdf_dataset = _module
+nerf_standard_dataset = _module
+octree_sdf_dataset = _module
 random_view_dataset = _module
-sdf_dataset = _module
+rtmv_dataset = _module
+image_dataset = _module
 ray_sampler = _module
 utils = _module
 framework = _module
@@ -63,14 +79,17 @@ codebook_grid = _module
 hash_grid = _module
 octree_grid = _module
 triplanar_grid = _module
+utils = _module
 layers = _module
 nefs = _module
 base_nef = _module
+image_nef = _module
 nerf = _module
 neural_sdf = _module
+neural_sdf_tex = _module
 spc_field = _module
 pipeline = _module
-offline_renderer = _module
+rasterization_pipeline = _module
 ops = _module
 differential = _module
 gradients = _module
@@ -118,6 +137,7 @@ wisp_app = _module
 api = _module
 base_renderer = _module
 decorators = _module
+raytraced_renderer = _module
 renderers_factory = _module
 scenegraph = _module
 control = _module
@@ -125,6 +145,7 @@ camera_controller_mode = _module
 first_person = _module
 trackball = _module
 turntable = _module
+cuda = _module
 render_core = _module
 renderers = _module
 radiance_pipeline_renderer = _module
@@ -138,31 +159,34 @@ primitives_painter = _module
 world_grid = _module
 gui = _module
 imgui = _module
+widget_accelstruct = _module
 widget_cameras = _module
-widget_dictionary_octree_grid = _module
 widget_gpu_stats = _module
 widget_imgui = _module
 widget_object_transform = _module
-widget_octree_grid = _module
 widget_optimization = _module
 widget_property_editor = _module
-widget_radiance_pipeline = _module
 widget_radiance_pipeline_renderer = _module
+widget_raytraced_pipeline_renderer = _module
 widget_renderer_properties = _module
 widget_scene_graph = _module
-widget_sdf_pipeline = _module
 widget_sdf_pipeline_renderer = _module
-widget_triplanar_grid = _module
+widget_wisp_module = _module
+web = _module
+jupyter_utils = _module
 tracers = _module
 base_tracer = _module
 packed_rf_tracer = _module
 packed_sdf_tracer = _module
 packed_spc_tracer = _module
-sdf_tracer = _module
 trainers = _module
 base_trainer = _module
+image_trainer = _module
 multiview_trainer = _module
 sdf_trainer = _module
+tracker = _module
+offline_renderer = _module
+tracker = _module
 debug = _module
 helper_classes = _module
 perf = _module
@@ -171,7 +195,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -187,16 +213,19 @@ xrange = range
 wraps = functools.wraps
 
 
+import logging
+
+
 import torch
 
 
-import logging as log
+from typing import Optional
+
+
+import torch.nn as nn
 
 
 import numpy as np
-
-
-import logging
 
 
 from torch.utils.cpp_extension import BuildExtension
@@ -211,55 +240,79 @@ from torch.utils.cpp_extension import CUDAExtension
 from torch.utils.cpp_extension import CUDA_HOME
 
 
-import pandas as pd
+from abc import ABC
 
 
-from typing import Tuple
-
-
-from typing import Callable
-
-
-from typing import Any
-
-
-import torch.nn.functional as F
+from abc import abstractmethod
 
 
 from typing import List
 
 
-from typing import Optional
-
-
-from typing import Union
-
-
-from typing import Set
-
-
 from typing import Dict
 
 
-from typing import Iterator
+from typing import Any
+
+
+from typing import Tuple
+
+
+import types
 
 
 from functools import partial
 
 
-import time
+import inspect
 
 
-from torch.multiprocessing import Pool
+import enum
 
 
 import copy
 
 
-from torch.multiprocessing import cpu_count
+import typing
+
+
+from typing import get_type_hints
+
+
+from typing import Type
+
+
+from typing import Callable
+
+
+from functools import lru_cache
+
+
+from typing import Union
+
+
+from typing import TYPE_CHECKING
+
+
+import torch.nn.functional as F
+
+
+from typing import Set
+
+
+from typing import Iterator
 
 
 from torch.utils.data import Dataset
+
+
+import logging as log
+
+
+import re
+
+
+from torch.multiprocessing import Pool
 
 
 from copy import deepcopy
@@ -268,43 +321,31 @@ from copy import deepcopy
 import random
 
 
+import math
+
+
 import collections
-
-
-from torch._six import string_classes
 
 
 from torch.utils.data._utils.collate import default_convert
 
 
-from typing import Type
+from torch.utils.data._utils.collate import default_collate_err_msg_format
 
 
 from typing import DefaultDict
 
 
-from typing import TYPE_CHECKING
-
-
 from collections import defaultdict
-
-
-import torch.nn as nn
 
 
 from scipy.stats import ortho_group
 
 
-from abc import ABC
+import time
 
 
-from abc import abstractmethod
-
-
-import inspect
-
-
-import math
+import torchvision
 
 
 from scipy.interpolate import RegularGridInterpolator
@@ -313,19 +354,28 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.ndimage import gaussian_filter
 
 
-from collections import deque
-
-
 import abc
 
 
 from typing import Iterable
 
 
+import queue
+
+
+from typing import Literal
+
+
+from torch.cuda.amp import custom_bwd
+
+
+from torch.cuda.amp import custom_fwd
+
+
 from torch.utils.data import DataLoader
 
 
-from torch.utils.tensorboard import SummaryWriter
+import pandas as pd
 
 
 class SigDecoder(nn.Module):
@@ -374,6 +424,35 @@ class SigDecoder(nn.Module):
         x_h[..., 3:] = self.activation(x_h[..., 3:])
         out = self.output_layer(x_h)
         return out
+
+
+class WispModule(nn.Module, ABC):
+    """ A general interface for all Wisp building blocks, such as neural fields, grids and tracers.
+        WispModules should:
+        1. Provide their name & dictionary of public properties. That makes them compatible with systems like
+        logging & gui.
+        2. WispModules extend torch's nn.Module out of convenience.
+        Modules are not required however, to implement a forward() function.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def name(self) ->str:
+        """
+        Returns:
+            (str) A WispModule should be given a meaningful, human readable name.
+            By default, the class name is used.
+        """
+        return type(self).__name__
+
+    @abstractmethod
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        raise NotImplementedError('Wisp modules should implement the `public_properties` method')
 
 
 class FullSort(nn.Module):
@@ -428,7 +507,7 @@ class Identity(nn.Module):
         return x
 
 
-class BasicDecoder(nn.Module):
+class BasicDecoder(WispModule):
     """Super basic but super useful MLP class.
     """
 
@@ -469,7 +548,7 @@ class BasicDecoder(nn.Module):
             if i == 0:
                 layers.append(self.layer(self.input_dim, self.hidden_dim, bias=self.bias))
             elif i in self.skip:
-                layers.append(self.layer(self.hidden_dim + input_dim, self.hidden_dim, bias=self.bias))
+                layers.append(self.layer(self.hidden_dim + self.input_dim, self.hidden_dim, bias=self.bias))
             else:
                 layers.append(self.layer(self.hidden_dim, self.hidden_dim, bias=self.bias))
         self.layers = nn.ModuleList(layers)
@@ -520,8 +599,19 @@ class BasicDecoder(nn.Module):
         m = get_weight(self.lout.weight)
         self.lout.weight = nn.Parameter(m)
 
+    def name(self) ->str:
+        """ A human readable name for the given wisp module. """
+        return 'BasicDecoder'
 
-class PositionalEmbedder(nn.Module):
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        return {'Input Dim': self.input_dim, 'Hidden Dim': self.hidden_dim, 'Outpt Dim': self.output_dim, 'Num. Layers': self.num_layers, 'Layer Type': self.layer.__name__, 'Activation': self.activation.__name__, 'Bias': self.bias, 'Skip Connections': self.skip}
+
+
+class PositionalEmbedder(WispModule):
     """PyTorch implementation of regular positional embedding, as used in the original NeRF and Transformer papers.
     """
 
@@ -570,55 +660,110 @@ class PositionalEmbedder(nn.Module):
             encoded = torch.cat([coords, encoded], dim=-1)
         return encoded
 
-
-class BLASGrid(nn.Module, ABC):
-    """
-    BLASGrids (commonly referred in documentation as simply "grids"), represent feature grids in Wisp.
-    BLAS: "Bottom Level Acceleration Structure", to signify this structure is the backbone that captures
-    a neural field's contents, in terms of both features and occupancy for speeding up queries.
-
-    This is an abstract base class that uses some spatial acceleration structure under the hood, to speed up operations
-    such as coordinate based queries or ray tracing.
-    Classes which inherit the BLASGrid are generally compatible with BaseTracers to support such operations
-    (see: raymarch(), raytrace(), query()).
-
-    Grids are usually employed as building blocks within neural fields (see: BaseNeuralField),
-    possibly paired with decoders to form a neural field.
-    """
-
-    def raymarch(self, *args, **kwargs):
-        """By default, this function will use the equivalent BLAS function unless overridden for custom behaviour.
-        """
-        return self.blas.raymarch(*args, **kwargs)
-
-    def raytrace(self, *args, **kwargs):
-        """By default, this function will use the equivalent BLAS function unless overridden for custom behaviour.
-        """
-        return self.blas.raytrace(*args, **kwargs)
-
-    def query(self, *args, **kwargs):
-        """By default, this function will use the equivalent BLAS function unless overridden for custom behaviour.
-        """
-        return self.blas.query(*args, **kwargs)
-
-    @abstractmethod
-    def interpolate(self, coords, lod_idx):
-        """ Interpolates a feature value for the given coords using the grid support, in the given lod_idx
-        Args:
-            coords (torch.FloatTensor): coords of shape [batch, num_samples, 3] or [batch, 3]
-            lod_idx  (int): int specifying the index to the desired level of detail, if supported.
-        """
-        raise NotImplementedError('A BLASGrid should implement the interpolation functionality according to the grid structure.')
-
     def name(self) ->str:
+        """ A human readable name for the given wisp module. """
+        return 'Positional Encoding'
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
         """
-        Returns:
-            (str) A BLASGrid should be given a meaningful, human readable name.
-        """
-        return type(self).__name__
+        return {'Output Dim': self.out_dim, 'Num. Frequencies': self.num_freq, 'Max Frequency': f'2^{self.max_freq_log2}', 'Include Input': self.include_input}
 
 
-class TriplanarFeatureVolume(nn.Module):
+@dataclass
+class ASQueryResults:
+    """ A data holder for keeping the results of a single acceleration structure query() call.
+    A query receives a set of input coordinates and returns the cell indices of the acceleration structure where
+    the query coordinates fall.
+    """
+    pidx: 'torch.LongTensor'
+    """ Holds the query results.
+    - If the query is invoked with `with_parents=False`, this field is a tensor of shape [num_coords],
+      containing indices of cells of the acceleration structure, where the query coordinates match.
+    - If the query is invoked with `with_parents=True`, this field is a tensor of shape [num_coords, level+1],
+      containing indices of the cells of the acceleration structure + the full parent hierarchy of each 
+      cell query result.
+    """
+
+
+@dataclass
+class ASRaytraceResults:
+    """ A data holder for keeping the results of a single acceleration structure raytrace() call.
+    A raytrace operation returns all intersections of the ray set with the acceleration structure cells.
+    Ray/cell intersections are also referred to in Kaolin & Wisp as "nuggets".
+    """
+    ridx: 'torch.LongTensor'
+    """ A tensor containing the ray index of the ray that intersected each cell [num_nuggets]. 
+    (can be used to index into rays.origins and rays.dirs)
+    """
+    pidx: 'torch.LongTensor'
+    """ Point indices into the cells of the acceleration structure, where the ray intersected a cell [num_nuggets] """
+    depth: 'torch.FloatTensor'
+    """ Depths of each nugget, representing:
+      - The first intersection point of the ray with the cell (entry), and 
+      - Optionally also a second intersection point of the ray with the cell (exit).
+      A tensor of [num_intersections, 1 or 2]. 
+    """
+
+
+class MultiTable(nn.Module):
+    """Class that holds multiresolution grid tables.
+    """
+
+    def __init__(self, resolutions: 'Tuple[int, ...]', coord_dim: 'int', feature_dim: 'int', std: 'float'=0.01, max_feats: 'Optional[int]'=None):
+        """
+        Args:
+            resolutions (List[int, ...]): The resolutions in the multiresolution hierarchy.
+            coord_dim (int): The coordinate dimension for the grid.
+            feature_dim (int): The feature dimension for the grid.
+            std (float): The standard deviation for the features.
+            max_feats (Optional[int]): The max number of features (when in use for hash grids, for example)
+        """
+        super().__init__()
+        self.num_lods = len(resolutions)
+        self.max_feats = max_feats
+        self.register_buffer('begin_idxes', torch.zeros(self.num_lods + 1, dtype=torch.int64))
+        self.register_buffer('num_feats', torch.zeros(self.num_lods, dtype=torch.int64))
+        self.coord_dim = coord_dim
+        self.feature_dim = feature_dim
+        self.resolutions = torch.zeros([self.num_lods, 1], dtype=torch.int64)
+        for i in range(len(resolutions)):
+            self.resolutions[i] = resolutions[i]
+        num_so_far = 0
+        for i in range(self.num_lods):
+            resolution = self.resolutions[i]
+            num_feats_level = resolution[0] ** self.coord_dim
+            if self.max_feats:
+                num_feats_level = min(self.max_feats, num_feats_level)
+            self.begin_idxes[i] = num_so_far
+            self.num_feats[i] = num_feats_level
+            num_so_far += num_feats_level
+        self.begin_idxes[self.num_lods] = num_so_far
+        self.total_feats = sum(self.num_feats)
+        self.feats = nn.Parameter(torch.randn(self.total_feats, self.feature_dim) * std)
+
+    def get_level(self, idx):
+        """Gets the features for a specific level.
+
+        Args:
+            idx (int): The level of the multiresolution grid to get.
+        """
+        return self.feats[self.begin_idxes[idx]:self.begin_idxes[idx + 1]]
+
+
+@torch.jit.script
+def fast_filter_method(mask_idx: 'torch.Tensor', depth: 'torch.Tensor', deltas: 'torch.Tensor', samples: 'torch.Tensor', num_samples: 'int', num_rays: 'int', device: 'torch.device') ->Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    depth_samples = depth[mask_idx[:, 0], mask_idx[:, 1]][:, None]
+    deltas = deltas[mask_idx[:, 0], mask_idx[:, 1]].reshape(-1, 1)
+    samples = samples[mask_idx[:, 0], mask_idx[:, 1], :]
+    ridx = torch.arange(0, num_rays, device=device)
+    ridx = ridx[..., None].repeat(1, num_samples)[mask_idx[:, 0], mask_idx[:, 1]]
+    return depth_samples, deltas, samples, ridx
+
+
+class TriplanarFeatureVolume(WispModule):
     """Triplanar feature volume represents a single triplane, e.g. a single LOD in a TriplanarGrid. """
 
     def __init__(self, fdim, fsize, std, bias):
@@ -662,119 +807,16 @@ class TriplanarFeatureVolume(nn.Module):
             sample = torch.stack([samplex, sampley, samplez], dim=1)
         return sample
 
-
-class TriplanarGrid(BLASGrid):
-    """A feature grid where the features are stored on a multiresolution pyramid of triplanes.
-    Each LOD consists of a triplane, e.g. a triplet of orthogonal planes.
-
-    The shape of the triplanar feature grid means the support region is bounded by an AABB,
-    therefore spatial queries / ray tracing ops can use an AABB as an acceleration structure.
-    Hence the class is compatible with BaseTracer implementations.
-    """
-
-    def __init__(self, feature_dim: int, base_lod: int, num_lods: int=1, interpolation_type: str='linear', multiscale_type: str='sum', feature_std: float=0.0, feature_bias: float=0.0):
-        """Constructs an instance of a TriplanarGrid.
-
-        Args:
-            feature_dim (int): The dimension of the features stored on the grid.
-            base_lod (int): The base LOD of the feature grid. This is the lowest LOD of the SPC octree
-                            for which features are defined.
-            num_lods (int): The number of LODs for which features are defined. Starts at base_lod.
-            interpolation_type (str): The type of interpolation function.
-            multiscale_type (str): The type of multiscale aggregation. Usually 'sum' or 'cat'.
-                                   Note that 'cat' will change the decoder input dimension.
-            feature_std (float): The features are initialized with a Gaussian distribution with the given
-                                 standard deviation.
-            feature_bias (float): The mean of the Gaussian distribution.
-
-        Returns:
-            (void): Initializes the class.
-        """
-        super().__init__()
-        self.feature_dim = feature_dim * 3
-        self.base_lod = base_lod
-        self.num_lods = num_lods
-        self.interpolation_type = interpolation_type
-        self.multiscale_type = multiscale_type
-        self.feature_std = feature_std
-        self.feature_bias = feature_bias
-        self.active_lods = [(self.base_lod + x) for x in range(self.num_lods)]
-        self.max_lod = self.num_lods + self.base_lod - 1
-        log.info(f'Active LODs: {self.active_lods}')
-        self.blas = AxisAlignedBBoxAS()
-        self.init_feature_structure()
-
-    def init_feature_structure(self):
-        """ Initializes everything related to the features stored in the triplanar grid structure. """
-        self.features = nn.ModuleList([])
-        self.num_feat = 0
-        for i in self.active_lods:
-            self.features.append(TriplanarFeatureVolume(self.feature_dim // 3, 2 ** i, self.feature_std, self.feature_bias))
-            self.num_feat += (2 ** i + 1) ** 2 * self.feature_dim * 3
-        log.info(f'# Feature Vectors: {self.num_feat}')
-
-    def freeze(self):
-        """Freezes the feature grid.
-        """
-        self.features.requires_grad_(False)
-
-    def interpolate(self, coords, lod_idx):
-        """Query multiscale features.
-
-        Args:
-            coords (torch.FloatTensor): coords of shape [batch, num_samples, 3] or [batch, 3]
-            lod_idx  (int): int specifying the index to ``active_lods``
-
-        Returns:
-            (torch.FloatTensor): interpolated features of
-            shape [batch, num_samples, feature_dim] or [batch, feature_dim]
-        """
-        output_shape = coords.shape[:-1]
-        if coords.ndim < 3:
-            coords = coords[:, None]
-        feats = []
-        for i in range(lod_idx + 1):
-            feats.append(self._interpolate(coords, self.features[i], i))
-        feats = torch.cat(feats, dim=-1)
-        if self.multiscale_type == 'sum':
-            feats = feats.reshape(*output_shape, lod_idx + 1, feats.shape[-1] // (lod_idx + 1)).sum(-2)
-        return feats
-
-    def _interpolate(self, coords, feats, lod_idx):
-        """Interpolates the given feature using the coordinates x.
-
-        This is a more low level interface for optimization.
-
-        Inputs:
-            coords     : float tensor of shape [batch, num_samples, 3]
-            feats : float tensor of shape [num_feats, feat_dim]
-            lod_idx   : int specifying the lod
-        Returns:
-            float tensor of shape [batch, num_samples, feat_dim]
-        """
-        batch, num_samples = coords.shape[:2]
-        if self.interpolation_type == 'linear':
-            fs = feats(coords).reshape(batch, num_samples, 3 * feats.fdim)
-        else:
-            raise ValueError(f"Interpolation mode '{self.interpolation_type}' is not supported")
-        return fs
-
-    def raymarch(self, rays, raymarch_type, num_samples, level=None):
-        """Mostly a wrapper over OctreeAS.raymarch. See corresponding function for more details.
-
-        Important detail: this is just used as an AABB tracer.
-        """
-        return self.blas.raymarch(rays, raymarch_type=raymarch_type, num_samples=num_samples, level=0)
-
-    def raytrace(self, rays, level=None, with_exit=False):
-        """By default, this function will use the equivalent BLAS function unless overridden for custom behaviour.
-
-        Important detail: this is just used as an AABB tracer.
-        """
-        return self.blas.raytrace(rays, level=0, with_exit=with_exit)
-
     def name(self) ->str:
-        return 'Triplanar Grid'
+        """ A human readable name for the given wisp module. """
+        return 'TriplanarFeatureVolume'
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        return {'Resolution': f'3x{self.fsize}x{self.fsize}'}
 
 
 def normalize_frobenius(x):
@@ -857,7 +899,7 @@ class L_inf_Linear(nn.Module):
         return F.linear(x, weight, self.linear.bias)
 
 
-class BaseNeuralField(nn.Module):
+class BaseNeuralField(WispModule):
     """The base class for all Neural Fields within Wisp.
     Neural Fields are defined as modules which take coordinates as input and output signals of some form.
     The term "Neural" is loosely used here to imply these modules are generally subject for optimization.
@@ -913,8 +955,8 @@ class BaseNeuralField(nn.Module):
     @abstractmethod
     def register_forward_functions(self):
         """Register forward functions with the channels that they output.
-        
-        This function should be overrided and call `self._register_forward_function` to 
+
+        This function should be overrided and call `self._register_forward_function` to
         tell the class which functions output what output channels. The function can be called
         multiple times to register multiple functions.
 
@@ -929,8 +971,8 @@ class BaseNeuralField(nn.Module):
 
     def get_forward_function(self, channel):
         """Will return the function that will return the channel.
-        
-        Args: 
+
+        Args:
             channel (str): The name of the channel to return.
 
         Returns:
@@ -951,6 +993,17 @@ class BaseNeuralField(nn.Module):
         """
         return self.supported_channels
 
+    def prune(self):
+        """Prunes the neural field components (i.e. grid, or blas) based on current state.
+        Neural fields may override this function to allow trainers to periodically invoke this logic.
+
+        For example:
+            A NeRF may use a hash grid with an octree acceleration structure. Since features and occupancy are tracked
+            by separate structures, calling this function may update the blas (occupancy structure)
+            with which cells should be marked as empty, according to decoded features -> density.
+        """
+        pass
+
     def forward(self, channels=None, **kwargs):
         """Queries the neural field with channels.
 
@@ -959,8 +1012,8 @@ class BaseNeuralField(nn.Module):
             kwargs: Any keyword argument passed in will be passed into the respective forward functions.
 
         Returns:
-            (list or dict or torch.Tensor): 
-                If channels is a string, will return a tensor of the request channel. 
+            (list or dict or torch.Tensor):
+                If channels is a string, will return a tensor of the request channel.
                 If channels is a list, will return a list of channels.
                 If channels is a set, will return a dictionary of channels.
                 If channels is None, will return a dictionary of all channels.
@@ -976,14 +1029,28 @@ class BaseNeuralField(nn.Module):
         unsupported_channels = requested_channels - self.get_supported_channels()
         if unsupported_channels:
             raise Exception(f'Channels {unsupported_channels} are not supported in {self.__class__.__name__}')
-        return_dict = {}
+        filtered_forward_functions = []
         for fn in self._forward_functions:
             output_channels = self._forward_functions[fn]
             supported_channels = output_channels & requested_channels
+            num_supported_channels = len(supported_channels)
+            if num_supported_channels != 0:
+                filtered_forward_functions.append((num_supported_channels, fn))
+        filtered_forward_functions = sorted(filtered_forward_functions, key=lambda x: x[0], reverse=True)
+        return_dict = {}
+        for _, fn in filtered_forward_functions:
+            torch.cuda.nvtx.range_push(f'{fn.__name__}')
+            output_channels = self._forward_functions[fn]
+            supported_channels = output_channels & requested_channels
+            requested_channels = requested_channels - supported_channels
             if len(supported_channels) != 0:
                 argspec = inspect.getfullargspec(fn)
-                required_args = argspec.args[:-len(argspec.defaults)][1:]
-                optional_args = argspec.args[-len(argspec.defaults):]
+                if argspec.defaults is None:
+                    required_len = 0
+                else:
+                    required_len = len(argspec.defaults)
+                required_args = argspec.args[:-required_len][1:]
+                optional_args = argspec.args[-required_len:]
                 input_args = {}
                 for _arg in required_args:
                     if _arg not in kwargs:
@@ -995,6 +1062,7 @@ class BaseNeuralField(nn.Module):
                 output = fn(**input_args)
                 for channel in supported_channels:
                     return_dict[channel] = output[channel]
+            torch.cuda.nvtx.range_pop()
         if isinstance(channels, str):
             if channels in return_dict:
                 return return_dict[channels]
@@ -1004,6 +1072,13 @@ class BaseNeuralField(nn.Module):
             return [return_dict[channel] for channel in channels]
         else:
             return return_dict
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        return dict()
 
 
 def get_activation_class(activation_type):
@@ -1025,6 +1100,14 @@ def get_activation_class(activation_type):
         return torch.relu
     elif activation_type == 'sin':
         return torch.sin
+    elif activation_type == 'celu':
+        return F.celu
+    elif activation_type == 'selu':
+        return F.selu
+    elif activation_type == 'leaky_relu':
+        return F.leaky_relu
+    elif activation_type == 'gelu':
+        return F.gelu
     else:
         assert False and 'activation type does not exist'
 
@@ -1076,6 +1159,50 @@ def get_positional_embedder(frequencies, input_dim=3, include_input=True):
     return encoder, encoder.out_dim
 
 
+class ImageNeuralField(BaseNeuralField):
+    """Model for encoding images.
+    """
+
+    def __init__(self, grid: 'BLASGrid', activation_type: 'str'='relu', layer_type: 'str'='none', hidden_dim: 'int'=128, num_layers: 'int'=1):
+        super().__init__()
+        self.grid = grid
+        self.activation_type = activation_type
+        self.layer_type = layer_type
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        if self.grid.multiscale_type == 'cat':
+            self.feature_dim = self.grid.feature_dim * len(self.grid.resolutions)
+        else:
+            self.feature_dim = self.grid.feature_dim
+        self.embedder, self.embed_dim = get_positional_embedder(frequencies=3, include_input=True)
+        self.embed_dim = 14
+        self.input_dim = self.feature_dim + self.embed_dim
+        self.decoder = BasicDecoder(self.input_dim, 3, get_activation_class(self.activation_type), True, layer=get_layer_class(self.layer_type), num_layers=self.num_layers, hidden_dim=self.hidden_dim, skip=[])
+
+    def register_forward_functions(self):
+        """Register the forward functions.
+        """
+        self._register_forward_function(self.rgb, ['rgb'])
+
+    def rgb(self, coords, lod=None):
+        """Compute color for some locations
+
+        Inputs:
+            coords            : packed float tensor of shape [batch, 3]
+            lod               : int of lod
+        Outputs:
+            float tensor of shape [batch, 3]
+        """
+        if lod is None:
+            lod = len(self.grid.resolutions) - 1
+        batch, _ = coords.shape
+        feats = self.grid.interpolate(coords, lod).reshape(-1, self.feature_dim)
+        embedded_pos = self.embedder(coords).view(batch, self.embed_dim)
+        fpos = torch.cat([feats, embedded_pos], dim=-1)
+        rgb = torch.sigmoid(self.decoder(fpos))
+        return rgb
+
+
 def sample_unif_sphere(n):
     """Sample uniformly random points on a sphere.
     
@@ -1101,33 +1228,84 @@ class NeuralRadianceField(BaseNeuralField):
     and Variable Bitrate Neural Fields (Takikawa et al. 2022).
     """
 
-    def __init__(self, grid: BLASGrid=None, pos_embedder: str='none', view_embedder: str='none', pos_multires: int=10, view_multires: int=4, position_input: bool=False, activation_type: str='relu', layer_type: str='none', hidden_dim: int=128, num_layers: int=1, prune_density_decay: float=None, prune_min_density: float=None):
+    def __init__(self, grid: 'BLASGrid', pos_embedder: 'str'='none', view_embedder: 'str'='none', pos_multires: 'int'=10, view_multires: 'int'=4, position_input: 'bool'=False, activation_type: 'str'='relu', layer_type: 'str'='linear', hidden_dim: 'int'=128, num_layers: 'int'=1, bias: 'bool'=False, prune_density_decay: 'Optional[float]'=0.01 * 512 / np.sqrt(3), prune_min_density: 'Optional[float]'=0.6):
+        """
+        Creates a new NeRF instance, which maps 3D input coordinates + view directions to RGB + density.
+
+        This neural field consists of:
+         * A feature grid (backed by an acceleration structure to boost raymarching speed)
+         * Color & density decoders
+         * Optional: positional embedders for input position coords & view directions, concatenated to grid features.
+
+         This neural field also supports:
+          * Aggregation of multi-resolution features (more than one LOD) via summation or concatenation
+          * Pruning scheme for HashGrids
+
+        Args:
+            grid: (BLASGrid): represents feature grids in Wisp. BLAS: "Bottom Level Acceleration Structure",
+                to signify this structure is the backbone that captures
+                a neural field's contents, in terms of both features and occupancy for speeding up queries.
+                Notable examples: OctreeGrid, HashGrid, TriplanarGrid, CodebookGrid.
+
+            pos_embedder (str): Type of positional embedder to use for input coordinates.
+                Options:
+                 - 'none': No positional input is fed into the density decoder.
+                 - 'identity': The sample coordinates are fed as is into the density decoder.
+                 - 'positional': The sample coordinates are embedded with the Positional Encoding from
+                    Mildenhall et al. 2020, before passing them into the density decoder.
+            view_embedder (str): Type of positional embedder to use for view directions.
+                Options:
+                 - 'none': No positional input is fed into the color decoder.
+                 - 'identity': The view directions are fed as is into the color decoder.
+                 - 'positional': The view directions are embedded with the Positional Encoding from
+                    Mildenhall et al. 2020, before passing them into the color decoder.
+            pos_multires (int): Number of frequencies used for 'positional' embedding of pos_embedder.
+                 Used only if pos_embedder is 'positional'.
+            view_multires (int): Number of frequencies used for 'positional' embedding of view_embedder.
+                 Used only if view_embedder is 'positional'.
+            position_input (bool): If True, the input coordinates will be passed into the decoder.
+                 For 'positional': the input coordinates will be concatenated to the embedded coords.
+                 For 'none' and 'identity': the embedder will behave like 'identity'.
+            activation_type (str): Type of activation function to use in BasicDecoder:
+                 'none', 'relu', 'sin', 'fullsort', 'minmax'.
+            layer_type (str): Type of MLP layer to use in BasicDecoder:
+                 'none' / 'linear', 'spectral_norm', 'frobenius_norm', 'l_1_norm', 'l_inf_norm'.
+            hidden_dim (int): Number of neurons in hidden layers of both decoders.
+            num_layers (int): Number of hidden layers in both decoders.
+            bias (bool): Whether to use bias in the decoders.
+            prune_density_decay (Optional[float]): Decay rate of density per "prune step",
+                 using the pruning scheme from Muller et al. 2022. Used only for grids which support pruning.
+            prune_min_density (Optional[float]): Minimal density allowed for "cells" before they get pruned during a "prune step".
+                 Used within the pruning scheme from Muller et al. 2022. Used only for grids which support pruning.
+        """
         super().__init__()
         self.grid = grid
-        self.position_input = position_input
-        if self.position_input:
-            self.pos_embedder, self.pos_embed_dim = self.init_embedder(pos_embedder, pos_multires)
-        else:
-            self.pos_embedder, self.pos_embed_dim = None, 0
-        self.view_embedder, self.view_embed_dim = self.init_embedder(view_embedder, view_multires)
+        self.pos_embedder_type = pos_embedder
+        self.view_embedder_type = view_embedder
+        self.pos_embedder, self.pos_embed_dim = self.init_embedder(pos_embedder, pos_multires, include_input=position_input)
+        self.view_embedder, self.view_embed_dim = self.init_embedder(view_embedder, view_multires, include_input=True)
         self.activation_type = activation_type
         self.layer_type = layer_type
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
+        self.bias = bias
         self.decoder_density, self.decoder_color = self.init_decoders(activation_type, layer_type, num_layers, hidden_dim)
         self.prune_density_decay = prune_density_decay
         self.prune_min_density = prune_min_density
         torch.cuda.empty_cache()
 
-    def init_embedder(self, embedder_type, frequencies=None):
+    def init_embedder(self, embedder_type, frequencies=None, include_input=False):
         """Creates positional embedding functions for the position and view direction.
         """
-        if embedder_type == 'none':
+        if embedder_type == 'none' and not include_input:
             embedder, embed_dim = None, 0
-        elif embedder_type == 'identity':
-            embedder, embed_dim = torch.nn.Identity(), 0
+        elif embedder_type == 'identity' or embedder_type == 'none' and include_input:
+            embedder, embed_dim = torch.nn.Identity(), 3
         elif embedder_type == 'positional':
-            embedder, embed_dim = get_positional_embedder(frequencies=frequencies)
+            embedder, embed_dim = get_positional_embedder(frequencies=frequencies, include_input=include_input)
+        elif embedder_type == 'tcnn':
+            embedder = tcnn.Encoding(n_input_dims=3, encoding_config={'otype': 'Composite', 'nested': [{'n_dims_to_encode': 3, 'otype': 'SphericalHarmonics', 'degree': 4}]})
+            embed_dim = 16
         else:
             raise NotImplementedError(f'Unsupported embedder type for NeuralRadianceField: {embedder_type}')
         return embedder, embed_dim
@@ -1135,22 +1313,25 @@ class NeuralRadianceField(BaseNeuralField):
     def init_decoders(self, activation_type, layer_type, num_layers, hidden_dim):
         """Initializes the decoder object.
         """
-        decoder_density = BasicDecoder(input_dim=self.density_net_input_dim, output_dim=16, activation=get_activation_class(activation_type), bias=True, layer=get_layer_class(layer_type), num_layers=num_layers, hidden_dim=hidden_dim, skip=[])
-        decoder_density.lout.bias.data[0] = 1.0
-        decoder_color = BasicDecoder(input_dim=self.color_net_input_dim, output_dim=3, activation=get_activation_class(activation_type), bias=True, layer=get_layer_class(layer_type), num_layers=num_layers + 1, hidden_dim=hidden_dim, skip=[])
+        decoder_density = BasicDecoder(input_dim=self.density_net_input_dim(), output_dim=16, activation=get_activation_class(activation_type), bias=self.bias, layer=get_layer_class(layer_type), num_layers=num_layers, hidden_dim=hidden_dim, skip=[])
+        if decoder_density.lout.bias is not None:
+            decoder_density.lout.bias.data[0] = 1.0
+        decoder_color = BasicDecoder(input_dim=self.color_net_input_dim(), output_dim=3, activation=get_activation_class(activation_type), bias=self.bias, layer=get_layer_class(layer_type), num_layers=num_layers + 1, hidden_dim=hidden_dim, skip=[])
         return decoder_density, decoder_color
 
     def prune(self):
         """Prunes the blas based on current state.
         """
+        if self.prune_density_decay is None or self.prune_min_density is None:
+            return
         if self.grid is not None:
-            if isinstance(self.grid, HashGrid):
+            if isinstance(self.grid, (HashGrid, TriplanarGrid)):
                 density_decay = self.prune_density_decay
                 min_density = self.prune_min_density
                 self.grid.occupancy = self.grid.occupancy
                 self.grid.occupancy = self.grid.occupancy * density_decay
                 points = self.grid.dense_points
-                res = 2.0 ** self.grid.blas_level
+                res = 2.0 ** self.grid.blas.max_level
                 samples = torch.rand(points.shape[0], 3, device=points.device)
                 samples = points.float() + samples
                 samples = samples / res
@@ -1163,13 +1344,15 @@ class NeuralRadianceField(BaseNeuralField):
                 _points = points[mask]
                 if _points.shape[0] == 0:
                     return
-                octree = spc_ops.unbatched_points_to_octree(_points, self.grid.blas_level, sorted=True)
-                self.grid.blas = OctreeAS(octree)
+                if hasattr(self.grid.blas.__class__, 'from_quantized_points'):
+                    self.grid.blas = self.grid.blas.__class__.from_quantized_points(_points, self.grid.blas.max_level)
+                else:
+                    raise Exception(f'The BLAS {self.grid.blas.__class__.__name__} does not support initialization from_quantized_points, which is required for pruning.')
             else:
-                raise NotImplementedError(f'Pruning not implemented for grid type {self.grid}')
+                raise NotImplementedError(f'Pruning not implemented for grid type {self.grid.__class__.__name__}')
 
     def register_forward_functions(self):
-        """Register the forward functions.
+        """Registers the forward function to call per requested channel.
         """
         self._register_forward_function(self.rgba, ['density', 'rgb'])
 
@@ -1189,21 +1372,22 @@ class NeuralRadianceField(BaseNeuralField):
         if lod_idx is None:
             lod_idx = len(self.grid.active_lods) - 1
         batch, _ = coords.shape
-        feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
+        feats = self.grid.interpolate(coords, lod_idx).reshape(batch, self.effective_feature_dim())
         if self.pos_embedder is not None:
-            embedded_pos = self.pos_embedder(coords).view(-1, self.pos_embed_dim)
+            embedded_pos = self.pos_embedder(coords).view(batch, self.pos_embed_dim)
             feats = torch.cat([feats, embedded_pos], dim=-1)
         density_feats = self.decoder_density(feats)
         if self.view_embedder is not None:
-            embedded_dir = self.view_embedder(-ray_d).view(-1, self.view_embed_dim)
+            if self.view_embedder_type == 'tcnn':
+                ray_d = (ray_d + 1.0) / 2.0
+            embedded_dir = self.view_embedder(ray_d).view(batch, self.view_embed_dim)
             fdir = torch.cat([density_feats, embedded_dir], dim=-1)
         else:
             fdir = density_feats
-        colors = torch.sigmoid(self.decoder_color(fdir))
+        colors = torch.sigmoid(self.decoder_color(fdir[..., 1:]))
         density = torch.relu(density_feats[..., 0:1])
         return dict(rgb=colors, density=density)
 
-    @property
     def effective_feature_dim(self):
         if self.grid.multiscale_type == 'cat':
             effective_feature_dim = self.grid.feature_dim * self.grid.num_lods
@@ -1211,13 +1395,23 @@ class NeuralRadianceField(BaseNeuralField):
             effective_feature_dim = self.grid.feature_dim
         return effective_feature_dim
 
-    @property
     def density_net_input_dim(self):
-        return self.effective_feature_dim + self.pos_embed_dim
+        return self.effective_feature_dim() + self.pos_embed_dim
 
-    @property
     def color_net_input_dim(self):
-        return 16 + self.view_embed_dim
+        return 15 + self.view_embed_dim
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        properties = {'Grid': self.grid, 'Pos. Embedding': self.pos_embedder, 'View Embedding': self.view_embedder, 'Decoder (density)': self.decoder_density, 'Decoder (color)': self.decoder_color}
+        if self.prune_density_decay is not None:
+            properties['Pruning Density Decay'] = self.prune_density_decay
+        if self.prune_min_density is not None:
+            properties['Pruning Min Density'] = self.prune_min_density
+        return properties
 
 
 class NeuralSDF(BaseNeuralField):
@@ -1226,7 +1420,42 @@ class NeuralSDF(BaseNeuralField):
     For example, the usage of Octree follows the idea from Takikawa et al. 2021 (Neural Geometric Level of Detail).
     """
 
-    def __init__(self, grid: BLASGrid=None, pos_embedder: str='none', pos_multires: int=10, position_input: bool=True, activation_type: str='relu', layer_type: str='none', hidden_dim: int=128, num_layers: int=1):
+    def __init__(self, grid: 'BLASGrid', pos_embedder: 'str'='positional', pos_multires: 'int'=4, position_input: 'bool'=True, activation_type: 'str'='relu', layer_type: 'str'='none', hidden_dim: 'int'=128, num_layers: 'int'=1):
+        """
+        Creates a new neural field of an implicit furface, which maps 3D input coordinates to SDF values.
+
+        This neural field consists of:
+         * A feature grid (backed by an acceleration structure to boost raymarching speed)
+         * SDF decoder
+         * Optional: positional embedders for input position coords, concatenated to grid features.
+
+         This neural field also supports:
+          * Aggregation of multi-resolution features (more than one LOD) via summation or concatenation
+
+        Args:
+            grid: (BLASGrid): represents feature grids in Wisp. BLAS: "Bottom Level Acceleration Structure",
+                to signify this structure is the backbone that captures
+                a neural field's contents, in terms of both features and occupancy for speeding up queries.
+                Notable examples: OctreeGrid, HashGrid, TriplanarGrid.
+
+            pos_embedder (str): Type of positional embedder to use for input coordinates.
+                Options:
+                 - 'none': No positional input is fed into the SDF decoder.
+                 - 'identity': The sample coordinates are fed as is into the SDF decoder.
+                 - 'positional': The sample coordinates are embedded with the Positional Encoding from
+                    Mildenhall et al. 2020, before passing them into the SDF decoder.
+            pos_multires (int): Number of frequencies used for 'positional' embedding of pos_embedder.
+                 Used only if pos_embedder is 'positional'.
+            position_input (bool): If True, the input coordinates will be passed into the decoder.
+                 For 'positional': the input coordinates will be concatenated to the embedded coords.
+                 For 'none' and 'identity': the embedder will behave like 'identity'.
+            activation_type (str): Type of activation function to use in BasicDecoder:
+                 'none', 'relu', 'sin', 'fullsort', 'minmax'.
+            layer_type (str): Type of MLP layer to use in BasicDecoder:
+                 'none' / 'linear', 'spectral_norm', 'frobenius_norm', 'l_1_norm', 'l_inf_norm'.
+            hidden_dim (int): Number of neurons in hidden layers of SDF decoder.
+            num_layers (int): Number of hidden layers in SDF decoder.
+        """
         super().__init__()
         self.grid = grid
         self.pos_multires = pos_multires
@@ -1242,10 +1471,10 @@ class NeuralSDF(BaseNeuralField):
     def init_embedder(self, embedder_type, frequencies=None, position_input=True):
         """Creates positional embedding functions for the position and view direction.
         """
-        if embedder_type == 'none':
+        if embedder_type == 'none' and not position_input:
             embedder, embed_dim = None, 0
-        elif embedder_type == 'identity':
-            embedder, embed_dim = torch.nn.Identity(), 0
+        elif embedder_type == 'identity' or embedder_type == 'none' and position_input:
+            embedder, embed_dim = torch.nn.Identity(), 3
         elif embedder_type == 'positional':
             embedder, embed_dim = get_positional_embedder(frequencies=frequencies, position_input=position_input)
         else:
@@ -1255,7 +1484,7 @@ class NeuralSDF(BaseNeuralField):
     def init_decoder(self, activation_type, layer_type, num_layers, hidden_dim):
         """Initializes the decoder object.
         """
-        decoder = BasicDecoder(input_dim=self.decoder_input_dim, output_dim=1, activation=get_activation_class(activation_type), bias=True, layer=get_layer_class(layer_type), num_layers=num_layers, hidden_dim=hidden_dim, skip=[])
+        decoder = BasicDecoder(input_dim=self.decoder_input_dim(), output_dim=1, activation=get_activation_class(activation_type), bias=True, layer=get_layer_class(layer_type), num_layers=num_layers, hidden_dim=hidden_dim, skip=[])
         return decoder
 
     def register_forward_functions(self):
@@ -1290,7 +1519,6 @@ class NeuralSDF(BaseNeuralField):
             sdf = sdf[:, 0]
         return dict(sdf=sdf)
 
-    @property
     def effective_feature_dim(self):
         if self.grid.multiscale_type == 'cat':
             effective_feature_dim = self.grid.feature_dim * self.grid.num_lods
@@ -1298,12 +1526,91 @@ class NeuralSDF(BaseNeuralField):
             effective_feature_dim = self.grid.feature_dim
         return effective_feature_dim
 
-    @property
     def decoder_input_dim(self):
-        input_dim = self.effective_feature_dim
+        input_dim = self.effective_feature_dim()
         if self.position_input:
             input_dim += self.pos_embed_dim
         return input_dim
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        properties = {'Grid': self.grid, 'Pos. Embedding': self.pos_embedder, 'Decoder (sdf)': self.decoder}
+        return properties
+
+
+class NeuralSDFTex(BaseNeuralField):
+    """Model for encoding neural signed distance functions + plenoptic color, e.g., implicit surfaces with albedo.
+    """
+
+    def __init__(self, grid: 'BLASGrid'=None, embedder_type: 'str'='none', pos_multires: 'int'=10, activation_type: 'str'='relu', layer_type: 'str'='none', hidden_dim: 'int'=128, num_layers: 'int'=1):
+        super().__init__()
+        self.grid = grid
+        self.embedder_type = embedder_type
+        self.pos_multires = pos_multires
+        self.pos_embedder, self.pos_embed_dim = self.init_embedder(embedder_type, pos_multires)
+        self.activation_type = activation_type
+        self.layer_type = layer_type
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        self.position_input = embedder_type != 'none'
+        self.decoder, self.effective_feature_dim, self.input_dim = self.init_decoder(activation_type, layer_type, num_layers, hidden_dim, self.position_input, self.pos_embed_dim)
+        torch.cuda.empty_cache()
+
+    def init_embedder(self, embedder_type, pos_multires):
+        """Creates positional embedding functions for the position and view direction.
+        """
+        is_active = embedder_type == 'positional'
+        pos_embedder, pos_embed_dim = get_positional_embedder(frequencies=pos_multires, active=is_active)
+        log.info(f'Position Embed Dim: {pos_embed_dim}')
+        return pos_embedder, pos_embed_dim
+
+    def init_decoder(self, activation_type, layer_type, num_layers, hidden_dim, position_input, pos_embed_dim):
+        """Initializes the decoder object.
+        """
+        if self.grid.multiscale_type == 'cat':
+            effective_feature_dim = self.grid.feature_dim * self.num_lods
+        else:
+            effective_feature_dim = self.grid.feature_dim
+        input_dim = effective_feature_dim
+        if position_input:
+            input_dim += pos_embed_dim
+        decoder = BasicDecoder(input_dim=input_dim, output_dim=4, activation=get_activation_class(activation_type), bias=True, layer=get_layer_class(layer_type), num_layers=num_layers, hidden_dim=hidden_dim, skip=[])
+        return decoder, effective_feature_dim, input_dim
+
+    def register_forward_functions(self):
+        """Register the forward functions.
+        """
+        self._register_forward_function(self.rgbsdf, ['rgb', 'sdf'])
+
+    def rgbsdf(self, coords, lod_idx=None):
+        """Computes the RGB + SDF for some samples.
+
+        Args:
+            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
+            lod_idx (int): index into active_lods. If None, will use the maximum LOD.
+        
+        Outputs:
+            {"rgb": torch.FloatTensor, "sdf": torch.FloatTensor}:
+            - RGB of shape [batch, num_samples, 3]
+            - SDF of shape [batch, num_samples, 1]
+        """
+        shape = coords.shape
+        if shape[0] == 0:
+            return dict(rgb=torch.zeros_like(coords)[..., :3], sdf=torch.zeros_like(coords)[..., 0:1])
+        if lod_idx is None:
+            lod_idx = self.num_lods - 1
+        if len(shape) == 2:
+            coords = coords[:, None]
+        feats = self.grid.interpolate(coords, lod_idx)
+        if self.position_input:
+            feats = torch.cat([self.pos_embedder(coords), feats], dim=-1)
+        rgbsdf = self.decoder(feats)
+        if len(shape) == 2:
+            rgbsdf = rgbsdf[:, 0]
+        return dict(rgb=torch.sigmoid(rgbsdf[..., :3]), sdf=rgbsdf[..., 3:4])
 
 
 class SPCField(BaseNeuralField):
@@ -1320,9 +1627,9 @@ class SPCField(BaseNeuralField):
     Feature samples per ray may be collected from each intersected "cell" of the structured point cloud.
     """
 
-    def __init__(self, spc_octree, features_dict=None, device='cuda', base_lod=None, num_lods=None, optimizable=False, **kwargs):
-        """
-        Creates a new Structured Point Cloud (SPC), represented as a Wisp Field.
+    def __init__(self, spc_octree: 'torch.ByteTensor', features_dict: 'Dict[str, torch.tensor]'=None, device: 'torch.device'='cuda'):
+        """Creates a new Structured Point Cloud (SPC), represented as a Wisp Field.
+
         In wisp, SPCs are considered neural fields, since their features may be optimized.
         See `examples/spc_browser` for an elaborate description of SPCs.
 
@@ -1336,34 +1643,23 @@ class SPCField(BaseNeuralField):
                 A dictionary holding the features information of the SPC.
                 Keys are assumed to be a subset of ('colors', 'normals').
                 Values are torch feature tensors containing information per point, of shape
-                :math:`(	ext{num_points}, 	ext{feat_dim})`.
+                :math:`(\\text{num_points}, \\text{feat_dim})`.
                 Where `num_points` is the number of occupied cells in the SPC.
                 See `kaolin.ops.conversions.pointcloud.unbatched_pointcloud_to_spc` for conversion of point
                 cloud information to such features.
             device (torch.device):
                 Torch device on which the features and topology of the SPC field will be stored.
-            base_lod (int):
-                Number of levels of detail without features the SPC will use.
-            num_lods (int):
-                Number of levels of detail with features the SPC will use.
-                The total number of levels the SPC will have is `base_lod + num_lods - 1`.
-            optimizable (bool):
-                A flag which determines if this SPCField supports optimization or not.
-                Toggling optimization off allows for quick creation of SPCField objects.
         """
+        super().__init__()
         self.spc_octree = spc_octree
         self.features_dict = features_dict if features_dict is not None else dict()
         self.spc_device = device
-        self.base_lod = base_lod
-        self.num_lods = num_lods
-        self.optimizable = optimizable
         self.grid = None
         self.colors = None
         self.normals = None
         self.init_grid(spc_octree)
-        super().__init__(grid=self.grid, **kwargs)
 
-    def init_grid(self, spc_octree):
+    def init_grid(self, spc_octree: 'torch.ByteTensor'):
         """ Uses the OctreeAS / OctreeGrid mechanism to quickly parse the SPC object into a Wisp Neural Field.
 
         Args:
@@ -1393,8 +1689,7 @@ class SPCField(BaseNeuralField):
                 colors = colors / np.power(2, level)
             self.colors = colors
         _, pyramid, _ = wisp_spc_ops.octree_to_spc(spc_octree)
-        max_level = pyramid.shape[-1] - 2
-        self.grid = OctreeGrid.from_spc(spc_octree=spc_octree, feature_dim=3, base_lod=max_level, num_lods=0)
+        self.grid = OctreeGrid(blas=OctreeAS(spc_octree), feature_dim=3, num_lods=0)
 
     @property
     def device(self):
@@ -1427,125 +1722,13 @@ class SPCField(BaseNeuralField):
         colors = self.colors[ridx_hit, :3].unsqueeze(1)
         return dict(rgb=colors)
 
-
-class BaseTracer(nn.Module, ABC):
-    """Base class for all tracers within Wisp.
-    Tracers drive the mapping process which takes an input "Neural Field", and outputs a RenderBuffer of pixels.
-    Different tracers may employ different algorithms for querying points, or tracing / marching rays through the
-    neural field.
-    A common paradigm for tracers to employ is as follows:
-    1. Take input in the form of rays or coordinates
-    2. Generate samples by tracing / marching rays, or querying coordinates over the neural field.
-       Possibly make use of the neural field spatial structure for high performance.
-    2. Invoke neural field's methods to decode sample features into actual channel values, such as color, density,
-       signed distance, and so forth.
-    3. Aggregate the sample values to decide on the final pixel value.
-       The exact output may depend on the requested channel type, blending mode or other parameters.
-    Wisp tracers are therefore flexible, and designed to be compatible with specific neural fields,
-    depending on the forward functions they support and internal grid structures they use.
-    Tracers are generally expected to be differentiable (e.g. they're part of the training loop),
-    though non-differentiable tracers are also allowed.
-    """
-
-    def __init__(self):
-        """Initializes the tracer class and sets the default arguments for trace.
-        This should be overrided and called if you want to pass custom defaults into the renderer.
-        If overridden, it should keep the arguments to `self.trace` in `self.` class variables.
-        Then, if these variables exist and no function arguments are passed into forward,
-        it will override them as the default.
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
         """
-        super().__init__()
-
-    @abstractmethod
-    def get_supported_channels(self):
-        """Returns the set of channel names this tracer may output.
-
-        Implement the function to return the supported channels, e.g.       
-        return set(["depth", "rgb"])
-
-        Returns:
-            (set): Set of channel strings.
-        """
-        pass
-
-    @abstractmethod
-    def get_required_nef_channels(self):
-        """Returns the channels required by neural fields to be compatible with this tracer.
-        
-        Implement the function to return the required channels, e.g.
-        return set(["rgb", "density"])
-
-        Returns:
-            (set): Set of channel strings.
-        """
-        pass
-
-    @abstractmethod
-    def trace(self, nef, channels, extra_channels, *args, **kwargs):
-        """Apply the forward map on the nef. 
-
-        This is the function to implement to implement a custom
-        This can take any number of arguments, but `nef` always needs to be the first argument and 
-        `channels` needs to be the second argument.
-        
-        Args:
-            nef (nn.Module): A neural field that uses a grid class.
-            channels (set): The set of requested channels. The trace method can return channels that 
-                            were not requested since those channels often had to be computed anyways.
-            extra_channels (set): Requested extra channels, which are not first class channels supported by
-                the tracer but will still be able to handle with some fallback options.
-
-        Returns:
-            (wisp.RenderBuffer): A dataclass which holds the output buffers from the tracer.
-        """
-        pass
-
-    def forward(self, nef, channels=None, **kwargs):
-        """Queries the tracer with channels.
-
-        Args:
-            channels (str or list of str or set of str): Requested channels.
-            kwargs: Any keyword argument passed in will be passed into the respective forward functions.
-
-        Returns:
-            (wisp.RenderBuffer): A dataclass which holds the output buffers from the tracer.
-        """
-        nef_channels = nef.get_supported_channels()
-        unsupported_inputs = self.get_required_nef_channels() - nef_channels
-        if unsupported_inputs:
-            raise Exception(f'The neural field class {type(nef)} does not output the required channels {unsupported_inputs}.')
-        if channels is None:
-            requested_channels = self.get_supported_channels()
-        elif isinstance(channels, str):
-            requested_channels = set([channels])
-        else:
-            requested_channels = set(channels)
-        extra_channels = requested_channels - self.get_supported_channels()
-        unsupported_outputs = extra_channels - nef_channels
-        if unsupported_outputs:
-            raise Exception(f'Channels {unsupported_outputs} are not supported in the tracer {type(self)} or neural field {type(nef)}.')
-        if extra_channels is None:
-            requested_extra_channels = set()
-        elif isinstance(extra_channels, str):
-            requested_extra_channels = set([extra_channels])
-        else:
-            requested_extra_channels = set(extra_channels)
-        argspec = inspect.getfullargspec(self.trace)
-        required_args = argspec.args[:-len(argspec.defaults)][4:]
-        optional_args = argspec.args[-len(argspec.defaults):]
-        input_args = {}
-        for _arg in required_args:
-            if _arg not in kwargs:
-                raise Exception(f'Argument {_arg} not found as input to in {type(self)}.trace()')
-            input_args[_arg] = kwargs[_arg]
-        for _arg in optional_args:
-            if _arg in kwargs:
-                input_args[_arg] = kwargs[_arg]
-            else:
-                default_arg = getattr(self, _arg, None)
-                if default_arg is not None:
-                    input_args[_arg] = default_arg
-        return self.trace(nef, requested_channels, requested_extra_channels, **input_args)
+        properties = {'Grid': self.grid}
+        return properties
 
 
 class Pipeline(nn.Module):
@@ -1567,7 +1750,7 @@ class Pipeline(nn.Module):
     The 'Pipeline' classes are responsible for holding and orchestrating these components.
     """
 
-    def __init__(self, nef: BaseNeuralField, tracer: BaseTracer=None):
+    def __init__(self, nef: 'BaseNeuralField', tracer: 'BaseTracer'=None):
         """Initialize the Pipeline.
 
         Args:
@@ -1575,8 +1758,8 @@ class Pipeline(nn.Module):
             tracer (nn.Module or None): Forward map module.
         """
         super().__init__()
-        self.nef: BaseNeuralField = nef
-        self.tracer: BaseTracer = tracer
+        self.nef: 'BaseNeuralField' = nef
+        self.tracer: 'BaseTracer' = tracer
 
     def forward(self, *args, **kwargs):
         """The forward function will use the tracer (the forward model) if one is available. 
@@ -1589,13 +1772,38 @@ class Pipeline(nn.Module):
             return self.nef(*args, **kwargs)
 
 
-BlendFunction = Callable[[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]
+class RasterizationPipeline(nn.Module):
+    """ Wrapper class for implementing neural / non-neural Rasterization pipelines.
+    RasterizationPipeline is a thin wrapper around existing rasterizers, which simply hints wisp
+    the wrapped object is a rasterizer which relies on camera input, rather than rays.
+    """
+
+    def __init__(self, rasterizer):
+        """Initialize the Pipeline.
+
+        Args:
+            rasterizer: A general model of a rasterizer.
+                No assumptions are made on the rasterizer object. The only requirement is
+                for this object to be callable.
+                Rasterizers are encouraged to return a Renderbuffer object, but are not required to do so.
+        """
+        super().__init__()
+        self.rasterizer = rasterizer
+
+    def forward(self, *args, **kwargs):
+        """The forward function will invoke the underlying rasterizer (the forward model).
+        Rasterizer is any general callable interface.
+        """
+        return self.rasterizer(*args, **kwargs)
 
 
-NormalizeFunction = Callable[[torch.Tensor, Any, Any], torch.Tensor]
+PI = torch.pi if hasattr(torch, 'pi') else np.pi
 
 
-def normalize(V: torch.Tensor, F: torch.Tensor, mode: str):
+__RB_VARIANTS__ = dict()
+
+
+def normalize(V: 'torch.Tensor', F: 'torch.Tensor', mode: 'str'):
     """Normalizes a mesh.
 
     Args:
@@ -1641,10 +1849,7 @@ def normalize(V: torch.Tensor, F: torch.Tensor, mode: str):
         return V, F
 
 
-__RB_VARIANTS__ = dict()
-
-
-def blend_alpha_composite_over(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
+def blend_alpha_composite_over(c1: 'torch.Tensor', c2: 'torch.Tensor', alpha1: 'torch.Tensor', alpha2: 'torch.Tensor'):
     """ An alpha compositing op where a front pixel is alpha blended with the background pixel
     (in a usual painter's algorithm manner).
     Useful for blending channels such as RGB.
@@ -1664,6 +1869,192 @@ def blend_alpha_composite_over(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch
     return c_out
 
 
+soft_blue = 0.721, 0.9, 1.0
+
+
+class BaseTracer(WispModule, ABC):
+    """Base class for all tracers within Wisp.
+    Tracers drive the mapping process which takes an input "Neural Field", and outputs a RenderBuffer of pixels.
+    Different tracers may employ different algorithms for querying points, tracing and marching rays through the
+    neural field.
+    A common paradigm for tracers to employ is as follows:
+    1. Take input in the form of rays
+    2. Generate samples by tracing / marching rays, or querying coordinates over the neural field.
+       Possibly make use of the neural field spatial structure for high performance.
+    3. Invoke neural field's methods to decode sample features into actual channel values, such as color, density,
+       signed distance, and so forth.
+    4. Aggregate the sample values to decide on the final pixel value.
+       The exact output may depend on the requested channel type, blending mode or other parameters.
+    Wisp tracers are therefore flexible, and designed to be compatible with specific neural fields,
+    depending on the forward functions they support and internal grid structures they use.
+    Tracers are generally expected to be differentiable (e.g. they're part of the training loop),
+    though non-differentiable tracers are also allowed.
+    """
+
+    def __init__(self, bg_color: 'Tuple[float, float, float]'=(0.0, 0.0, 0.0)):
+        """Initializes the tracer class and sets the default arguments for trace.
+        This should be overrided and called if you want to pass custom defaults into the renderer.
+        If overridden, it should keep the arguments to `self.trace` in `self.` class variables.
+        Then, if these variables exist and no function arguments are passed into forward,
+        it will override them as the default.
+
+        Args:
+            bg_color (Tuple[float, float, float]): The clear background color used by default for the color channel.
+        """
+        super().__init__()
+        self.bg_color = bg_color
+
+    @abstractmethod
+    def get_supported_channels(self):
+        """Returns the set of channel names this tracer may output.
+
+        Implement the function to return the supported channels, e.g.       
+        return set(["depth", "rgb"])
+
+        Returns:
+            (set): Set of channel strings.
+        """
+        pass
+
+    @abstractmethod
+    def get_required_nef_channels(self):
+        """Returns the channels required by neural fields to be compatible with this tracer.
+        
+        Implement the function to return the required channels, e.g.
+        return set(["rgb", "density"])
+
+        Returns:
+            (set): Set of channel strings.
+        """
+        pass
+
+    @abstractmethod
+    def trace(self, nef, rays, channels, extra_channels, *args, **kwargs):
+        """Apply the forward map on the nef. 
+
+        Tracers are required to implement this function, which commonly follows these paradigm:
+        1. Take input in the form of rays
+        2. Generate samples by tracing / marching rays, or querying coordinates over the neural field.
+           Possibly make use of the neural field spatial structure for high performance.
+        3. Invoke neural field's methods to decode sample features into actual channel values, such as color, density,
+           signed distance, and so forth.
+        4. Aggregate the sample values to decide on the final pixel value.
+           The exact output may depend on the requested channel type, blending mode or other parameters.
+        
+        Args:
+            nef (nn.Module): A neural field that uses a grid class.
+            rays (Rays): Pack of rays to trace through the neural field.
+            channels (set): The set of requested channels. The trace method can return channels that 
+                            were not requested since those channels often had to be computed anyways.
+            extra_channels (set): Requested extra channels, which are not first class channels supported by
+                the tracer but will still be able to handle with some fallback options.
+
+        Returns:
+            (wisp.RenderBuffer): A dataclass which holds the output buffers from the tracer.
+        """
+        pass
+
+    def forward(self, nef, rays: 'Rays', channels=None, **kwargs):
+        """Queries the tracer with channels.
+
+        Args:
+            nef (BaseNeuralField): Neural field to be traced. The nef will be queried for decoded sample values.
+            rays (Rays): Pack of rays to trace through the neural field.
+            channels (str or list of str or set of str): Requested channel names.
+            This list should include at least all channels in tracer.get_supported_channels(),
+            and may include extra channels in addition.
+            kwargs: Any keyword argument passed in will be passed into the respective forward functions.
+
+        Returns:
+            (wisp.RenderBuffer): A dataclass which holds the output buffers from the tracer.
+        """
+        nef_channels = nef.get_supported_channels()
+        unsupported_inputs = self.get_required_nef_channels() - nef_channels
+        if unsupported_inputs:
+            raise Exception(f'The neural field class {type(nef)} does not output the required channels {unsupported_inputs}.')
+        if channels is None:
+            requested_channels = self.get_supported_channels()
+        elif isinstance(channels, str):
+            requested_channels = set([channels])
+        else:
+            requested_channels = set(channels)
+        extra_channels = requested_channels - self.get_supported_channels()
+        unsupported_outputs = extra_channels - nef_channels
+        if unsupported_outputs:
+            raise Exception(f'Channels {unsupported_outputs} are not supported in the tracer {type(self)} or neural field {type(nef)}.')
+        if extra_channels is None:
+            requested_extra_channels = set()
+        elif isinstance(extra_channels, str):
+            requested_extra_channels = set([extra_channels])
+        else:
+            requested_extra_channels = set(extra_channels)
+        required_args = dict(inspect.signature(BaseTracer.trace).parameters)
+        required_args.pop('self', None)
+        required_args.pop('args', None)
+        required_args.pop('kwargs', None)
+        optional_args = dict(inspect.signature(self.trace).parameters)
+        optional_args.pop('self', None)
+        optional_args.pop('args', None)
+        optional_args.pop('kwargs', None)
+        for _arg in required_args:
+            optional_args.pop(_arg)
+        input_args = {}
+        for _arg in optional_args:
+            if _arg in kwargs:
+                input_args[_arg] = kwargs[_arg]
+            else:
+                default_arg = getattr(self, _arg, None)
+                if default_arg is not None:
+                    input_args[_arg] = default_arg
+        with torch.cuda.nvtx.range('Tracer.trace'):
+            rb = self.trace(nef, rays, requested_channels, requested_extra_channels, **input_args)
+        return rb
+
+    def public_properties(self) ->Dict[str, Any]:
+        """ Wisp modules expose their public properties in a dictionary.
+        The purpose of this method is to give an easy table of outwards facing attributes,
+        for the purpose of logging, gui apps, etc.
+        """
+        return dict()
+
+
+gold = 1.0, 0.804, 0.0
+
+
+lime_green = 0.519, 0.819, 0.0
+
+
+purple = 0.667, 0.0, 0.429
+
+
+soft_red = 1.0, 0.0, 0.085
+
+
+_REGISTERED_RENDERABLE_NEURAL_FIELDS = defaultdict(dict)
+
+
+def register_neural_field_type(neural_field_type: 'Type[BaseNeuralField]', tracer_type: 'Type[BaseTracer]', renderer_type: 'Type[BottomLevelRenderer]'):
+    """ Register new types of neural fields with their associated bottom level renderers using this function.
+        This allows the interactive renderer to display this neural field type on the canvas.
+    """
+    field_name = neural_field_type.__name__
+    tracer_name = tracer_type.__name__
+    _REGISTERED_RENDERABLE_NEURAL_FIELDS[field_name][tracer_name] = renderer_type
+
+
+def field_renderer(field_type: 'Type[BaseNeuralField]', tracer_type: 'Type[BaseTracer]'):
+    """ A decorator that registers a neural field type with a renderer.
+        By registering the renderer type, the interactive renderer knows what type of renderer to create
+        when dealing with this type of field.
+        Essentially, this allows displaying custom types of objects on the canvas.
+    """
+
+    def _register_renderer_fn(renderer_class: 'Type[BottomLevelRenderer]'):
+        register_neural_field_type(field_type, tracer_type, renderer_class)
+        return renderer_class
+    return _register_renderer_fn
+
+
 class PackedRFTracer(BaseTracer):
     """Tracer class for sparse (packed) radiance fields.
     - Packed: each ray yields a custom number of samples, which are therefore packed in a flat form within a tensor,
@@ -1675,7 +2066,7 @@ class PackedRFTracer(BaseTracer):
     i.e. a grid that inherits the BLASGrid class for both a feature structure and an occupancy acceleration structure).
     """
 
-    def __init__(self, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white', **kwargs):
+    def __init__(self, raymarch_type: 'str'='ray', num_steps: 'int'=1024, step_size: 'float'=1.0, bg_color: 'Tuple[float, float, float]'=(1.0, 1.0, 1.0)):
         """Set the default trace() arguments.
 
         Args:
@@ -1693,13 +2084,24 @@ class PackedRFTracer(BaseTracer):
                 status of the acceleration structure.
             step_size (float): The step size between samples. Currently unused, but will be used for a new
                                sampling method in the future.
-            bg_color (str): The background color to use.
+            bg_color (Tuple[float, float, float]): The background color to use.
         """
-        super().__init__()
+        super().__init__(bg_color=bg_color)
         self.raymarch_type = raymarch_type
         self.num_steps = num_steps
         self.step_size = step_size
-        self.bg_color = bg_color
+        self.bg_color = torch.tensor(bg_color, dtype=torch.float32)
+        self.prev_num_samples = None
+
+    def get_prev_num_samples(self):
+        """Returns the number of ray samples that were executed.
+        
+        Returns None if the tracer has never ran.
+
+        Returns:
+            (int): The number of ray samples.
+        """
+        return self.prev_num_samples
 
     def get_supported_channels(self):
         """Returns the set of channel names this tracer may output.
@@ -1717,7 +2119,7 @@ class PackedRFTracer(BaseTracer):
         """
         return {'rgb', 'density'}
 
-    def trace(self, nef, channels, extra_channels, rays, lod_idx=None, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white'):
+    def trace(self, nef, rays, channels, extra_channels, lod_idx=None, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white'):
         """Trace the rays against the neural field.
 
         Args:
@@ -1734,124 +2136,56 @@ class PackedRFTracer(BaseTracer):
             num_steps (int): The number of steps to use for the sampling.
             step_size (float): The step size between samples. Currently unused, but will be used for a new
                                sampling method in the future.
-            bg_color (str): The background color to use. TODO(ttakikawa): Might be able to simplify / remove
+            bg_color (Tuple[float, float, float]): The background color to use.
 
         Returns:
             (wisp.RenderBuffer): A dataclass which holds the output buffers from the render.
         """
         assert nef.grid is not None and 'this tracer requires a grid'
         N = rays.origins.shape[0]
+        if lod_idx is None:
+            lod_idx = nef.grid.num_lods - 1
+        raymarch_results = nef.grid.raymarch(rays, level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
+        ridx = raymarch_results.ridx
+        samples = raymarch_results.samples
+        deltas = raymarch_results.deltas
+        depths = raymarch_results.depth_samples
+        self.prev_num_samples = samples.shape[0]
+        pack_info = raymarch_results.pack_info
+        boundary = raymarch_results.boundary
+        hit_ray_d = rays.dirs.index_select(0, ridx)
+        num_samples = samples.shape[0]
+        color, density = nef(coords=samples, ray_d=hit_ray_d, lod_idx=lod_idx, channels=['rgb', 'density'])
+        density = density.reshape(num_samples, 1)
+        extra_outputs = {}
+        self.bg_color = self.bg_color
         if 'depth' in channels:
             depth = torch.zeros(N, 1, device=rays.origins.device)
         else:
             depth = None
-        if bg_color == 'white':
-            rgb = torch.ones(N, 3, device=rays.origins.device)
-        else:
-            rgb = torch.zeros(N, 3, device=rays.origins.device)
+        rgb = torch.zeros(N, 3, device=rays.origins.device) + self.bg_color
         hit = torch.zeros(N, device=rays.origins.device, dtype=torch.bool)
         out_alpha = torch.zeros(N, 1, device=rays.origins.device)
-        if lod_idx is None:
-            lod_idx = nef.grid.num_lods - 1
-        raymarch_results = nef.grid.raymarch(rays, level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
-        ridx, samples, depths, deltas, boundary = raymarch_results
-        ridx_hit = ridx[spc_render.mark_pack_boundaries(ridx.int())]
-        hit_ray_d = rays.dirs.index_select(0, ridx)
-        color, density = nef(coords=samples, ray_d=hit_ray_d, lod_idx=lod_idx, channels=['rgb', 'density'])
-        density = density.reshape(-1, 1)
-        del ridx
+        ridx_hit = ridx[boundary]
         tau = density * deltas
         del density, deltas
         ray_colors, transmittance = spc_render.exponential_integration(color, tau, boundary, exclusive=True)
         if 'depth' in channels:
-            ray_depth = spc_render.sum_reduce(depths.reshape(-1, 1) * transmittance, boundary)
+            ray_depth = spc_render.sum_reduce(depths.reshape(num_samples, 1) * transmittance, boundary)
             depth[ridx_hit, :] = ray_depth
         alpha = spc_render.sum_reduce(transmittance, boundary)
         out_alpha[ridx_hit] = alpha
         hit[ridx_hit] = alpha[..., 0] > 0.0
-        if bg_color == 'white':
-            color = 1.0 - alpha + ray_colors
-        else:
-            color = alpha * ray_colors
-        rgb[ridx_hit] = color
-        extra_outputs = {}
+        rgb[ridx_hit] = self.bg_color * (1.0 - alpha) + ray_colors
         for channel in extra_channels:
             feats = nef(coords=samples, ray_d=hit_ray_d, lod_idx=lod_idx, channels=channel)
             num_channels = feats.shape[-1]
-            ray_feats, transmittance = spc_render.exponential_integration(feats.view(-1, num_channels), tau, boundary, exclusive=True)
+            ray_feats, transmittance = spc_render.exponential_integration(feats.view(num_samples, num_channels), tau, boundary, exclusive=True)
             composited_feats = alpha * ray_feats
             out_feats = torch.zeros(N, num_channels, device=feats.device)
             out_feats[ridx_hit] = composited_feats
             extra_outputs[channel] = out_feats
         return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha, **extra_outputs)
-
-
-class bcolors:
-    HEADER = '\x1b[95m'
-    OKBLUE = '\x1b[94m'
-    OKGREEN = '\x1b[92m'
-    WARNING = '\x1b[93m'
-    FAIL = '\x1b[91m'
-    ENDC = '\x1b[0m'
-    BOLD = '\x1b[1m'
-    UNDERLINE = '\x1b[4m'
-
-
-def colorize_time(elapsed):
-    """Returns colors based on the significance of the time elapsed.
-    """
-    if elapsed > 0.001:
-        return bcolors.FAIL + '{:.3e}'.format(elapsed) + bcolors.ENDC
-    elif elapsed > 0.0001:
-        return bcolors.WARNING + '{:.3e}'.format(elapsed) + bcolors.ENDC
-    elif elapsed > 1e-05:
-        return bcolors.OKBLUE + '{:.3e}'.format(elapsed) + bcolors.ENDC
-    else:
-        return '{:.3e}'.format(elapsed)
-
-
-class PerfTimer:
-    """Super simple performance timer.
-    """
-
-    def __init__(self, activate=False, show_memory=False, print_mode=True):
-        self.prev_time = time.process_time()
-        self.start = torch.cuda.Event(enable_timing=True)
-        self.end = torch.cuda.Event(enable_timing=True)
-        self.prev_time_gpu = self.start.record()
-        self.counter = 0
-        self.activate = activate
-        self.show_memory = show_memory
-        self.print_mode = print_mode
-
-    def reset(self):
-        self.counter = 0
-        self.prev_time = time.process_time()
-        self.start = torch.cuda.Event(enable_timing=True)
-        self.end = torch.cuda.Event(enable_timing=True)
-        self.prev_time_gpu = self.start.record()
-
-    def check(self, name=None):
-        if self.activate:
-            cpu_time = time.process_time() - self.prev_time
-            self.end.record()
-            torch.cuda.synchronize()
-            gpu_time = self.start.elapsed_time(self.end) / 1000.0
-            if self.print_mode:
-                cpu_time_disp = colorize_time(cpu_time)
-                gpu_time_disp = colorize_time(gpu_time)
-                if name:
-                    None
-                    None
-                else:
-                    None
-                    None
-                if self.show_memory:
-                    None
-            self.prev_time = time.process_time()
-            self.prev_time_gpu = self.start.record()
-            self.counter += 1
-            return cpu_time, gpu_time
 
 
 def find_depth_bound(query, nug_depth, info, curr_idxes=None):
@@ -1892,8 +2226,12 @@ class PackedSDFTracer(BaseTracer):
     i.e. a grid that inherits the BLASGrid class for both a feature structure and an occupancy acceleration structure).
     """
 
-    def __init__(self, num_steps=64, step_size=1.0, min_dis=0.0001, **kwargs):
-        """Set the default trace() arguments. """
+    def __init__(self, num_steps=1024, step_size=0.8, min_dis=0.0003):
+        """Set the default trace() arguments.
+        Args:
+            num_steps (int): Max number of steps used by Sphere Trace if query did not converge
+            step_size (float): Scale factor for step size used to advance the Sphere Tracer.
+        """
         super().__init__()
         self.num_steps = num_steps
         self.step_size = step_size
@@ -1915,17 +2253,17 @@ class PackedSDFTracer(BaseTracer):
         """
         return {'sdf'}
 
-    def trace(self, nef, channels, extra_channels, rays, lod_idx=None, num_steps=64, step_size=1.0, min_dis=0.0001):
+    def trace(self, nef, rays, channels, extra_channels, lod_idx=None, num_steps=64, step_size=1.0, min_dis=0.0001):
         """Trace the rays against the neural field.
 
         Args:
             nef (nn.Module): A neural field that uses a grid class.
-            channels (set): The set of requested channels. The trace method can return channels that 
+            rays (wisp.core.Rays): Ray origins and directions of shape [N, 3]
+            channels (set): The set of requested channels. The trace method can return channels that
                             were not requested since those channels often had to be computed anyways.
             extra_channels (set): If there are any extra channels requested, this tracer will by default
                                   query those extra channels at surface intersection points.
-            rays (wisp.core.Rays): Ray origins and directions of shape [N, 3]
-            lod_idx (int): LOD index to render at. 
+            lod_idx (int): LOD index to render at.
             num_steps (int): The number of steps to use for sphere tracing.
             step_size (float): The multiplier for the sphere tracing steps. 
                                Use a value <1.0 for conservative tracing.
@@ -1937,9 +2275,11 @@ class PackedSDFTracer(BaseTracer):
         assert nef.grid is not None and 'this tracer requires a grid'
         if lod_idx is None:
             lod_idx = nef.grid.num_lods - 1
-        timer = PerfTimer(activate=False)
         invres = 1.0
-        ridx, pidx, depth = nef.grid.raytrace(rays, nef.grid.active_lods[lod_idx], with_exit=True)
+        raytrace_results = nef.grid.raytrace(rays, nef.grid.active_lods[lod_idx], with_exit=True)
+        ridx = raytrace_results.ridx
+        pidx = raytrace_results.pidx
+        depth = raytrace_results.depth
         depth[..., 0:1] += 1e-05
         first_hit = spc_render.mark_pack_boundaries(ridx)
         curr_idxes = torch.nonzero(first_hit)[..., 0].int()
@@ -1952,12 +2292,11 @@ class PackedSDFTracer(BaseTracer):
         x = torch.addcmul(nug_o, nug_d, t)
         dist = torch.zeros_like(t)
         curr_pidx = pidx[first_hit].long()
-        timer.check('initial')
         with torch.no_grad():
-            dist[mask] = nef(coords=x[mask], lod_idx=lod_idx, pidx=curr_pidx[mask], channels='sdf') * invres * step_size
+            sdf = nef(coords=x[mask], lod_idx=lod_idx, pidx=curr_pidx[mask], channels='sdf') * invres * step_size
+            dist[mask] = sdf
             dist[~mask] = 20
             dist_prev = dist.clone()
-            timer.check('first')
             for i in range(num_steps):
                 t += dist
                 x = torch.where(mask.view(mask.shape[0], 1), torch.addcmul(nug_o, nug_d, t), x)
@@ -1977,8 +2316,8 @@ class PackedSDFTracer(BaseTracer):
                 curr_pidx = torch.where(mask, pidx[curr_idxes.long()].long(), curr_pidx)
                 if not mask.any():
                     break
-                dist[mask] = nef(coords=x[mask], lod_idx=lod_idx, pidx=curr_pidx[mask], channels='sdf') * invres * step_size
-            timer.check('step done')
+                sdf = nef(coords=x[mask], lod_idx=lod_idx, pidx=curr_pidx[mask], channels='sdf') * invres * step_size
+                dist[mask] = sdf
         x_buffer = torch.zeros_like(rays.origins)
         depth_buffer = torch.zeros_like(rays.origins[..., 0:1])
         hit_buffer = torch.zeros_like(rays.origins[..., 0]).bool()
@@ -1998,7 +2337,6 @@ class PackedSDFTracer(BaseTracer):
             normal_buffer[hit_buffer] = F.normalize(grad, p=2, dim=-1, eps=1e-05)
             rgb_buffer[..., :3] = (normal_buffer + 1.0) / 2.0
         alpha_buffer[hit_buffer] = 1.0
-        timer.check('populate buffers')
         return RenderBuffer(xyz=x_buffer, depth=depth_buffer, hit=hit_buffer, normal=normal_buffer, rgb=rgb_buffer, alpha=alpha_buffer, **extra_outputs)
 
 
@@ -2012,9 +2350,9 @@ class PackedSPCTracer(BaseTracer):
     See also: https://kaolin.readthedocs.io/en/latest/notes/spc_summary.html#spc
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         """Set the default trace() arguments. """
-        super().__init__()
+        super().__init__(bg_color=(0.0, 0.0, 0.0))
 
     def get_supported_channels(self):
         """Returns the set of channel names this tracer may output.
@@ -2032,31 +2370,31 @@ class PackedSPCTracer(BaseTracer):
         """
         return {'rgb'}
 
-    def trace(self, nef, channels, extra_channels, rays, lod_idx=None):
+    def trace(self, nef, rays, channels, extra_channels, lod_idx=None):
         """Trace the rays against the neural field.
 
         Args:
             nef (nn.Module): A neural field that uses a grid class.
+            rays (wisp.core.Rays): Ray origins and directions of shape [N, 3]
             channels (set): The set of requested channels. The trace method can return channels that
                             were not requested since those channels often had to be computed anyways.
-            rays (wisp.core.Rays): Ray origins and directions of shape [N, 3]
             lod_idx (int): LOD index to render at.
 
         Returns:
             (wisp.RenderBuffer): A dataclass which holds the output buffers from the render.
         """
-        timer = PerfTimer(activate=False, show_memory=False)
         N = rays.origins.shape[0]
         if lod_idx is None:
             lod_idx = nef.grid.blas.max_level
-        ridx, pidx, depths = nef.grid.blas.raytrace(rays, lod_idx, with_exit=False)
-        timer.check('Raytrace')
+        raytrace_results = nef.grid.blas.raytrace(rays, lod_idx, with_exit=False)
+        ridx = raytrace_results.ridx
+        pidx = raytrace_results.pidx
+        depths = raytrace_results.depth
         first_hits_mask = spc_render.mark_pack_boundaries(ridx)
         first_hits_point = pidx[first_hits_mask]
         first_hits_ray = ridx[first_hits_mask]
         first_hits_depth = depths[first_hits_mask]
         color = nef(ridx_hit=first_hits_point.long(), channels='rgb')
-        timer.check('RGBA')
         del ridx, pidx, rays
         ray_colors = color.squeeze(1)
         ray_depth = first_hits_depth
@@ -2070,91 +2408,7 @@ class PackedSPCTracer(BaseTracer):
         hit[first_hits_ray.long()] = alpha[..., 0] > 0.0
         rgb[first_hits_ray.long(), :3] = color
         out_alpha[first_hits_ray.long()] = alpha
-        timer.check('Composit')
         return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha)
-
-
-class SDFTracer(BaseTracer):
-
-    def __init__(self, num_steps=64, step_size=1.0, min_dis=0.0001, raymarch_type='voxel', **kwargs):
-        """Set the default trace() arguments. """
-        super().__init__(**kwargs)
-        self.raymarch_type = raymarch_type
-        self.num_steps = num_steps
-        self.step_size = step_size
-        self.min_dis = min_dis
-
-    def get_supported_channels(self):
-        """Returns the set of channel names this tracer may output.
-        
-        Returns:
-            (set): Set of channel strings.
-        """
-        return {'depth', 'normal', 'xyz', 'hit'}
-
-    def get_required_nef_channels(self):
-        """Returns the channels required by neural fields to be compatible with this tracer.
-        
-        Returns:
-            (set): Set of channel strings.
-        """
-        return {'sdf'}
-
-    def trace(self, nef, channels, extra_channels, rays, num_steps=64, step_size=1.0, min_dis=0.0001):
-        """Trace the rays against the neural field.
-
-        Args:
-            nef (nn.Module): A neural field that uses a grid class.
-            channels (set): The set of requested channels. The trace method can return channels that 
-                            were not requested since those channels often had to be computed anyways.
-            extra_channels (set): If there are any extra channels requested, this tracer will by default
-                                  query those extra channels at surface intersection points.
-            rays (wisp.core.Rays): Ray origins and directions of shape [N, 3]
-            num_steps (int): The number of steps to use for sphere tracing.
-            step_size (float): The multiplier for the sphere tracing steps. 
-                               Use a value <1.0 for conservative tracing.
-            min_dis (float): The termination distance for sphere tracing.
-
-        Returns:
-            (wisp.RenderBuffer): A dataclass which holds the output buffers from the render.
-        """
-        timer = PerfTimer(activate=False)
-        t = torch.zeros(rays.origins.shape[0], 1, device=rays.origins.device)
-        x = torch.addcmul(rays.origins, rays.dirs, t)
-        cond = torch.ones_like(t).bool()[:, 0]
-        normal = torch.zeros_like(x)
-        with torch.no_grad():
-            d = nef(coords=x, channels='sdf')
-            dprev = d.clone()
-            hit = torch.zeros_like(d).byte()
-            for i in range(num_steps):
-                timer.check('start')
-                hit = (torch.abs(t) < rays.dist_max)[:, 0]
-                cond = cond & (torch.abs(d) > min_dis)[:, 0]
-                cond = cond & (torch.abs((d + dprev) / 2.0) > min_dis * 3)[:, 0]
-                cond = cond & hit
-                if not cond.any():
-                    break
-                x = torch.where(cond.view(cond.shape[0], 1), torch.addcmul(rays.origins, rays.dirs, t), x)
-                dprev = torch.where(cond.unsqueeze(1), d, dprev)
-                d[cond] = nef(coords=x[cond], channels='sdf') * step_size
-                t = torch.where(cond.view(cond.shape[0], 1), t + d, t)
-                timer.check('end')
-        hit = hit & ~(torch.abs(x) > 1.0).any(dim=-1)
-        extra_outputs = {}
-        for channel in extra_channels:
-            feats = nef(coords=x[hit], lod_idx=lod_idx, channels=channel)
-            extra_buffer = torch.zeros(*x.shape[:-1], feats.shape[-1], device=feats.device)
-            extra_buffer[hit] = feats
-            extra_outputs[channel] = extra_buffer
-        if 'normal' in channels:
-            if hit.any():
-                grad = finitediff_gradient(x[hit], nef.get_forward_function('sdf'))
-                _normal = F.normalize(grad, p=2, dim=-1, eps=1e-05)
-                normal[hit] = _normal
-        else:
-            normal = None
-        return RenderBuffer(xyz=x, depth=t, hit=hit, normal=normal, **extra_outputs)
 
 
 import torch
@@ -2164,10 +2418,6 @@ from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _
 
 TESTCASES = [
     # (nn.Module, init_args, forward_args, jit_compiles)
-    (BaseNeuralField,
-     lambda: ([], {}),
-     lambda: ([], {}),
-     False),
     (BasicDecoder,
      lambda: ([], {'input_dim': 4, 'output_dim': 4, 'activation': _mock_layer(), 'bias': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -2204,6 +2454,10 @@ TESTCASES = [
      lambda: ([], {'num_freq': 4, 'max_freq_log2': 4}),
      lambda: ([torch.rand([4, 16])], {}),
      True),
+    (RasterizationPipeline,
+     lambda: ([], {'rasterizer': _mock_layer()}),
+     lambda: ([], {'input': torch.rand([4, 4])}),
+     False),
     (SigDecoder,
      lambda: ([], {'input_dim': 4, 'output_dim': 4, 'hidden_dim': 4, 'activation': _mock_layer(), 'bias': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),

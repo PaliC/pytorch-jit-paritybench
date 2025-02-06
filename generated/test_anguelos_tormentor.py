@@ -48,7 +48,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -277,16 +279,13 @@ class BUNet(nn.Module):
         torch.save(state_dict, fname)
 
 
-TensorSize = Union[torch.Size, int, Tuple[int], Tuple[int, int], Tuple[int, int, int], Tuple[int, int, int, int]]
-
-
 class Distribution(torch.nn.Module):
 
     def __init__(self, do_rsample):
         super().__init__()
         self.do_rsample = do_rsample
 
-    def forward(self, size: TensorSize=1, device='cpu'):
+    def forward(self, size: 'TensorSize'=1, device='cpu'):
         """Samples the probabillity distribution
 
         Args:
@@ -321,12 +320,9 @@ class Distribution(torch.nn.Module):
         return hash(tuple(sorted(self.get_distribution_parameters().items())))
 
 
-TupleRange = Tuple[float, float]
-
-
 class Uniform(Distribution):
 
-    def __init__(self, value_range: TupleRange=(0.0, 1.0), do_rsample=False):
+    def __init__(self, value_range: 'TupleRange'=(0.0, 1.0), do_rsample=False):
         super().__init__(do_rsample=do_rsample)
         self.min = torch.nn.Parameter(torch.Tensor([value_range[0]]), requires_grad=True)
         self.max = torch.nn.Parameter(torch.Tensor([value_range[1]]), requires_grad=True)
@@ -342,7 +338,7 @@ class Uniform(Distribution):
         range_str = f'({self.distribution.low.item():.3}, {self.distribution.high.item():.3})'
         return f'{self.__class__.__qualname__}(value_range={range_str})'
 
-    def forward(self, size: TensorSize=1, device='cpu') ->torch.Tensor:
+    def forward(self, size: 'TensorSize'=1, device='cpu') ->torch.Tensor:
         self
         if not hasattr(size, '__getitem__'):
             size = [size]
@@ -366,7 +362,7 @@ class Uniform(Distribution):
 
 class Constant(Distribution):
 
-    def __init__(self, value: float, do_rsample=False):
+    def __init__(self, value: 'float', do_rsample=False):
         super().__init__(do_rsample=do_rsample)
         self.value = torch.nn.Parameter(torch.Tensor([value]))
 
@@ -374,7 +370,7 @@ class Constant(Distribution):
         value_str = tuple(self.value.detach().cpu().numpy())
         return f'{self.__class__.__qualname__}(value={value_str})'
 
-    def forward(self, size: TensorSize=1, device='cpu') ->torch.Tensor:
+    def forward(self, size: 'TensorSize'=1, device='cpu') ->torch.Tensor:
         self
         if not hasattr(size, '__getitem__'):
             size = size,
@@ -398,12 +394,12 @@ class Constant(Distribution):
 
 class Bernoulli(Distribution):
 
-    def __init__(self, prob: float=0.5, do_rsample: object=False) ->object:
+    def __init__(self, prob: 'float'=0.5, do_rsample: 'object'=False) ->object:
         super().__init__(do_rsample)
         self.prob = torch.nn.Parameter(torch.tensor([prob]))
         self.distribution = torch.distributions.Bernoulli(probs=self.prob)
 
-    def forward(self, size: TensorSize=1, device='cpu'):
+    def forward(self, size: 'TensorSize'=1, device='cpu'):
         self
         if self.do_rsample:
             raise NotImplemented
@@ -439,7 +435,7 @@ class Bernoulli(Distribution):
 
 class Categorical(Distribution):
 
-    def __init__(self, n_categories: int=0, probs=(), do_rsample=False):
+    def __init__(self, n_categories: 'int'=0, probs=(), do_rsample=False):
         super().__init__(do_rsample=do_rsample)
         if n_categories == 0:
             assert probs != ()
@@ -449,7 +445,7 @@ class Categorical(Distribution):
         self.probs = torch.autograd.Variable(torch.Tensor([probs]))
         self.distribution = torch.distributions.Categorical(probs=self.probs)
 
-    def forward(self, size: TensorSize=1, device='cpu'):
+    def forward(self, size: 'TensorSize'=1, device='cpu'):
         self
         if self.do_rsample:
             raise NotImplemented
@@ -490,7 +486,7 @@ class Normal(Distribution):
         self.deviation = torch.nn.Parameter(torch.Tensor([deviation]))
         self.distribution = torch.distributions.Normal(loc=self.mean, scale=self.deviation)
 
-    def forward(self, size: TensorSize=1, device='cpu'):
+    def forward(self, size: 'TensorSize'=1, device='cpu'):
         self
         if not hasattr(size, '__getitem__'):
             size = [size]
@@ -522,7 +518,7 @@ class DistributionNetwork(Distribution):
     def __init__(self):
         super().__init__()
 
-    def forward(self, size: TensorSize=1, device='cpu'):
+    def forward(self, size: 'TensorSize'=1, device='cpu'):
         raise NotImplementedError()
 
     def copy(self, do_rsample=None):

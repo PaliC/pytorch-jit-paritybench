@@ -16,6 +16,8 @@ aws_batch = _module
 aws_batch_runner = _module
 aws_s3 = _module
 s3_file_system = _module
+aws_sagemaker = _module
+aws_sagemaker_runner = _module
 core = _module
 analyzer = _module
 analyzer_config = _module
@@ -65,6 +67,10 @@ rasterio_source = _module
 rasterio_source_config = _module
 rasterized_source = _module
 rasterized_source_config = _module
+stac_config = _module
+temporal_multi_raster_source = _module
+xarray_source = _module
+xarray_source_config = _module
 raster_transformer = _module
 cast_transformer = _module
 cast_transformer_config = _module
@@ -81,9 +87,12 @@ stats_transformer = _module
 stats_transformer_config = _module
 scene = _module
 scene_config = _module
+aoi_sampler = _module
 factory = _module
 geojson = _module
 misc = _module
+raster = _module
+rasterio = _module
 vectorization = _module
 vector_source = _module
 geojson_vector_source = _module
@@ -122,12 +131,14 @@ raster_stats = _module
 rv_pipeline = _module
 chip_classification = _module
 chip_classification_config = _module
+chip_options = _module
 object_detection_config = _module
 rv_pipeline_config = _module
 semantic_segmentation_config = _module
 cog = _module
 filter_geojson = _module
 stac = _module
+types = _module
 gdal_vsi = _module
 vsi_file_system = _module
 pipeline = _module
@@ -173,6 +184,7 @@ pytorch_object_detection = _module
 pytorch_object_detection_config = _module
 pytorch_semantic_segmentation = _module
 pytorch_semantic_segmentation_config = _module
+utils = _module
 pytorch_learner = _module
 classification_learner = _module
 classification_learner_config = _module
@@ -183,7 +195,6 @@ object_detection_dataset = _module
 regression_dataset = _module
 semantic_segmentation_dataset = _module
 transform = _module
-aoi_sampler = _module
 visualizer = _module
 classification_visualizer = _module
 object_detection_visualizer = _module
@@ -192,8 +203,6 @@ semantic_segmentation_visualizer = _module
 visualizer = _module
 learner = _module
 learner_config = _module
-learner_pipeline = _module
-learner_pipeline_config = _module
 object_detection_learner = _module
 object_detection_learner_config = _module
 object_detection_utils = _module
@@ -201,9 +210,14 @@ regression_learner = _module
 regression_learner_config = _module
 semantic_segmentation_learner = _module
 semantic_segmentation_learner_config = _module
+distributed = _module
+prediction = _module
 torch_hub = _module
 utils = _module
 tests = _module
+test_aws_batch_runner = _module
+test_s3_file_system = _module
+test_aws_sagemaker_runner = _module
 test_rasterio_crs_transformer = _module
 test_chip_classification_labels = _module
 test_object_detection_labels = _module
@@ -211,6 +225,8 @@ test_semantic_segmentation_labels = _module
 test_chip_classification_label_source = _module
 test_object_detection_label_source = _module
 test_semantic_segmentation_label_source = _module
+test_chip_classification_geojson_store = _module
+test_object_detection_geojson_store = _module
 test_semantic_segmentation_label_store = _module
 test_utils = _module
 mock_crs_transformer = _module
@@ -218,12 +234,22 @@ mock_raster_source = _module
 test_multi_raster_source = _module
 test_rasterio_source = _module
 test_rasterized_source = _module
+test_stac_config = _module
+test_temporal_multi_raster_source = _module
+test_xarray_source = _module
 test_cast_transformer = _module
+test_min_max_transformer = _module
+test_nan_transformer = _module
 test_rgb_class_transformer = _module
 test_stats_transformer = _module
 test_class_config = _module
 test_dataset = _module
+test_scene = _module
+test_aoi_sampler = _module
 test_geojson = _module
+test_misc = _module
+test_raster = _module
+test_rasterio = _module
 test_geojson_vector_source = _module
 test_buffer_transformer = _module
 test_class_inference_transformer = _module
@@ -234,22 +260,39 @@ test_evaluator = _module
 test_object_detection_evaluation = _module
 test_semantic_segmentation_evaluation = _module
 test_semantic_segmentation_evaluator = _module
+test_chip_options = _module
+test_object_detection_config = _module
+test_rv_pipeline_config = _module
 test_semantic_segmentation_config = _module
 test_box = _module
+test_raster_stats = _module
 test_stats_analyzer = _module
 test_stac = _module
 data_files = _module
 lambda_transforms = _module
+test_vsi_file_system = _module
+test_cli = _module
 test_config = _module
 test_file_system = _module
+test_rvconfig = _module
+test_tiny_spacenet = _module
+test_pytorch_chip_classification = _module
 test_pytorch_learner_backend = _module
-test_aoi_sampler = _module
+test_pytorch_object_detection = _module
+test_pytorch_semantic_segmentation = _module
 test_dataset = _module
 test_transform = _module
+test_classification_visualizer = _module
+test_object_detection_visualizer = _module
+test_regression_visualizer = _module
+test_semantic_segmentation_visualizer = _module
+test_visualizer = _module
 test_classification_learner = _module
 test_data_config = _module
+test_learner_config = _module
 test_model_config = _module
 test_object_detection_learner = _module
+test_object_detection_learner_config = _module
 test_object_detection_utils = _module
 test_regression_learner = _module
 test_semantic_segmentation_learner = _module
@@ -261,7 +304,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -277,25 +322,25 @@ xrange = range
 wraps = functools.wraps
 
 
+import logging
+
+
 from typing import TYPE_CHECKING
 
 
-from typing import List
-
-
-import logging
+import numpy as np
 
 
 import warnings
 
 
-import torch
+import torch.distributed as dist
 
 
-from typing import Union
+from typing import Iterable
 
 
-from typing import Optional
+from collections.abc import Callable
 
 
 from enum import Enum
@@ -304,31 +349,22 @@ from enum import Enum
 from torch import nn
 
 
-from typing import Tuple
-
-
 from typing import Any
 
 
-from typing import TypeVar
+from typing import Literal
 
 
-import numpy as np
+import torch
 
 
 from torch.utils.data import Dataset
 
 
-from typing import Dict
-
-
 from collections import defaultdict
 
 
-from typing import Iterable
-
-
-from typing import Callable
+from typing import overload
 
 
 from typing import Sequence
@@ -358,10 +394,7 @@ from torch.utils.data import DataLoader
 from typing import Iterator
 
 
-from typing import Type
-
-
-import time
+from time import perf_counter
 
 
 import numbers
@@ -371,6 +404,15 @@ import torch.nn as nn
 
 
 from torch.utils.tensorboard import SummaryWriter
+
+
+from torch.utils.data import DistributedSampler
+
+
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+
+import torch.multiprocessing as mp
 
 
 import random
@@ -430,7 +472,13 @@ from torch.nn import functional as F
 import torch.hub
 
 
+from typing import Container
+
+
 from torch.hub import _import_module
+
+
+import pandas as pd
 
 
 from uuid import uuid4
@@ -441,7 +489,7 @@ from matplotlib import pyplot as plt
 
 class BoxList:
 
-    def __init__(self, boxes: torch.Tensor, format: str='xyxy', **extras) ->None:
+    def __init__(self, boxes: 'torch.Tensor', format: 'str'='xyxy', **extras) ->None:
         """Representation of a list of bounding boxes and associated data.
 
         Internally, boxes are always stored in the xyxy format.
@@ -460,16 +508,16 @@ class BoxList:
         else:
             self.boxes = box_convert(boxes, format, 'xyxy')
 
-    def __contains__(self, key: str) ->bool:
+    def __contains__(self, key: 'str') ->bool:
         return key == 'boxes' or key in self.extras
 
-    def get_field(self, name: str) ->Any:
+    def get_field(self, name: 'str') ->Any:
         if name == 'boxes':
             return self.boxes
         else:
             return self.extras.get(name)
 
-    def _map_extras(self, func: Callable, cond: Callable=lambda k, v: True) ->dict:
+    def _map_extras(self, func: 'Callable[[str, Any], Any]', cond: 'Callable[[str, Any], bool]'=lambda k, v: True) ->dict:
         new_extras = {}
         for k, v in self.extras.items():
             if cond(k, v):
@@ -478,15 +526,24 @@ class BoxList:
                 new_extras[k] = v
         return new_extras
 
-    def copy(self) ->'BoxList':
+    def copy(self) ->'Self':
         return BoxList(self.boxes.copy(), **self._map_extras(lambda k, v: v.copy()), cond=lambda k, v: torch.is_tensor(v))
 
-    def to(self, *args, **kwargs) ->'BoxList':
+    def to(self, *args, **kwargs) ->'Self':
+        """Recursively apply :meth:`torch.Tensor.to` to Tensors.
+
+        Args:
+            *args: Args for :meth:`torch.Tensor.to`.
+            **kwargs: Keyword args for :meth:`torch.Tensor.to`.
+
+        Returns:
+            BoxList: New BoxList with to'd Tensors.
+        """
         boxes = self.boxes
         extras = self._map_extras(func=lambda k, v: v, cond=lambda k, v: torch.is_tensor(v))
         return BoxList(boxes, **extras)
 
-    def convert_boxes(self, out_fmt: str) ->torch.Tensor:
+    def convert_boxes(self, out_fmt: 'str') ->torch.Tensor:
         if out_fmt == 'yxyx':
             boxes = self.boxes[:, [1, 0, 3, 2]]
         else:
@@ -497,7 +554,7 @@ class BoxList:
         return len(self.boxes)
 
     @staticmethod
-    def cat(box_lists: Iterable['BoxList']) ->'BoxList':
+    def cat(box_lists: "Iterable['Self']") ->'Self':
         boxes = []
         extras = defaultdict(list)
         for bl in box_lists:
@@ -509,7 +566,7 @@ class BoxList:
             extras[k] = torch.cat(v)
         return BoxList(boxes, **extras)
 
-    def equal(self, other: 'BoxList') ->bool:
+    def equal(self, other: "'Self'") ->bool:
         if len(other) != len(self):
             return False
         extras = [(v.float().unsqueeze(1) if v.ndim == 1 else v.float()) for v in self.extras.values()]
@@ -520,38 +577,46 @@ class BoxList:
         other_tups = set([tuple([x.item() for x in row]) for row in cat_arr])
         return self_tups == other_tups
 
-    def ind_filter(self, inds: Sequence[int]) ->'BoxList':
+    def ind_filter(self, inds: 'Sequence[int]') ->'Self':
         boxes = self.boxes[inds]
         extras = self._map_extras(func=lambda k, v: v[inds], cond=lambda k, v: torch.is_tensor(v))
         return BoxList(boxes, **extras)
 
-    def score_filter(self, score_thresh: float=0.25) ->'BoxList':
+    def score_filter(self, score_thresh: 'float'=0.25) ->'Self':
         scores = self.extras.get('scores')
         if scores is not None:
             return self.ind_filter(scores > score_thresh)
         else:
             raise ValueError('must have scores as key in extras')
 
-    def clip_boxes(self, img_height: int, img_width: int) ->'BoxList':
+    def clip_boxes(self, img_height: 'int', img_width: 'int') ->'Self':
         boxes = clip_boxes_to_image(self.boxes, (img_height, img_width))
         return BoxList(boxes, **self.extras)
 
-    def nms(self, iou_thresh: float=0.5) ->torch.Tensor:
+    def nms(self, iou_thresh: 'float'=0.5) ->torch.Tensor:
         if len(self) == 0:
             return self
         good_inds = batched_nms(self.boxes, self.get_field('scores'), self.get_field('class_ids'), iou_thresh)
         return self.ind_filter(good_inds)
 
-    def scale(self, yscale: float, xscale: float) ->'BoxList':
-        boxes = self.boxes * torch.tensor([[yscale, xscale, yscale, xscale]], device=self.boxes.device)
-        return BoxList(boxes, **self.extras)
+    def scale(self, yscale: 'float', xscale: 'float') ->'Self':
+        """Scale box coords by the given scaling factors."""
+        dtype = self.boxes.dtype
+        boxes = self.boxes.float()
+        boxes[:, [0, 2]] *= xscale
+        boxes[:, [1, 3]] *= yscale
+        self.boxes = boxes
+        return self
 
-    def pin_memory(self) ->'BoxList':
+    def pin_memory(self) ->'Self':
         self.boxes = self.boxes.pin_memory()
         for k, v in self.extras.items():
             if torch.is_tensor(v):
                 self.extras[k] = v.pin_memory()
         return self
+
+    def __repr__(self) ->str:
+        return pformat(dict(boxes=self.boxes, **self.extras))
 
 
 class TorchVisionODAdapter(nn.Module):
@@ -565,48 +630,45 @@ class TorchVisionODAdapter(nn.Module):
     (which is what the TorchVision models expect).
     """
 
-    def __init__(self, model: nn.Module, ignored_output_inds: Sequence[int]=[0]) ->None:
+    def __init__(self, model: 'nn.Module', ignored_output_inds: 'Sequence[int]'=[0]) ->None:
         """Constructor.
 
         Args:
             model (nn.Module): A torchvision object detection model.
-            ignored_output_inds (Iterable[int], optional): Class labels to exclude.
+            ignored_output_inds (Iterable[int]): Class labels to exclude.
                 Defaults to [0].
         """
         super().__init__()
         self.model = model
         self.ignored_output_inds = ignored_output_inds
 
-    def forward(self, input: torch.Tensor, targets: Optional[Iterable[BoxList]]=None) ->Union[dict, List[BoxList]]:
+    def forward(self, input: 'torch.Tensor', targets: 'Iterable[BoxList] | None'=None) ->(dict[str, Any] | list[BoxList]):
         """Forward pass.
 
         Args:
-            input (Tensor[batch_size, in_channels, in_height, in_width]): batch
-                of images.
-            targets (Optional[Iterable[BoxList]], optional): In training mode,
-                should be Iterable[BoxList]], with each BoxList having a
-                'class_ids' field. In eval mode, should be None. Defaults to
-                None.
+            input: batch of images.
+            targets: In training mode, should be ``Iterable[BoxList]]``, with
+                each ``BoxList`` having a ``'class_ids'`` field. In eval mode,
+                should be None. Defaults to ``None``.
 
         Returns:
-            Union[dict, List[BoxList]]: In training mode,
-                returns a dict of losses. In eval mode, returns a list of
-                BoxLists containing predicted boxes, class_ids, and scores.
-                Further filtering based on score should be done before
-                considering the prediction "final".
+            In training mode, returns a dict of losses. In eval mode, returns a
+            list of BoxLists containing predicted boxes, class_ids, and scores.
+            Further filtering based on score should be done before considering
+            the prediction "final".
         """
         if targets is not None:
             _targets = [self.boxlist_to_model_input_dict(bl) for bl in targets]
             loss_dict = self.model(input, _targets)
-            loss_dict['total_loss'] = sum(list(loss_dict.values()))
             return loss_dict
         outs = self.model(input)
         boxlists = [self.model_output_dict_to_boxlist(out) for out in outs]
         return boxlists
 
-    def boxlist_to_model_input_dict(self, boxlist: BoxList) ->dict:
-        """Convert BoxList to a dict compatible with torchvision detection
-        models. Also, make class labels 1-indexed.
+    def boxlist_to_model_input_dict(self, boxlist: 'BoxList') ->dict:
+        """Convert BoxList to dict compatible w/ torchvision detection models.
+
+        Also, make class labels 1-indexed.
 
         Args:
             boxlist (BoxList): A BoxList with a "class_ids" field.
@@ -616,9 +678,10 @@ class TorchVisionODAdapter(nn.Module):
         """
         return {'boxes': boxlist.boxes, 'labels': boxlist.get_field('class_ids') + 1}
 
-    def model_output_dict_to_boxlist(self, out: dict) ->BoxList:
-        """Convert torchvision detection dict to BoxList. Also, exclude any
-        null classes and make class labels 0-indexed.
+    def model_output_dict_to_boxlist(self, out: 'dict') ->BoxList:
+        """Convert model output dict to BoxList.
+
+        Also, exclude any null classes and make class labels 0-indexed.
 
         Args:
             out (dict): A dict output by a torchvision detection model in eval
@@ -635,16 +698,16 @@ class TorchVisionODAdapter(nn.Module):
 
 class RegressionModel(nn.Module):
 
-    def __init__(self, backbone_arch, out_features, pretrained=True, pos_out_inds=None, prob_out_inds=None):
+    def __init__(self, backbone: 'nn.Module', out_features: 'int', pos_out_inds: 'Sequence[int] | None'=None, prob_out_inds: 'Sequence[int] | None'=None, **kwargs):
         super().__init__()
-        self.backbone = getattr(models, backbone_arch)(pretrained=pretrained)
+        self.backbone = backbone
         in_features = self.backbone.fc.in_features
         self.backbone.fc = nn.Linear(in_features, out_features)
         self.pos_out_inds = pos_out_inds
         self.prob_out_inds = prob_out_inds
 
-    def forward(self, x):
-        out = self.backbone(x)
+    def forward(self, x: "'torch.Tensor'") ->'torch.Tensor':
+        out: "'torch.Tensor'" = self.backbone(x)
         if self.pos_out_inds:
             for ind in self.pos_out_inds:
                 out[:, ind] = out[:, ind].exp()
@@ -690,7 +753,7 @@ class AddTensors(nn.Module):
 
 class MockModel(nn.Module):
 
-    def __init__(self, num_classes: int) ->None:
+    def __init__(self, num_classes: 'int') ->None:
         super().__init__()
         self.num_classes = num_classes
 

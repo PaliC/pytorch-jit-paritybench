@@ -1,0 +1,121 @@
+; ModuleID = 'LLVMDialectModule'
+source_filename = "LLVMDialectModule"
+target datalayout = "e-p3:32:32-p4:32:32-p5:32:32-i64:64-i128:128-v16:16-v32:32-n16:32:64"
+
+define void @triton_per_fused_sort_0(ptr addrspace(1) %0, ptr addrspace(1) %1, i32 %2, i32 %3) local_unnamed_addr !dbg !7 {
+  %5 = tail call i32 asm "mov.u32 $0, %ctaid.x;", "=r"() #2, !dbg !10
+  %6 = icmp slt i32 %5, 64, !dbg !11
+  %7 = tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg !12
+  %8 = and i32 %7, 1, !dbg !12
+  %9 = and i32 %7, 3, !dbg !12
+  %10 = shl i32 %5, 2, !dbg !13
+  %11 = or disjoint i32 %10, %9, !dbg !14
+  %12 = sext i32 %11 to i64, !dbg !15
+  %13 = getelementptr float, ptr addrspace(1) %0, i64 %12, !dbg !15
+  %14 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09@$2 ld.global.b32 { $0 }, [ $1 + 0 ];\0A\09@!$4 mov.u32 $0, $3;", "=r,l,b,r,b"(ptr addrspace(1) %13, i1 %6, i32 0, i1 %6) #2, !dbg !16
+  %15 = lshr i32 %7, 1, !dbg !17
+  %.lobit = and i32 %15, 1, !dbg !17
+  %16 = xor i32 %.lobit, 1, !dbg !22
+  %17 = xor i32 %8, 1, !dbg !22
+  %18 = mul nuw nsw i32 %14, %17, !dbg !24
+  %19 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %18, i32 1, i32 31), !dbg !25
+  %20 = add i32 %18, %19, !dbg !28
+  %21 = mul nuw nsw i32 %14, %8, !dbg !30
+  %22 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %21, i32 1, i32 31), !dbg !25
+  %23 = add i32 %22, %21, !dbg !28
+  %24 = bitcast i32 %20 to float, !dbg !31
+  %25 = bitcast i32 %23 to float, !dbg !32
+  %26 = trunc i32 %15 to i1, !dbg !33
+  %27 = fcmp ule float %24, %25, !dbg !33
+  %.not = xor i1 %27, %26, !dbg !33
+  %28 = xor i32 %23, %20, !dbg !34
+  %29 = select i1 %.not, i32 0, i32 %28, !dbg !35
+  %30 = xor i32 %29, %14, !dbg !36
+  %31 = mul nuw nsw i32 %30, %16, !dbg !24
+  %32 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %31, i32 2, i32 31), !dbg !25
+  %33 = add i32 %31, %32, !dbg !28
+  %34 = mul nuw nsw i32 %30, %.lobit, !dbg !30
+  %35 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %34, i32 2, i32 31), !dbg !25
+  %36 = add i32 %34, %35, !dbg !28
+  %37 = bitcast i32 %33 to float, !dbg !31
+  %38 = bitcast i32 %36 to float, !dbg !32
+  %39 = fcmp ogt float %37, %38, !dbg !37
+  %40 = xor i32 %33, %36, !dbg !34
+  %41 = select i1 %39, i32 %40, i32 0, !dbg !35
+  %42 = xor i32 %41, %30, !dbg !36
+  %43 = mul nuw nsw i32 %42, %17, !dbg !24
+  %44 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %43, i32 1, i32 31), !dbg !25
+  %45 = add i32 %43, %44, !dbg !28
+  %46 = mul nuw nsw i32 %42, %8, !dbg !30
+  %47 = tail call i32 @llvm.nvvm.shfl.sync.bfly.i32(i32 -1, i32 %46, i32 1, i32 31), !dbg !25
+  %48 = add i32 %46, %47, !dbg !28
+  %49 = bitcast i32 %45 to float, !dbg !31
+  %50 = bitcast i32 %48 to float, !dbg !32
+  %51 = fcmp ogt float %49, %50, !dbg !37
+  %52 = xor i32 %45, %48, !dbg !34
+  %53 = select i1 %51, i32 %52, i32 0, !dbg !35
+  %54 = xor i32 %53, %42, !dbg !36
+  %55 = getelementptr float, ptr addrspace(1) %1, i64 %12, !dbg !38
+  %56 = and i32 %7, 60, !dbg !39
+  %57 = icmp eq i32 %56, 0, !dbg !39
+  %58 = and i1 %57, %6, !dbg !39
+  tail call void asm sideeffect "@$2 st.global.b32 [ $1 + 0 ], { $0 };", "r,l,b"(i32 %54, ptr addrspace(1) %55, i1 %58) #2, !dbg !39
+  ret void, !dbg !40
+}
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef i32 @llvm.nvvm.read.ptx.sreg.tid.x() #0
+
+; Function Attrs: convergent nocallback nounwind memory(inaccessiblemem: readwrite)
+declare i32 @llvm.nvvm.shfl.sync.bfly.i32(i32, i32, i32, i32) #1
+
+attributes #0 = { mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #1 = { convergent nocallback nounwind memory(inaccessiblemem: readwrite) }
+attributes #2 = { nounwind }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+!nvvm.annotations = !{!4, !5}
+!llvm.ident = !{!6}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = !{i32 4, !"nvvm-reflect-ftz", i32 1}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "triton", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
+!3 = !DIFile(filename: "cwwwef7o3l5axh575l3rykxbh7pxehnk3d4227ogpvx5uwwjrppm.py", directory: "inductor_cache/ww")
+!4 = !{ptr @triton_per_fused_sort_0, !"kernel", i32 1}
+!5 = !{ptr @triton_per_fused_sort_0, !"reqntidx", i32 64}
+!6 = !{!"clang version 3.8.0 (tags/RELEASE_380/final)"}
+!7 = distinct !DISubprogram(name: "triton_per_fused_sort_0", linkageName: "triton_per_fused_sort_0", scope: !3, file: !3, line: 19, type: !8, scopeLine: 19, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !2)
+!8 = !DISubroutineType(cc: DW_CC_normal, types: !9)
+!9 = !{}
+!10 = !DILocation(line: 23, column: 28, scope: !7)
+!11 = !DILocation(line: 25, column: 21, scope: !7)
+!12 = !DILocation(line: 26, column: 34, scope: !7)
+!13 = !DILocation(line: 31, column: 37, scope: !7)
+!14 = !DILocation(line: 31, column: 35, scope: !7)
+!15 = !DILocation(line: 31, column: 30, scope: !7)
+!16 = !DILocation(line: 31, column: 42, scope: !7)
+!17 = !DILocation(line: 575, column: 44, scope: !18, inlinedAt: !21)
+!18 = distinct !DILexicalBlockFile(scope: !20, file: !19, discriminator: 0)
+!19 = !DIFile(filename: "triton_helpers.py", directory: "/home/sahanp/.conda/envs/parity-bench/lib/python3.12/site-packages/torch/_inductor/runtime")
+!20 = distinct !DILexicalBlockFile(scope: !7, file: !19, discriminator: 0)
+!21 = !DILocation(line: 36, column: 67, scope: !7)
+!22 = !DILocation(line: 505, column: 21, scope: !23, inlinedAt: !21)
+!23 = distinct !DILexicalBlockFile(scope: !18, file: !19, discriminator: 0)
+!24 = !DILocation(line: 506, column: 40, scope: !23, inlinedAt: !21)
+!25 = !DILocation(line: 267, column: 36, scope: !26, inlinedAt: !21)
+!26 = distinct !DILexicalBlockFile(scope: !23, file: !27, discriminator: 0)
+!27 = !DIFile(filename: "standard.py", directory: "/home/sahanp/.conda/envs/parity-bench/lib/python3.12/site-packages/triton/language")
+!28 = !DILocation(line: 256, column: 15, scope: !29, inlinedAt: !21)
+!29 = distinct !DILexicalBlockFile(scope: !26, file: !27, discriminator: 0)
+!30 = !DILocation(line: 507, column: 41, scope: !23, inlinedAt: !21)
+!31 = !DILocation(line: 510, column: 20, scope: !23, inlinedAt: !21)
+!32 = !DILocation(line: 511, column: 22, scope: !23, inlinedAt: !21)
+!33 = !DILocation(line: 547, column: 28, scope: !23, inlinedAt: !21)
+!34 = !DILocation(line: 548, column: 38, scope: !23, inlinedAt: !21)
+!35 = !DILocation(line: 548, column: 46, scope: !23, inlinedAt: !21)
+!36 = !DILocation(line: 548, column: 15, scope: !23, inlinedAt: !21)
+!37 = !DILocation(line: 538, column: 22, scope: !23, inlinedAt: !21)
+!38 = !DILocation(line: 37, column: 25, scope: !7)
+!39 = !DILocation(line: 37, column: 43, scope: !7)
+!40 = !DILocation(line: 37, column: 4, scope: !7)

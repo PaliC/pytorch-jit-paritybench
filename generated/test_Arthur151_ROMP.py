@@ -129,6 +129,7 @@ simple_romp = _module
 bev = _module
 main = _module
 model = _module
+pack_smil_info = _module
 post_parser = _module
 split2process = _module
 RH_evaluation = _module
@@ -138,12 +139,113 @@ eval_Relative_Human = _module
 eval_cmu_panoptic = _module
 main = _module
 model = _module
+pack_smpl_info = _module
 post_parser = _module
 smpl = _module
 utils = _module
 setup = _module
+setup_trace = _module
 convert2fbx = _module
 convert_checkpoints = _module
+trace2 = _module
+comparison_plots = _module
+run_bdd = _module
+run_davis = _module
+run_headtracking_challenge = _module
+run_kitti = _module
+run_kitti_mots = _module
+run_mot_challenge = _module
+run_mots_challenge = _module
+run_rob_mots = _module
+run_tao = _module
+run_youtube_vis = _module
+test_all_quick = _module
+test_davis = _module
+test_metrics = _module
+test_mot17 = _module
+test_mots = _module
+trackeval = _module
+_timing = _module
+baselines = _module
+baseline_utils = _module
+non_overlap = _module
+pascal_colormap = _module
+stp = _module
+thresholder = _module
+vizualize = _module
+datasets = _module
+_base_dataset = _module
+bdd100k = _module
+davis = _module
+head_tracking_challenge = _module
+kitti_2d_box = _module
+kitti_mots = _module
+mot_challenge_2d_box = _module
+mots_challenge = _module
+rob_mots = _module
+rob_mots_classmap = _module
+tao = _module
+youtube_vis = _module
+metrics = _module
+_base_metric = _module
+clear = _module
+count = _module
+hota = _module
+identity = _module
+ideucl = _module
+j_and_f = _module
+track_map = _module
+vace = _module
+plotting = _module
+dynacam_evaluation = _module
+evalute_ate = _module
+loading_data = _module
+utils = _module
+eval_3DPW = _module
+eval_dynacam = _module
+evaluate_tracking = _module
+smpl = _module
+main = _module
+TempTracker = _module
+basic_modules = _module
+debug_utils = _module
+deform_conv = _module
+functions = _module
+deform_conv = _module
+deform_pool = _module
+modules = _module
+deform_conv = _module
+deform_pool = _module
+setup = _module
+hrnet_32 = _module
+model = _module
+raft = _module
+corr = _module
+extractor = _module
+process = _module
+raft = _module
+update = _module
+augmentor = _module
+flow_viz = _module
+frame_utils = _module
+utils = _module
+smpl = _module
+results_parser = _module
+centermap = _module
+smpl_wrapper_relative_temp = _module
+temp_result_parser = _module
+show = _module
+track = _module
+matching_3dcenter = _module
+tracker3D = _module
+eval_utils = _module
+infer_settings = _module
+infer_utils = _module
+load_data = _module
+open3d_gui = _module
+utils = _module
+visualize_maps = _module
+visualize_results = _module
 byte_tracker_3dcenter = _module
 kalman_filter_3dcenter = _module
 vis_human = _module
@@ -153,12 +255,135 @@ sim3drender = _module
 renderer = _module
 vedo_vis = _module
 vis_utils = _module
+trace = _module
+base = _module
+config = _module
+DynaCamRotation = _module
+DynaCamTranslation = _module
+camera_parameters = _module
+image_base = _module
+image_base_relative = _module
+internet_video = _module
+penn_action = _module
+video_base_relative = _module
+epropnp = _module
+camera = _module
+common = _module
+cost_fun = _module
+distributions = _module
+epropnp = _module
+levenberg_marquardt = _module
+eval_3DMPB = _module
+eval_ds_utils = _module
+evaluation_matrix = _module
+mupots_util = _module
+datautil = _module
+load_dep_pred = _module
+matcher = _module
+mpii_get_joints = _module
+smpl = _module
+calc_loss = _module
+keypoints_loss = _module
+learnable_loss = _module
+maps_loss = _module
+matching = _module
+params_loss = _module
+prior_loss = _module
+relative_loss = _module
+video_loss = _module
+centermap = _module
+debug_utils = _module
+matching = _module
+matching_utils = _module
+relative_parser = _module
+result_parser = _module
+suppress_duplication = _module
+target_generators = _module
+temp_result_parser = _module
+CoordConv = _module
+EProPnP6DoFSolver = _module
+GRU = _module
+TempRegressor = _module
+TempTracker = _module
+TemporalRegressor = _module
+base = _module
+basic_modules = _module
+build = _module
+deform_conv = _module
+deform_pool = _module
+deform_conv = _module
+deform_pool = _module
+setup = _module
+hrnet_32 = _module
+modelv1 = _module
+modelv6 = _module
+resnet_50 = _module
+tempGRU = _module
+trace = _module
+video_base = _module
+balanced_dataparallel = _module
+criterion_parallel = _module
+corr = _module
+extractor = _module
+process = _module
+raft = _module
+update = _module
+augmentor = _module
+utils = _module
+create_smpl_models = _module
+flame = _module
+mano = _module
+pack_smil_info = _module
+pack_smpl_info = _module
+pack_smpla_info = _module
+pack_smplx_info = _module
+pack_smplx_info_sparse = _module
+pack_smplxa_info_sparse = _module
+smpl = _module
+smpl_regressor = _module
+smpl_wrapper = _module
+smpl_wrapper_relative = _module
+smpl_wrapper_relative_temp = _module
+smpla = _module
+smplx = _module
+transfer_smpl_parameters = _module
+byte_tracker_3dcenter_combined = _module
+augments = _module
+cam_utils = _module
+center_utils = _module
+convert2deepmimic = _module
+debug = _module
+demo_utils = _module
+fetch_remote_file = _module
+gpu_memory_log = _module
+make_demo = _module
+projection = _module
+quaternion_operations = _module
+rot_6D = _module
+rotation_transform = _module
+smooth_filter = _module
+train_utils = _module
+transformation = _module
+transforms = _module
+util = _module
+utils_pybullet = _module
+video_utils = _module
+vis_utils = _module
+plotly_volume_viewer = _module
+renderer_pt3d = _module
+trajectory_viewer = _module
+visualization = _module
+world_vis = _module
+track = _module
+train_video = _module
 
 from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -300,7 +525,461 @@ import re
 import numpy
 
 
+from torch.utils.cpp_extension import BuildExtension
+
+
+from torch.utils.cpp_extension import CUDAExtension
+
+
 from sklearn.model_selection import PredefinedSplit
+
+
+from torch.autograd import Function
+
+
+from torch.nn.modules.utils import _pair
+
+
+from torchvision.transforms import ColorJitter
+
+
+from scipy import interpolate
+
+
+import scipy.spatial.transform.rotation as R
+
+
+from random import sample
+
+
+from torch.distributions import VonMises
+
+
+from torch.distributions.multivariate_normal import _batch_mahalanobis
+
+
+from torch.distributions.multivariate_normal import _standard_normal
+
+
+from torch.distributions.multivariate_normal import _batch_mv
+
+
+from abc import ABCMeta
+
+
+from abc import abstractmethod
+
+
+from functools import partial
+
+
+from numpy import result_type
+
+
+import torch.cuda.comm as comm
+
+
+from torch.nn.parallel.data_parallel import DataParallel
+
+
+from torch.nn.parallel.parallel_apply import get_a_var
+
+
+from torch.nn.parallel._functions import ReduceAddCoalesced
+
+
+from torch.nn.parallel._functions import Broadcast
+
+
+from typing import Optional
+
+
+from typing import Dict
+
+
+from typing import Union
+
+
+from collections import namedtuple
+
+
+def _calc_radius_(bboxes_hw_norm, map_size=64):
+    if len(bboxes_hw_norm) == 0:
+        return []
+    minimum_radius = map_size / 32.0
+    scale_factor = map_size / 16.0
+    scales = np.linalg.norm(np.stack(bboxes_hw_norm, 0) / 2, ord=2, axis=1)
+    radius = (scales * scale_factor + minimum_radius).astype(np.uint8)
+    return radius
+
+
+def _calc_uv_radius_(scales, map_size=64):
+    minimum_radius = map_size / 32.0
+    scale_factor = map_size / 16.0
+    radius = (scales * scale_factor + minimum_radius).astype(np.uint8)
+    return radius
+
+
+def gather_feature(fmap, index, mask=None, use_transform=False):
+    if use_transform:
+        batch, channel = fmap.shape[:2]
+        fmap = fmap.view(batch, channel, -1).permute((0, 2, 1)).contiguous()
+    dim = fmap.size(-1)
+    index = index.unsqueeze(len(index.shape)).expand(*index.shape, dim)
+    fmap = fmap.gather(dim=1, index=index)
+    if mask is not None:
+        mask = mask.unsqueeze(2).expand_as(fmap)
+        fmap = fmap[mask]
+        fmap = fmap.reshape(-1, dim)
+    return fmap
+
+
+def gaussian2D(shape, sigma=1):
+    m, n = [((ss - 1.0) / 2.0) for ss in shape]
+    y, x = np.ogrid[-m:m + 1, -n:n + 1]
+    h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
+    h[h < np.finfo(h.dtype).eps * h.max()] = 0
+    return h
+
+
+def gaussian3D(d, h, w, center, s=2, device='cuda'):
+    """
+    :param d: hmap depth
+    :param h: hmap height
+    :param w: hmap width
+    :param center: center of the Gaussian | ORDER: (x, y, z)
+    :param s: sigma of the Gaussian
+    :return: heatmap (shape torch.Size([d, h, w])) with a gaussian centered in `center`
+    """
+    x = torch.arange(0, w, 1).float()
+    y = torch.arange(0, h, 1).float()
+    y = y.unsqueeze(1)
+    z = torch.arange(0, d, 1).float()
+    z = z.unsqueeze(1).unsqueeze(1)
+    x0 = center[0]
+    y0 = center[1]
+    z0 = center[2]
+    return torch.exp(-1 * ((x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2) / s ** 2)
+
+
+def get_3Dcoord_maps(size=128, z_base=None):
+    range_arr = torch.arange(size, dtype=torch.float32)
+    if z_base is None:
+        Z_map = range_arr.reshape(1, size, 1, 1, 1).repeat(1, 1, size, size, 1) / size * 2 - 1
+    else:
+        Z_map = z_base.reshape(1, size, 1, 1, 1).repeat(1, 1, size, size, 1)
+    Y_map = range_arr.reshape(1, 1, size, 1, 1).repeat(1, size, 1, size, 1) / size * 2 - 1
+    X_map = range_arr.reshape(1, 1, 1, size, 1).repeat(1, size, size, 1, 1) / size * 2 - 1
+    out = torch.cat([Z_map, Y_map, X_map], dim=-1)
+    return out
+
+
+class CenterMap(object):
+
+    def __init__(self, style='heatmap_adaptive_scale'):
+        self.style = style
+        self.size = args().centermap_size
+        self.max_person = args().max_person
+        self.shrink_scale = float(args().input_size // self.size)
+        self.dims = 1
+        self.sigma = 1
+        self.conf_thresh = args().centermap_conf_thresh
+        None
+        self.gk_group, self.pool_group = self.generate_kernels(args().kernel_sizes)
+        if args().model_version > 4:
+            self.prepare_parsing()
+
+    def prepare_parsing(self):
+        self.coordmap_3d = get_3Dcoord_maps(size=self.size)
+        self.maxpool3d = torch.nn.MaxPool3d(5, 1, (5 - 1) // 2)
+
+    def generate_kernels(self, kernel_size_list):
+        gk_group, pool_group = {}, {}
+        for kernel_size in set(kernel_size_list):
+            x = np.arange(0, kernel_size, 1, float)
+            y = x[:, np.newaxis]
+            x0, y0 = (kernel_size - 1) // 2, (kernel_size - 1) // 2
+            gaussian_distribution = -((x - x0) ** 2 + (y - y0) ** 2) / (2 * self.sigma ** 2)
+            gk_group[kernel_size] = np.exp(gaussian_distribution)
+            pool_group[kernel_size] = torch.nn.MaxPool2d(kernel_size, 1, (kernel_size - 1) // 2)
+        return gk_group, pool_group
+
+    def process_gt_CAM(self, center_normed):
+        center_list = []
+        valid_mask = center_normed[:, :, 0] > -1
+        valid_inds = torch.where(valid_mask)
+        valid_batch_inds, valid_person_ids = valid_inds[0], valid_inds[1]
+        center_gt = ((center_normed + 1) / 2 * self.size).long()
+        center_gt_valid = center_gt[valid_mask]
+        return valid_batch_inds, valid_person_ids, center_gt_valid
+
+    def generate_centermap(self, center_locs, **kwargs):
+        if self.style == 'heatmap':
+            return self.generate_centermap_heatmap(center_locs, **kwargs)
+        elif self.style == 'heatmap_adaptive_scale':
+            return self.generate_centermap_heatmap_adaptive_scale(center_locs, **kwargs)
+        else:
+            raise NotImplementedError
+
+    def parse_centermap(self, center_map):
+        if self.style == 'heatmap':
+            return self.parse_centermap_heatmap(center_map)
+        elif self.style == 'heatmap_adaptive_scale' and center_map.shape[1] == 1:
+            return self.parse_centermap_heatmap_adaptive_scale_batch(center_map)
+        elif self.style == 'heatmap_adaptive_scale' and center_map.shape[1] == self.size:
+            return self.parse_3dcentermap_heatmap_adaptive_scale_batch(center_map)
+        else:
+            raise NotImplementedError
+
+    def generate_centermap_mask(self, center_locs):
+        centermap = np.ones((self.dims, self.size, self.size))
+        centermap[-1] = 0
+        for center_loc in center_locs:
+            map_coord = ((center_loc + 1) / 2 * self.size).astype(np.int32) - 1
+            centermap[0, map_coord[0], map_coord[1]] = 0
+            centermap[1, map_coord[0], map_coord[1]] = 1
+        return centermap
+
+    def generate_centermap_heatmap(self, center_locs, kernel_size=5, **kwargs):
+        hms = np.zeros((self.dims, self.size, self.size), dtype=np.float32)
+        offset = (kernel_size - 1) // 2
+        for idx, pt in enumerate(center_locs):
+            x, y = int((pt[0] + 1) / 2 * self.size), int((pt[1] + 1) / 2 * self.size)
+            if x < 0 or y < 0 or x >= self.size or y >= self.size:
+                continue
+            ul = int(np.round(x - offset)), int(np.round(y - offset))
+            br = int(np.round(x + offset + 1)), int(np.round(y + offset + 1))
+            c, d = max(0, -ul[0]), min(br[0], self.size) - ul[0]
+            a, b = max(0, -ul[1]), min(br[1], self.size) - ul[1]
+            cc, dd = max(0, ul[0]), min(br[0], self.size)
+            aa, bb = max(0, ul[1]), min(br[1], self.size)
+            hms[0, aa:bb, cc:dd] = np.maximum(hms[0, aa:bb, cc:dd], self.gk_group[kernel_size][a:b, c:d])
+        return hms
+
+    def generate_centermap_heatmap_adaptive_scale(self, center_locs, bboxes_hw_norm, occluded_by_who=None, **kwargs):
+        """
+           center_locs is in the order of (y,x), corresponding to (w,h), while in the loading data, we have rectified it to the correct (x, y) order
+        """
+        radius_list = _calc_radius_(bboxes_hw_norm, map_size=self.size)
+        if args().collision_aware_centermap and occluded_by_who is not None:
+            for cur_idx, occluded_idx in enumerate(occluded_by_who):
+                if occluded_idx > -1:
+                    dist_onmap = np.sqrt(((center_locs[occluded_idx] - center_locs[cur_idx]) ** 2).sum()) + 0.0001
+                    least_dist = (radius_list[occluded_idx] + radius_list[cur_idx] + 1) / self.size * 2
+                    if dist_onmap < least_dist:
+                        offset = np.abs(((radius_list[occluded_idx] + radius_list[cur_idx] + 1) / self.size * 2 - dist_onmap) / dist_onmap) * (center_locs[occluded_idx] - center_locs[cur_idx] + 0.0001) * args().collision_factor
+                        center_locs[cur_idx] -= offset / 2
+                        center_locs[occluded_idx] += offset / 2
+            center_locs = np.clip(center_locs, -1, 1)
+            center_locs[center_locs == -1] = -0.96
+            center_locs[center_locs == 1] = 0.96
+        heatmap = self.generate_heatmap_adaptive_scale(center_locs, radius_list)
+        heatmap = torch.from_numpy(heatmap)
+        return heatmap
+
+    def generate_heatmap_adaptive_scale(self, center_locs, radius_list, k=1):
+        heatmap = np.zeros((1, self.size, self.size), dtype=np.float32)
+        for center, radius in zip(center_locs, radius_list):
+            diameter = 2 * radius + 1
+            gaussian = gaussian2D((diameter, diameter), sigma=float(diameter) / 6)
+            x, y = int((center[0] + 1) / 2 * self.size), int((center[1] + 1) / 2 * self.size)
+            if x < 0 or y < 0 or x >= self.size or y >= self.size:
+                continue
+            height, width = heatmap.shape[1:]
+            left, right = min(x, radius), min(width - x, radius + 1)
+            top, bottom = min(y, radius), min(height - y, radius + 1)
+            masked_heatmap = heatmap[0, y - top:y + bottom, x - left:x + right]
+            masked_gaussian = gaussian[radius - top:radius + bottom, radius - left:radius + right]
+            if min(masked_gaussian.shape) > 0 and min(masked_heatmap.shape) > 0:
+                np.maximum(masked_heatmap, masked_gaussian * k, out=masked_heatmap)
+            heatmap[0, y, x] = 1
+        return heatmap
+
+    def generate_centermap_3dheatmap_adaptive_scale_batch(self, batch_center_locs, radius=3, depth_num=None, device='cuda:0'):
+        if depth_num is None:
+            depth_num = int(self.size // 2)
+        heatmap = torch.zeros((len(batch_center_locs), depth_num, self.size, self.size), device=device)
+        for bid, center_locs in enumerate(batch_center_locs):
+            for cid, center in enumerate(center_locs):
+                diameter = int(2 * radius + 1)
+                gaussian_patch = gaussian3D(w=diameter, h=diameter, d=diameter, center=(diameter // 2, diameter // 2, diameter // 2), s=float(diameter) / 6, device=device)
+                xa, ya, za = int(max(0, center[0] - diameter // 2)), int(max(0, center[1] - diameter // 2)), int(max(0, center[2] - diameter // 2))
+                xb, yb, zb = int(min(center[0] + diameter // 2, self.size - 1)), int(min(center[1] + diameter // 2, self.size - 1)), int(min(center[2] + diameter // 2, depth_num - 1))
+                gxa = xa - int(center[0] - diameter // 2)
+                gya = ya - int(center[1] - diameter // 2)
+                gza = za - int(center[2] - diameter // 2)
+                gxb = xb + 1 - xa + gxa
+                gyb = yb + 1 - ya + gya
+                gzb = zb + 1 - za + gza
+                heatmap[bid, za:zb + 1, ya:yb + 1, xa:xb + 1] = torch.max(torch.cat(tuple([heatmap[bid, za:zb + 1, ya:yb + 1, xa:xb + 1].unsqueeze(0), gaussian_patch[gza:gzb, gya:gyb, gxa:gxb].unsqueeze(0)])), 0)[0]
+        return heatmap
+
+    def generate_centermap_3dheatmap_adaptive_scale(self, center_locs, depth_num=None, device='cpu'):
+        """
+        center_locs: center locations (X,Y,Z) on 3D center map (BxDxHxW)
+        """
+        if depth_num is None:
+            depth_num = int(self.size // 2)
+        heatmap = torch.zeros((depth_num, self.size, self.size))
+        if len(center_locs) == 0:
+            return heatmap, False
+        adaptive_depth_uncertainty = np.array(center_locs)[:, 2].astype(np.float16) / depth_num
+        depth_uncertainty = (4 + adaptive_depth_uncertainty * 4).astype(np.int32) // 2 * 2 + 1
+        adaptive_image_scale = (1 - adaptive_depth_uncertainty) / 2.0
+        uv_radius = (_calc_uv_radius_(adaptive_image_scale, map_size=self.size) * 2 + 1).astype(np.int32)
+        for cid, center in enumerate(center_locs):
+            width, height = uv_radius[cid], uv_radius[cid]
+            depth = depth_uncertainty[cid]
+            diameter = np.linalg.norm([width / 2.0, height / 2.0, depth / 2.0], ord=2, axis=0) * 2
+            gaussian_patch = gaussian3D(w=width, h=height, d=depth, center=(width // 2, height // 2, depth // 2), s=float(diameter) / 6, device=device)
+            xa, ya, za = int(max(0, center[0] - width // 2)), int(max(0, center[1] - height // 2)), int(max(0, center[2] - depth // 2))
+            xb, yb, zb = int(min(center[0] + width // 2, self.size - 1)), int(min(center[1] + height // 2, self.size - 1)), int(min(center[2] + depth // 2, depth_num - 1))
+            gxa = xa - int(center[0] - width // 2)
+            gya = ya - int(center[1] - height // 2)
+            gza = za - int(center[2] - depth // 2)
+            gxb = xb + 1 - xa + gxa
+            gyb = yb + 1 - ya + gya
+            gzb = zb + 1 - za + gza
+            heatmap[za:zb + 1, ya:yb + 1, xa:xb + 1] = torch.max(torch.cat(tuple([heatmap[za:zb + 1, ya:yb + 1, xa:xb + 1].unsqueeze(0), gaussian_patch[gza:gzb, gya:gyb, gxa:gxb].unsqueeze(0)])), 0)[0]
+        return heatmap, True
+
+    def generate_centermap_3dheatmap_adaptive_scale_org(self, center_locs, radius=3, depth_num=None, device='cpu'):
+        """
+        center_locs: center locations (X,Y,Z) on 3D center map (BxDxHxW)
+        """
+        if depth_num is None:
+            depth_num = int(self.size // 2)
+        heatmap = torch.zeros((depth_num, self.size, self.size))
+        if len(center_locs) == 0:
+            return heatmap, False
+        for cid, center in enumerate(center_locs):
+            diameter = int(2 * radius + 1)
+            gaussian_patch = gaussian3D(w=diameter, h=diameter, d=diameter, center=(diameter // 2, diameter // 2, diameter // 2), s=float(diameter) / 6, device=device)
+            xa, ya, za = int(max(0, center[0] - diameter // 2)), int(max(0, center[1] - diameter // 2)), int(max(0, center[2] - diameter // 2))
+            xb, yb, zb = int(min(center[0] + diameter // 2, self.size - 1)), int(min(center[1] + diameter // 2, self.size - 1)), int(min(center[2] + diameter // 2, depth_num - 1))
+            gxa = xa - int(center[0] - diameter // 2)
+            gya = ya - int(center[1] - diameter // 2)
+            gza = za - int(center[2] - diameter // 2)
+            gxb = xb + 1 - xa + gxa
+            gyb = yb + 1 - ya + gya
+            gzb = zb + 1 - za + gza
+            heatmap[za:zb + 1, ya:yb + 1, xa:xb + 1] = torch.max(torch.cat(tuple([heatmap[za:zb + 1, ya:yb + 1, xa:xb + 1].unsqueeze(0), gaussian_patch[gza:gzb, gya:gyb, gxa:gxb].unsqueeze(0)])), 0)[0]
+        return heatmap, True
+
+    def multi_channel_nms(self, center_maps):
+        center_map_pooled = []
+        for depth_idx, center_map in enumerate(center_maps):
+            center_map_pooled.append(nms(center_map[None], pool_func=self.pool_group[args().kernel_sizes[depth_idx]]))
+        center_maps_max = torch.max(torch.cat(center_map_pooled, 0), 0).values
+        center_map_nms = nms(center_maps_max[None], pool_func=self.pool_group[args().kernel_sizes[-1]])[0]
+        return center_map_nms
+
+    def parse_centermap_mask(self, center_map):
+        center_map_bool = torch.argmax(center_map, 1).bool()
+        center_idx = torch.stack(torch.where(center_map_bool)).transpose(1, 0)
+        return center_idx
+
+    def parse_centermap_heatmap(self, center_maps):
+        if center_maps.shape[0] > 1:
+            center_map_nms = self.multi_channel_nms(center_maps)
+        else:
+            center_map_nms = nms(center_maps, pool_func=self.pool_group[args().kernel_sizes[-1]])[0]
+        h, w = center_map_nms.shape
+        centermap = center_map_nms.view(-1)
+        confidence, index = centermap.topk(self.max_person)
+        x = index % w
+        y = (index / w).long()
+        idx_topk = torch.stack((y, x), dim=1)
+        center_preds, conf_pred = idx_topk[confidence > self.conf_thresh], confidence[confidence > self.conf_thresh]
+        return center_preds, conf_pred
+
+    def parse_centermap_heatmap_adaptive_scale(self, center_maps):
+        center_map_nms = nms(center_maps, pool_func=self.pool_group[args().kernel_sizes[-1]])[0]
+        h, w = center_map_nms.shape
+        centermap = center_map_nms.view(-1)
+        confidence, index = centermap.topk(self.max_person)
+        x = index % w
+        y = (index / float(w)).long()
+        idx_topk = torch.stack((y, x), dim=1)
+        center_preds, conf_pred = idx_topk[confidence > self.conf_thresh], confidence[confidence > self.conf_thresh]
+        return center_preds, conf_pred
+
+    def parse_centermap_heatmap_adaptive_scale_batch(self, center_maps, top_n_people=None):
+        center_map_nms = nms(center_maps, pool_func=self.pool_group[args().kernel_sizes[-1]])
+        b, c, h, w = center_map_nms.shape
+        K = self.max_person if top_n_people is None else top_n_people
+        topk_scores, topk_inds = torch.topk(center_map_nms.reshape(b, c, -1), K)
+        topk_inds = topk_inds % (h * w)
+        topk_ys = torch.div(topk_inds.long(), w).float()
+        topk_xs = (topk_inds % w).int().float()
+        topk_score, index = torch.topk(topk_scores.reshape(b, -1), K)
+        topk_clses = torch.div(index.long(), K)
+        topk_inds = gather_feature(topk_inds.view(b, -1, 1), index).reshape(b, K)
+        topk_ys = gather_feature(topk_ys.reshape(b, -1, 1), index).reshape(b, K)
+        topk_xs = gather_feature(topk_xs.reshape(b, -1, 1), index).reshape(b, K)
+        if top_n_people is not None:
+            mask = topk_score > 0
+            mask[:] = True
+        else:
+            mask = topk_score > self.conf_thresh
+        batch_ids = torch.where(mask)[0]
+        center_yxs = torch.stack([topk_ys[mask], topk_xs[mask]]).permute((1, 0))
+        return batch_ids, topk_inds[mask], center_yxs, topk_score[mask]
+
+    def parse_3dcentermap_heatmap_adaptive_scale_batch(self, center_maps, top_n_people=None):
+        center_map_nms = nms(center_maps, pool_func=self.maxpool3d).squeeze(1)
+        b, c, h, w = center_map_nms.shape
+        K = self.max_person if top_n_people is None else top_n_people
+        topk_scores, topk_inds = torch.topk(center_map_nms.reshape(b, c, -1), K)
+        topk_inds = topk_inds % (h * w)
+        topk_ys = torch.div(topk_inds.long(), w).float()
+        topk_xs = (topk_inds % w).int().float()
+        topk_score, index = torch.topk(topk_scores.reshape(b, -1), K)
+        topk_inds = gather_feature(topk_inds.view(b, -1, 1), index).reshape(b, K)
+        topk_zs = torch.div(index.long(), K)
+        topk_ys = gather_feature(topk_ys.reshape(b, -1, 1), index).reshape(b, K)
+        topk_xs = gather_feature(topk_xs.reshape(b, -1, 1), index).reshape(b, K)
+        if top_n_people is not None:
+            mask = topk_score > 0
+            mask[:] = True
+        else:
+            mask = topk_score > self.conf_thresh
+        batch_ids = torch.where(mask)[0]
+        center_zyxs = torch.stack([topk_zs[mask], topk_ys[mask], topk_xs[mask]]).permute((1, 0)).long()
+        return [batch_ids, center_zyxs, topk_score[mask]]
+
+    def parse_local_centermap3D(self, center_maps, pred_batch_ids, center_yxs, only_max=False):
+        if len(center_yxs) == 0:
+            return [], [], []
+        cys = center_yxs[:, 0]
+        cxs = center_yxs[:, 1]
+        center_map_nms = nms(center_maps, pool_func=self.maxpool3d).squeeze(1)
+        b, c, h, w = center_map_nms.shape
+        cys = torch.clip(cys, 0, h - 1)
+        cxs = torch.clip(cxs, 0, w - 1)
+        device = center_maps.device
+        local_K = 16
+        czyxs = []
+        new_pred_batch_inds = []
+        top_scores = []
+        for batch_id, cy, cx in zip(pred_batch_ids, cys, cxs):
+            local_vec = center_map_nms[batch_id, :, cy, cx]
+            topk_scores, topk_zs = torch.topk(local_vec, local_K)
+            if only_max:
+                mask = torch.zeros(len(topk_scores)).bool()
+                mask[0] = True
+            else:
+                mask = topk_scores > self.conf_thresh
+                if mask.sum() == 0:
+                    mask[0] = True
+            for cz, score in zip(topk_zs[mask], topk_scores[mask]):
+                czyxs.append(torch.Tensor([cz, cy, cx]))
+                new_pred_batch_inds.append(batch_id)
+                top_scores.append(score)
+        czyxs = torch.stack(czyxs).long()
+        new_pred_batch_inds = torch.Tensor(new_pred_batch_inds).long()
+        top_scores = torch.Tensor(top_scores)
+        return new_pred_batch_inds, czyxs, top_scores
 
 
 DEFAULT_DTYPE = torch.float32
@@ -322,20 +1001,148 @@ def _calc_matched_PCKh_(real, pred, kp2d_mask, error_thresh=0.143):
     return PCKs
 
 
+def angle_axis_to_quaternion(angle_axis: 'torch.Tensor') ->torch.Tensor:
+    """Convert an angle axis to a quaternion.
+
+    Adapted from ceres C++ library: ceres-solver/include/ceres/rotation.h
+
+    Args:
+        angle_axis (torch.Tensor): tensor with angle axis.
+
+    Return:
+        torch.Tensor: tensor with quaternion.
+
+    Shape:
+        - Input: :math:`(*, 3)` where `*` means, any number of dimensions
+        - Output: :math:`(*, 4)` in (w,x,y,z) order.
+    """
+    if not torch.is_tensor(angle_axis):
+        raise TypeError('Input type is not a torch.Tensor. Got {}'.format(type(angle_axis)))
+    if not angle_axis.shape[-1] == 3:
+        raise ValueError('Input must be a tensor of shape Nx3 or 3. Got {}'.format(angle_axis.shape))
+    a0: 'torch.Tensor' = angle_axis[..., 0:1]
+    a1: 'torch.Tensor' = angle_axis[..., 1:2]
+    a2: 'torch.Tensor' = angle_axis[..., 2:3]
+    theta_squared: 'torch.Tensor' = a0 * a0 + a1 * a1 + a2 * a2
+    theta: 'torch.Tensor' = torch.sqrt(theta_squared)
+    half_theta: 'torch.Tensor' = theta * 0.5
+    mask: 'torch.Tensor' = theta_squared > 0.0
+    ones: 'torch.Tensor' = torch.ones_like(half_theta)
+    k_neg: 'torch.Tensor' = 0.5 * ones
+    k_pos: 'torch.Tensor' = torch.sin(half_theta) / theta
+    k: 'torch.Tensor' = torch.where(mask, k_pos, k_neg)
+    w: 'torch.Tensor' = torch.where(mask, torch.cos(half_theta), ones)
+    quaternion: 'torch.Tensor' = torch.zeros_like(angle_axis)
+    quaternion[..., 0:1] += a0 * k
+    quaternion[..., 1:2] += a1 * k
+    quaternion[..., 2:3] += a2 * k
+    return torch.cat([w, quaternion], dim=-1)
+
+
+def clip_frame_pairs_indes(N, device):
+    first_index, second_index = torch.meshgrid(torch.arange(N), torch.arange(N))
+    first_index = first_index.reshape(-1)
+    second_index = second_index.reshape(-1)
+    k = first_index != second_index
+    first_index = first_index[k]
+    second_index = second_index[k]
+    return first_index, second_index
+
+
+def q_conjugate(q):
+    """
+    Returns the complex conjugate of the input quaternion tensor of shape [*, 4].
+    """
+    assert q.shape[-1] == 4
+    conj = torch.tensor([1, -1, -1, -1], device=q.device)
+    return q * conj.expand_as(q)
+
+
+def q_mul(q1, q2):
+    """
+    Multiply quaternion q1 with q2.
+    Expects two equally-sized tensors of shape [*, 4], where * denotes any number of dimensions.
+    Returns q1*q2 as a tensor of shape [*, 4].
+    """
+    assert q1.shape[-1] == 4
+    assert q2.shape[-1] == 4
+    original_shape = q1.shape
+    terms = torch.bmm(q2.view(-1, 4, 1), q1.view(-1, 1, 4))
+    w = terms[:, 0, 0] - terms[:, 1, 1] - terms[:, 2, 2] - terms[:, 3, 3]
+    x = terms[:, 0, 1] + terms[:, 1, 0] - terms[:, 2, 3] + terms[:, 3, 2]
+    y = terms[:, 0, 2] + terms[:, 1, 3] + terms[:, 2, 0] - terms[:, 3, 1]
+    z = terms[:, 0, 3] - terms[:, 1, 2] + terms[:, 2, 1] + terms[:, 3, 0]
+    return torch.stack((w, x, y, z), dim=1).view(original_shape)
+
+
+def q_normalize(q):
+    """
+    Normalize the coefficients of a given quaternion tensor of shape [*, 4].
+    """
+    assert q.shape[-1] == 4
+    norm = torch.sqrt(torch.sum(torch.square(q), dim=-1))
+    assert not torch.any(torch.isclose(norm, torch.zeros_like(norm, device=q.device)))
+    return torch.div(q, norm[:, None])
+
+
+def quaternion_difference(q1, q2):
+    q1_normed, q2_normed = q_normalize(q1), q_normalize(q2)
+    q1_inv = q_conjugate(q1_normed)
+    difference = q_mul(q1_inv, q2_normed)
+    return difference
+
+
+def quaternion_loss(predictions, targets):
+    """
+    Computes the quaternion loss between predicted and target quaternions.
+    Args:
+        predictions (torch.Tensor): predicted quaternions of shape (batch_size, 4)
+        targets (torch.Tensor): target quaternions of shape (batch_size, 4)
+    Returns:
+        quaternion_loss (torch.Tensor): quaternion loss value
+    """
+    predictions_norm = predictions / torch.norm(predictions, dim=1, keepdim=True)
+    targets_norm = targets / torch.norm(targets, dim=1, keepdim=True)
+    dot_product = torch.sum(predictions_norm * targets_norm, dim=1)
+    angle = 2 * torch.acos(torch.clamp(dot_product, min=-1, max=1))
+    quaternion_loss = torch.mean(angle)
+    return quaternion_loss
+
+
+def _calc_world_gros_loss_(preds, gts, vmasks, sequence_inds):
+    loss = []
+    device = preds.device
+    gts, vmasks = gts, vmasks
+    for seq_inds in sequence_inds:
+        pred, gt, vmask = preds[seq_inds], gts[seq_inds], vmasks[seq_inds]
+        if vmask.sum() == 0:
+            continue
+        N = pred.shape[0]
+        first_index, second_index = clip_frame_pairs_indes(N, device)
+        quaternion_pred = angle_axis_to_quaternion(pred)
+        quaternion_gt = angle_axis_to_quaternion(gt)
+        delta_pred = quaternion_difference(quaternion_pred[first_index], quaternion_pred[second_index])
+        delta_gt = quaternion_difference(quaternion_gt[first_index], quaternion_gt[second_index])
+        error = quaternion_loss(delta_pred, delta_gt)
+        loss.append(error)
+    loss = torch.stack(loss) if len(loss) > 0 else torch.zeros(1, device=device)
+    return loss
+
+
 def _check_params_(params):
     assert params.shape[0] > 0, logging.error('meta_data[params] dim 0 is empty, params: {}'.format(params))
     assert params.shape[1] > 0, logging.error('meta_data[params] dim 1 is empty, params shape: {}, params: {}'.format(params.shape, params))
 
 
-def batch_kp_2d_l2_loss(real, pred):
+def batch_kp_2d_l2_loss(real, pred, images):
     """ 
     Directly supervise the 2D coordinates of global joints, like torso
     While supervise the relative 2D coordinates of part joints, like joints on face, feets
     """
     vis_mask = ((real > -1.99).sum(-1) == real.shape[-1]).float()
     for parent_joint, leaf_joints in constants.joint2D_tree.items():
-        parent_id = constants.SMPL_ALL_54[parent_joint]
-        leaf_ids = np.array([constants.SMPL_ALL_54[leaf_joint] for leaf_joint in leaf_joints])
+        parent_id = constants.SMPL_ALL_44[parent_joint]
+        leaf_ids = np.array([constants.SMPL_ALL_44[leaf_joint] for leaf_joint in leaf_joints])
         vis_mask[:, leaf_ids] = vis_mask[:, [parent_id]] * vis_mask[:, leaf_ids]
         real[:, leaf_ids] -= real[:, [parent_id]]
         pred[:, leaf_ids] -= pred[:, [parent_id]]
@@ -347,50 +1154,58 @@ def batch_kp_2d_l2_loss(real, pred):
         loss = (diff * vis_mask).sum(-1) / (vis_mask.sum(-1) + 0.0001)
         if torch.isnan(loss).sum() > 0 or (loss > 1000).sum() > 0:
             return 0
-            None
-            non_position = torch.isnan(loss)
-            None
-            return 0
+    return loss
+
+
+def batch_kp_2d_l2_loss_old(real, pred, top_limit=100):
+    vis_mask = (real > -1.99).sum(-1) == real.shape[-1]
+    loss = torch.norm(real[vis_mask] - pred[vis_mask], p=2, dim=-1)
+    loss = loss[~torch.isnan(loss)]
+    loss = loss[loss < top_limit]
+    if len(loss) == 0:
+        return 0
     return loss
 
 
 def batch_l2_loss(real, predict):
-    loss_batch = torch.norm(real - predict, p=2, dim=1)
-    return loss_batch.mean()
+    if len(real) == 0:
+        return 0
+    loss = torch.norm(real - predict, p=2, dim=1)
+    loss = loss[~torch.isnan(loss)]
+    if len(loss) == 0:
+        return 0
+    return loss
 
 
 def quat2mat(quat):
-    """
-    This function is borrowed from https://github.com/MandyMo/pytorch_HMR/blob/master/src/util.py#L50
-
-    Convert quaternion coefficients to rotation matrix.
+    """Convert quaternion coefficients to rotation matrix.
+    把四元组的系数转化成旋转矩阵。四元组表示三维旋转
     Args:
-        quat: size = [batch_size, 4] 4 <===>(w, x, y, z)
+        quat: size = [B, 4] 4 <===>(w, x, y, z)
     Returns:
-        Rotation matrix corresponding to the quaternion -- size = [batch_size, 3, 3]
+        Rotation matrix corresponding to the quaternion -- size = [B, 3, 3]
     """
     norm_quat = quat
     norm_quat = norm_quat / norm_quat.norm(p=2, dim=1, keepdim=True)
     w, x, y, z = norm_quat[:, 0], norm_quat[:, 1], norm_quat[:, 2], norm_quat[:, 3]
-    batch_size = quat.size(0)
+    B = quat.size(0)
     w2, x2, y2, z2 = w.pow(2), x.pow(2), y.pow(2), z.pow(2)
     wx, wy, wz = w * x, w * y, w * z
     xy, xz, yz = x * y, x * z, y * z
-    rotMat = torch.stack([w2 + x2 - y2 - z2, 2 * xy - 2 * wz, 2 * wy + 2 * xz, 2 * wz + 2 * xy, w2 - x2 + y2 - z2, 2 * yz - 2 * wx, 2 * xz - 2 * wy, 2 * wx + 2 * yz, w2 - x2 - y2 + z2], dim=1).view(batch_size, 3, 3)
+    rotMat = torch.stack([w2 + x2 - y2 - z2, 2 * xy - 2 * wz, 2 * wy + 2 * xz, 2 * wz + 2 * xy, w2 - x2 + y2 - z2, 2 * yz - 2 * wx, 2 * xz - 2 * wy, 2 * wx + 2 * yz, w2 - x2 - y2 + z2], dim=1).view(B, 3, 3)
     return rotMat
 
 
-def batch_rodrigues(axisang):
-    axisang_norm = torch.norm(axisang + 1e-08, p=2, dim=1)
-    angle = torch.unsqueeze(axisang_norm, -1)
-    axisang_normalized = torch.div(axisang, angle)
+def batch_rodrigues(param):
+    batch_size = param.shape[0]
+    l1norm = torch.norm(param + 1e-08, p=2, dim=1)
+    angle = torch.unsqueeze(l1norm, -1)
+    normalized = torch.div(param, angle)
     angle = angle * 0.5
     v_cos = torch.cos(angle)
     v_sin = torch.sin(angle)
-    quat = torch.cat([v_cos, v_sin * axisang_normalized], dim=1)
-    rot_mat = quat2mat(quat)
-    rot_mat = rot_mat.view(rot_mat.shape[0], 9)
-    return rot_mat
+    quat = torch.cat([v_cos, v_sin * normalized], dim=1)
+    return quat2mat(quat)
 
 
 def batch_smpl_pose_l2_error(real, predict):
@@ -400,6 +1215,37 @@ def batch_smpl_pose_l2_error(real, predict):
     loss = torch.norm((real - predict).view(-1, 9), p=2, dim=-1)
     loss = loss.reshape(batch_size, -1).mean(-1)
     return loss
+
+
+def get_valid_offset_mask(traj_gts, clip_frame_ids):
+    dims = traj_gts.shape[-1]
+    current_position = traj_gts[torch.arange(len(clip_frame_ids)), clip_frame_ids]
+    previous_position = traj_gts[torch.arange(len(clip_frame_ids)), clip_frame_ids - 1]
+    valid_offset_mask = (clip_frame_ids != 0) * ((current_position != -2.0).sum(-1) == dims) * ((previous_position != -2.0).sum(-1) == dims)
+    offset_gts = current_position[valid_offset_mask] - previous_position[valid_offset_mask]
+    return valid_offset_mask, offset_gts
+
+
+def get_valid_offset_maskV2(traj_gts, clip_frame_ids):
+    dims = traj_gts.shape[-1]
+    current_position = traj_gts.clone()
+    previous_position = traj_gts[torch.arange(len(traj_gts)) - 1].clone()
+    valid_offset_mask = (clip_frame_ids.clone() != 0) * ((current_position != -2.0).sum(-1) == dims) * ((previous_position != -2.0).sum(-1) == dims)
+    offset_gts = current_position[valid_offset_mask] - previous_position[valid_offset_mask]
+    return valid_offset_mask, offset_gts
+
+
+def calc_motion_offsets3D_loss(motion_offsets, clip_frame_ids, traj3D_gts):
+    if len(traj3D_gts.shape) == 3:
+        valid_3Doffset_masks, offset3D_gts = get_valid_offset_mask(traj3D_gts, clip_frame_ids)
+    elif len(traj3D_gts.shape) == 2:
+        valid_3Doffset_masks, offset3D_gts = get_valid_offset_maskV2(traj3D_gts, clip_frame_ids)
+    if valid_3Doffset_masks.sum() > 0:
+        valid_3Doffset_masks = valid_3Doffset_masks.detach()
+        offset3D_loss = torch.norm(motion_offsets[valid_3Doffset_masks] - offset3D_gts, p=2, dim=-1)
+    else:
+        offset3D_loss = 0
+    return offset3D_loss
 
 
 def align_by_parts(joints, align_inds=None):
@@ -443,7 +1289,8 @@ def batch_compute_similarity_transform_torch(S1, S2):
     X2 = S2 - mu2
     var1 = torch.sum(X1 ** 2, dim=1).sum(dim=1)
     K = X1.bmm(X2.permute(0, 2, 1))
-    U, s, V = torch.svd(K)
+    U, s, Vh = torch.linalg.svd(K)
+    V = Vh.transpose(-2, -1)
     Z = torch.eye(U.shape[1], device=S1.device).unsqueeze(0)
     Z = Z.repeat(U.shape[0], 1, 1)
     Z[:, -1, -1] *= torch.sign(torch.det(U.bmm(V.permute(0, 2, 1))))
@@ -467,7 +1314,47 @@ def calc_pampjpe(real, pred, sample_wise=True, return_transform_mat=False):
         return pa_mpjpe_each
 
 
-def focal_loss(pred, gt):
+def calc_pj2d_error(real, pred, joint_inds=None):
+    if joint_inds is not None:
+        real, pred = real[:, joint_inds], pred[:, joint_inds]
+    vis_mask = (real > -1.99).sum(-1) == real.shape[-1]
+    bv_mask = torch.logical_and(vis_mask.float().sum(-1) > 0, (real - pred).sum(-1).sum(-1) != 0)
+    batch_errors = torch.zeros(len(pred))
+    for bid in torch.where(bv_mask)[0]:
+        vmask = vis_mask[bid]
+        diff = torch.norm(real[bid][vmask] - pred[bid][vmask], p=2, dim=-1).mean()
+        batch_errors[bid] = diff.item()
+    return batch_errors
+
+
+def calc_temporal_shape_consistency_loss(pred_betas, sequence_inds, weights=None):
+    temp_shape_consist_loss = 0
+    seq_losses = []
+    for seq_inds in sequence_inds:
+        seq_pred_betas = pred_betas[seq_inds]
+        average_shape = seq_pred_betas.mean(0).unsqueeze(0).detach()
+        diff = seq_pred_betas - average_shape
+        if weights is not None:
+            diff = diff * weights.unsqueeze(0)
+        seq_losses.append(torch.norm(diff, p=2, dim=1))
+    if len(seq_losses) > 0:
+        temp_shape_consist_loss = torch.cat(seq_losses, 0)
+    return temp_shape_consist_loss
+
+
+def extract_sequence_inds(subject_ids, video_seq_ids, clip_frame_ids):
+    sequence_inds = []
+    for seq_id in torch.unique(video_seq_ids):
+        seq_inds = torch.where(video_seq_ids == seq_id)[0]
+        for subj_id in torch.unique(subject_ids[seq_inds]):
+            if subj_id == -1:
+                continue
+            subj_mask = subject_ids[seq_inds] == subj_id
+            sequence_inds.append(seq_inds[subj_mask][torch.argsort(clip_frame_ids[seq_inds][subj_mask])])
+    return sequence_inds
+
+
+def focal_loss(pred, gt, max_loss_limit=0.8):
     """ Modified focal loss. Exactly the same as CornerNet.
       Runs faster and costs a little bit more memory
     Arguments:
@@ -487,6 +1374,9 @@ def focal_loss(pred, gt):
     mask = num_pos > 0
     loss[~mask] = loss[~mask] - neg_loss[~mask]
     loss[mask] = loss[mask] - (pos_loss[mask] + neg_loss[mask]) / (num_pos[mask] + 0.0001)
+    while (loss > max_loss_limit).sum() > 0:
+        exclude_mask = loss > max_loss_limit
+        loss[exclude_mask] = loss[exclude_mask] / 4
     return loss.mean(-1)
 
 
@@ -501,6 +1391,7 @@ def focal_loss_3D(pred, gt):
     neg_inds = gt.lt(1).float()
     neg_weights = torch.pow(1 - gt, 4)
     loss = torch.zeros(gt.size(0))
+    pred[torch.isnan(pred)] = 0.001
     pred_log = torch.clamp(pred.clone(), min=0.001, max=1 - 0.001)
     pos_loss = torch.log(pred_log) * torch.pow(1 - pred, 2) * pos_inds
     neg_loss = torch.log(1 - pred_log) * torch.pow(pred, 2) * neg_weights * neg_inds
@@ -510,6 +1401,9 @@ def focal_loss_3D(pred, gt):
     mask = num_pos > 0
     loss[~mask] = loss[~mask] - neg_loss[~mask]
     loss[mask] = loss[mask] - (pos_loss[mask] + neg_loss[mask]) / (num_pos[mask] + 0.0001)
+    if torch.isnan(loss).sum() > 0:
+        None
+        loss[torch.isnan(loss)] = 0
     return loss.mean(-1)
 
 
@@ -594,6 +1488,56 @@ def relative_depth_loss(pred_depths, depth_ids, reorganize_idx, dist_thresh=0.3,
     return depth_ordering_loss
 
 
+def match_batch_subject_ids(reorganize_idx, subject_ids, torso_pj2d_errors, a_id, b_id, pj2d_thresh=0.1):
+    matched_inds = [[], []]
+    a_mask = reorganize_idx == a_id
+    b_mask = reorganize_idx == b_id
+    all_subject_ids = set(subject_ids[a_mask].cpu().numpy()).intersection(set(subject_ids[b_mask].cpu().numpy()))
+    if len(all_subject_ids) == 0:
+        return matched_inds
+    for ind, sid in enumerate(all_subject_ids):
+        a_ind = torch.where(torch.logical_and(subject_ids == sid, a_mask))[0][0]
+        b_ind = torch.where(torch.logical_and(subject_ids == sid, b_mask))[0][0]
+        a_error, b_error = torso_pj2d_errors[a_ind], torso_pj2d_errors[b_ind]
+        if a_error < pj2d_thresh and b_error < pj2d_thresh:
+            if a_error > b_error:
+                matched_inds[0].append(b_ind)
+                matched_inds[1].append(a_ind)
+            else:
+                matched_inds[0].append(a_ind)
+                matched_inds[1].append(b_ind)
+    matched_inds[0] = torch.Tensor(matched_inds[0]).long()
+    matched_inds[1] = torch.Tensor(matched_inds[1]).long()
+    return matched_inds
+
+
+def relative_depth_scale_loss(pred_depths, img_scale, subject_ids, reorganize_idx, torso_pj2d_errors):
+    batch_size = args().batch_size
+    rds_ratio = args().relative_depth_scale_aug_ratio
+    rds_size = int(batch_size * rds_ratio)
+    reorganize_idx_cpu = reorganize_idx.cpu()
+    subject_ids_cpu = subject_ids.cpu()
+    a_ids = torch.arange(batch_size - 2 * rds_size, batch_size - rds_size)
+    b_ids = torch.arange(batch_size - rds_size, batch_size)
+    rds_loss = []
+    for a_id, b_id in zip(a_ids, b_ids):
+        if a_id not in reorganize_idx_cpu or b_id not in reorganize_idx_cpu:
+            continue
+        matched_inds = match_batch_subject_ids(reorganize_idx_cpu, subject_ids_cpu, torso_pj2d_errors, a_id, b_id)
+        if len(matched_inds[0]) == 0 or len(matched_inds[1]) == 0:
+            continue
+        img_scale_anchor = img_scale[matched_inds[0]].reshape(-1)
+        img_scale_learn = img_scale[matched_inds[1]].reshape(-1)
+        pred_depths_anchor = pred_depths[matched_inds[0]].detach()
+        pred_depths_learn = pred_depths[matched_inds[1]]
+        scale_diff = torch.sqrt((torch.div(pred_depths_learn, pred_depths_anchor) - torch.div(img_scale_learn, img_scale_anchor)) ** 2 + 1e-06)
+        rds_loss.append(scale_diff)
+    if len(rds_loss) == 0:
+        return torch.zeros(1, device=pred_depths.device)
+    else:
+        return torch.cat(rds_loss).mean()
+
+
 class Loss(nn.Module):
 
     def __init__(self):
@@ -602,9 +1546,10 @@ class Loss(nn.Module):
         if args().HMloss_type == 'focal':
             args().heatmap_weight /= 1000
         self.cross_entropy = nn.CrossEntropyLoss(ignore_index=-1)
-        self.joint_lossweights = torch.from_numpy(constants.SMPL54_weights).float()
-        self.align_inds_MPJPE = np.array([constants.SMPL_ALL_54['L_Hip'], constants.SMPL_ALL_54['R_Hip']])
+        self.align_inds_MPJPE = np.array([constants.SMPL_ALL_44['L_Hip'], constants.SMPL_ALL_44['R_Hip']])
         self.shape_pca_weight = torch.Tensor([1, 0.64, 0.32, 0.32, 0.16, 0.16, 0.16, 0.16, 0.16, 0.16]).unsqueeze(0).float()
+        if args().center3d_loss == 'dynamic':
+            self.CM = CenterMap()
 
     def forward(self, outputs, **kwargs):
         meta_data = outputs['meta_data']
@@ -619,6 +1564,12 @@ class Loss(nn.Module):
             loss_dict = dict(loss_dict, **kp_loss_dict)
             params_loss_dict = self._calc_param_loss(outputs, meta_data, matched_mask)
             loss_dict = dict(loss_dict, **params_loss_dict)
+            if args().video:
+                temp_loss_dict = self._calc_temp_loss(outputs, meta_data)
+                loss_dict = dict(loss_dict, **temp_loss_dict)
+            if args().estimate_camera:
+                camera_loss_dict = self._calc_camera_loss(outputs, meta_data)
+                loss_dict = dict(loss_dict, **camera_loss_dict)
         loss_names = list(loss_dict.keys())
         for name in loss_names:
             if isinstance(loss_dict[name], tuple):
@@ -628,29 +1579,75 @@ class Loss(nn.Module):
             loss_dict[name] = loss_dict[name].mean() * eval('args().{}_weight'.format(name))
         return {'loss_dict': loss_dict, 'kp_error': kp_error}
 
+    def _calc_camera_loss(self, outputs, meta_data):
+        camera_loss_dict = {'fovs': 0}
+        camera_loss_dict['fovs'] = calc_fov_loss(outputs['fovs'], meta_data['fovs'].squeeze())
+        return camera_loss_dict
+
+    def _calc_temp_loss(self, outputs, meta_data):
+        temp_loss_dict = {item: (0) for item in ['world_foot', 'world_grots', 'temp_shape_consist']}
+        if args().learn_motion_offset3D:
+            temp_loss_dict.update({item: (0) for item in ['motion_offsets3D']})
+        sequence_mask = outputs['pred_seq_mask']
+        if sequence_mask.sum() == 0:
+            return temp_loss_dict
+        pred_batch_ids = outputs['pred_batch_ids'][sequence_mask].detach().long() - meta_data['batch_ids'][0]
+        subject_ids = meta_data['subject_ids'][sequence_mask]
+        pred_cams = outputs['cam'][sequence_mask].float()
+        clip_frame_ids = meta_data['seq_inds'][pred_batch_ids, 1]
+        video_seq_ids = meta_data['seq_inds'][pred_batch_ids, 0]
+        sequence_inds = extract_sequence_inds(subject_ids, video_seq_ids, clip_frame_ids)
+        if args().dynamic_augment:
+            world_cam_masks = meta_data['world_cam_mask'][sequence_mask]
+            world_cams_gt = meta_data['world_cams'][sequence_mask]
+            world_trans_gts = meta_data['world_root_trans'][sequence_mask]
+            pred_world_cams = outputs['world_cams'][sequence_mask].float()
+            world_trans_preds = outputs['world_trans'][sequence_mask].float()
+            world_global_rots_gt = meta_data['world_global_rots'][sequence_mask]
+            world_global_rots_pred = outputs['world_global_rots'][sequence_mask]
+            grot_masks = meta_data['valid_masks'][sequence_mask][:, 3]
+            valid_world_global_rots_mask = torch.logical_and(grot_masks, world_cam_masks)
+            temp_loss_dict['world_grots'] = _calc_world_gros_loss_(world_global_rots_pred, world_global_rots_gt, valid_world_global_rots_mask, sequence_inds)
+            temp_loss_dict['wrotsL2'] = 0
+            if valid_world_global_rots_mask.sum() > 0:
+                temp_loss_dict['wrotsL2'] = batch_smpl_pose_l2_error(world_global_rots_gt[valid_world_global_rots_mask].contiguous(), world_global_rots_pred[valid_world_global_rots_mask].contiguous()).mean()
+            temp_loss_dict['world_pj2D'] = batch_kp_2d_l2_loss_old(meta_data['dynamic_kp2ds'], outputs['world_pj2d'])
+        if args().learn_temporal_shape_consistency:
+            pred_betas = outputs['smpl_betas'][sequence_mask]
+            temp_loss_dict['temp_shape_consist'] = calc_temporal_shape_consistency_loss(pred_betas, sequence_inds)
+        if args().learn_motion_offset3D:
+            pred_motion_offsets = outputs['motion_offsets3D'][sequence_mask]
+            traj3D_gts = meta_data['traj3D_gts'][sequence_mask]
+            traj2D_gts = meta_data['traj2D_gts'][sequence_mask]
+            temp_loss_dict['motion_offsets3D'] = calc_motion_offsets3D_loss(pred_motion_offsets, clip_frame_ids, traj3D_gts)
+        return temp_loss_dict
+
     def _calc_detection_loss(self, outputs, meta_data):
-        detect_loss_dict = {'CenterMap': 0}
+        detect_loss_dict = {}
+        all_person_mask = meta_data['all_person_detected_mask']
         if args().calc_mesh_loss and 'center_map' in outputs:
-            all_person_mask = meta_data['all_person_detected_mask']
             if all_person_mask.sum() > 0:
                 detect_loss_dict['CenterMap'] = focal_loss(outputs['center_map'][all_person_mask], meta_data['centermap'][all_person_mask])
+            else:
+                detect_loss_dict['CenterMap'] = 0
         reorganize_idx_on_each_gpu = outputs['reorganize_idx'] - outputs['meta_data']['batch_ids'][0]
         if 'center_map_3d' in outputs:
-            detect_loss_dict['CenterMap_3D'] = 0
             valid_mask_c3d = meta_data['valid_centermap3d_mask'].squeeze()
+            valid_mask_c3d = torch.logical_and(valid_mask_c3d, all_person_mask.squeeze())
+            detect_loss_dict['CenterMap_3D'] = 0
             valid_mask_c3d = valid_mask_c3d.reshape(-1)
-            if meta_data['valid_centermap3d_mask'].sum() > 0:
+            if valid_mask_c3d.sum() > 0:
                 detect_loss_dict['CenterMap_3D'] = focal_loss_3D(outputs['center_map_3d'][valid_mask_c3d], meta_data['centermap_3d'][valid_mask_c3d])
         return detect_loss_dict
 
     def _calc_keypoints_loss(self, outputs, meta_data, matched_mask):
         kp_loss_dict, error = {'P_KP2D': 0, 'MPJPE': 0, 'PAMPJPE': 0}, {'3d': {'error': [], 'idx': []}, '2d': {'error': [], 'idx': []}}
-        if 'pj2d' in outputs:
-            real_2d = meta_data['full_kp2d']
+        real_2d = meta_data['full_kp2d']
+        if 'pj2d' in outputs and args().learn2Dprojection:
             if args().model_version == 3:
                 kp_loss_dict['joint_sampler'] = self.joint_sampler_loss(real_2d, outputs['joint_sampler_pred'])
-            kp_loss_dict['P_KP2D'] = batch_kp_2d_l2_loss(real_2d.float().clone(), outputs['pj2d'].float().clone())
-            kp3d_mask = meta_data['valid_masks'][:, 1]
+            kp_loss_dict['P_KP2D'] = batch_kp_2d_l2_loss_old(real_2d, outputs['pj2d'])
+        kp3d_mask = meta_data['valid_masks'][:, 1]
         if kp3d_mask.sum() > 1 and 'j3d' in outputs:
             kp3d_gt = meta_data['kp_3d'].contiguous()
             preds_kp3d = outputs['j3d'][:, :kp3d_gt.shape[1]].contiguous()
@@ -670,33 +1667,37 @@ class Loss(nn.Module):
         return kp_loss_dict, error
 
     def _calc_param_loss(self, outputs, meta_data, matched_mask):
-        params_loss_dict = {'Pose': 0, 'Shape': 0, 'Cam': 0, 'Prior': 0}
+        params_loss_dict = {'Pose': 0, 'Shape': 0}
+        _check_params_(meta_data['params'])
+        device = outputs['body_pose'].device
+        grot_masks, smpl_pose_masks, smpl_shape_masks = meta_data['valid_masks'][:, 3], meta_data['valid_masks'][:, 4], meta_data['valid_masks'][:, 5]
+        if grot_masks.sum() > 0:
+            params_loss_dict['Pose'] += batch_smpl_pose_l2_error(meta_data['params'][grot_masks, :3].contiguous(), outputs['global_orient'][grot_masks].contiguous()).mean()
+        if smpl_pose_masks.sum() > 0:
+            params_loss_dict['Pose'] += batch_smpl_pose_l2_error(meta_data['params'][smpl_pose_masks, 3:22 * 3].contiguous(), outputs['body_pose'][smpl_pose_masks, :21 * 3].contiguous()).mean()
+        if smpl_shape_masks.sum() > 0:
+            smpl_shape_diff = meta_data['params'][smpl_shape_masks, -10:].contiguous() - outputs['smpl_betas'][smpl_shape_masks, :10].contiguous()
+            params_loss_dict['Shape'] += torch.norm(smpl_shape_diff * self.shape_pca_weight, p=2, dim=-1).mean() / 20.0
+        if args().separate_smil_betas:
+            pass
+        if (~smpl_shape_masks).sum() > 0:
+            params_loss_dict['Shape'] += (outputs['smpl_betas'][~smpl_shape_masks, :10] ** 2).mean() / 80.0
+        if args().supervise_cam_params:
+            params_loss_dict.update({'Cam': 0})
+            cam_mask = meta_data['cam_mask']
+            if cam_mask.sum() > 0:
+                params_loss_dict['Cam'] += batch_l2_loss(meta_data['cams'][cam_mask], outputs['cam'][cam_mask])
         if args().learn_relative:
-            params_loss_dict.update({'R_Age': 0, 'R_Depth': 0})
-        if 'params' in outputs:
-            _check_params_(meta_data['params'])
-            device = outputs['params']['body_pose'].device
-            grot_masks, smpl_pose_masks, smpl_shape_masks = meta_data['valid_masks'][:, 3], meta_data['valid_masks'][:, 4], meta_data['valid_masks'][:, 5]
-            if grot_masks.sum() > 0:
-                params_loss_dict['Pose'] += batch_smpl_pose_l2_error(meta_data['params'][grot_masks, :3].contiguous(), outputs['params']['global_orient'][grot_masks].contiguous()).mean()
-            if smpl_pose_masks.sum() > 0:
-                params_loss_dict['Pose'] += batch_smpl_pose_l2_error(meta_data['params'][smpl_pose_masks, 3:22 * 3].contiguous(), outputs['params']['body_pose'][smpl_pose_masks, :21 * 3].contiguous()).mean()
-            if smpl_shape_masks.sum() > 0:
-                smpl_shape_diff = meta_data['params'][smpl_shape_masks, -10:].contiguous() - outputs['params']['betas'][smpl_shape_masks, :10].contiguous()
-                params_loss_dict['Shape'] += torch.norm(smpl_shape_diff * self.shape_pca_weight, p=2, dim=-1).mean() / 20.0
-            if (~smpl_shape_masks).sum() > 0:
-                params_loss_dict['Shape'] += (outputs['params']['betas'][~smpl_shape_masks, :10] ** 2).mean() / 20.0
-            if args().supervise_cam_params:
-                cam_mask, pred_cam_params = meta_data['cam_mask'], outputs['params']['cam']
-                if cam_mask.sum() > 0:
-                    params_loss_dict['Cam'] += batch_l2_loss(meta_data['cams'][cam_mask], pred_cam_params[cam_mask])
-            if args().learn_relative:
-                if args().learn_relative_age:
-                    params_loss_dict['R_Age'] = relative_age_loss(outputs['kid_offsets_pred'], meta_data['depth_info'][:, 0], matched_mask=matched_mask) + kid_offset_loss(outputs['kid_offsets_pred'], meta_data['kid_shape_offsets'], matched_mask=matched_mask) * 2
-                if args().learn_relative_depth:
-                    params_loss_dict['R_Depth'] = relative_depth_loss(outputs['cam_trans'][:, 2], meta_data['depth_info'][:, 3], outputs['reorganize_idx'], matched_mask=matched_mask)
-            gmm_prior_loss = self.gmm_prior(outputs['params']['body_pose']).mean() / 100.0
-            valuable_prior_loss_thresh = 5.0
+            if args().learn_relative_age:
+                params_loss_dict['R_Age'] = relative_age_loss(outputs['kid_offsets_pred'], meta_data['depth_info'][:, 0], matched_mask=matched_mask) + kid_offset_loss(outputs['kid_offsets_pred'], meta_data['kid_shape_offsets'], matched_mask=matched_mask) * 2
+            if args().learn_relative_depth:
+                params_loss_dict['R_Depth'] = relative_depth_loss(outputs['cam_trans'][:, 2], meta_data['depth_info'][:, 3], outputs['reorganize_idx'], matched_mask=matched_mask)
+            if args().relative_depth_scale_aug and not args().model_return_loss:
+                torso_pj2d_errors = calc_pj2d_error(meta_data['full_kp2d'].clone(), outputs['pj2d'].float().clone(), joint_inds=constants.torso_joint_inds)
+                params_loss_dict['R_Depth_scale'] = relative_depth_scale_loss(outputs['cam_trans'][:, 2], meta_data['img_scale'], meta_data['subject_ids'], outputs['reorganize_idx'], torso_pj2d_errors)
+        if args().learn_gmm_prior:
+            gmm_prior_loss = self.gmm_prior(outputs['body_pose']).mean() / 100.0
+            valuable_prior_loss_thresh = 8.0
             gmm_prior_loss[gmm_prior_loss < valuable_prior_loss_thresh] = 0
             params_loss_dict['Prior'] = gmm_prior_loss
         return params_loss_dict
@@ -709,19 +1710,54 @@ class Loss(nn.Module):
         return loss
 
 
+def kabsch_umeyama(A, B):
+    n, m = A.shape
+    EA = torch.mean(A, axis=0)
+    EB = torch.mean(B, axis=0)
+    VarA = torch.mean((A - EA).norm(dim=1) ** 2)
+    H = (A - EA).T @ (B - EB) / n
+    U, D, VT = torch.svd(H)
+    c = VarA / torch.trace(torch.diag(D))
+    return c
+
+
+def _calc_world_trans_loss_(preds, gts, vmasks, sequence_inds):
+    loss = []
+    device = preds.device
+    gts, vmasks = gts, vmasks
+    for seq_inds in sequence_inds:
+        pred, gt, vmask = preds[seq_inds], gts[seq_inds], vmasks[seq_inds]
+        if vmask.sum() == 0:
+            continue
+        N = pred.shape[0]
+        first_index, second_index = clip_frame_pairs_indes(N, device)
+        scale2align = kabsch_umeyama(gt, pred).detach().clamp(max=10.0)
+        pred_aligned = pred * scale2align
+        delta_pred_aligned = pred_aligned[first_index] - pred_aligned[second_index]
+        delta_gt = gt[first_index] - gt[second_index]
+        error = torch.norm(delta_pred_aligned - delta_gt, dim=-1).mean()
+        if torch.isnan(error):
+            continue
+        loss.append(error)
+    loss = torch.stack(loss) if len(loss) > 0 else torch.zeros(1, device=device)
+    return loss
+
+
 class Learnable_Loss(nn.Module):
     """docstring for  Learnable_Loss"""
 
     def __init__(self, ID_num=0):
         super(Learnable_Loss, self).__init__()
-        self.loss_class = {'det': ['CenterMap', 'CenterMap_3D'], 'reg': ['MPJPE', 'PAMPJPE', 'P_KP2D', 'Pose', 'Shape', 'Cam', 'Prior']}
-        self.all_loss_names = np.concatenate([loss_list for task_name, loss_list in self.loss_class.items()]).tolist()
-        if args().learn_2dpose:
-            self.loss_class['reg'].append('heatmap')
-        if args().learn_AE:
-            self.loss_class['reg'].append('AE')
+        self.loss_class = {'det': ['CenterMap', 'CenterMap_3D'], 'loc': ['Cam', 'init_pj2d', 'cams_init', 'P_KP2D'], 'reg': ['MPJPE', 'PAMPJPE', 'P_KP2D', 'Pose', 'Shape', 'Prior', 'ortho']}
         if args().learn_relative:
             self.loss_class['rel'] = ['R_Age', 'R_Gender', 'R_Weight', 'R_Depth', 'R_Depth_scale']
+        if args().video:
+            self.loss_class['temp'] = ['temp_rot_consist', 'temp_cam_consist', 'temp_shape_consist']
+        if args().dynamic_augment:
+            self.loss_class['dynamic'] = ['world_cams_consist', 'world_cams', 'world_pj2D', 'world_foot', 'wrotsL2', 'world_cams_init_consist', 'world_cams_init', 'init_world_pj2d', 'world_grots', 'world_trans']
+        if args().learn_motion_offset3D:
+            self.loss_class['motion'] = ['motion_offsets3D', 'associate_offsets3D']
+        self.all_loss_names = np.concatenate([loss_list for task_name, loss_list in self.loss_class.items()]).tolist()
 
     def forward(self, outputs, new_training=False):
         loss_dict = outputs['loss_dict']
@@ -735,10 +1771,20 @@ class Learnable_Loss(nn.Module):
                         loss_dict['PAMPJPE'] = calc_pampjpe(kp3d_gt.contiguous().float(), preds_kp3d.contiguous().float()).mean() * args().PAMPJPE_weight
                 except Exception as exp_error:
                     None
+        if args().model_return_loss and args().dynamic_augment:
+            meta_data = outputs['meta_data']
+            sequence_mask = outputs['pred_seq_mask']
+            pred_batch_ids = outputs['pred_batch_ids'][sequence_mask].detach().long() - meta_data['batch_ids'][0]
+            subject_ids = meta_data['subject_ids'][sequence_mask]
+            clip_frame_ids = meta_data['seq_inds'][pred_batch_ids, 1]
+            video_seq_ids = meta_data['seq_inds'][pred_batch_ids, 0]
+            sequence_inds = extract_sequence_inds(subject_ids, video_seq_ids, clip_frame_ids)
+            world_cam_masks = meta_data['world_cam_mask'][sequence_mask]
+            world_trans_gts = meta_data['world_root_trans'][sequence_mask]
+            world_trans_preds = outputs['world_trans'][sequence_mask].float()
+            loss_dict['world_trans'] = _calc_world_trans_loss_(world_trans_preds, world_trans_gts, world_cam_masks, sequence_inds)
+            loss_dict['world_trans'] = loss_dict['world_trans'] * args().world_trans_weight
         loss_dict = {key: value.mean() for key, value in loss_dict.items() if not isinstance(value, int)}
-        if new_training and args().model_version == 6:
-            loss_dict['CenterMap_3D'] = loss_dict['CenterMap_3D'] / 1000.0
-            loss_dict = {key: loss_dict[key] for key in self.loss_class['det']}
         loss_list = []
         for key, value in loss_dict.items():
             if isinstance(value, torch.Tensor):
@@ -995,267 +2041,35 @@ class MultiLossFactory(nn.Module):
         assert len(outputs) == len(self.ae_loss), 'outputs and ae_loss should have same length, got {} vs {}.'.format(len(outputs), len(self.ae_loss))
 
 
-def gather_feature(fmap, index, mask=None):
-    dim = fmap.size(-1)
-    index = index.unsqueeze(len(index.shape)).expand(*index.shape, dim)
-    fmap = fmap.gather(dim=1, index=index)
-    if mask is not None:
-        mask = mask.unsqueeze(2).expand_as(fmap)
-        fmap = fmap[mask]
-        fmap = fmap.reshape(-1, dim)
-    return fmap
-
-
-class CenterMap(object):
-
-    def __init__(self, conf_thresh):
-        self.size = 64
-        self.max_person = 64
-        self.sigma = 1
-        self.conf_thresh = conf_thresh
-        self.gk_group, self.pool_group = self.generate_kernels([5])
-
-    def generate_kernels(self, kernel_size_list):
-        gk_group, pool_group = {}, {}
-        for kernel_size in set(kernel_size_list):
-            x = np.arange(0, kernel_size, 1, float)
-            y = x[:, np.newaxis]
-            x0, y0 = (kernel_size - 1) // 2, (kernel_size - 1) // 2
-            gaussian_distribution = -((x - x0) ** 2 + (y - y0) ** 2) / (2 * self.sigma ** 2)
-            gk_group[kernel_size] = np.exp(gaussian_distribution)
-            pool_group[kernel_size] = torch.nn.MaxPool2d(kernel_size, 1, (kernel_size - 1) // 2)
-        return gk_group, pool_group
-
-    def parse_centermap(self, center_maps):
-        center_map_nms = nms(center_maps, pool_func=self.pool_group[5])
-        b, c, h, w = center_map_nms.shape
-        K = self.max_person
-        topk_scores, topk_inds = torch.topk(center_map_nms.reshape(b, c, -1), K)
-        topk_inds = topk_inds % (h * w)
-        topk_ys = (topk_inds.long() // w).float()
-        topk_xs = (topk_inds % w).int().float()
-        topk_score, index = torch.topk(topk_scores.reshape(b, -1), K)
-        topk_clses = index.long() // K
-        topk_inds = gather_feature(topk_inds.view(b, -1, 1), index).reshape(b, K)
-        topk_ys = gather_feature(topk_ys.reshape(b, -1, 1), index).reshape(b, K)
-        topk_xs = gather_feature(topk_xs.reshape(b, -1, 1), index).reshape(b, K)
-        mask = topk_score > self.conf_thresh
-        batch_ids = torch.where(mask)[0]
-        center_yxs = torch.stack([topk_ys[mask], topk_xs[mask]]).permute((1, 0))
-        return batch_ids, topk_inds[mask], center_yxs, topk_score[mask]
-
-
-class Params(object):
-
-    def __init__(self):
-        self.num_joints = 17
-        self.max_num_people = 5
-        self.detection_threshold = 0.1
-        self.tag_threshold = 1.0
-        self.use_detection_val = True
-        self.ignore_too_much = True
-
-
-def py_max_match(scores):
-    m = Munkres()
-    tmp = m.compute(scores)
-    tmp = np.array(tmp).astype(np.int32)
-    return tmp
-
-
-def match_by_tag(inp, params):
-    assert isinstance(params, Params), 'params should be class Params()'
-    tag_k, loc_k, val_k = inp
-    default_ = np.zeros((params.num_joints, 3 + tag_k.shape[2]))
-    joint_dict = {}
-    tag_dict = {}
-    for i in range(params.num_joints):
-        idx = i
-        tags = tag_k[idx]
-        joints = np.concatenate((loc_k[idx], val_k[idx, :, None], tags), 1)
-        mask = joints[:, 2] > params.detection_threshold
-        tags = tags[mask]
-        joints = joints[mask]
-        if joints.shape[0] == 0:
-            continue
-        if i == 0 or len(joint_dict) == 0:
-            for tag, joint in zip(tags, joints):
-                key = tag[0]
-                joint_dict.setdefault(key, np.copy(default_))[idx] = joint
-                tag_dict[key] = [tag]
-        else:
-            grouped_keys = list(joint_dict.keys())[:params.max_num_people]
-            grouped_tags = [np.mean(tag_dict[i], axis=0) for i in grouped_keys]
-            if params.ignore_too_much and len(grouped_keys) == params.max_num_people:
-                continue
-            diff = joints[:, None, 3:] - np.array(grouped_tags)[None, :, :]
-            diff_normed = np.linalg.norm(diff, ord=2, axis=2)
-            diff_saved = np.copy(diff_normed)
-            if params.use_detection_val:
-                diff_normed = np.round(diff_normed) * 100 - joints[:, 2:3]
-            num_added = diff.shape[0]
-            num_grouped = diff.shape[1]
-            if num_added > num_grouped:
-                diff_normed = np.concatenate((diff_normed, np.zeros((num_added, num_added - num_grouped)) + 10000000000.0), axis=1)
-            pairs = py_max_match(diff_normed)
-            for row, col in pairs:
-                if row < num_added and col < num_grouped and diff_saved[row][col] < params.tag_threshold:
-                    key = grouped_keys[col]
-                    joint_dict[key][idx] = joints[row]
-                    tag_dict[key].append(tags[row])
-                else:
-                    key = tags[row][0]
-                    joint_dict.setdefault(key, np.copy(default_))[idx] = joints[row]
-                    tag_dict[key] = [tags[row]]
-    ans = np.array([joint_dict[i] for i in joint_dict]).astype(np.float32)
-    return ans
-
-
-class HeatmapParser(object):
-
-    def __init__(self):
-        self.params = Params()
-        self.tag_per_joint = True
-        NMS_KERNEL, NMS_PADDING = 5, 2
-        self.map_size = 128
-        self.pool = torch.nn.MaxPool2d(NMS_KERNEL, 1, NMS_PADDING)
-
-    def nms(self, det):
-        maxm = self.pool(det)
-        maxm = torch.eq(maxm, det).float()
-        det = det * maxm
-        return det
-
-    def match(self, tag_k, loc_k, val_k):
-        match = lambda x: match_by_tag(x, self.params)
-        return list(map(match, zip(tag_k, loc_k, val_k)))
-
-    def top_k(self, det, tag):
-        det = self.nms(det)
-        num_images = det.size(0)
-        num_joints = det.size(1)
-        h = det.size(2)
-        w = det.size(3)
-        det = det.view(num_images, num_joints, -1)
-        val_k, ind = det.topk(self.params.max_num_people, dim=2)
-        tag = tag.view(tag.size(0), tag.size(1), w * h, -1)
-        if not self.tag_per_joint:
-            tag = tag.expand(-1, self.params.num_joints, -1, -1)
-        tag_k = torch.stack([torch.gather(tag[:, :, :, i], 2, ind) for i in range(tag.size(3))], dim=3)
-        x = ind % w
-        y = (ind / float(w)).long()
-        ind_k = torch.stack((x, y), dim=3)
-        ans = {'tag_k': tag_k.cpu().numpy(), 'loc_k': ind_k.cpu().numpy(), 'val_k': val_k.cpu().numpy()}
-        return ans
-
-    def adjust(self, ans, det):
-        for batch_id, people in enumerate(ans):
-            for people_id, i in enumerate(people):
-                for joint_id, joint in enumerate(i):
-                    if joint[2] > 0:
-                        y, x = joint[0:2]
-                        xx, yy = int(x), int(y)
-                        tmp = det[batch_id][joint_id]
-                        if tmp[xx, min(yy + 1, tmp.shape[1] - 1)] > tmp[xx, max(yy - 1, 0)]:
-                            y += 0.25
-                        else:
-                            y -= 0.25
-                        if tmp[min(xx + 1, tmp.shape[0] - 1), yy] > tmp[max(0, xx - 1), yy]:
-                            x += 0.25
-                        else:
-                            x -= 0.25
-                        ans[batch_id][people_id, joint_id, 0:2] = y + 0.5, x + 0.5
-        return ans
-
-    def refine(self, det, tag, keypoints):
-        """
-        Given initial keypoint predictions, we identify missing joints
-        :param det: numpy.ndarray of size (17, 128, 128)
-        :param tag: numpy.ndarray of size (17, 128, 128) if not flip
-        :param keypoints: numpy.ndarray of size (17, 4) if not flip, last dim is (x, y, det score, tag score)
-        :return: 
-        """
-        if len(tag.shape) == 3:
-            tag = tag[:, :, :, None]
-        tags = []
-        for i in range(keypoints.shape[0]):
-            if keypoints[i, 2] > 0:
-                x, y = keypoints[i][:2].astype(np.int32)
-                tags.append(tag[i, y, x])
-        prev_tag = np.mean(tags, axis=0)
-        ans = []
-        for i in range(keypoints.shape[0]):
-            tmp = det[i, :, :]
-            tt = ((tag[i, :, :] - prev_tag[None, None, :]) ** 2).sum(axis=2) ** 0.5
-            tmp2 = tmp - np.round(tt)
-            y, x = np.unravel_index(np.argmax(tmp2), tmp.shape)
-            xx = x
-            yy = y
-            val = tmp[y, x]
-            x += 0.5
-            y += 0.5
-            if tmp[yy, min(xx + 1, tmp.shape[1] - 1)] > tmp[yy, max(xx - 1, 0)]:
-                x += 0.25
-            else:
-                x -= 0.25
-            if tmp[min(yy + 1, tmp.shape[0] - 1), xx] > tmp[max(0, yy - 1), xx]:
-                y += 0.25
-            else:
-                y -= 0.25
-            ans.append((x, y, val))
-        ans = np.array(ans)
-        if ans is not None:
-            for i in range(det.shape[0]):
-                if ans[i, 2] > 0 and keypoints[i, 2] == 0:
-                    keypoints[i, :2] = ans[i, :2]
-                    keypoints[i, 2] = ans[i, 2]
-        return keypoints
-
-    def parse(self, det, tag, adjust=True, refine=True, get_best=False):
-        ans = self.match(**self.top_k(det, tag))
-        if adjust:
-            ans = self.adjust(ans, det)
-        scores = [i[:, 2].mean() for i in ans[0]]
-        if refine:
-            ans = ans[0]
-            for i in range(len(ans)):
-                det_numpy = det[0].cpu().numpy()
-                tag_numpy = tag[0].cpu().numpy()
-                if not self.tag_per_joint:
-                    tag_numpy = np.tile(tag_numpy, (self.params.num_joints, 1, 1, 1))
-                ans[i] = self.refine(det_numpy, tag_numpy, ans[i])
-            ans = [ans]
-        if len(scores) > 0:
-            kp2ds = np.array(ans[0][:, :, :2])
-            kp2ds = 2 * kp2ds / float(self.map_size) - 1
-            return kp2ds, scores
-        else:
-            return np.zeros((1, self.params.num_joints, 2)), [0]
-
-    def batch_parse(self, dets_tags, **kwargs):
-        dets, tags = dets_tags[:, :self.params.num_joints], dets_tags[:, self.params.num_joints:]
-        results, scores = [], []
-        for det, tag in zip(dets, tags):
-            kp2ds, each_scores = self.parse(det.unsqueeze(0), tag.unsqueeze(0), **kwargs)
-            results.append(kp2ds)
-            scores.append(each_scores)
-        return results, scores
+def regress_joints_from_vertices(vertices, J_regressor):
+    if J_regressor.is_sparse:
+        J = torch.stack([torch.sparse.mm(J_regressor, vertices[i]) for i in range(len(vertices))])
+    else:
+        J = torch.einsum('bik,ji->bjk', [vertices, J_regressor])
+    return J
 
 
 class VertexJointSelector(nn.Module):
+    """
+    Different from SMPL which directly sellect the face/hand/foot joints as specific vertex points from mesh surface         via torch.index_select(vertices, 1, self.extra_joints_idxs)
+    The right joints should be regressed in SMPL-X joints manner via joint regressor. 
+    """
 
-    def __init__(self, extra_joints_idxs, J_regressor_extra9, J_regressor_h36m17, dtype=torch.float32):
+    def __init__(self, extra_joints_idxs, J_regressor_extra9, J_regressor_h36m17, dtype=torch.float32, sparse_joint_regressor=False):
         super(VertexJointSelector, self).__init__()
-        self.register_buffer('extra_joints_idxs', extra_joints_idxs)
+        if not sparse_joint_regressor:
+            J_regressor_extra9 = J_regressor_extra9.to_dense()
+            J_regressor_h36m17 = J_regressor_h36m17.to_dense()
+        self.register_buffer('facial_foot_joints_idxs', extra_joints_idxs)
         self.register_buffer('J_regressor_extra9', J_regressor_extra9)
         self.register_buffer('J_regressor_h36m17', J_regressor_h36m17)
 
     def forward(self, vertices, joints):
-        extra_joints21 = torch.index_select(vertices, 1, self.extra_joints_idxs)
-        extra_joints9 = torch.einsum('bik,ji->bjk', [vertices, self.J_regressor_extra9])
-        joints_h36m17 = torch.einsum('bik,ji->bjk', [vertices, self.J_regressor_h36m17])
-        joints54_17 = torch.cat([joints, extra_joints21, extra_joints9, joints_h36m17], dim=1)
-        return joints54_17
+        facial_foot_joints9 = torch.index_select(vertices, 1, self.facial_foot_joints_idxs)
+        extra_joints9 = regress_joints_from_vertices(vertices, self.J_regressor_extra9)
+        joints_h36m17 = regress_joints_from_vertices(vertices, self.J_regressor_h36m17)
+        joints73_17 = torch.cat([joints, facial_foot_joints9, extra_joints9, joints_h36m17], dim=1)
+        return joints73_17
 
 
 def transform_mat(R, t):
@@ -1348,7 +2162,7 @@ def lbs(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents, lbs_
     """
     batch_size = betas.shape[0]
     v_shaped = v_template + torch.einsum('bl,mkl->bmk', [betas, shapedirs])
-    J = torch.einsum('bik,ji->bjk', [v_shaped, J_regressor])
+    J = regress_joints_from_vertices(v_shaped, J_regressor)
     dtype = pose.dtype
     posedirs = posedirs.type(dtype)
     ident = torch.eye(3, dtype=dtype, device=J_regressor.device)
@@ -1385,7 +2199,7 @@ class SMPL(nn.Module):
         self.register_buffer('parents', model_info['kintree_table'])
         self.register_buffer('lbs_weights', model_info['weights'])
 
-    def forward(self, betas=None, poses=None, root_align=False):
+    def forward(self, betas=None, poses=None, root_align=True, **kwargs):
         """ Forward pass for the SMPL model
             Parameters
             ----------
@@ -1400,11 +2214,6 @@ class SMPL(nn.Module):
                 pose of the body joints are predicted from some external model.
                 It should be a tensor that contains joint rotations in
                 axis-angle format. (default=None)
-            transl: torch.tensor, optional, shape Bx3
-                If given, ignore the member variable `transl` and use it
-                instead. For example, it can used if the translation
-                `transl` is predicted from some external model.
-                (default=None)
             Return
             ----------
             outputs: dict, {'verts': vertices of body meshes, (B x 6890 x 3),
@@ -1415,41 +2224,144 @@ class SMPL(nn.Module):
             betas = torch.from_numpy(betas).type(self.dtype)
         if isinstance(poses, np.ndarray):
             poses = torch.from_numpy(poses).type(self.dtype)
+        if poses.shape[-1] == 66:
+            poses = torch.cat([poses, torch.zeros_like(poses[..., :6])], -1)
         default_device = self.shapedirs.device
         betas, poses = betas, poses
         vertices, joints = lbs(betas, poses, self.v_template, self.shapedirs, self.posedirs, self.J_regressor, self.parents, self.lbs_weights, dtype=self.dtype)
-        joints54 = self.vertex_joint_selector(vertices, joints)
+        joints44_17 = self.vertex_joint_selector(vertices, joints)
         if root_align:
-            root_trans = joints54[:, [45, 46]].mean(1).unsqueeze(1)
-            joints54 = joints54 - root_trans
+            root_trans = joints44_17[:, [constants.SMPL_ALL_44['R_Hip'], constants.SMPL_ALL_44['L_Hip']]].mean(1).unsqueeze(1)
+            joints44_17 = joints44_17 - root_trans
             vertices = vertices - root_trans
-        return vertices, joints54, self.faces_tensor
+        return vertices, joints44_17
 
 
 class SMPLA_parser(nn.Module):
 
-    def __init__(self, smpla_path, smil_path):
+    def __init__(self, smpla_path, smil_path, baby_thresh=0.8):
         super(SMPLA_parser, self).__init__()
         self.smil_model = SMPL(smil_path, model_type='smpl')
-        self.smpl_model = SMPL(smpla_path, model_type='smpla')
-        self.baby_thresh = 0.8
+        self.smpla_model = SMPL(smpla_path, model_type='smpla')
+        self.baby_thresh = baby_thresh
 
-    def forward(self, betas=None, thetas=None, root_align=True):
+    def forward(self, betas=None, poses=None, root_align=True, separate_smil_betas=False):
         baby_mask = betas[:, 10] > self.baby_thresh
         if baby_mask.sum() > 0:
             adult_mask = ~baby_mask
-            person_num = len(thetas)
-            verts, joints = torch.zeros(person_num, 6890, 3, device=thetas.device).float(), torch.zeros(person_num, 54 + 17, 3, device=thetas.device).float()
-            verts[baby_mask], joints[baby_mask], face = self.smil_model(betas[baby_mask, :10], thetas[baby_mask])
+            verts, joints = torch.zeros(len(poses), 6890, 3, device=poses.device, dtype=poses.dtype), torch.zeros(len(poses), args().joint_num + 17, 3, device=poses.device, dtype=poses.dtype)
+            if separate_smil_betas:
+                verts[baby_mask], joints[baby_mask] = self.smil_model(betas=betas[baby_mask, 11:], poses=poses[baby_mask], root_align=root_align)
+            else:
+                verts[baby_mask], joints[baby_mask] = self.smil_model(betas=betas[baby_mask, :10], poses=poses[baby_mask], root_align=root_align)
             if adult_mask.sum() > 0:
-                verts[adult_mask], joints[adult_mask], face = self.smpl_model(betas[adult_mask], thetas[adult_mask])
+                verts[adult_mask], joints[adult_mask] = self.smpla_model(betas=betas[adult_mask, :11], poses=poses[adult_mask], root_align=root_align)
         else:
-            verts, joints, face = self.smpl_model(betas, thetas)
+            verts, joints = self.smpla_model(betas=betas[:, :11], poses=poses, root_align=root_align)
+        return verts, joints
+
+
+class SMPLX(SMPL):
+    """
+    sparse_joint_regressor: 
+        True: using sparse coo matrix for joint regressor, 
+        when batch size = 1, faster (65%, 8.45e-3 v.s. 3e-3) on CPU, while slower (25%, 1.5e-3 v.s. 1.2e-3) on GPU. 
+        when batch size >4, on GPU, they cost equal GPU memory, and direct dense matrix multiplation is always faster than the sparse one. 
+        Maybe sparse matrix multiplation is not optmized as good as dense matrix multiplation.
+             
+    """
+
+    def __init__(self, model_path, model_type='smplx', sparse_joint_regressor=True, pca_hand_pose_num=0, flat_hand_mean=True, expression_dim=10, dtype=torch.float32):
+        super(SMPLX, self).__init__(model_path, model_type='smpl')
+        model_info = torch.load(model_path)
+        self.vertex_joint_selector = VertexJointSelector(model_info['extra_joints_index'], model_info['J_regressor_extra9'], model_info['J_regressor_h36m17'], dtype=self.dtype, sparse_joint_regressor=sparse_joint_regressor)
+        if not sparse_joint_regressor:
+            self.J_regressor = self.J_regressor.to_dense()
+        self.expression_dim = expression_dim
+        self.register_buffer('expr_dirs', model_info['expr_dirs'][..., :expression_dim])
+        self.pca_hand_pose = pca_hand_pose_num > 0
+        self.pca_hand_pose_num = pca_hand_pose_num
+        if self.pca_hand_pose:
+            self.hand_pose_dim = self.pca_hand_pose_num
+            self.register_buffer('left_hand_components', model_info['hands_componentsl'][:pca_hand_pose_num])
+            self.register_buffer('right_hand_components', model_info['hands_componentsr'][:pca_hand_pose_num])
+        else:
+            self.hand_pose_dim = 45
+        self.flat_hand_mean = flat_hand_mean
+        if not self.flat_hand_mean:
+            self.register_buffer('left_hand_mean', model_info['hands_meanl'])
+            self.register_buffer('right_hand_mean', model_info['hands_meanr'])
+
+    def forward(self, betas=None, poses=None, head_poses=None, expression=None, left_hand_pose=None, right_hand_pose=None, root_align=True, **kwargs):
+        """ Forward pass for the SMPL model
+            Parameters
+            ----------
+            betas: torch.tensor, optional, shape Bx10
+                If given, ignore the member variable `betas` and use it
+                instead. For example, it can used if shape parameters
+                `betas` are predicted from some external model.
+                (default=None)
+            body_pose: torch.tensor, optional, shape Bx(J*3)
+                If given, ignore the member variable `body_pose` and use it
+                instead. For example, it can used if someone predicts the
+                pose of the body joints are predicted from some external model.
+                It should be a tensor that contains joint rotations in
+                axis-angle format. (default=None)
+            head_poses: Bx(3*3), 3 joints including jaw_pose,leye_pose,reye_pose
+            expression: Bxexpression_dim, usually first 10 parameters to control the facial expression
+            left_hand_pose / right_hand_pose: 
+                if self.pca_hand_pose is True, then use PCA hand pose space, (B,self.pca_hand_pose_num)
+                    else (B,(15*3)), each finger has 3 joints to control the hand pose. 
+
+            Return
+            ----------
+            outputs: dict, {'verts': vertices of body meshes, (B x 6890 x 3),
+                            'joints54': 73 joints of body meshes, (B x 73 x 3), }
+                            #'joints_h36m17': 17 joints of body meshes follow h36m skeleton format, (B x 17 x 3)}
+        """
+        if isinstance(betas, np.ndarray):
+            betas = torch.from_numpy(betas).type(self.dtype)
+        if isinstance(poses, np.ndarray):
+            poses = torch.from_numpy(poses).type(self.dtype)
+        if left_hand_pose is None:
+            left_hand_pose = torch.zeros(len(poses), self.hand_pose_dim, dtype=poses.dtype, device=poses.device)
+        if right_hand_pose is None:
+            right_hand_pose = torch.zeros(len(poses), self.hand_pose_dim, dtype=poses.dtype, device=poses.device)
+        if head_poses is None:
+            head_poses = torch.zeros(len(poses), 3 * 3, dtype=poses.dtype, device=poses.device)
+        if expression is None:
+            expression = torch.zeros(len(poses), self.expression_dim, dtype=poses.dtype, device=poses.device)
+        if self.pca_hand_pose:
+            left_hand_pose = torch.einsum('bi,ij->bj', [left_hand_pose, self.left_hand_components])
+            right_hand_pose = torch.einsum('bi,ij->bj', [right_hand_pose, self.right_hand_components])
+        if not self.flat_hand_mean:
+            left_hand_pose = left_hand_pose + self.left_hand_mean
+            right_hand_pose = right_hand_pose + self.right_hand_mean
+        default_device = self.shapedirs.device
+        betas, poses = betas, poses
+        shape_components = torch.cat([betas, expression], dim=-1)
+        shapedirs = torch.cat([self.shapedirs, self.expr_dirs], dim=-1)
+        full_pose = torch.cat([poses, head_poses, left_hand_pose, right_hand_pose], dim=1)
+        vertices, joints = lbs(shape_components, full_pose, self.v_template, shapedirs, self.posedirs, self.J_regressor, self.parents, self.lbs_weights, dtype=self.dtype)
+        joints73_17 = self.vertex_joint_selector(vertices, joints)
         if root_align:
-            root_trans = joints[:, [45, 46]].mean(1).unsqueeze(1)
-            joints = joints - root_trans
-            verts = verts - root_trans
-        return verts, joints, face
+            root_trans = joints73_17[:, [constants.SMPL_ALL_44['R_Hip'], constants.SMPL_ALL_44['L_Hip']]].mean(1).unsqueeze(1)
+            joints73_17 = joints73_17 - root_trans
+            vertices = vertices - root_trans
+        return vertices, joints73_17
+        if return_shaped:
+            v_shaped = self.v_template + blend_shapes(betas, self.shapedirs)
+
+
+def create_model(model_type, model_path=None, **kwargs):
+    if model_type == 'smpl':
+        model_path = args().smpl_model_path if model_path is None else model_path
+        return SMPL(model_path, model_type='smpl', **kwargs)
+    if model_type == 'smpla':
+        return SMPLA_parser(args().smpla_model_path, args().smil_model_path, baby_thresh=args().baby_threshold, **kwargs)
+    if model_type == 'smplx':
+        model_path = os.path.join(args().smplx_model_folder, 'SMPLX_NEUTRAL.pth') if model_path is None else model_path
+        return SMPLX(model_path, **kwargs)
 
 
 def parse_age_cls_results(age_probs):
@@ -1471,7 +2383,7 @@ def rot6d_to_rotmat(x):
     return rot_mats
 
 
-def quaternion_to_angle_axis(quaternion: torch.Tensor) ->torch.Tensor:
+def quaternion_to_angle_axis(quaternion: 'torch.Tensor') ->torch.Tensor:
     """
     This function is borrowed from https://github.com/kornia/kornia
 
@@ -1497,17 +2409,17 @@ def quaternion_to_angle_axis(quaternion: torch.Tensor) ->torch.Tensor:
         raise TypeError('Input type is not a torch.Tensor. Got {}'.format(type(quaternion)))
     if not quaternion.shape[-1] == 4:
         raise ValueError('Input must be a tensor of shape Nx4 or 4. Got {}'.format(quaternion.shape))
-    q1: torch.Tensor = quaternion[..., 1]
-    q2: torch.Tensor = quaternion[..., 2]
-    q3: torch.Tensor = quaternion[..., 3]
-    sin_squared_theta: torch.Tensor = q1 * q1 + q2 * q2 + q3 * q3
-    sin_theta: torch.Tensor = torch.sqrt(sin_squared_theta)
-    cos_theta: torch.Tensor = quaternion[..., 0]
-    two_theta: torch.Tensor = 2.0 * torch.where(cos_theta < 0.0, torch.atan2(-sin_theta, -cos_theta), torch.atan2(sin_theta, cos_theta))
-    k_pos: torch.Tensor = two_theta / sin_theta
-    k_neg: torch.Tensor = 2.0 * torch.ones_like(sin_theta)
-    k: torch.Tensor = torch.where(sin_squared_theta > 0.0, k_pos, k_neg)
-    angle_axis: torch.Tensor = torch.zeros_like(quaternion)[..., :3]
+    q1: 'torch.Tensor' = quaternion[..., 1]
+    q2: 'torch.Tensor' = quaternion[..., 2]
+    q3: 'torch.Tensor' = quaternion[..., 3]
+    sin_squared_theta: 'torch.Tensor' = q1 * q1 + q2 * q2 + q3 * q3
+    sin_theta: 'torch.Tensor' = torch.sqrt(sin_squared_theta)
+    cos_theta: 'torch.Tensor' = quaternion[..., 0]
+    two_theta: 'torch.Tensor' = 2.0 * torch.where(cos_theta < 0.0, torch.atan2(-sin_theta, -cos_theta), torch.atan2(sin_theta, cos_theta))
+    k_pos: 'torch.Tensor' = two_theta / sin_theta
+    k_neg: 'torch.Tensor' = 2.0 * torch.ones_like(sin_theta)
+    k: 'torch.Tensor' = torch.where(sin_squared_theta > 0.0, k_pos, k_neg)
+    angle_axis: 'torch.Tensor' = torch.zeros_like(quaternion)[..., :3]
     angle_axis[..., 0] += q1 * k
     angle_axis[..., 1] += q2 * k
     angle_axis[..., 2] += q3 * k
@@ -1541,6 +2453,8 @@ def rotation_matrix_to_quaternion(rotation_matrix, eps=1e-06):
         raise TypeError('Input type is not a torch.Tensor. Got {}'.format(type(rotation_matrix)))
     if len(rotation_matrix.shape) > 3:
         raise ValueError('Input size must be a three dimensional tensor. Got {}'.format(rotation_matrix.shape))
+    if not rotation_matrix.shape[-2:] == (3, 4):
+        raise ValueError('Input size must be a N x 3 x 4  tensor. Got {}'.format(rotation_matrix.shape))
     rmat_t = torch.transpose(rotation_matrix, 1, 2)
     mask_d2 = rmat_t[:, 2, 2] < eps
     mask_d0_d1 = rmat_t[:, 0, 0] > rmat_t[:, 1, 1]
@@ -1566,25 +2480,34 @@ def rotation_matrix_to_quaternion(rotation_matrix, eps=1e-06):
     mask_c2 = mask_c2.view(-1, 1).type_as(q2)
     mask_c3 = mask_c3.view(-1, 1).type_as(q3)
     q = q0 * mask_c0 + q1 * mask_c1 + q2 * mask_c2 + q3 * mask_c3
-    q /= torch.sqrt(t0_rep * mask_c0 + t1_rep * mask_c1 + t2_rep * mask_c2 + t3_rep * mask_c3)
-    q *= 0.5
+    q = q * torch.sqrt(t0_rep * mask_c0 + t1_rep * mask_c1 + t2_rep * mask_c2 + t3_rep * mask_c3) * 0.5
     return q
 
 
 def rotation_matrix_to_angle_axis(rotation_matrix):
     """
+    This function is borrowed from https://github.com/kornia/kornia
+
     Convert 3x4 rotation matrix to Rodrigues vector
+
     Args:
         rotation_matrix (Tensor): rotation matrix.
+
     Returns:
         Tensor: Rodrigues vector transformation.
+
     Shape:
-        - Input: :math:`(N, 3, 3)`
+        - Input: :math:`(N, 3, 4)`
         - Output: :math:`(N, 3)`
+
     Example:
-        >>> input = torch.rand(2, 3, 3) 
+        >>> input = torch.rand(2, 3, 4)  # Nx4x4
         >>> output = tgm.rotation_matrix_to_angle_axis(input)  # Nx3
     """
+    if rotation_matrix.shape[1:] == (3, 3):
+        rot_mat = rotation_matrix.reshape(-1, 3, 3)
+        hom = torch.tensor([0, 0, 1], dtype=torch.float32, device=rotation_matrix.device).reshape(1, 3, 1).expand(rot_mat.shape[0], -1, -1)
+        rotation_matrix = torch.cat([rot_mat, hom], dim=-1)
     quaternion = rotation_matrix_to_quaternion(rotation_matrix)
     aa = quaternion_to_angle_axis(quaternion)
     aa[torch.isnan(aa)] = 0.0
@@ -1607,162 +2530,121 @@ def batch_orth_proj(X, camera, mode='2d', keep_dim=False):
     return X_camed
 
 
+def convert_cam_to_3d_trans(cams, weight=2.0):
+    s, tx, ty = cams[:, 0], cams[:, 1], cams[:, 2]
+    depth, dx, dy = 1.0 / s, tx / s, ty / s
+    trans3d = torch.stack([dx, dy, depth], 1) * weight
+    return trans3d
+
+
 def convert_kp2d_from_input_to_orgimg(kp2ds, offsets):
     offsets = offsets.float()
     img_pad_size, crop_trbl, pad_trbl = offsets[:, :2], offsets[:, 2:6], offsets[:, 6:10]
     leftTop = torch.stack([crop_trbl[:, 3] - pad_trbl[:, 3], crop_trbl[:, 0] - pad_trbl[:, 0]], 1)
-    kp2ds_on_orgimg = (kp2ds + 1) * img_pad_size.unsqueeze(1) / 2 + leftTop.unsqueeze(1)
+    kp2ds_on_orgimg = (kp2ds[:, :, :2] + 1) * img_pad_size.unsqueeze(1) / 2 + leftTop.unsqueeze(1)
+    if kp2ds.shape[-1] == 3:
+        kp2ds_on_orgimg = torch.cat([kp2ds_on_orgimg, (kp2ds[:, :, [2]] + 1) * img_pad_size.unsqueeze(1)[:, :, [0]] / 2], -1)
     return kp2ds_on_orgimg
 
 
-INVALID_TRANS = np.ones(3) * -1
-
-
-def estimate_translation_cv2(joints_3d, joints_2d, focal_length=600, img_size=np.array([512.0, 512.0]), proj_mat=None, cam_dist=None):
-    if proj_mat is None:
-        camK = np.eye(3)
-        camK[0, 0], camK[1, 1] = focal_length, focal_length
-        camK[:2, 2] = img_size // 2
-    else:
-        camK = proj_mat
-    ret, rvec, tvec, inliers = cv2.solvePnPRansac(joints_3d, joints_2d, camK, cam_dist, flags=cv2.SOLVEPNP_EPNP, reprojectionError=20, iterationsCount=100)
-    if inliers is None:
-        return INVALID_TRANS
-    else:
-        tra_pred = tvec[:, 0]
-        return tra_pred
-
-
-def estimate_translation_np(joints_3d, joints_2d, joints_conf, focal_length=600, img_size=np.array([512.0, 512.0]), proj_mat=None):
-    """Find camera translation that brings 3D joints joints_3d closest to 2D the corresponding joints_2d.
-    Input:
-        joints_3d: (25, 3) 3D joint locations
-        joints: (25, 3) 2D joint locations and confidence
-    Returns:
-        (3,) camera translation vector
-    """
-    num_joints = joints_3d.shape[0]
-    if proj_mat is None:
-        f = np.array([focal_length, focal_length])
-        center = img_size / 2.0
-    else:
-        f = np.array([proj_mat[0, 0], proj_mat[1, 1]])
-        center = proj_mat[:2, 2]
-    Z = np.reshape(np.tile(joints_3d[:, 2], (2, 1)).T, -1)
-    XY = np.reshape(joints_3d[:, 0:2], -1)
-    O = np.tile(center, num_joints)
-    F = np.tile(f, num_joints)
-    weight2 = np.reshape(np.tile(np.sqrt(joints_conf), (2, 1)).T, -1)
-    Q = np.array([F * np.tile(np.array([1, 0]), num_joints), F * np.tile(np.array([0, 1]), num_joints), O - np.reshape(joints_2d, -1)]).T
-    c = (np.reshape(joints_2d, -1) - O) * Z - F * XY
-    W = np.diagflat(weight2)
-    Q = np.dot(W, Q)
-    c = np.dot(W, c)
-    A = np.dot(Q.T, Q)
-    b = np.dot(Q.T, c)
-    trans = np.linalg.solve(A, b)
-    return trans
-
-
-def estimate_translation(joints_3d, joints_2d, pts_mnum=4, focal_length=600, proj_mats=None, cam_dists=None, img_size=np.array([512.0, 512.0])):
-    """Find camera translation that brings 3D joints joints_3d closest to 2D the corresponding joints_2d.
-    Input:
-        joints_3d: (B, K, 3) 3D joint locations
-        joints: (B, K, 2) 2D joint coordinates
-    Returns:
-        (B, 3) camera translation vectors
-    """
-    if torch.is_tensor(joints_3d):
-        joints_3d = joints_3d.detach().cpu().numpy()
-    if torch.is_tensor(joints_2d):
-        joints_2d = joints_2d.detach().cpu().numpy()
-    if joints_2d.shape[-1] == 2:
-        joints_conf = joints_2d[:, :, -1] > -2.0
-    elif joints_2d.shape[-1] == 3:
-        joints_conf = joints_2d[:, :, -1] > 0
-    joints3d_conf = joints_3d[:, :, -1] != -2.0
-    trans = np.zeros((joints_3d.shape[0], 3), dtype=np.float)
-    if proj_mats is None:
-        proj_mats = [None for _ in range(len(joints_2d))]
-    if cam_dists is None:
-        cam_dists = [None for _ in range(len(joints_2d))]
-    for i in range(joints_3d.shape[0]):
-        S_i = joints_3d[i]
-        joints_i = joints_2d[i, :, :2]
-        valid_mask = joints_conf[i] * joints3d_conf[i]
-        if valid_mask.sum() < pts_mnum:
-            trans[i] = INVALID_TRANS
-            continue
-        if len(img_size.shape) == 1:
-            imgsize = img_size
-        elif len(img_size.shape) == 2:
-            imgsize = img_size[i]
-        else:
-            raise NotImplementedError
-        try:
-            trans[i] = estimate_translation_cv2(S_i[valid_mask], joints_i[valid_mask], focal_length=focal_length, img_size=imgsize, proj_mat=proj_mats[i], cam_dist=cam_dists[i])
-        except:
-            trans[i] = estimate_translation_np(S_i[valid_mask], joints_i[valid_mask], valid_mask[valid_mask].astype(np.float32), focal_length=focal_length, img_size=imgsize, proj_mat=proj_mats[i])
-    return torch.from_numpy(trans).float()
-
-
-def vertices_kp3d_projection(outputs, meta_data=None, presp=False):
-    vertices, j3ds = outputs['verts'], outputs['j3d']
-    verts_camed = batch_orth_proj(vertices, outputs['cam'], mode='3d', keep_dim=True)
-    pj3d = batch_orth_proj(j3ds, outputs['cam'], mode='2d')
-    predicts_j3ds = j3ds[:, :24].contiguous().detach().cpu().numpy()
-    predicts_pj2ds = (pj3d[:, :, :2][:, :24].detach().cpu().numpy() + 1) * 256
-    cam_trans = estimate_translation(predicts_j3ds, predicts_pj2ds, focal_length=443.4, img_size=np.array([512, 512]))
-    projected_outputs = {'verts_camed': verts_camed, 'pj2d': pj3d[:, :, :2], 'cam_trans': cam_trans}
-    if meta_data is not None:
-        projected_outputs['pj2d_org'] = convert_kp2d_from_input_to_orgimg(projected_outputs['pj2d'], meta_data['offsets'])
+def convert_kp2ds2org_images(projected_outputs, input2orgimg_offsets):
+    projected_outputs['pj2d_org'] = convert_kp2d_from_input_to_orgimg(projected_outputs['pj2d'], input2orgimg_offsets)
+    if 'verts_camed' in projected_outputs:
+        projected_outputs['verts_camed_org'] = convert_kp2d_from_input_to_orgimg(projected_outputs['verts_camed'], input2orgimg_offsets)
+    if 'pj2d_h36m17' in projected_outputs:
+        projected_outputs['pj2d_org_h36m17'] = convert_kp2d_from_input_to_orgimg(projected_outputs['pj2d_h36m17'], input2orgimg_offsets)
     return projected_outputs
+
+
+def convert_scale_to_depth(scale, fovs):
+    return fovs / (scale + 1e-06)
 
 
 class SMPLWrapper(nn.Module):
 
     def __init__(self):
         super(SMPLWrapper, self).__init__()
-        logging.info('Building SMPL family for relative learning!!')
-        self.smpl_model = SMPLA_parser(args().smpla_model_path, args().smil_model_path, baby_thresh=args().baby_threshold)
-        self.part_name = ['cam', 'global_orient', 'body_pose', 'betas']
-        self.part_idx = [args().cam_dim, args().rot_dim, (args().smpl_joint_num - 1) * args().rot_dim, 11]
+        logging.info('Building SMPL family for relative learning in temporal!')
+        self.smpl_model = create_model(args().smpl_model_type)
+        self.part_name = ['cam', 'global_orient', 'body_pose', 'smpl_betas']
+        self.part_idx = [3, 6, (args().smpl_joint_num - 1) * 6, 11 if not args().separate_smil_betas else 21]
         self.params_num = np.array(self.part_idx).sum()
-        self.global_orient_nocam = torch.from_numpy(constants.global_orient_nocam).unsqueeze(0)
-        self.joint_mapper_op25 = torch.from_numpy(constants.joint_mapping(constants.SMPL_ALL_54, constants.OpenPose_25)).long()
 
-    def forward(self, outputs, meta_data):
-        params_dict = self.pack_params_dict(outputs['params_pred'])
-        params_dict['betas'], cls_dict = self.process_betas(params_dict['betas'])
-        vertices, joints54_17 = self.smpl_model(betas=params_dict['betas'], poses=params_dict['poses'])
-        outputs.update({'params': params_dict, 'verts': vertices, 'j3d': joints54_17[:, :54], 'joints_h36m17': joints54_17[:, 54:], **cls_dict})
-        outputs.update(vertices_kp3d_projection(outputs['j3d'], outputs['params']['cam'], joints_h36m17_preds=outputs['joints_h36m17'], input2orgimg_offsets=meta_data['offsets'], presp=args().perspective_proj, vertices=outputs['verts']))
+    def parse_params_pred(self, params_pred, without_cam=False):
+        params_dict = self.pack_params_dict(params_pred, without_cam=without_cam)
+        params_dict['smpl_betas'], cls_dict = self.process_betas(params_dict['smpl_betas'])
+        vertices, joints44_17 = self.smpl_model(betas=params_dict['smpl_betas'], poses=params_dict['smpl_thetas'], separate_smil_betas=args().separate_smil_betas)
+        return vertices, joints44_17, params_dict, cls_dict
+
+    def forward(self, outputs, meta_data, calc_pj2d_org=True):
+        vertices, joints44_17, params_dict, cls_dict = self.parse_params_pred(outputs['params_pred'])
+        if 'world_global_rots' in outputs:
+            world_vertices, world_joints44_17 = self.smpl_model(betas=params_dict['smpl_betas'].detach(), poses=torch.cat([outputs['world_global_rots'], params_dict['smpl_thetas'][:, 3:].detach()], 1), separate_smil_betas=args().separate_smil_betas)
+            outputs.update({'world_verts': world_vertices, 'world_j3d': world_joints44_17[:, :args().joint_num], 'world_joints_h36m17': world_joints44_17[:, args().joint_num:]})
+        outputs.update({'verts': vertices, 'j3d': joints44_17[:, :args().joint_num], 'joints_h36m17': joints44_17[:, args().joint_num:], **params_dict, **cls_dict})
+        outputs.update(vertices_kp3d_projection(outputs['j3d'], outputs['joints_h36m17'], outputs['cam'], input2orgimg_offsets=meta_data['offsets'] if calc_pj2d_org else None, presp=args().perspective_proj, vertices=outputs['verts'] if args().compute_verts_org else None))
+        if args().dynamic_augment:
+            dyna_pouts = vertices_kp3d_projection(outputs['world_j3d'].detach(), outputs['joints_h36m17'].detach(), outputs['world_cams'], input2orgimg_offsets=meta_data['offsets'] if calc_pj2d_org else None, presp=args().perspective_proj, vertices=outputs['verts'] if args().compute_verts_org else None)
+            outputs.update({'world_pj2d': dyna_pouts['pj2d'], 'world_trans': dyna_pouts['cam_trans'], 'world_joints_h36m17': dyna_pouts['pj2d_h36m17']})
+            if args().compute_verts_org:
+                outputs.update({'world_verts_camed_org': dyna_pouts['verts_camed_org']})
         return outputs
 
-    def add_template_mesh_pose(self, params):
-        template_mesh = self.template_mesh.repeat(len(params['poses']), 1, 1)
-        template_joint = self.template_joint.repeat(len(params['poses']), 1, 1)
-        return {'verts': template_mesh, 'j3d': template_joint, 'joints_smpl24': template_joint}
-
-    def pack_params_dict(self, params_pred):
+    def pack_params_dict(self, params_pred, without_cam=False):
         idx_list, params_dict = [0], {}
         for i, (idx, name) in enumerate(zip(self.part_idx, self.part_name)):
+            if without_cam and i == 0:
+                idx_list.append(0)
+                continue
             idx_list.append(idx_list[i] + idx)
             params_dict[name] = params_pred[:, idx_list[i]:idx_list[i + 1]].contiguous()
-        if args().Rot_type == '6D':
+        if params_dict['global_orient'].shape[-1] == 6:
             params_dict['body_pose'] = rot6D_to_angular(params_dict['body_pose'])
             params_dict['global_orient'] = rot6D_to_angular(params_dict['global_orient'])
         N = params_dict['body_pose'].shape[0]
         params_dict['body_pose'] = torch.cat([params_dict['body_pose'], torch.zeros(N, 6)], 1)
-        params_dict['poses'] = torch.cat([params_dict['global_orient'], params_dict['body_pose']], 1)
+        params_dict['smpl_thetas'] = torch.cat([params_dict['global_orient'], params_dict['body_pose']], 1)
         return params_dict
 
     def process_betas(self, betas_pred):
-        smpl_betas = betas_pred[:, :10]
+        if not args().learn_relative_age:
+            betas_pred[:, 10] = 0
         kid_offsets = betas_pred[:, 10]
         Age_preds = parse_age_cls_results(kid_offsets)
+        betas_pred = betas_pred[:, :10]
         cls_dict = {'Age_preds': Age_preds, 'kid_offsets_pred': kid_offsets}
         return betas_pred, cls_dict
+
+
+def _check_params_pred_(params_pred_shape, batch_length):
+    assert len(params_pred_shape) == 2, logging.error('outputs[params_pred] dimension less than 2, is {}'.format(len(params_pred_shape)))
+    assert params_pred_shape[0] == batch_length, logging.error('sampled length not equal.')
+
+
+def _check_params_sampling_(param_maps_shape, dim_start, dim_end, batch_ids, sampler_flat_inds_i):
+    assert len(param_maps_shape) == 3, logging.error('During parameter sampling, param_maps dimension is not equal 3, is {}'.format(len(param_maps_shape)))
+    assert param_maps_shape[2] > dim_end >= dim_start, logging.error('During parameter sampling, param_maps dimension -1 is not larger than dim_end and dim_start, they are {},{},{}'.format(param_maps_shape[-1], dim_end, dim_start))
+    assert (batch_ids >= param_maps_shape[0]).sum() == 0, logging.error('During parameter sampling, batch_ids {} out of boundary, param_maps_shape[0] is {}'.format(batch_ids, param_maps_shape[0]))
+    assert (sampler_flat_inds_i >= param_maps_shape[1]).sum() == 0, logging.error('During parameter sampling, sampler_flat_inds_i {} out of boundary, param_maps_shape[1] is {}'.format(sampler_flat_inds_i, param_maps_shape[1]))
+
+
+def match_trajectory_gts(traj3D_gts, traj2D_gts, traj_sids, subject_ids, batch_ids):
+    subject_num = len(subject_ids)
+    traj3D_gts_matched = torch.ones(subject_num, args().temp_clip_length, 3).float() * -2.0
+    traj2D_gts_matched = torch.ones(subject_num, args().temp_clip_length, 2).float() * -2.0
+    parallel_start_id = int(batch_ids[0].item())
+    for ind, (sid, bid) in enumerate(zip(subject_ids, batch_ids)):
+        if sid == -1:
+            continue
+        input_batch_ind = int(bid.item()) // args().temp_clip_length - parallel_start_id // args().temp_clip_length
+        input_subject_ind = torch.where(traj_sids[input_batch_ind, :, 0, 3] == sid)[0]
+        try:
+            if len(input_subject_ind) > 0:
+                traj2D_gts_matched[ind] = traj2D_gts[input_batch_ind, input_subject_ind]
+                traj3D_gts_matched[ind] = traj3D_gts[input_batch_ind, input_subject_ind]
+        except:
+            None
+    return traj3D_gts_matched, traj2D_gts_matched
 
 
 def flatten_inds(coords):
@@ -1770,38 +2652,288 @@ def flatten_inds(coords):
     return coords[:, 0].long() * args().centermap_size + coords[:, 1].long()
 
 
-def convert_cam_params_to_centermap_coords(cam_params, cam3dmap_anchor):
+def match_with_2d_centers(center_gts_info, center_preds_info, device, is_training):
+    vgt_batch_ids, vgt_person_ids, vgt_centers = center_gts_info
+    vpred_batch_ids, flat_inds, cyxs, top_score = center_preds_info
+    mc = {key: [] for key in ['batch_ids', 'flat_inds', 'person_ids', 'conf']}
+    if args().match_preds_to_gts_for_supervision:
+        for match_ind in torch.arange(len(vgt_batch_ids)):
+            batch_id, person_id, center_gt = vgt_batch_ids[match_ind], vgt_person_ids[match_ind], vgt_centers[match_ind]
+            pids = torch.where(vpred_batch_ids == batch_id)[0]
+            if len(pids) == 0:
+                continue
+            closet_center_ind = pids[torch.argmin(torch.norm(cyxs[pids].float() - center_gt[None].float(), dim=-1))]
+            center_matched = cyxs[closet_center_ind].long()
+            cy, cx = torch.clamp(center_matched, 0, args().centermap_size - 1)
+            flat_ind = cy * args().centermap_size + cx
+            mc['batch_ids'].append(batch_id)
+            mc['flat_inds'].append(flat_ind)
+            mc['person_ids'].append(person_id)
+            mc['conf'].append(top_score[closet_center_ind])
+        keys_list = list(mc.keys())
+        for key in keys_list:
+            if key != 'conf':
+                mc[key] = torch.Tensor(mc[key]).long()
+            if args().max_supervise_num != -1 and is_training:
+                mc[key] = mc[key][:args().max_supervise_num]
+    if not args().match_preds_to_gts_for_supervision or len(mc['batch_ids']) == 0:
+        mc['batch_ids'] = vgt_batch_ids.long()
+        mc['flat_inds'] = flatten_inds(vgt_centers.long())
+        mc['person_ids'] = vgt_person_ids.long()
+        mc['conf'] = torch.zeros(len(vgt_person_ids))
+    return mc
+
+
+def convert_cam_params_to_centermap_coords(cam_params):
     center_coords = torch.ones_like(cam_params)
     center_coords[:, 1:] = cam_params[:, 1:].clone()
     cam3dmap_anchors = cam3dmap_anchor[None]
-    scale_num = len(cam3dmap_anchor)
     if len(cam_params) != 0:
-        center_coords[:, 0] = torch.argmin(torch.abs(cam_params[:, [0]].repeat(1, scale_num) - cam3dmap_anchors), dim=1).float() / 128 * 2.0 - 1.0
+        center_coords[:, 0] = torch.argmin(torch.abs(cam_params[:, [0]].repeat(1, scale_num) - cam3dmap_anchors), dim=1).float() / args().centermap_size * 2.0 - 1.0
     return center_coords
-
-
-def denormalize_center(center, size=128):
-    center = (center + 1) / 2 * size
-    center = torch.clamp(center, 1, size - 1).long()
-    return center
 
 
 def process_gt_center(center_normed):
     valid_mask = center_normed[:, :, 0] > -1
     valid_inds = torch.where(valid_mask)
     valid_batch_inds, valid_person_ids = valid_inds[0], valid_inds[1]
-    center_gt = ((center_normed + 1) / 2 * args().centermap_size).long()
+    center_normed[valid_inds] = torch.max(center_normed[valid_inds], torch.ones_like(center_normed[valid_inds]) * -1)
+    center_gt = ((center_normed + 1) / 2 * (args().centermap_size - 1)).long()
+    center_gt = torch.min(center_gt, torch.ones_like(center_gt) * (args().centermap_size - 1))
     center_gt_valid = center_gt[valid_mask]
     return valid_batch_inds, valid_person_ids, center_gt_valid
+
+
+def match_with_3d_2d_centers(meta_data, outputs, cfg):
+    with_2d_matching = cfg['with_2d_matching']
+    is_training = cfg['is_training']
+    cam_mask = meta_data['cam_mask']
+    batch_size = len(cam_mask)
+    pred_batch_ids = outputs['pred_batch_ids']
+    pred_czyxs = outputs['pred_czyxs']
+    top_score = outputs['top_score']
+    device = outputs['center_map_3d'].device
+    center_gts_info_3d = parse_gt_center3d(cam_mask, meta_data['cams'])
+    person_centers = meta_data['person_centers'].clone()
+    person_centers[cam_mask] = -2.0
+    center_gts_info_2d = process_gt_center(person_centers)
+    vgt_batch_ids, vgt_person_ids, vgt_centers = center_gts_info_2d
+    vgt_batch_ids_3d, vgt_person_ids_3d, vgt_czyxs = center_gts_info_3d
+    mc = {key: [] for key in ['batch_ids', 'matched_ids', 'person_ids', 'conf']}
+    for match_ind in torch.arange(len(vgt_batch_ids_3d)):
+        batch_id, person_id, center_gt = vgt_batch_ids_3d[match_ind], vgt_person_ids_3d[match_ind], vgt_czyxs[match_ind]
+        pids = torch.where(pred_batch_ids == batch_id)[0]
+        if len(pids) == 0:
+            continue
+        center_dist_3d = torch.norm(pred_czyxs[pids].float() - center_gt[None].float(), dim=-1)
+        matched_pred_id = pids[torch.argmin(center_dist_3d)]
+        mc['batch_ids'].append(batch_id)
+        mc['matched_ids'].append(matched_pred_id)
+        mc['person_ids'].append(person_id)
+        mc['conf'].append(top_score[matched_pred_id])
+    for match_ind in torch.arange(len(vgt_batch_ids)):
+        batch_id, person_id, center_gt = vgt_batch_ids[match_ind], vgt_person_ids[match_ind], vgt_centers[match_ind]
+        pids = torch.where(pred_batch_ids == batch_id)[0]
+        if len(pids) == 0:
+            continue
+        matched_pred_id = pids[torch.argmin(torch.norm(pred_czyxs[pids, 1:].float() - center_gt[None].float(), dim=-1))]
+        center_matched = pred_czyxs[matched_pred_id].long()
+        mc['batch_ids'].append(batch_id)
+        mc['matched_ids'].append(matched_pred_id)
+        mc['person_ids'].append(person_id)
+        mc['conf'].append(top_score[matched_pred_id])
+    if args().eval_2dpose:
+        for inds, (batch_id, person_id, center_gt) in enumerate(zip(vgt_batch_ids, vgt_person_ids, vgt_centers)):
+            if batch_id in pred_batch_ids:
+                center_pred = pred_czyxs[pred_batch_ids == batch_id]
+                matched_id = torch.argmin(torch.norm(center_pred[:, 1:].float() - center_gt[None].float(), dim=-1))
+                matched_pred_id = np.where((pred_batch_ids == batch_id).cpu())[0][matched_id]
+                mc['matched_ids'].append(matched_pred_id)
+                mc['batch_ids'].append(batch_id)
+                mc['person_ids'].append(person_id)
+    if len(mc['matched_ids']) == 0:
+        mc.update({'batch_ids': [0], 'matched_ids': [0], 'person_ids': [0], 'conf': [0]})
+    keys_list = list(mc.keys())
+    for key in keys_list:
+        if key == 'conf':
+            mc[key] = torch.Tensor(mc[key])
+        else:
+            mc[key] = torch.Tensor(mc[key]).long()
+        if args().max_supervise_num != -1 and is_training:
+            mc[key] = mc[key][:args().max_supervise_num]
+    return mc['batch_ids'], mc['person_ids'], mc['matched_ids'], mc['conf']
+
+
+def get_bbx_overlap(p1, p2, imgpath, baseline=None):
+    min_p1 = np.min(p1, axis=0)
+    min_p2 = np.min(p2, axis=0)
+    max_p1 = np.max(p1, axis=0)
+    max_p2 = np.max(p2, axis=0)
+    bb1 = {}
+    bb2 = {}
+    bb1['x1'] = min_p1[0]
+    bb1['x2'] = max_p1[0]
+    bb1['y1'] = min_p1[1]
+    bb1['y2'] = max_p1[1]
+    bb2['x1'] = min_p2[0]
+    bb2['x2'] = max_p2[0]
+    bb2['y1'] = min_p2[1]
+    bb2['y2'] = max_p2[1]
+    assert bb1['x1'] < bb1['x2']
+    assert bb1['y1'] < bb1['y2']
+    assert bb2['x1'] < bb2['x2']
+    assert bb2['y1'] < bb2['y2']
+    x_left = max(bb1['x1'], bb2['x1'])
+    y_top = max(bb1['y1'], bb2['y1'])
+    x_right = min(bb1['x2'], bb2['x2'])
+    y_bottom = min(bb1['y2'], bb2['y2'])
+    intersection_area = max(0, x_right - x_left + 1) * max(0, y_bottom - y_top + 1)
+    bb1_area = (bb1['x2'] - bb1['x1'] + 1) * (bb1['y2'] - bb1['y1'] + 1)
+    bb2_area = (bb2['x2'] - bb2['x1'] + 1) * (bb2['y2'] - bb2['y1'] + 1)
+    iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
+    return iou
+
+
+def greedy_matching_kp2ds(pred_kps, gtkp, valid_mask, iou_thresh=0.05, valid=None):
+    """
+    matches groundtruth keypoints to the detection by considering all possible matchings.
+    :return: best possible matching, a list of tuples, where each tuple corresponds to one match of pred_person.to gt_person.
+            the order within one tuple is as follows (idx_pred_kps, idx_gt_kps)
+    """
+    predList = np.arange(len(pred_kps))
+    gtList = np.arange(len(gtkp))
+    combs = list(product(predList, gtList))
+    errors_per_pair = {}
+    errors_per_pair_list = []
+    for comb in combs:
+        vmask = valid_mask[comb[1]]
+        if vmask.sum() < 1:
+            None
+        errors_per_pair[str(comb)] = np.linalg.norm(pred_kps[comb[0]][vmask, :2] - gtkp[comb[1]][vmask, :2], 2)
+        errors_per_pair_list.append(errors_per_pair[str(comb)])
+    gtAssigned = np.zeros((len(gtkp),), dtype=bool)
+    opAssigned = np.zeros((len(pred_kps),), dtype=bool)
+    errors_per_pair_list = np.array(errors_per_pair_list)
+    bestMatch = []
+    excludedGtBecauseInvalid = []
+    falsePositiveCounter = 0
+    while np.sum(gtAssigned) < len(gtAssigned) and np.sum(opAssigned) + falsePositiveCounter < len(pred_kps):
+        found = False
+        falsePositive = False
+        while not found:
+            if sum(np.inf == errors_per_pair_list) == len(errors_per_pair_list):
+                None
+            minIdx = np.argmin(errors_per_pair_list)
+            minComb = combs[minIdx]
+            iou = get_bbx_overlap(pred_kps[minComb[0]], gtkp[minComb[1]])
+            if not opAssigned[minComb[0]] and not gtAssigned[minComb[1]] and iou >= iou_thresh:
+                found = True
+                errors_per_pair_list[minIdx] = np.inf
+            else:
+                errors_per_pair_list[minIdx] = np.inf
+                if iou < iou_thresh:
+                    found = True
+                    falsePositive = True
+                    falsePositiveCounter += 1
+        if not valid is None:
+            if valid[minComb[1]]:
+                if not falsePositive:
+                    bestMatch.append(minComb)
+                    opAssigned[minComb[0]] = True
+                    gtAssigned[minComb[1]] = True
+            else:
+                gtAssigned[minComb[1]] = True
+                excludedGtBecauseInvalid.append(minComb[1])
+        elif not falsePositive:
+            bestMatch.append(minComb)
+            opAssigned[minComb[0]] = True
+            gtAssigned[minComb[1]] = True
+    bestMatch = np.array(bestMatch)
+    opAssigned = []
+    gtAssigned = []
+    for pair in bestMatch:
+        opAssigned.append(pair[0])
+        gtAssigned.append(pair[1])
+    opAssigned.sort()
+    gtAssigned.sort()
+    falsePositives = []
+    misses = []
+    opIds = np.arange(len(pred_kps))
+    notAssignedIds = np.setdiff1d(opIds, opAssigned)
+    for notAssignedId in notAssignedIds:
+        falsePositives.append(notAssignedId)
+    gtIds = np.arange(len(gtList))
+    notAssignedIdsGt = np.setdiff1d(gtIds, gtAssigned)
+    for notAssignedIdGt in notAssignedIdsGt:
+        if not valid is None:
+            if valid[notAssignedIdGt]:
+                misses.append(notAssignedIdGt)
+            else:
+                excludedGtBecauseInvalid.append(notAssignedIdGt)
+        else:
+            misses.append(notAssignedIdGt)
+    return bestMatch, falsePositives, misses
+
+
+def match_with_kp2ds(meta_data, outputs, cfg):
+    pred_kp2ds = outputs['pj2d']
+    device = pred_kp2ds.device
+    pred_batch_ids = outputs['pred_batch_ids'].long()
+    body_center_confs = outputs['top_score']
+    gt_kp2ds = meta_data['full_kp2d']
+    valid_mask = meta_data['valid_masks'][:, :, 0]
+    vgt_batch_ids, vgt_person_ids = torch.where(valid_mask)
+    vgt_kp2ds = gt_kp2ds[vgt_batch_ids, vgt_person_ids]
+    vgt_valid_mask = ((vgt_kp2ds != -2.0).sum(-1) == 2).sum(-1) > 0
+    if vgt_valid_mask.sum() != len(vgt_valid_mask):
+        vgt_kp2ds, vgt_batch_ids, vgt_person_ids = vgt_kp2ds[vgt_valid_mask], vgt_batch_ids[vgt_valid_mask], vgt_person_ids[vgt_valid_mask]
+    mc = {key: [] for key in ['batch_ids', 'matched_ids', 'person_ids', 'conf']}
+    matching_batch_ids = torch.unique(pred_batch_ids)
+    for batch_id in matching_batch_ids:
+        gt_ids = torch.where(vgt_batch_ids == batch_id)[0]
+        if len(gt_ids) == 0:
+            continue
+        pred_ids = torch.where(pred_batch_ids == batch_id)[0]
+        pred_kp2ds_matching = pred_kp2ds[pred_ids].detach().cpu().numpy()
+        gt_kp2ds_matching = vgt_kp2ds[gt_ids].cpu().numpy()
+        gt_valid_mask_matching = (gt_kp2ds_matching == -2.0).sum(-1) == 0
+        bestMatch, falsePositives, misses = greedy_matching_kp2ds(pred_kp2ds_matching, gt_kp2ds_matching, gt_valid_mask_matching)
+        for pid, gtid in bestMatch:
+            matched_gt_id = gt_ids[gtid]
+            gt_batch_id = vgt_batch_ids[matched_gt_id]
+            gt_person_id = vgt_person_ids[matched_gt_id]
+            pred_batch_id = pred_ids[pid]
+            mc['batch_ids'].append(gt_batch_id)
+            mc['person_ids'].append(gt_person_id)
+            mc['matched_ids'].append(pred_batch_id)
+            mc['conf'].append(body_center_confs[int(pred_batch_id)])
+    if len(mc['matched_ids']) == 0:
+        None
+        mc.update({'batch_ids': [0], 'matched_ids': [0], 'person_ids': [0], 'conf': [0]})
+    keys_list = list(mc.keys())
+    for key in keys_list:
+        if key == 'conf':
+            mc[key] = torch.Tensor(mc[key])
+        else:
+            mc[key] = torch.Tensor(mc[key]).long()
+        if args().max_supervise_num != -1 and cfg['is_training']:
+            mc[key] = mc[key][:args().max_supervise_num]
+    return mc['batch_ids'], mc['person_ids'], mc['matched_ids'], mc['conf']
+
+
+matching_gts2preds = {'kp2ds': match_with_kp2ds, '3D+2D_center': match_with_3d_2d_centers, '2D_center': match_with_2d_centers}
 
 
 def reorganize_gts(meta_data, key_list, batch_ids):
     for key in key_list:
         if key in meta_data:
-            if isinstance(meta_data[key], torch.Tensor):
-                meta_data[key] = meta_data[key][batch_ids]
-            elif isinstance(meta_data[key], list):
-                meta_data[key] = [meta_data[key][ind] for ind in batch_ids]
+            try:
+                if isinstance(meta_data[key], torch.Tensor):
+                    meta_data[key] = meta_data[key][batch_ids]
+                elif isinstance(meta_data[key], list):
+                    meta_data[key] = [meta_data[key][ind] for ind in batch_ids]
+            except:
+                None
     return meta_data
 
 
@@ -1817,9 +2949,42 @@ def reorganize_data(outputs, meta_data, exclude_keys, gt_keys, batch_ids, person
         if gt_key in meta_data:
             try:
                 meta_data[gt_key] = meta_data[gt_key][batch_ids, person_ids]
-            except Exception as error:
+            except:
                 None
     return outputs, meta_data
+
+
+def reorganize_gts_cpu(meta_data, key_list, batch_ids):
+    for key in key_list:
+        if key in meta_data:
+            if isinstance(meta_data[key], torch.Tensor):
+                meta_data[key] = meta_data[key].cpu()[batch_ids.cpu()]
+            elif isinstance(meta_data[key], list):
+                meta_data[key] = [meta_data[key][ind] for ind in batch_ids]
+    return meta_data
+
+
+def suppressing_silimar_mesh_and_2D_center(params_preds, pred_batch_ids, pred_czyxs, top_score, rot_dim=6, center2D_thresh=5, pose_thresh=2.5):
+    pose_params_preds = params_preds[:, args().cam_dim:args().cam_dim + 22 * rot_dim]
+    N = len(pred_czyxs)
+    center2D_similarity = torch.norm((pred_czyxs[:, 1:].unsqueeze(1).repeat(1, N, 1) - pred_czyxs[:, 1:].unsqueeze(0).repeat(N, 1, 1)).float(), p=2, dim=-1)
+    same_batch_id_mask = pred_batch_ids.unsqueeze(1).repeat(1, N) == pred_batch_ids.unsqueeze(0).repeat(N, 1)
+    center2D_similarity[~same_batch_id_mask] = center2D_thresh + 1
+    similarity = center2D_similarity <= center2D_thresh
+    center_similar_inds = torch.where(similarity.sum(-1) > 1)[0]
+    for s_inds in center_similar_inds:
+        if rot_dim == 6:
+            pose_angulars = rot6D_to_angular(pose_params_preds[similarity[s_inds]])
+            pose_angular_base = rot6D_to_angular(pose_params_preds[s_inds].unsqueeze(0)).repeat(len(pose_angulars), 1)
+        elif rot_dim == 3:
+            pose_angulars = pose_params_preds[similarity[s_inds]]
+            pose_angular_base = pose_params_preds[s_inds].unsqueeze(0).repeat(len(pose_angulars))
+        pose_similarity = batch_smpl_pose_l2_error(pose_angulars, pose_angular_base)
+        sim_past = similarity[s_inds].clone()
+        similarity[s_inds, sim_past] = pose_similarity < pose_thresh
+    score_map = similarity * top_score.unsqueeze(0).repeat(N, 1)
+    nms_inds = torch.argmax(score_map, 1) == torch.arange(N)
+    return [item[nms_inds] for item in [pred_batch_ids, pred_czyxs, top_score]], nms_inds
 
 
 class ResultParser(nn.Module):
@@ -1830,17 +2995,23 @@ class ResultParser(nn.Module):
         self.with_smpl_parser = with_smpl_parser
         if args().calc_smpl_mesh and with_smpl_parser:
             self.params_map_parser = SMPLWrapper()
-        self.heatmap_parser = HeatmapParser()
         self.centermap_parser = CenterMap()
         self.match_preds_to_gts_for_supervision = args().match_preds_to_gts_for_supervision
 
     def matching_forward(self, outputs, meta_data, cfg):
-        if args().model_version in [6, 8, 9]:
-            outputs, meta_data = self.match_params_new(outputs, meta_data, cfg)
+        if args().BEV_matching_gts2preds == 'kp2ds':
+            outputs = self.params_map_parser(outputs, meta_data, calc_pj2d_org=False)
+            if args().model_version in [6, 8, 9]:
+                outputs, meta_data = self.match_params_new(outputs, meta_data, cfg)
+            else:
+                outputs, meta_data = self.match_params(outputs, meta_data, cfg)
         else:
-            outputs, meta_data = self.match_params(outputs, meta_data, cfg)
-        if 'params_pred' in outputs and self.with_smpl_parser and args().calc_smpl_mesh:
-            outputs = self.params_map_parser(outputs, meta_data)
+            if args().model_version in [6, 8, 9]:
+                outputs, meta_data = self.match_params_new(outputs, meta_data, cfg)
+            else:
+                outputs, meta_data = self.match_params(outputs, meta_data, cfg)
+            if 'params_pred' in outputs and self.with_smpl_parser and args().calc_smpl_mesh:
+                outputs = self.params_map_parser(outputs, meta_data)
         if 'detection_flag' not in outputs:
             outputs['detection_flag'] = self.determine_detection_flag(outputs, meta_data)
         return outputs, meta_data
@@ -1859,54 +3030,20 @@ class ResultParser(nn.Module):
         detection_flag = torch.Tensor([(batch_id in detected_ids) for batch_id in meta_data['batch_ids']])
         return detection_flag
 
-    def process_reorganize_idx_data_parallel(self, outputs):
-        gpu_num = torch.cuda.device_count()
-        current_device_id = outputs['params_maps'].device.index
-        data_size = outputs['params_maps'].shape[0]
-        outputs['reorganize_idx'] += data_size * current_device_id
-        return outputs
-
-    def suppressing_silimar_mesh_and_2D_center(self, params_preds, pred_batch_ids, pred_czyxs, top_score, center2D_thresh=5, pose_thresh=2.5):
-        pose_params_preds = params_preds[:, args().cam_dim:args().cam_dim + 22 * args().rot_dim]
-        N = len(pred_czyxs)
-        center2D_similarity = torch.norm((pred_czyxs[:, 1:].unsqueeze(1).repeat(1, N, 1) - pred_czyxs[:, 1:].unsqueeze(0).repeat(N, 1, 1)).float(), p=2, dim=-1)
-        same_batch_id_mask = pred_batch_ids.unsqueeze(1).repeat(1, N) == pred_batch_ids.unsqueeze(0).repeat(N, 1)
-        center2D_similarity[~same_batch_id_mask] = center2D_thresh + 1
-        similarity = center2D_similarity <= center2D_thresh
-        center_similar_inds = torch.where(similarity.sum(-1) > 1)[0]
-        for s_inds in center_similar_inds:
-            pose_angulars = rot6D_to_angular(pose_params_preds[similarity[s_inds]])
-            pose_angular_base = rot6D_to_angular(pose_params_preds[s_inds].unsqueeze(0)).repeat(len(pose_angulars), 1)
-            pose_similarity = batch_smpl_pose_l2_error(pose_angulars, pose_angular_base)
-            sim_past = similarity[s_inds].clone()
-            similarity[s_inds, sim_past] = pose_similarity < pose_thresh
-        score_map = similarity * top_score.unsqueeze(0).repeat(N, 1)
-        nms_inds = torch.argmax(score_map, 1) == torch.arange(N)
-        return [item[nms_inds] for item in [pred_batch_ids, pred_czyxs, top_score]], nms_inds
-
-    def suppressing_duplicate_mesh(self, outputs):
-        (pred_batch_ids, pred_czyxs, top_score), nms_inds = self.suppressing_silimar_mesh_and_2D_center(outputs['params_pred'], outputs['pred_batch_ids'], outputs['pred_czyxs'], outputs['top_score'])
-        outputs['params_pred'], outputs['cam_czyx'] = outputs['params_pred'][nms_inds], outputs['cam_czyx'][nms_inds]
-        if 'motion_offsets' in outputs:
-            outputs['motion_offsets'] = outputs['motion_offsets'][nms_inds]
-        outputs.update({'pred_batch_ids': pred_batch_ids, 'pred_czyxs': pred_czyxs, 'top_score': top_score})
-        return outputs
-
     def match_params_new(self, outputs, meta_data, cfg):
-        gt_keys = ['params', 'full_kp2d', 'kp_3d', 'valid_masks', 'subject_ids', 'verts', 'cam_mask', 'kid_shape_offsets', 'root_trans', 'cams']
+        gt_keys = ['params', 'full_kp2d', 'kp_3d', 'valid_masks', 'subject_ids', 'verts', 'cam_mask', 'kid_shape_offsets', 'root_trans_cam', 'cams']
         if args().learn_relative:
             gt_keys += ['depth_info']
-        exclude_keys = ['heatmap', 'centermap', 'AE_joints', 'person_centers', 'params_pred', 'all_person_detected_mask', 'person_scales']
+        if args().learn_cam_with_fbboxes:
+            gt_keys += ['full_body_bboxes']
+        exclude_keys = ['heatmap', 'centermap', 'AE_joints', 'person_centers', 'params_pred', 'all_person_detected_mask', 'person_scales', 'dynamic_supervise']
         if cfg['with_nms']:
-            outputs = self.suppressing_duplicate_mesh(outputs)
-        cam_mask = meta_data['cam_mask']
-        center_gts_info_3d = parse_gt_center3d(cam_mask, meta_data['cams'])
-        person_centers = meta_data['person_centers'].clone()
-        person_centers[cam_mask] = -2.0
-        center_gts_info_2d = process_gt_center(person_centers)
-        mc = self.match_gt_pred_3d_2d(center_gts_info_2d, center_gts_info_3d, outputs['pred_batch_ids'], outputs['pred_czyxs'], outputs['top_score'], outputs['cam_czyx'], outputs['center_map_3d'].device, cfg['is_training'], batch_size=len(cam_mask), with_2d_matching=cfg['with_2d_matching'])
-        batch_ids, person_ids, matched_pred_ids, center_confs = mc['batch_ids'], mc['person_ids'], mc['matched_ids'], mc['conf']
+            outputs = suppressing_duplicate_mesh(outputs)
+        batch_ids, person_ids, matched_pred_ids, center_confs = matching_gts2preds[args().BEV_matching_gts2preds](meta_data, outputs, cfg)
         outputs['params_pred'] = outputs['params_pred'][matched_pred_ids]
+        if args().video:
+            outputs['motion_offsets'] = outputs['motion_offsets'][matched_pred_ids]
+            exclude_keys += ['traj3D_gts', 'traj2D_gts', 'Tj_flag', 'traj_gt_ids']
         for center_key in ['pred_batch_ids', 'pred_czyxs', 'top_score']:
             outputs[center_key] = outputs[center_key][matched_pred_ids]
         outputs['pred_batch_ids'] += meta_data['batch_ids'][0]
@@ -1914,107 +3051,57 @@ class ResultParser(nn.Module):
         outputs, meta_data = reorganize_data(outputs, meta_data, exclude_keys, gt_keys, batch_ids, person_ids)
         outputs['center_preds'] = outputs['pred_czyxs'] * args().input_size / args().centermap_size
         outputs['center_confs'] = center_confs
+        if args().BEV_matching_gts2preds == 'kp2ds':
+            output_keys = ['verts', 'j3d', 'joints_h36m17', 'cam', 'global_orient', 'body_pose', 'smpl_betas', 'smpl_thetas', 'Age_preds', 'kid_offsets_pred', 'cam_trans', 'pj2d', 'pj2d_h36m17', 'verts_camed']
+            for key in output_keys:
+                outputs[key] = outputs[key][matched_pred_ids]
+            outputs = convert_kp2ds2org_images(outputs, meta_data['offsets'])
+        if 'traj3D_gts' in meta_data:
+            meta_data['traj3D_gts'], meta_data['traj2D_gts'] = match_trajectory_gts(meta_data['traj3D_gts'], meta_data['traj2D_gts'], meta_data['traj_gt_ids'], meta_data['subject_ids'], meta_data['batch_ids'])
         return outputs, meta_data
 
-    def match_gt_pred_3d_2d(self, center_gts_info_2d, center_gts_info_3d, pred_batch_ids, pred_czyxs, top_score, cam_czyx, device, is_training, batch_size=1, with_2d_matching=True):
-        vgt_batch_ids, vgt_person_ids, vgt_centers = center_gts_info_2d
-        vgt_batch_ids_3d, vgt_person_ids_3d, vgt_czyxs = center_gts_info_3d
-        mc = {key: [] for key in ['batch_ids', 'matched_ids', 'person_ids', 'conf']}
-        for match_ind in torch.arange(len(vgt_batch_ids_3d)):
-            batch_id, person_id, center_gt = vgt_batch_ids_3d[match_ind], vgt_person_ids_3d[match_ind], vgt_czyxs[match_ind]
-            pids = torch.where(pred_batch_ids == batch_id)[0]
-            if len(pids) == 0:
-                continue
-            center_dist_3d = torch.norm(pred_czyxs[pids].float() - center_gt[None].float(), dim=-1)
-            matched_pred_id = pids[torch.argmin(center_dist_3d)]
-            mc['batch_ids'].append(batch_id)
-            mc['matched_ids'].append(matched_pred_id)
-            mc['person_ids'].append(person_id)
-            mc['conf'].append(top_score[matched_pred_id])
-        for match_ind in torch.arange(len(vgt_batch_ids)):
-            batch_id, person_id, center_gt = vgt_batch_ids[match_ind], vgt_person_ids[match_ind], vgt_centers[match_ind]
-            pids = torch.where(pred_batch_ids == batch_id)[0]
-            if len(pids) == 0:
-                continue
-            matched_pred_id = pids[torch.argmin(torch.norm(pred_czyxs[pids, 1:].float() - center_gt[None].float(), dim=-1))]
-            center_matched = pred_czyxs[matched_pred_id].long()
-            mc['batch_ids'].append(batch_id)
-            mc['matched_ids'].append(matched_pred_id)
-            mc['person_ids'].append(person_id)
-            mc['conf'].append(top_score[matched_pred_id])
-        if args().eval_2dpose:
-            for inds, (batch_id, person_id, center_gt) in enumerate(zip(vgt_batch_ids, vgt_person_ids, vgt_centers)):
-                if batch_id in pred_batch_ids:
-                    center_pred = pred_czyxs[pred_batch_ids == batch_id]
-                    matched_id = torch.argmin(torch.norm(center_pred[:, 1:].float() - center_gt[None].float(), dim=-1))
-                    matched_pred_id = np.where((pred_batch_ids == batch_id).cpu())[0][matched_id]
-                    mc['matched_ids'].append(matched_pred_id)
-                    mc['batch_ids'].append(batch_id)
-                    mc['person_ids'].append(person_id)
-        if len(mc['matched_ids']) == 0:
-            mc.update({'batch_ids': [0], 'matched_ids': [0], 'person_ids': [0], 'conf': [0]})
-        keys_list = list(mc.keys())
-        for key in keys_list:
-            if key == 'conf':
-                mc[key] = torch.Tensor(mc[key])
-            else:
-                mc[key] = torch.Tensor(mc[key]).long()
-            if args().max_supervise_num != -1 and is_training:
-                mc[key] = mc[key][:args().max_supervise_num]
-        return mc
-
     def match_params(self, outputs, meta_data, cfg):
-        gt_keys = ['params', 'full_kp2d', 'kp_3d', 'subject_ids', 'valid_masks']
+        gt_keys = ['params', 'full_kp2d', 'kp_3d', 'subject_ids', 'valid_masks', 'verts', 'cam_mask', 'kid_shape_offsets', 'root_trans_cam', 'cams']
+        if args().learn_relative:
+            gt_keys += ['depth_info']
         exclude_keys = ['heatmap', 'centermap', 'AE_joints', 'person_centers', 'all_person_detected_mask']
         center_gts_info = process_gt_center(meta_data['person_centers'])
         center_preds_info = self.centermap_parser.parse_centermap(outputs['center_map'])
-        mc_centers = self.match_gt_pred(center_gts_info, center_preds_info, outputs['center_map'].device, cfg['is_training'])
+        mc_centers = matching_gts2preds['2D_center'](center_gts_info, center_preds_info, outputs['center_map'].device, cfg['is_training'])
         batch_ids, flat_inds, person_ids = mc_centers['batch_ids'], mc_centers['flat_inds'], mc_centers['person_ids']
-        if len(batch_ids) == 0:
-            if 'new_training' in cfg:
-                if cfg['new_training']:
-                    outputs['detection_flag'] = torch.Tensor([(False) for _ in range(len(meta_data['batch_ids']))])
-                    outputs['reorganize_idx'] = meta_data['batch_ids']
-                    return outputs, meta_data
-            batch_ids, flat_inds = torch.zeros(1).long(), (torch.ones(1) * self.map_size ** 2 / 2.0).long()
-            person_ids = batch_ids.clone()
-        outputs['detection_flag'] = torch.Tensor([(True) for _ in range(len(batch_ids))])
         if 'params_maps' in outputs and 'params_pred' not in outputs:
             outputs['params_pred'] = self.parameter_sampling(outputs['params_maps'], batch_ids, flat_inds, use_transform=True)
+        if 'uncertainty_map' in outputs:
+            outputs['uncertainty_pred'] = torch.sqrt(self.parameter_sampling(outputs['uncertainty_map'], batch_ids, flat_inds, use_transform=True) ** 2) + 1
+        if 'reid_map' in outputs:
+            outputs['reid_embeds'] = self.parameter_sampling(outputs['reid_map'], batch_ids, flat_inds, use_transform=True)
+        if 'joint_sampler_maps' in outputs:
+            outputs['joint_sampler_pred'] = self.parameter_sampling(outputs['joint_sampler_maps'], batch_ids, flat_inds, use_transform=True)
+            outputs['joint_sampler'] = self.parameter_sampling(outputs['joint_sampler_maps_filtered'], batch_ids, flat_inds, use_transform=True)
+            if 'params_pred' in outputs:
+                _check_params_pred_(outputs['params_pred'].shape, len(batch_ids))
+                outputs['params_pred'] = self.adjust_to_joint_level_sampling(outputs['params_pred'], outputs['joint_sampler'], outputs['params_maps'], batch_ids)
         outputs, meta_data = reorganize_data(outputs, meta_data, exclude_keys, gt_keys, batch_ids, person_ids)
-        outputs['centers_pred'] = torch.stack([flat_inds % args().centermap_size, flat_inds // args().centermap_size], 1)
+        outputs['center_preds'] = torch.stack([flat_inds % args().centermap_size, flat_inds // args().centermap_size], 1) * args().input_size / args().centermap_size
         return outputs, meta_data
 
-    def match_gt_pred(self, center_gts_info, center_preds_info, device, is_training):
-        vgt_batch_ids, vgt_person_ids, vgt_centers = center_gts_info
-        vpred_batch_ids, flat_inds, cyxs, top_score = center_preds_info
-        mc = {key: [] for key in ['batch_ids', 'flat_inds', 'person_ids', 'conf']}
-        if self.match_preds_to_gts_for_supervision:
-            for match_ind in torch.arange(len(vgt_batch_ids)):
-                batch_id, person_id, center_gt = vgt_batch_ids[match_ind], vgt_person_ids[match_ind], vgt_centers[match_ind]
-                pids = torch.where(vpred_batch_ids == batch_id)[0]
-                if len(pids) == 0:
-                    continue
-                closet_center_ind = pids[torch.argmin(torch.norm(cyxs[pids].float() - center_gt[None].float(), dim=-1))]
-                center_matched = cyxs[closet_center_ind].long()
-                cy, cx = torch.clamp(center_matched, 0, self.map_size - 1)
-                flat_ind = cy * args().centermap_size + cx
-                mc['batch_ids'].append(batch_id)
-                mc['flat_inds'].append(flat_ind)
-                mc['person_ids'].append(person_id)
-                mc['conf'].append(top_score[closet_center_ind])
-            keys_list = list(mc.keys())
-            for key in keys_list:
-                if key != 'conf':
-                    mc[key] = torch.Tensor(mc[key]).long()
-                if args().max_supervise_num != -1 and is_training:
-                    mc[key] = mc[key][:args().max_supervise_num]
-        else:
-            mc['batch_ids'] = vgt_batch_ids.long()
-            mc['flat_inds'] = flatten_inds(vgt_centers.long())
-            mc['person_ids'] = vgt_person_ids.long()
-            mc['conf'] = torch.zeros(len(vgt_person_ids))
-        return mc
+    def adjust_to_joint_level_sampling(self, param_preds, joint_sampler, param_maps, batch_ids):
+        sampler_flat_inds = self.process_joint_sampler(joint_sampler)
+        batch, channel = param_maps.shape[:2]
+        param_maps = param_maps.view(batch, channel, -1).permute((0, 2, 1)).contiguous()
+        for inds, joint_inds in enumerate(constants.joint_sampler_relationship):
+            start_inds = joint_inds * args().rot_dim + args().cam_dim
+            end_inds = start_inds + args().rot_dim
+            _check_params_sampling_(param_maps.shape, start_inds, end_inds, batch_ids, sampler_flat_inds[inds])
+            param_preds[..., start_inds:end_inds] = param_maps[..., start_inds:end_inds][batch_ids, sampler_flat_inds[inds]].contiguous()
+        return param_preds
+
+    def process_joint_sampler(self, joint_sampler, thresh=0.999):
+        joint_sampler = torch.clamp(joint_sampler, -1 * thresh, thresh)
+        joint_sampler = (joint_sampler + 1) * self.map_size // 2
+        xs, ys = joint_sampler[:, ::2], joint_sampler[:, 1::2]
+        sampler_flat_inds = (ys * self.map_size + xs).permute((1, 0)).long().contiguous()
+        return sampler_flat_inds
 
     def parameter_sampling(self, maps, batch_ids, flat_inds, use_transform=True):
         device = maps.device
@@ -2026,9 +3113,9 @@ class ResultParser(nn.Module):
 
     @torch.no_grad()
     def parse_maps(self, outputs, meta_data, cfg):
-        if args().model_version in [6]:
-            if cfg['with_nms']:
-                outputs = self.suppressing_duplicate_mesh(outputs)
+        if 'pred_batch_ids' in outputs:
+            if cfg['with_nms'] and args().model_version in [6, 9]:
+                outputs = suppressing_duplicate_mesh(outputs)
             batch_ids = outputs['pred_batch_ids'].long()
             outputs['center_preds'] = outputs['pred_czyxs'] * args().input_size / args().centermap_size
             outputs['center_confs'] = outputs['top_score']
@@ -2037,23 +3124,29 @@ class ResultParser(nn.Module):
             if len(batch_ids) == 0:
                 batch_ids, flat_inds, cyxs, top_score = self.centermap_parser.parse_centermap_heatmap_adaptive_scale_batch(outputs['center_map'], top_n_people=1)
                 outputs['detection_flag'] = torch.Tensor([(False) for _ in range(len(batch_ids))])
-            outputs['centers_pred'] = torch.stack([flat_inds % args().centermap_size, torch.div(flat_inds, args().centermap_size, rounding_mode='floor')], 1)
-            outputs['centers_conf'] = self.parameter_sampling(outputs['center_map'], batch_ids, flat_inds, use_transform=True)
+        if 'params_pred' not in outputs and 'params_maps' in outputs:
             outputs['params_pred'] = self.parameter_sampling(outputs['params_maps'], batch_ids, flat_inds, use_transform=True)
+        if 'center_preds' not in outputs:
+            outputs['center_preds'] = torch.stack([flat_inds % args().centermap_size, flat_inds // args().centermap_size], 1) * args().input_size / args().centermap_size
+            outputs['center_confs'] = self.parameter_sampling(outputs['center_map'], batch_ids, flat_inds, use_transform=True)
+        if 'joint_sampler_maps_filtered' in outputs:
+            outputs['joint_sampler'] = self.parameter_sampling(outputs['joint_sampler_maps_filtered'], batch_ids, flat_inds, use_transform=True)
+            if 'params_pred' in outputs:
+                _check_params_pred_(outputs['params_pred'].shape, len(batch_ids))
+                self.adjust_to_joint_level_sampling(outputs['params_pred'], outputs['joint_sampler'], outputs['params_maps'], batch_ids)
+        if 'reid_map' in outputs:
+            outputs['reid_embeds'] = self.parameter_sampling(outputs['reid_map'], batch_ids, flat_inds, use_transform=True)
+        if 'uncertainty_map' in outputs:
+            outputs['uncertainty_pred'] = torch.sqrt(self.parameter_sampling(outputs['uncertainty_map'], batch_ids, flat_inds, use_transform=True) ** 2) + 1
         outputs['reorganize_idx'] = meta_data['batch_ids'][batch_ids]
         info_vis = ['image', 'offsets', 'imgpath', 'camMats']
-        meta_data = reorganize_gts(meta_data, info_vis, batch_ids)
+        if len(args().gpu) == 1:
+            meta_data = reorganize_gts_cpu(meta_data, info_vis, batch_ids)
+        else:
+            meta_data = reorganize_gts(meta_data, info_vis, batch_ids)
         if 'pred_batch_ids' in outputs:
             outputs['pred_batch_ids'] += meta_data['batch_ids'][0]
         return outputs, meta_data
-
-    def parse_kps(self, heatmap_AEs, kp2d_thresh=0.1):
-        kps = []
-        heatmap_AE_results = self.heatmap_parser.batch_parse(heatmap_AEs.detach())
-        for batch_id in range(len(heatmap_AE_results)):
-            kp2d, kp2d_conf = heatmap_AE_results[batch_id]
-            kps.append(kp2d[np.array(kp2d_conf) > kp2d_thresh])
-        return kps
 
 
 class AddCoords(nn.Module):
@@ -2236,6 +3329,12 @@ class Base(nn.Module):
             return self.parsing_forward(meta_data, **cfg)
         elif cfg['mode'] == 'forward':
             return self.pure_forward(meta_data, **cfg)
+        elif cfg['mode'] == 'extract_img_feature_maps':
+            return self.extract_img_feature_maps(meta_data, **cfg)
+        elif cfg['mode'] == 'extract_mesh_feature_maps':
+            return self.extract_mesh_feature_maps(meta_data, **cfg)
+        elif cfg['mode'] == 'mesh_regression':
+            return self.regress_mesh_from_sampled_features(meta_data, **cfg)
         else:
             raise NotImplementedError('forward mode is not recognized! please set proper mode (parsing/matching_gts)')
 
@@ -2276,6 +3375,44 @@ class Base(nn.Module):
                 outputs = self.feed_forward(meta_data)
         else:
             outputs = self.feed_forward(meta_data)
+        return outputs
+
+    def extract_feature_maps(self, image):
+        x = self.backbone(image.contiguous())
+        if args().learn_deocclusion:
+            outputs = self.acquire_maps(x)
+        else:
+            outputs = {'image_feature_maps': x.float()}
+        return outputs
+
+    def extract_img_feature_maps(self, image_inputs, **cfg):
+        if args().model_precision == 'fp16':
+            with autocast():
+                outputs = self.extract_feature_maps(image_inputs['image'])
+        else:
+            outputs = self.extract_feature_maps(image_inputs['image'])
+        return outputs
+
+    @torch.no_grad()
+    def extract_mesh_feature_maps(self, image_inputs, **cfg):
+        if args().model_precision == 'fp16':
+            with autocast():
+                mesh_feature_maps = self.param_head(self.backbone(image_inputs['image'].contiguous()))
+        else:
+            mesh_feature_maps = self.param_head(self.backbone(image_inputs['image'].contiguous()))
+        return mesh_feature_maps
+
+    def regress_mesh_from_sampled_features(self, packed_data, **cfg):
+        features_sampled, cam_czyx, cam_preds, outputs = packed_data
+        if args().model_precision == 'fp16':
+            with autocast():
+                outputs['params_pred'] = self.mesh_regression_from_features(features_sampled, cam_czyx, cam_preds)
+                outputs = self._result_parser.params_map_parser(outputs, outputs['meta_data'])
+        else:
+            outputs['params_pred'] = self.mesh_regression_from_features(features_sampled, cam_czyx, cam_preds)
+            outputs = self._result_parser.params_map_parser(outputs, outputs['meta_data'])
+        if 'detection_flag' not in outputs:
+            outputs['detection_flag'] = self.determine_detection_flag(outputs, outputs['meta_data'])
         return outputs
 
     def head_forward(self, x):
@@ -2549,61 +3686,37 @@ class HighResolutionModule(nn.Module):
         return x_fuse
 
 
-def get_3Dcoord_maps(size=128, z_base=None):
+def get_3Dcoord_maps_halfz(size, z_base):
     range_arr = torch.arange(size, dtype=torch.float32)
-    if z_base is None:
-        Z_map = range_arr.reshape(1, size, 1, 1, 1).repeat(1, 1, size, size, 1) / size * 2 - 1
-    else:
-        Z_map = z_base.reshape(1, size, 1, 1, 1).repeat(1, 1, size, size, 1)
-    Y_map = range_arr.reshape(1, 1, size, 1, 1).repeat(1, size, 1, size, 1) / size * 2 - 1
-    X_map = range_arr.reshape(1, 1, 1, size, 1).repeat(1, size, size, 1, 1) / size * 2 - 1
+    z_len = len(z_base)
+    Z_map = z_base.reshape(1, z_len, 1, 1, 1).repeat(1, 1, size, size, 1)
+    Y_map = range_arr.reshape(1, 1, size, 1, 1).repeat(1, z_len, 1, size, 1) / size * 2 - 1
+    X_map = range_arr.reshape(1, 1, 1, size, 1).repeat(1, z_len, size, 1, 1) / size * 2 - 1
     out = torch.cat([Z_map, Y_map, X_map], dim=-1)
     return out
 
 
-class CenterMap3D(object):
-
-    def __init__(self, conf_thresh):
-        None
-        self.size = 128
-        self.max_person = 64
-        self.sigma = 1
-        self.conf_thresh = conf_thresh
-        self.gk_group, self.pool_group = self.generate_kernels([5])
-        self.prepare_parsing()
-
-    def prepare_parsing(self):
-        self.coordmap_3d = get_3Dcoord_maps(size=self.size)
-        self.maxpool3d = torch.nn.MaxPool3d(5, 1, (5 - 1) // 2)
-
-    def generate_kernels(self, kernel_size_list):
-        gk_group, pool_group = {}, {}
-        for kernel_size in set(kernel_size_list):
-            x = np.arange(0, kernel_size, 1, float)
-            y = x[:, np.newaxis]
-            x0, y0 = (kernel_size - 1) // 2, (kernel_size - 1) // 2
-            gaussian_distribution = -((x - x0) ** 2 + (y - y0) ** 2) / (2 * self.sigma ** 2)
-            gk_group[kernel_size] = np.exp(gaussian_distribution)
-            pool_group[kernel_size] = torch.nn.MaxPool2d(kernel_size, 1, (kernel_size - 1) // 2)
-        return gk_group, pool_group
-
-    def parse_3dcentermap(self, center_maps):
-        center_map_nms = nms(center_maps, pool_func=self.maxpool3d).squeeze(1)
-        b, c, h, w = center_map_nms.shape
-        K = self.max_person
-        topk_scores, topk_inds = torch.topk(center_map_nms.reshape(b, c, -1), K)
-        topk_inds = topk_inds % (h * w)
-        topk_ys = (topk_inds.long() // w).float()
-        topk_xs = (topk_inds % w).int().float()
-        topk_score, index = torch.topk(topk_scores.reshape(b, -1), K)
-        topk_inds = gather_feature(topk_inds.view(b, -1, 1), index).reshape(b, K)
-        topk_zs = index.long() // K
-        topk_ys = gather_feature(topk_ys.reshape(b, -1, 1), index).reshape(b, K)
-        topk_xs = gather_feature(topk_xs.reshape(b, -1, 1), index).reshape(b, K)
-        mask = topk_score > self.conf_thresh
-        batch_ids = torch.where(mask)[0]
-        center_zyxs = torch.stack([topk_zs[mask].long(), topk_ys[mask].long(), topk_xs[mask].long()]).permute((1, 0)).long()
-        return [batch_ids, center_zyxs, topk_score[mask]]
+def get_coord_maps(size=128):
+    xx_ones = torch.ones([1, size], dtype=torch.int32)
+    xx_ones = xx_ones.unsqueeze(-1)
+    xx_range = torch.arange(size, dtype=torch.int32).unsqueeze(0)
+    xx_range = xx_range.unsqueeze(1)
+    xx_channel = torch.matmul(xx_ones, xx_range)
+    xx_channel = xx_channel.unsqueeze(-1)
+    yy_ones = torch.ones([1, size], dtype=torch.int32)
+    yy_ones = yy_ones.unsqueeze(1)
+    yy_range = torch.arange(size, dtype=torch.int32).unsqueeze(0)
+    yy_range = yy_range.unsqueeze(-1)
+    yy_channel = torch.matmul(yy_range, yy_ones)
+    yy_channel = yy_channel.unsqueeze(-1)
+    xx_channel = xx_channel.permute(0, 3, 1, 2)
+    yy_channel = yy_channel.permute(0, 3, 1, 2)
+    xx_channel = xx_channel.float() / (size - 1)
+    yy_channel = yy_channel.float() / (size - 1)
+    xx_channel = xx_channel * 2 - 1
+    yy_channel = yy_channel * 2 - 1
+    out = torch.cat([xx_channel, yy_channel], dim=1)
+    return out
 
 
 def BHWC_to_BCHW(x):
@@ -2617,6 +3730,42 @@ def BHWC_to_BCHW(x):
 blocks_dict = {'BASIC': BasicBlock, 'BOTTLENECK': Bottleneck}
 
 
+def copy_state_dict(cur_state_dict, pre_state_dict, prefix='module.', drop_prefix='', fix_loaded=False):
+    success_layers, failed_layers = [], []
+
+    def _get_params(key):
+        key = key.replace(drop_prefix, '')
+        key = prefix + key
+        if key in pre_state_dict:
+            return pre_state_dict[key]
+        return None
+    for k in cur_state_dict.keys():
+        v = _get_params(k)
+        try:
+            if v is None:
+                failed_layers.append(k)
+                continue
+            cur_state_dict[k].copy_(v)
+            if prefix in k and prefix != '':
+                k = k.split(prefix)[1]
+            success_layers.append(k)
+        except:
+            None
+            continue
+    None
+    if fix_loaded and len(failed_layers) > 0:
+        logging.info('fixing the layers that were loaded successfully, while train the layers that failed,')
+        fixed_layers = []
+        for k in cur_state_dict.keys():
+            try:
+                if k in success_layers:
+                    cur_state_dict[k].requires_grad = False
+                    fixed_layers.append(k)
+            except:
+                logging.info('fixing the layer {} failed'.format(k))
+    return success_layers
+
+
 class HigherResolutionNet(nn.Module):
 
     def __init__(self, **kwargs):
@@ -2624,6 +3773,11 @@ class HigherResolutionNet(nn.Module):
         super(HigherResolutionNet, self).__init__()
         self.make_baseline()
         self.backbone_channels = 32
+
+    def load_pretrain_params(self):
+        if os.path.exists(args().hrnet_pretrain):
+            None
+            success_layer = copy_state_dict(self.state_dict(), torch.load(args().hrnet_pretrain), prefix='', fix_loaded=True)
 
     def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer):
         num_branches_cur = len(num_channels_cur_layer)
@@ -2698,9 +3852,8 @@ class HigherResolutionNet(nn.Module):
         self.transition3 = self._make_transition_layer(pre_stage_channels, num_channels)
         self.stage4, pre_stage_channels = self._make_stage(self.stage4_cfg, num_channels, multi_scale_output=False)
 
-    @torch.no_grad()
     def forward(self, x):
-        x = (BHWC_to_BCHW(x) / 255.0 * 2.0 - 1.0).contiguous()
+        x = (BHWC_to_BCHW(x) / 255 * 2.0 - 1.0).contiguous()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -2732,941 +3885,21 @@ class HigherResolutionNet(nn.Module):
         x = y_list[0]
         return x
 
-
-def get_3Dcoord_maps_halfz(size, z_base):
-    range_arr = torch.arange(size, dtype=torch.float32)
-    z_len = len(z_base)
-    Z_map = z_base.reshape(1, z_len, 1, 1, 1).repeat(1, 1, size, size, 1)
-    Y_map = range_arr.reshape(1, 1, size, 1, 1).repeat(1, z_len, 1, size, 1) / size * 2 - 1
-    X_map = range_arr.reshape(1, 1, 1, size, 1).repeat(1, z_len, size, 1, 1) / size * 2 - 1
-    out = torch.cat([Z_map, Y_map, X_map], dim=-1)
-    return out
-
-
-def get_cam3dmap_anchor(FOV, centermap_size):
-    depth_level = np.array([1, 10, 20, 100], dtype=np.float32)
-    map_coord_range_each_level = (np.array([2 / 64.0, 25 / 64.0, 3 / 64.0, 2 / 64.0], dtype=np.float32) * centermap_size).astype(np.int)
-    scale_level = 1 / np.tan(np.radians(FOV / 2.0)) / depth_level
-    cam3dmap_anchor = []
-    scale_cache = 8
-    for scale, coord_range in zip(scale_level, map_coord_range_each_level):
-        cam3dmap_anchor.append(scale_cache - np.arange(1, coord_range + 1) / coord_range * (scale_cache - scale))
-        scale_cache = scale
-    cam3dmap_anchor = np.concatenate(cam3dmap_anchor)
-    return cam3dmap_anchor
-
-
-class BEVv1(nn.Module):
-
-    def __init__(self, **kwargs):
-        super(BEVv1, self).__init__()
-        None
-        self.backbone = HigherResolutionNet()
-        self._build_head()
-        self._build_parser(conf_thresh=kwargs.get('center_thresh', 0.1))
-
-    def _build_parser(self, conf_thresh=0.12):
-        self.centermap_parser = CenterMap3D(conf_thresh=conf_thresh)
-
-    def _build_head(self):
-        params_num, cam_dim = 3 + 22 * 6 + 11, 3
-        self.outmap_size = 128
-        self.output_cfg = {'NUM_PARAMS_MAP': params_num - cam_dim, 'NUM_CENTER_MAP': 1, 'NUM_CAM_MAP': cam_dim}
-        self.head_cfg = {'NUM_BASIC_BLOCKS': 1, 'NUM_CHANNELS': 128}
-        self.bv_center_cfg = {'NUM_DEPTH_LEVEL': self.outmap_size // 2, 'NUM_BLOCK': 2}
-        self.backbone_channels = self.backbone.backbone_channels
-        self.transformer_cfg = {'INPUT_C': self.head_cfg['NUM_CHANNELS'], 'NUM_CHANNELS': 512}
-        self._make_transformer()
-        self.cam3dmap_anchor = torch.from_numpy(get_cam3dmap_anchor(60, self.outmap_size)).float()
-        self.register_buffer('coordmap_3d', get_3Dcoord_maps_halfz(self.outmap_size, z_base=self.cam3dmap_anchor))
-        self._make_final_layers(self.backbone_channels)
-
-    def _make_transformer(self, drop_ratio=0.2):
-        self.position_embeddings = nn.Embedding(self.outmap_size, self.transformer_cfg['INPUT_C'], padding_idx=0)
-        self.transformer = nn.Sequential(nn.Linear(self.transformer_cfg['INPUT_C'], self.transformer_cfg['NUM_CHANNELS']), nn.ReLU(inplace=True), nn.Dropout(drop_ratio), nn.Linear(self.transformer_cfg['NUM_CHANNELS'], self.transformer_cfg['NUM_CHANNELS']), nn.ReLU(inplace=True), nn.Dropout(drop_ratio), nn.Linear(self.transformer_cfg['NUM_CHANNELS'], self.output_cfg['NUM_PARAMS_MAP']))
-
-    def _make_final_layers(self, input_channels):
-        self.det_head = self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP'])
-        self.param_head = self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP'], with_outlayer=False)
-        self._make_bv_center_layers(input_channels, self.bv_center_cfg['NUM_DEPTH_LEVEL'] * 2)
-        self._make_3D_map_refiner()
-
-    def _make_head_layers(self, input_channels, output_channels, num_channels=None, with_outlayer=True):
-        head_layers = []
-        if num_channels is None:
-            num_channels = self.head_cfg['NUM_CHANNELS']
-        for _ in range(self.head_cfg['NUM_BASIC_BLOCKS']):
-            head_layers.append(nn.Sequential(BasicBlock(input_channels, num_channels, downsample=nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0))))
-            input_channels = num_channels
-        if with_outlayer:
-            head_layers.append(nn.Conv2d(in_channels=num_channels, out_channels=output_channels, kernel_size=1, stride=1, padding=0))
-        return nn.Sequential(*head_layers)
-
-    def _make_bv_center_layers(self, input_channels, output_channels):
-        num_channels = self.outmap_size // 8
-        self.bv_pre_layers = nn.Sequential(nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True), nn.Conv2d(in_channels=num_channels, out_channels=num_channels, kernel_size=3, stride=1, padding=1), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True), nn.Conv2d(in_channels=num_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True))
-        input_channels = (num_channels + self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP']) * self.outmap_size
-        inter_channels = 512
-        self.bv_out_layers = nn.Sequential(BasicBlock_1D(input_channels, inter_channels), BasicBlock_1D(inter_channels, inter_channels), BasicBlock_1D(inter_channels, output_channels))
-
-    def _make_3D_map_refiner(self):
-        self.center_map_refiner = nn.Sequential(BasicBlock_3D(self.output_cfg['NUM_CENTER_MAP'], self.output_cfg['NUM_CENTER_MAP']))
-        self.cam_map_refiner = nn.Sequential(BasicBlock_3D(self.output_cfg['NUM_CAM_MAP'], self.output_cfg['NUM_CAM_MAP']))
-
-    def fv_conditioned_bv_estimation(self, x, center_maps_fv, cam_maps_offset):
-        img_feats = self.bv_pre_layers(x)
-        summon_feats = torch.cat([center_maps_fv, cam_maps_offset, img_feats], 1).view(img_feats.size(0), -1, self.outmap_size)
-        outputs_bv = self.bv_out_layers(summon_feats)
-        center_maps_bv = outputs_bv[:, :self.bv_center_cfg['NUM_DEPTH_LEVEL']]
-        cam_maps_offset_bv = outputs_bv[:, self.bv_center_cfg['NUM_DEPTH_LEVEL']:]
-        center_map_3d = center_maps_fv.repeat(1, self.bv_center_cfg['NUM_DEPTH_LEVEL'], 1, 1) * center_maps_bv.unsqueeze(2).repeat(1, 1, self.outmap_size, 1)
-        return center_map_3d, cam_maps_offset_bv
-
-    def coarse2fine_localization(self, x):
-        maps_fv = self.det_head(x)
-        center_maps_fv = maps_fv[:, :self.output_cfg['NUM_CENTER_MAP']]
-        cam_maps_offset = maps_fv[:, self.output_cfg['NUM_CENTER_MAP']:self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP']]
-        center_maps_3d, cam_maps_offset_bv = self.fv_conditioned_bv_estimation(x, center_maps_fv, cam_maps_offset)
-        center_maps_3d = self.center_map_refiner(center_maps_3d.unsqueeze(1)).squeeze(1)
-        cam_maps_3d = self.coordmap_3d + cam_maps_offset.unsqueeze(-1).transpose(4, 1).contiguous()
-        cam_maps_3d[:, :, :, :, 2] = cam_maps_3d[:, :, :, :, 2] + cam_maps_offset_bv.unsqueeze(2).contiguous()
-        cam_maps_3d = self.cam_map_refiner(cam_maps_3d.unsqueeze(1).transpose(5, 1).squeeze(-1))
-        return center_maps_3d, cam_maps_3d, center_maps_fv
-
-    def differentiable_person_feature_sampling(self, feature, pred_czyxs, pred_batch_ids):
-        cz, cy, cx = pred_czyxs[:, 0], pred_czyxs[:, 1], pred_czyxs[:, 2]
-        position_encoding = self.position_embeddings(cz)
-        feature_sampled = feature[pred_batch_ids, :, cy, cx]
-        input_features = feature_sampled + position_encoding
-        return input_features
-
-    def mesh_parameter_regression(self, fv_f, cams_preds, pred_batch_ids):
-        cam_czyx = denormalize_center(convert_cam_params_to_centermap_coords(cams_preds.clone(), self.cam3dmap_anchor), size=self.outmap_size)
-        feature_sampled = self.differentiable_person_feature_sampling(fv_f, cam_czyx, pred_batch_ids)
-        params_preds = self.transformer(feature_sampled)
-        params_preds = torch.cat([cams_preds, params_preds], 1)
-        return params_preds, cam_czyx
-
-    @torch.no_grad()
-    def forward(self, x):
-        x = self.backbone(x)
-        center_maps_3d, cam_maps_3d, center_maps_fv = self.coarse2fine_localization(x)
-        center_preds_info_3d = self.centermap_parser.parse_3dcentermap(center_maps_3d)
-        if len(center_preds_info_3d[0]) == 0:
-            None
-            return None
-        pred_batch_ids, pred_czyxs, center_confs = center_preds_info_3d
-        cams_preds = cam_maps_3d[pred_batch_ids, :, pred_czyxs[:, 0], pred_czyxs[:, 1], pred_czyxs[:, 2]]
-        front_view_features = self.param_head(x)
-        params_preds, cam_czyx = self.mesh_parameter_regression(front_view_features, cams_preds, pred_batch_ids)
-        output = {'params_pred': params_preds.float(), 'cam_czyx': cam_czyx.float(), 'center_map': center_maps_fv.float(), 'center_map_3d': center_maps_3d.float().squeeze(), 'pred_batch_ids': pred_batch_ids, 'pred_czyxs': pred_czyxs, 'center_confs': center_confs}
-        return output
-
-
-class ResultSaver:
-
-    def __init__(self, mode='image', save_path=None, save_npz=True):
-        self.is_dir = len(osp.splitext(save_path)[1]) == 0
-        self.mode = mode
-        self.save_path = save_path
-        self.save_npz = save_npz
-        self.save_dir = save_path if self.is_dir else osp.dirname(save_path)
-        if self.mode in ['image', 'video']:
-            os.makedirs(self.save_dir, exist_ok=True)
-        if self.mode == 'video':
-            self.frame_save_paths = []
-
-    def __call__(self, outputs, input_path, prefix=None, img_ext='.png'):
-        if self.mode == 'video' or self.is_dir:
-            save_name = osp.basename(input_path)
-            save_path = osp.join(self.save_dir, osp.splitext(save_name)[0]) + img_ext
-        elif self.mode == 'image':
-            save_path = self.save_path
-        if prefix is not None:
-            save_path = osp.splitext(save_path)[0] + f'_{prefix}' + osp.splitext(save_path)[1]
-        rendered_image = None
-        if outputs is not None:
-            if 'rendered_image' in outputs:
-                rendered_image = outputs.pop('rendered_image')
-            if self.save_npz:
-                np.savez(osp.splitext(save_path)[0] + '.npz', results=outputs)
-        if rendered_image is None:
-            rendered_image = cv2.imread(input_path)
-        cv2.imwrite(save_path, rendered_image)
-        if self.mode == 'video':
-            self.frame_save_paths.append(save_path)
-
-    def save_video(self, save_path, frame_rate=24):
-        if len(self.frame_save_paths) == 0:
-            return
-        height, width = cv2.imread(self.frame_save_paths[0]).shape[:2]
-        writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, (width, height))
-        for frame_path in self.frame_save_paths:
-            writer.write(cv2.imread(frame_path))
-        writer.release()
-
-
-def convert_cam_to_3d_trans2(j3ds, pj3d):
-    predicts_j3ds = j3ds[:, :24].contiguous().detach().cpu().numpy()
-    predicts_pj2ds = (pj3d[:, :, :2][:, :24].detach().cpu().numpy() + 1) * 256
-    cam_trans = estimate_translation(predicts_j3ds, predicts_pj2ds, focal_length=443.4, img_size=np.array([512, 512]))
-    return cam_trans
-
-
-def convert_proejection_from_input_to_orgimg(kps, offsets):
-    top, bottom, left, right, h, w = offsets
-    img_pad_size = max(h, w)
-    kps[:, :, 0] = (kps[:, :, 0] + 1) * img_pad_size / 2 - left
-    kps[:, :, 1] = (kps[:, :, 1] + 1) * img_pad_size / 2 - top
-    if kps.shape[-1] == 3:
-        kps[:, :, 2] = (kps[:, :, 2] + 1) * img_pad_size / 2
-    return kps
-
-
-def body_mesh_projection2image(j3d_preds, cam_preds, vertices=None, input2org_offsets=None):
-    pj3d = batch_orth_proj(j3d_preds, cam_preds, mode='2d')
-    pred_cam_t = convert_cam_to_3d_trans2(j3d_preds, pj3d)
-    projected_outputs = {'pj2d': pj3d[:, :, :2], 'cam_trans': pred_cam_t}
-    if vertices is not None:
-        projected_outputs['verts_camed'] = batch_orth_proj(vertices, cam_preds, mode='3d', keep_dim=True)
-    if input2org_offsets is not None:
-        projected_outputs['pj2d_org'] = convert_proejection_from_input_to_orgimg(projected_outputs['pj2d'], input2org_offsets)
-        projected_outputs['verts_camed_org'] = convert_proejection_from_input_to_orgimg(projected_outputs['verts_camed'], input2org_offsets)
-    return projected_outputs
-
-
-class LowPassFilter:
-
-    def __init__(self):
-        self.prev_raw_value = None
-        self.prev_filtered_value = None
-
-    def process(self, value, alpha):
-        if self.prev_raw_value is None:
-            s = value
-        else:
-            s = alpha * value + (1.0 - alpha) * self.prev_filtered_value
-        self.prev_raw_value = value
-        self.prev_filtered_value = s
-        return s
-
-
-class OneEuroFilter:
-
-    def __init__(self, mincutoff=1.0, beta=0.0, dcutoff=1.0, freq=30):
-        self.freq = freq
-        self.mincutoff = mincutoff
-        self.beta = beta
-        self.dcutoff = dcutoff
-        self.x_filter = LowPassFilter()
-        self.dx_filter = LowPassFilter()
-
-    def compute_alpha(self, cutoff):
-        te = 1.0 / self.freq
-        tau = 1.0 / (2 * np.pi * cutoff)
-        return 1.0 / (1.0 + tau / te)
-
-    def process(self, x, print_inter=False):
-        prev_x = self.x_filter.prev_raw_value
-        dx = 0.0 if prev_x is None else (x - prev_x) * self.freq
-        edx = self.dx_filter.process(dx, self.compute_alpha(self.dcutoff))
-        if isinstance(edx, float):
-            cutoff = self.mincutoff + self.beta * np.abs(edx)
-        elif isinstance(edx, np.ndarray):
-            cutoff = self.mincutoff + self.beta * np.abs(edx)
-        elif isinstance(edx, torch.Tensor):
-            cutoff = self.mincutoff + self.beta * torch.abs(edx)
-        if print_inter:
-            None
-        return self.x_filter.process(x, self.compute_alpha(cutoff))
-
-
-def create_OneEuroFilter(smooth_coeff):
-    return {'smpl_thetas': OneEuroFilter(smooth_coeff, 0.7), 'cam': OneEuroFilter(1.6, 0.7), 'smpl_betas': OneEuroFilter(0.6, 0.7), 'global_rot': OneEuroFilter(smooth_coeff, 0.7)}
-
-
-def check_filter_state(OE_filters, signal_ID, show_largest=False, smooth_coeff=3.0):
-    if len(OE_filters) > 100:
-        del OE_filters
-    if signal_ID not in OE_filters:
-        if show_largest:
-            OE_filters[signal_ID] = create_OneEuroFilter(smooth_coeff)
-        else:
-            OE_filters[signal_ID] = {}
-    if len(OE_filters[signal_ID]) > 1000:
-        del OE_filters[signal_ID]
-
-
-def convert_tensor2numpy(outputs, del_keys=['verts_camed', 'smpl_face', 'pj2d', 'verts_camed_org']):
-    for key in del_keys:
-        if key in outputs:
-            del outputs[key]
-    result_keys = list(outputs.keys())
-    for key in result_keys:
-        if isinstance(outputs[key], torch.Tensor):
-            outputs[key] = outputs[key].cpu().numpy()
-    return outputs
-
-
-tan_fov = np.tan(np.radians(60 / 2.0))
-
-
-def convert_scale_to_depth(scale):
-    return 1 / (scale * tan_fov + 0.001)
-
-
-def denormalize_cam_params_to_trans(normed_cams, positive_constrain=False):
-    scale = normed_cams[:, 0]
-    if positive_constrain:
-        positive_mask = (normed_cams[:, 0] > 0).float()
-        scale = scale * positive_mask
-    trans_XY_normed = torch.flip(normed_cams[:, 1:], [1])
-    depth = convert_scale_to_depth(scale).unsqueeze(1)
-    trans_XY = trans_XY_normed * depth * tan_fov
-    trans = torch.cat([trans_XY, depth], 1)
-    return trans
-
-
-def determine_device(gpu_id):
-    if gpu_id != -1:
-        device = torch.device('cuda:{}'.format(gpu_id))
-    else:
-        device = torch.device('cpu')
-    return device
-
-
-def padding_image(image):
-    h, w = image.shape[:2]
-    side_length = max(h, w)
-    pad_image = np.zeros((side_length, side_length, 3), dtype=np.uint8)
-    top, left = int((side_length - h) // 2), int((side_length - w) // 2)
-    bottom, right = int(top + h), int(left + w)
-    pad_image[top:bottom, left:right] = image
-    image_pad_info = torch.Tensor([top, bottom, left, right, h, w])
-    return pad_image, image_pad_info
-
-
-def img_preprocess(image, input_size=512):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    pad_image, image_pad_info = padding_image(image)
-    input_image = torch.from_numpy(cv2.resize(pad_image, (input_size, input_size), interpolation=cv2.INTER_CUBIC))[None].float()
-    return input_image, image_pad_info
-
-
-def pack_params_dict(params_pred):
-    idx_list, params_dict = [0], {}
-    part_name = ['cam', 'global_orient', 'body_pose', 'smpl_betas']
-    part_idx = [3, 6, 21 * 6, 10]
-    for i, (idx, name) in enumerate(zip(part_idx, part_name)):
-        idx_list.append(idx_list[i] + idx)
-        params_dict[name] = params_pred[:, idx_list[i]:idx_list[i + 1]].contiguous()
-    params_dict['body_pose'] = rot6D_to_angular(params_dict['body_pose'])
-    params_dict['global_orient'] = rot6D_to_angular(params_dict['global_orient'])
-    N = params_dict['body_pose'].shape[0]
-    params_dict['body_pose'] = torch.cat([params_dict['body_pose'], torch.zeros(N, 6)], 1)
-    params_dict['smpl_thetas'] = torch.cat([params_dict['global_orient'], params_dict['body_pose']], 1)
-    return params_dict
-
-
-def remove_subjects(outputs, removed_subj_inds):
-    N = len(outputs['params_pred'])
-    remove_mask = torch.ones(N).bool()
-    remove_mask[removed_subj_inds] = False
-    left_subj_inds = torch.where(remove_mask)[0].tolist()
-    keys = list(outputs.keys())
-    for key in keys:
-        if key in ['smpl_face', 'center_map', 'center_map_3d']:
-            continue
-        outputs[key] = outputs[key][left_subj_inds]
-    return outputs
-
-
-def remove_outlier(outputs, relative_scale_thresh=3, scale_thresh=0.25):
-    cam_trans = outputs['cam_trans']
-    N = len(cam_trans)
-    if N < 3:
-        return outputs
-    trans_diff = cam_trans.unsqueeze(1).repeat(1, N, 1) - cam_trans.unsqueeze(0).repeat(N, 1, 1)
-    trans_dist_mat = torch.norm(trans_diff, p=2, dim=-1)
-    trans_dist_mat = torch.sort(trans_dist_mat).values[:, 1:-1]
-    mean_dist = trans_dist_mat.mean(1)
-    relative_scale = mean_dist / ((mean_dist.sum() - mean_dist) / (N - 1))
-    outlier_mask = relative_scale > relative_scale_thresh
-    outlier_mask *= outputs['cam'][:, 0] < scale_thresh
-    removed_subj_inds = torch.where(outlier_mask)[0]
-    if len(removed_subj_inds) > 0:
-        outputs = remove_subjects(outputs, removed_subj_inds)
-    return outputs
-
-
-smpl24_connMat = np.array([0, 1, 0, 2, 0, 3, 1, 4, 4, 7, 7, 10, 2, 5, 5, 8, 8, 11, 3, 6, 6, 9, 9, 12, 12, 15, 12, 13, 13, 16, 16, 18, 18, 20, 20, 22, 12, 14, 14, 17, 17, 19, 19, 21, 21, 23]).reshape(-1, 2)
-
-
-class Plotter3dPoses:
-
-    def __init__(self, canvas_size=(512, 512), origin=(0.5, 0.5), scale=200):
-        self.canvas_size = canvas_size
-        self.origin = np.array([origin[1] * canvas_size[1], origin[0] * canvas_size[0]], dtype=np.float32)
-        self.scale = np.float32(scale)
-        self.theta, self.phi = 0, np.pi / 2
-        axis_length = 200
-        axes = [np.array([[-axis_length / 2, -axis_length / 2, 0], [axis_length / 2, -axis_length / 2, 0]], dtype=np.float32), np.array([[-axis_length / 2, -axis_length / 2, 0], [-axis_length / 2, axis_length / 2, 0]], dtype=np.float32), np.array([[-axis_length / 2, -axis_length / 2, 0], [-axis_length / 2, -axis_length / 2, axis_length]], dtype=np.float32)]
-        step = 20
-        for step_id in range(axis_length // step + 1):
-            axes.append(np.array([[-axis_length / 2, -axis_length / 2 + step_id * step, 0], [axis_length / 2, -axis_length / 2 + step_id * step, 0]], dtype=np.float32))
-            axes.append(np.array([[-axis_length / 2 + step_id * step, -axis_length / 2, 0], [-axis_length / 2 + step_id * step, axis_length / 2, 0]], dtype=np.float32))
-        self.axes = np.array(axes)
-
-    def plot(self, pose_3ds, bones=smpl24_connMat, colors=[(255, 0, 0)], img=None):
-        img = np.ones((self.canvas_size[0], self.canvas_size[1], 3), dtype=np.uint8) * 0 if img is None else img
-        R = self._get_rotation(self.theta, self.phi)
-        for vertices, color in zip(pose_3ds, colors):
-            self._plot_edges(img, vertices, bones, R, color)
-        return img
-
-    def encircle_plot(self, pose_3ds, bones, colors=[(255, 255, 255)], img=None):
-        img = np.ones((self.canvas_size[0], self.canvas_size[1], 3), dtype=np.uint8) * 255 if img is None else img
-        encircle_theta, encircle_phi = [0, 0, 0, np.pi / 4, np.pi / 4, np.pi / 4, np.pi / 2, np.pi / 2, np.pi / 2], [np.pi / 2, 5 * np.pi / 7, -2 * np.pi / 7, np.pi / 2, 5 * np.pi / 7, -2 * np.pi / 7, np.pi / 2, 5 * np.pi / 7, -2 * np.pi / 7]
-        encircle_origin = np.array([[0.165, 0.165], [0.165, 0.495], [0.165, 0.825], [0.495, 0.165], [0.495, 0.495], [0.495, 0.825], [0.825, 0.165], [0.825, 0.495], [0.825, 0.825]], dtype=np.float32) * np.array(self.canvas_size)[None]
-        for self.theta, self.phi, self.origin in zip(encircle_theta, encircle_phi, encircle_origin):
-            R = self._get_rotation(self.theta, self.phi)
-            for vertices, color in zip(pose_3ds, colors):
-                self._plot_edges(img, vertices * 0.6, bones, R, color)
-        return img
-
-    def _draw_axes(self, img, R):
-        axes_2d = np.dot(self.axes, R)
-        axes_2d = axes_2d + self.origin
-        for axe in axes_2d:
-            axe = axe.astype(int)
-            cv2.line(img, tuple(axe[0]), tuple(axe[1]), (128, 128, 128), 1, cv2.LINE_AA)
-
-    def _plot_edges(self, img, vertices, edges, R, color):
-        vertices_2d = np.dot(vertices, R)
-        edges_vertices = vertices_2d.reshape((-1, 2))[edges] * self.scale + self.origin
-        org_verts = vertices.reshape((-1, 3))[edges]
-        for inds, edge_vertices in enumerate(edges_vertices):
-            if 0 in org_verts[inds]:
-                continue
-            edge_vertices = edge_vertices.astype(int)
-            cv2.line(img, tuple(edge_vertices[0]), tuple(edge_vertices[1]), color, 10, cv2.LINE_AA)
-
-    def _get_rotation(self, theta, phi):
-        sin, cos = math.sin, math.cos
-        return np.array([[cos(theta), sin(theta) * sin(phi)], [-sin(theta), cos(theta) * sin(phi)], [0, -cos(phi)]], dtype=np.float32)
-
-
-def draw_skeleton(image, pts, bones=smpl24_connMat, cm=None, label_kp_order=False, r=8):
-    for i, pt in enumerate(pts):
-        if len(pt) > 1:
-            if pt[0] > 0 and pt[1] > 0:
-                image = cv2.circle(image, (int(pt[0]), int(pt[1])), r, cm[i % len(cm)], -1)
-                if label_kp_order and i in bones:
-                    img = cv2.putText(image, str(i), (int(pt[0]), int(pt[1])), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 215, 0), 1)
-    if bones is not None:
-        set_colors = np.array([cm for i in range(len(bones))]).astype(np.int)
-        bones = np.concatenate([bones, set_colors], 1).tolist()
-        for line in bones:
-            pa = pts[line[0]]
-            pb = pts[line[1]]
-            if (pa > 0).all() and (pb > 0).all():
-                xa, ya, xb, yb = int(pa[0]), int(pa[1]), int(pb[0]), int(pb[1])
-                image = cv2.line(image, (xa, ya), (xb, yb), (int(line[2]), int(line[3]), int(line[4])), r)
-    return image
-
-
-def draw_skeleton_multiperson(image, pts_group, colors):
-    for ind, pts in enumerate(pts_group):
-        image = draw_skeleton(image, pts, cm=colors[ind])
-    return image
-
-
-color_table_default = np.array([[0.4, 0.6, 1], [0.8, 0.7, 1], [0.1, 0.9, 1], [0.8, 0.9, 1], [1, 0.6, 0.4], [1, 0.7, 0.8], [1, 0.9, 0.1], [1, 0.9, 0.8], [0.9, 1, 1], [0.9, 0.7, 0.4], [0.8, 0.7, 1], [0.8, 0.9, 1], [0.9, 0.3, 0.1], [0.7, 1, 0.6], [0.7, 0.4, 0.6], [0.3, 0.5, 1]])[:, ::-1]
-
-
-def mesh_color_left2right(trans, color_table=None):
-    left2right_order = torch.sort(trans[:, 0].cpu()).indices.numpy()
-    color_inds = np.arange(len(trans))
-    color_inds[left2right_order] = np.arange(len(trans))
-    if color_table is None:
-        color_table = color_table_default
-    return np.array([color_table[ind % len(color_table)] for ind in color_inds])
-
-
-tracking_color_list = np.array([0.0, 0.447, 0.741, 0.85, 0.325, 0.098, 0.929, 0.694, 0.125, 0.494, 0.184, 0.556, 0.466, 0.674, 0.188, 0.301, 0.745, 0.933, 0.635, 0.078, 0.184, 0.3, 0.3, 0.3, 0.6, 0.6, 0.6, 1.0, 0.0, 0.0, 1.0, 0.5, 0.0, 0.749, 0.749, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.667, 0.0, 1.0, 0.333, 0.333, 0.0, 0.333, 0.667, 0.0, 0.333, 1.0, 0.0, 0.667, 0.333, 0.0, 0.667, 0.667, 0.0, 0.667, 1.0, 0.0, 1.0, 0.333, 0.0, 1.0, 0.667, 0.0, 1.0, 1.0, 0.0, 0.0, 0.333, 0.5, 0.0, 0.667, 0.5, 0.0, 1.0, 0.5, 0.333, 0.0, 0.5, 0.333, 0.333, 0.5, 0.333, 0.667, 0.5, 0.333, 1.0, 0.5, 0.667, 0.0, 0.5, 0.667, 0.333, 0.5, 0.667, 0.667, 0.5, 0.667, 1.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.333, 0.5, 1.0, 0.667, 0.5, 1.0, 1.0, 0.5, 0.0, 0.333, 1.0, 0.0, 0.667, 1.0, 0.0, 1.0, 1.0, 0.333, 0.0, 1.0, 0.333, 0.333, 1.0, 0.333, 0.667, 1.0, 0.333, 1.0, 1.0, 0.667, 0.0, 1.0, 0.667, 0.333, 1.0, 0.667, 0.667, 1.0, 0.667, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.333, 1.0, 1.0, 0.667, 1.0, 0.167, 0.0, 0.0, 0.333, 0.0, 0.0, 0.5, 0.0, 0.0, 0.667, 0.0, 0.0, 0.833, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.167, 0.0, 0.0, 0.333, 0.0, 0.0, 0.5, 0.0, 0.0, 0.667, 0.0, 0.0, 0.833, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.167, 0.0, 0.0, 0.333, 0.0, 0.0, 0.5, 0.0, 0.0, 0.667, 0.0, 0.0, 0.833, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.143, 0.143, 0.143, 0.286, 0.286, 0.286, 0.429, 0.429, 0.429, 0.571, 0.571, 0.571, 0.714, 0.714, 0.714, 0.857, 0.857, 0.857, 1.0, 1.0, 1.0]).astype(np.float32).reshape((-1, 3))
-
-
-def mesh_color_trackID(track_ids, color_table=None):
-    if color_table is None:
-        color_table = tracking_color_list
-    return np.array([color_table[tid % len(color_table)] for tid in track_ids])
-
-
-def get_rotate_x_mat(angle):
-    angle = np.radians(angle)
-    rot_mat = torch.Tensor([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
-    return rot_mat
-
-
-def get_rotate_y_mat(angle):
-    angle = np.radians(angle)
-    rot_mat = torch.Tensor([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
-    return rot_mat
-
-
-def rotate_view_perspective(verts, rx=30, ry=0, FOV=60, bbox3D_center=None, depth=None):
-    device, dtype = verts.device, verts.dtype
-    Rx_mat = get_rotate_x_mat(rx).type(dtype)
-    Ry_mat = get_rotate_y_mat(ry).type(dtype)
-    verts_rot = torch.einsum('bij,kj->bik', verts, Rx_mat)
-    verts_rot = torch.einsum('bij,kj->bik', verts_rot, Ry_mat)
-    if bbox3D_center is None:
-        flatten_verts = verts_rot.view(-1, 3)
-        bbox3D_center = 0.5 * (flatten_verts.min(0).values + flatten_verts.max(0).values)[None, None]
-    verts_aligned = verts_rot - bbox3D_center
-    if depth is None:
-        dist_min = torch.abs(verts_aligned.view(-1, 3).min(0).values)
-        dist_max = torch.abs(verts_aligned.view(-1, 3).max(0).values)
-        z = dist_max[:2].max() / np.tan(np.radians(FOV / 2)) + dist_min[2]
-        depth = torch.tensor([[[0, 0, z]]], device=device)
-    verts_aligned = verts_aligned + depth
-    return verts_aligned, bbox3D_center, depth
-
-
-def rendering_mesh_rotating_view(vert_trans, renderer, triangles, image, background, internal=5):
-    result_imgs = []
-    pause_num = 24
-    pause = np.zeros(pause_num).astype(np.int32)
-    change_time = 90 // internal
-    roates = np.ones(change_time) * internal
-    go_up = np.sin(np.arange(change_time).astype(np.float32) / change_time) * 1
-    go_down = np.sin(np.arange(change_time).astype(np.float32) / change_time - 1) * 1
-    azimuth_angles = np.concatenate([pause, roates, roates, roates, roates])
-    elevation_angles = np.concatenate([pause, go_up, go_down, go_up, go_down])
-    camera_pose = np.eye(4)
-    elevation_start = 20
-    camera_pose[:3, :3] = get_rotate_x_mat(-elevation_start)
-    cam_height = 1.4 * vert_trans[:, :, 2].mean().item() * np.tan(np.radians(elevation_start))
-    camera_pose[:3, 3] = np.array([0, cam_height, 0])
-    verts_rotated = vert_trans.clone()
-    bbox3D_center, move_depth = None, None
-    for azimuth_angle, elevation_angle in zip(azimuth_angles, elevation_angles):
-        verts_rotated, bbox3D_center, move_depth = rotate_view_perspective(verts_rotated, rx=0, ry=azimuth_angle, depth=move_depth)
-        rendered_image, rend_depth = renderer(verts_rotated.cpu().numpy(), triangles, background, mesh_colors=np.array([[0.9, 0.9, 0.8]]), camera_pose=camera_pose)
-        result_imgs.append(rendered_image)
-    return result_imgs
-
-
-def rotate_view_weak_perspective(verts, rx=30, ry=0, img_shape=[512, 512], expand_ratio=1.2, bbox3D_center=None, scale=None):
-    device, dtype = verts.device, verts.dtype
-    h, w = img_shape
-    Rx_mat = get_rotate_x_mat(rx).type(dtype)
-    Ry_mat = get_rotate_y_mat(ry).type(dtype)
-    verts_rot = torch.einsum('bij,kj->bik', verts, Rx_mat)
-    verts_rot = torch.einsum('bij,kj->bik', verts_rot, Ry_mat)
-    if bbox3D_center is None:
-        flatten_verts = verts_rot.view(-1, 3)
-        bbox3D_center = 0.5 * (flatten_verts.min(0).values + flatten_verts.max(0).values)[None, None]
-    verts_aligned = verts_rot - bbox3D_center
-    rendered_image_center = torch.Tensor([[[w / 2, h / 2]]]).type(verts_aligned.dtype)
-    if scale is None:
-        scale = 1 / (expand_ratio * torch.abs(torch.div(verts_aligned[:, :, :2], rendered_image_center)).max())
-    verts_aligned *= scale
-    verts_aligned[:, :, :2] += rendered_image_center
-    return verts_aligned, bbox3D_center, scale
-
-
-def rendering_romp_bev_results(renderer, outputs, image, rendering_cfgs, alpha=1):
-    triangles = outputs['smpl_face'].cpu().numpy().astype(np.int32)
-    h, w = image.shape[:2]
-    background = np.ones([h, h, 3], dtype=np.uint8) * 255
-    result_image = [image]
-    cam_trans = outputs['cam_trans']
-    if rendering_cfgs['mesh_color'] == 'identity':
-        if 'track_ids' in outputs:
-            mesh_colors = mesh_color_trackID(outputs['track_ids'])
-        else:
-            mesh_colors = mesh_color_left2right(cam_trans)
-    elif rendering_cfgs['mesh_color'] == 'same':
-        mesh_colors = np.array([[0.9, 0.9, 0.8] for _ in range(len(cam_trans))])
-    if rendering_cfgs['renderer'] == 'sim3dr':
-        depth_order = torch.sort(cam_trans[:, 2].cpu(), descending=True).indices.numpy()
-        vertices = outputs['verts_camed_org'][depth_order].cpu().numpy()
-        mesh_colors = mesh_colors[depth_order]
-        verts_tran = (outputs['verts'] + cam_trans.unsqueeze(1))[depth_order]
-        vertices[:, :, 2] = vertices[:, :, 2] * -1
-        verts_tran[:, :, 2] = verts_tran[:, :, 2] * -1
-        if 'mesh' in rendering_cfgs['items']:
-            rendered_image = renderer(vertices, triangles, image, mesh_colors=mesh_colors)
-            result_image.append(rendered_image)
-        if 'mesh_bird_view' in rendering_cfgs['items']:
-            verts_bird_view, bbox3D_center, scale = rotate_view_weak_perspective(verts_tran, rx=-90, ry=0, img_shape=background.shape[:2], expand_ratio=1.2)
-            rendered_bv_image = renderer(verts_bird_view.cpu().numpy(), triangles, background, mesh_colors=mesh_colors)
-            result_image.append(rendered_bv_image)
-        if 'mesh_side_view' in rendering_cfgs['items']:
-            verts_side_view, bbox3D_center, scale = rotate_view_weak_perspective(verts_tran, rx=0, ry=-90, img_shape=image.shape[:2], expand_ratio=1.2)
-            rendered_sv_image = renderer(verts_side_view.cpu().numpy(), triangles, background, mesh_colors=mesh_colors)
-            result_image.append(rendered_sv_image)
-    if rendering_cfgs['renderer'] == 'pyrender':
-        verts_tran = outputs['verts'] + cam_trans.unsqueeze(1)
-        if 'mesh' in rendering_cfgs['items']:
-            rendered_image, rend_depth = renderer(verts_tran.cpu().numpy(), triangles, image, mesh_colors=mesh_colors)
-            result_image.append(rendered_image)
-        if 'mesh_bird_view' in rendering_cfgs['items']:
-            verts_bird_view, bbox3D_center, move_depth = rotate_view_perspective(verts_tran, rx=90, ry=0)
-            rendered_bv_image, rend_depth = renderer(verts_bird_view.cpu().numpy(), triangles, background, persp=False, mesh_colors=mesh_colors)
-            result_image.append(cv2.resize(rendered_bv_image, (h, h)))
-        if 'mesh_side_view' in rendering_cfgs['items']:
-            verts_side_view, bbox3D_center, move_depth = rotate_view_perspective(verts_tran, rx=0, ry=90)
-            rendered_sv_image, rend_depth = renderer(verts_side_view.cpu().numpy(), triangles, background, mesh_colors=mesh_colors)
-            result_image.append(cv2.resize(rendered_sv_image, (h, h)))
-        if 'rotate_mesh' in rendering_cfgs['items']:
-            rot_trans = cam_trans.unsqueeze(1)
-            rot_trans[:, :, 2] /= 1.5
-            verts_tran_rot = outputs['verts'] + rot_trans
-            rotate_renderings = rendering_mesh_rotating_view(verts_tran_rot, renderer, triangles, image, background)
-            time_stamp = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(int(round(time.time() * 1000)) / 1000))
-            save_path = os.path.join(os.path.expanduser('~'), 'rotate-{}.mp4'.format(time_stamp))
-            frame_rate = 24
-            writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, rotate_renderings[0].shape[:2])
-            for frame in rotate_renderings:
-                writer.write(frame)
-            writer.release()
-            None
-    if 'pj2d' in rendering_cfgs['items']:
-        img_skeleton2d = draw_skeleton_multiperson(copy.deepcopy(image), outputs['pj2d_org'].cpu().numpy()[:, :24], mesh_colors * 255)
-        result_image.append(img_skeleton2d)
-    if 'j3d' in rendering_cfgs['items']:
-        plot_3dpose = Plotter3dPoses(canvas_size=(h, h))
-        joint_trans = (outputs['joints'] + cam_trans.unsqueeze(1)).cpu().numpy()[:, :24] * 3
-        img_skeleton3d = plot_3dpose.plot(joint_trans, colors=mesh_colors * 255)
-        result_image.append(img_skeleton3d)
-    if 'center_conf' in rendering_cfgs['items']:
-        for ind, kp in enumerate(outputs['pj2d_org'].cpu().numpy()[:, 0]):
-            cv2.putText(result_image[1], '{:.3f}'.format(outputs['center_confs'][ind]), tuple(kp.astype(int)), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 255), 1)
-    if 'tracking' in rendering_cfgs['items'] and 'track_ids' in outputs:
-        for ind, kp in enumerate(outputs['pj2d_org'].cpu().numpy()[:, 0]):
-            cv2.putText(result_image[1], '{:d}'.format(outputs['track_ids'][ind]), tuple(kp.astype(int)), cv2.FONT_HERSHEY_COMPLEX, 2, (255, 0, 255), 2)
-    outputs['rendered_image'] = np.concatenate(result_image, 1)
-    return outputs
-
-
-def setup_renderer(name='sim3dr', **kwargs):
-    if name == 'sim3dr':
-        renderer = Sim3DR(**kwargs)
-    elif name == 'pyrender':
-        renderer = Py3DR(**kwargs)
-    elif name == 'open3d':
-        renderer = O3DDR(multi_mode=True, **kwargs)
-    return renderer
-
-
-def transform_rot_representation(rot, input_type='mat', out_type='quat', input_is_degrees=True):
-    """
-    make transformation between different representation of 3D rotation
-    input_type / out_type (np.array):
-        'mat': rotation matrix (3*3)
-        'quat': quaternion (4)
-        'vec': rotation vector (3)
-        'euler': Euler degrees in x,y,z (3)
-    """
-    if input_type == 'mat':
-        r = R.from_matrix(rot)
-    elif input_type == 'quat':
-        r = R.from_quat(rot)
-    elif input_type == 'vec':
-        r = R.from_rotvec(rot)
-    elif input_type == 'euler':
-        r = R.from_euler('xyz', rot, degrees=input_is_degrees)
-    if out_type == 'mat':
-        out = r.as_matrix()
-    elif out_type == 'quat':
-        out = r.as_quat()
-    elif out_type == 'vec':
-        out = r.as_rotvec()
-    elif out_type == 'euler':
-        out = r.as_euler('xyz', degrees=False)
-    return out
-
-
-def smooth_global_rot_matrix(pred_rots, OE_filter):
-    rot_mat = batch_rodrigues(pred_rots[None]).squeeze(0)
-    smoothed_rot_mat = OE_filter.process(rot_mat)
-    smoothed_rot = rotation_matrix_to_angle_axis(smoothed_rot_mat.reshape(1, 3, 3)).reshape(-1)
-    return smoothed_rot
-    device = pred_rots.device
-    rot_euler = transform_rot_representation(pred_rots.cpu().numpy(), input_type='vec', out_type='mat')
-    smoothed_rot = OE_filter.process(rot_euler)
-    smoothed_rot = transform_rot_representation(smoothed_rot, input_type='mat', out_type='vec')
-    smoothed_rot = torch.from_numpy(smoothed_rot).float()
-    return smoothed_rot
-
-
-def smooth_results(filters, body_pose=None, body_shape=None, cam=None):
-    if body_pose is not None:
-        global_rot = smooth_global_rot_matrix(body_pose[:3], filters['global_rot'])
-        body_pose = torch.cat([global_rot, filters['smpl_thetas'].process(body_pose[3:])], 0)
-    if body_shape is not None:
-        body_shape = filters['smpl_betas'].process(body_shape)
-    if cam is not None:
-        cam = filters['cam'].process(cam)
-    return body_pose, body_shape, cam
-
-
-def suppressing_redundant_prediction_via_projection(outputs, img_shape, thresh=16, conf_based=False):
-    pj2ds = outputs['pj2d']
-    N = len(pj2ds)
-    if N == 1:
-        return outputs
-    pj2d_diff = pj2ds.unsqueeze(1).repeat(1, N, 1, 1) - pj2ds.unsqueeze(0).repeat(N, 1, 1, 1)
-    pj2d_dist_mat = torch.norm(pj2d_diff, p=2, dim=-1).mean(-1)
-    person_scales = outputs['cam'][:, 0] * 2
-    ps1, ps2 = person_scales.unsqueeze(1).repeat(1, N), person_scales.unsqueeze(0).repeat(N, 1)
-    max_scale_mat = torch.where(ps1 > ps2, ps1, ps2)
-    pj2d_dist_mat_normalized = pj2d_dist_mat / max_scale_mat
-    triu_mask = torch.triu(torch.ones_like(pj2d_dist_mat), diagonal=1) < 0.5
-    pj2d_dist_mat_normalized[triu_mask] = 10000.0
-    max_length = max(img_shape)
-    thresh = thresh * max_length / 640
-    repeat_subj_inds = torch.where(pj2d_dist_mat_normalized < thresh)
-    if len(repeat_subj_inds) > 0:
-        if conf_based:
-            center_confs = outputs['center_confs']
-            removed_subj_inds = torch.where(center_confs[repeat_subj_inds[0]] < center_confs[repeat_subj_inds[1]], repeat_subj_inds[0], repeat_subj_inds[1])
-        else:
-            removed_subj_inds = torch.where(person_scales[repeat_subj_inds[0]] < person_scales[repeat_subj_inds[1]], repeat_subj_inds[0], repeat_subj_inds[1])
-        outputs = remove_subjects(outputs, removed_subj_inds)
-    return outputs
-
-
-def time_cost(name='ROMP'):
-
-    def time_counter(func):
-
-        def wrap_func(*args, **kwargs):
-            t1 = time()
-            result = func(*args, **kwargs)
-            t2 = time()
-            cost_time = t2 - t1
-            fps = 1.0 / cost_time
-            None
-            return result
-        return wrap_func
-    return time_counter
-
-
-def wait_func(mode):
-    if mode == 'image':
-        None
-        while 1:
-            if cv2.waitKey() == 27:
-                break
-    elif mode == 'webcam' or mode == 'video':
-        cv2.waitKey(1)
-
-
-class BEV(nn.Module):
-
-    def __init__(self, romp_settings):
-        super(BEV, self).__init__()
-        self.settings = romp_settings
-        self.tdevice = determine_device(self.settings.GPU)
-        self._build_model_()
-        self._initilization_()
-
-    def _build_model_(self):
-        model = BEVv1(center_thresh=self.settings.center_thresh).eval()
-        model.load_state_dict(torch.load(self.settings.model_path, map_location=self.tdevice), strict=False)
-        model = model
-        self.model = nn.DataParallel(model)
-
-    def _initilization_(self):
-        if self.settings.calc_smpl:
-            self.smpl_parser = SMPLA_parser(self.settings.smpl_path, self.settings.smil_path)
-        if self.settings.temporal_optimize:
-            self._initialize_optimization_tools_(self.settings.smooth_coeff)
-        if self.settings.render_mesh or self.settings.mode == 'webcam':
-            self.renderer = setup_renderer(name=self.settings.renderer)
-        self.visualize_items = self.settings.show_items.split(',')
-        self.result_keys = ['smpl_thetas', 'smpl_betas', 'cam', 'cam_trans', 'params_pred', 'center_confs', 'pred_batch_ids']
-
-    def _initialize_optimization_tools_(self, smooth_coeff):
-        self.OE_filters = {}
-        if not self.settings.show_largest:
-            self.tracker = Tracker(det_thresh=0.12, low_conf_det_thresh=0.05, track_buffer=60, match_thresh=300, frame_rate=30)
-
-    def single_image_forward(self, image):
-        input_image, image_pad_info = img_preprocess(image)
-        parsed_results = self.model(input_image)
-        if parsed_results is None:
-            return None, image_pad_info
-        parsed_results.update(pack_params_dict(parsed_results['params_pred']))
-        parsed_results.update({'cam_trans': denormalize_cam_params_to_trans(parsed_results['cam'])})
-        all_result_keys = list(parsed_results.keys())
-        for key in all_result_keys:
-            if key not in self.result_keys:
-                del parsed_results[key]
-        return parsed_results, image_pad_info
-
-    @time_cost('BEV')
-    @torch.no_grad()
-    def forward(self, image, signal_ID=0, **kwargs):
-        if image.shape[1] / image.shape[0] >= 2 and self.settings.crowd:
-            outputs = self.process_long_image(image, show_patch_results=self.settings.show_patch_results)
-        else:
-            outputs = self.process_normal_image(image, signal_ID)
-        if outputs is None:
-            return None
-        if self.settings.render_mesh:
-            mesh_color_type = 'identity' if self.settings.mode != 'webcam' and not self.settings.save_video else 'same'
-            rendering_cfgs = {'mesh_color': mesh_color_type, 'items': self.visualize_items, 'renderer': self.settings.renderer}
-            outputs = rendering_romp_bev_results(self.renderer, outputs, image, rendering_cfgs)
-        if self.settings.show:
-            h, w = outputs['rendered_image'].shape[:2]
-            show_image = outputs['rendered_image'] if h <= 1080 else cv2.resize(outputs['rendered_image'], (int(w * (1080 / h)), 1080))
-            cv2.imshow('rendered', show_image)
-            wait_func(self.settings.mode)
-        return convert_tensor2numpy(outputs)
-
-    def process_normal_image(self, image, signal_ID):
-        outputs, image_pad_info = self.single_image_forward(image)
-        meta_data = {'input2org_offsets': image_pad_info}
-        if outputs is None:
-            return None
-        if self.settings.temporal_optimize:
-            outputs = self.temporal_optimization(outputs, signal_ID)
-            if outputs is None:
-                return None
-            outputs.update({'cam_trans': denormalize_cam_params_to_trans(outputs['cam'])})
-        if self.settings.calc_smpl:
-            verts, joints, face = self.smpl_parser(outputs['smpl_betas'], outputs['smpl_thetas'])
-            outputs.update({'verts': verts, 'joints': joints, 'smpl_face': face})
-            if self.settings.render_mesh:
-                meta_data['vertices'] = outputs['verts']
-            projection = body_mesh_projection2image(outputs['joints'], outputs['cam'], **meta_data)
-            outputs.update(projection)
-            outputs = suppressing_redundant_prediction_via_projection(outputs, image.shape, thresh=self.settings.nms_thresh)
-            outputs = remove_outlier(outputs, relative_scale_thresh=self.settings.relative_scale_thresh)
-        return outputs
-
-    def process_long_image(self, full_image, show_patch_results=False):
-        None
-        full_image_pad, image_pad_info, pad_length = padding_image_overlap(full_image, overlap_ratio=self.settings.overlap_ratio)
-        meta_data = {'input2org_offsets': image_pad_info}
-        fh, fw = full_image_pad.shape[:2]
-        crop_boxes = get_image_split_plan(full_image_pad, overlap_ratio=self.settings.overlap_ratio)
-        croped_images, outputs_list = [], []
-        for cid, crop_box in enumerate(crop_boxes):
-            l, r, t, b = crop_box
-            croped_image = full_image_pad[t:b, l:r]
-            crop_outputs, image_pad_info = self.single_image_forward(croped_image)
-            if crop_outputs is None:
-                outputs_list.append(crop_outputs)
-                continue
-            verts, joints, face = self.smpl_parser(crop_outputs['smpl_betas'], crop_outputs['smpl_thetas'])
-            crop_outputs.update({'verts': verts, 'joints': joints, 'smpl_face': face})
-            outputs_list.append(crop_outputs)
-            croped_images.append(croped_image)
-        for cid in range(len(crop_boxes)):
-            this_outs = outputs_list[cid]
-            if this_outs is not None:
-                if cid != len(crop_boxes) - 1:
-                    this_right, next_left = crop_boxes[cid, 1], crop_boxes[cid + 1, 0]
-                    drop_boundary_ratio = (this_right - next_left) / fh / 2
-                    exclude_boudary_subjects(this_outs, drop_boundary_ratio, ptype='left', torlerance=0)
-                ch, cw = croped_images[cid].shape[:2]
-                projection = body_mesh_projection2image(this_outs['joints'], this_outs['cam'], vertices=this_outs['verts'], input2org_offsets=torch.Tensor([0, ch, 0, cw, ch, cw]))
-                this_outs.update(projection)
-        for cid in range(1, len(crop_boxes) - 1):
-            this_outs, next_outs = outputs_list[cid], outputs_list[cid + 1]
-            this_right, next_left = crop_boxes[cid, 1], crop_boxes[cid + 1, 0]
-            drop_boundary_ratio = (this_right - next_left) / fh / 2
-            if next_outs is not None:
-                exclude_boudary_subjects(next_outs, drop_boundary_ratio, ptype='right', torlerance=0)
-        for cid, crop_image in enumerate(croped_images):
-            this_outs = outputs_list[cid]
-            ch, cw = croped_images[cid].shape[:2]
-            this_outs = suppressing_redundant_prediction_via_projection(this_outs, [ch, cw], thresh=self.settings.nms_thresh, conf_based=True)
-            this_outs = remove_outlier(this_outs, scale_thresh=1, relative_scale_thresh=self.settings.relative_scale_thresh)
-        if show_patch_results:
-            rendering_cfgs = {'mesh_color': 'identity', 'items': ['mesh', 'center_conf', 'pj2d'], 'renderer': self.settings.renderer}
-            for cid, crop_image in enumerate(croped_images):
-                this_outs = outputs_list[cid]
-                this_outs = rendering_romp_bev_results(self.renderer, this_outs, crop_image, rendering_cfgs)
-                saver = ResultSaver(self.settings.mode, self.settings.save_path)
-                saver(this_outs, 'crop.jpg', prefix=f'{self.settings.center_thresh}_{cid}')
-        outputs = {}
-        for cid, crop_box in enumerate(crop_boxes):
-            crop_outputs = outputs_list[cid]
-            if crop_outputs is None:
-                continue
-            crop_box[:2] -= pad_length
-            crop_outputs['cam'] = convert_crop_cam_params2full_image(crop_outputs['cam'], crop_box, full_image.shape[:2])
-            collect_outputs(crop_outputs, outputs)
-        if self.settings.render_mesh:
-            meta_data['vertices'] = outputs['verts']
-        projection = body_mesh_projection2image(outputs['joints'], outputs['cam'], **meta_data)
-        outputs.update(projection)
-        outputs = suppressing_redundant_prediction_via_projection(outputs, full_image.shape, thresh=self.settings.nms_thresh, conf_based=True)
-        outputs = remove_outlier(outputs, scale_thresh=0.5, relative_scale_thresh=self.settings.relative_scale_thresh)
-        return outputs
-
-    def temporal_optimization(self, outputs, signal_ID, image_scale=128, depth_scale=30):
-        check_filter_state(self.OE_filters, signal_ID, self.settings.show_largest, self.settings.smooth_coeff)
-        if self.settings.show_largest:
-            max_id = torch.argmax(outputs['cam'][:, 0])
-            outputs['smpl_thetas'], outputs['smpl_betas'], outputs['cam'] = smooth_results(self.OE_filters[signal_ID], outputs['smpl_thetas'][max_id], outputs['smpl_betas'][max_id], outputs['cam'][max_id])
-            outputs['smpl_thetas'], outputs['smpl_betas'], outputs['cam'] = outputs['smpl_thetas'].unsqueeze(0), outputs['smpl_betas'].unsqueeze(0), outputs['cam'].unsqueeze(0)
-        else:
-            cam_trans = outputs['cam_trans'].cpu().numpy()
-            cams = outputs['cam'].cpu().numpy()
-            det_confs = outputs['center_confs'].cpu().numpy()
-            tracking_points = np.concatenate([(cams[:, [2, 1]] + 1) * image_scale, cam_trans[:, [2]] * depth_scale, cams[:, [0]] * image_scale / 2], 1)
-            tracked_ids, results_inds = self.tracker.update(tracking_points, det_confs)
-            if len(tracked_ids) == 0:
-                return None
-            for key in self.result_keys:
-                outputs[key] = outputs[key][results_inds]
-            for ind, tid in enumerate(tracked_ids):
-                if tid not in self.OE_filters[signal_ID]:
-                    self.OE_filters[signal_ID][tid] = create_OneEuroFilter(self.settings.smooth_coeff)
-                outputs['smpl_thetas'][ind], outputs['smpl_betas'][ind], outputs['cam'][ind] = smooth_results(self.OE_filters[signal_ID][tid], outputs['smpl_thetas'][ind], outputs['smpl_betas'][ind], outputs['cam'][ind])
-            outputs['track_ids'] = np.array(tracked_ids).astype(np.int32)
-        return outputs
-
-
-def copy_state_dict(cur_state_dict, pre_state_dict, prefix='module.', drop_prefix='', fix_loaded=False):
-    success_layers, failed_layers = [], []
-
-    def _get_params(key):
-        key = key.replace(drop_prefix, '')
-        key = prefix + key
-        if key in pre_state_dict:
-            return pre_state_dict[key]
-        return None
-    for k in cur_state_dict.keys():
-        v = _get_params(k)
-        try:
-            if v is None:
-                failed_layers.append(k)
-                continue
-            cur_state_dict[k].copy_(v)
-            if prefix in k and prefix != '':
-                k = k.split(prefix)[1]
-            success_layers.append(k)
-        except:
-            None
-            continue
-    None
-    if fix_loaded and len(failed_layers) > 0:
-        logging.info('fixing the layers that were loaded successfully, while train the layers that failed,')
-        for k in cur_state_dict.keys():
-            try:
-                if k in success_layers:
-                    cur_state_dict[k].requires_grad = False
-            except:
-                logging.info('fixing the layer {} failed'.format(k))
-    return success_layers
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.001)
+                for name, _ in m.named_parameters():
+                    if name in ['bias']:
+                        nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.ConvTranspose2d):
+                nn.init.normal_(m.weight, std=0.001)
+                for name, _ in m.named_parameters():
+                    if name in ['bias']:
+                        nn.init.constant_(m.bias, 0)
 
 
 class ResNet_50(nn.Module):
@@ -3682,8 +3915,11 @@ class ResNet_50(nn.Module):
             success_layer = copy_state_dict(self.state_dict(), torch.load(args().resnet_pretrain), prefix='', fix_loaded=True)
 
     def image_preprocess(self, x):
-        x = BHWC_to_BCHW(x) / 255.0
-        x = torch.stack(list(map(lambda x: F.normalize(x, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], inplace=False), x)))
+        if args().pretrain == 'imagenet' or args().pretrain == 'spin':
+            x = BHWC_to_BCHW(x) / 255.0
+            x = torch.stack(list(map(lambda x: F.normalize(x, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], inplace=False), x)))
+        else:
+            x = (BHWC_to_BCHW(x) / 255.0 * 2.0 - 1.0).contiguous()
         return x
 
     def make_resnet(self):
@@ -3763,57 +3999,60 @@ class ResNet_50(nn.Module):
                         nn.init.constant_(m.bias, 0)
 
 
-def get_coord_maps(size=128):
-    xx_ones = torch.ones([1, size], dtype=torch.int32)
-    xx_ones = xx_ones.unsqueeze(-1)
-    xx_range = torch.arange(size, dtype=torch.int32).unsqueeze(0)
-    xx_range = xx_range.unsqueeze(1)
-    xx_channel = torch.matmul(xx_ones, xx_range)
-    xx_channel = xx_channel.unsqueeze(-1)
-    yy_ones = torch.ones([1, size], dtype=torch.int32)
-    yy_ones = yy_ones.unsqueeze(1)
-    yy_range = torch.arange(size, dtype=torch.int32).unsqueeze(0)
-    yy_range = yy_range.unsqueeze(-1)
-    yy_channel = torch.matmul(yy_range, yy_ones)
-    yy_channel = yy_channel.unsqueeze(-1)
-    xx_channel = xx_channel.permute(0, 3, 1, 2)
-    yy_channel = yy_channel.permute(0, 3, 1, 2)
-    xx_channel = xx_channel.float() / (size - 1)
-    yy_channel = yy_channel.float() / (size - 1)
-    xx_channel = xx_channel * 2 - 1
-    yy_channel = yy_channel * 2 - 1
-    out = torch.cat([xx_channel, yy_channel], dim=1)
-    return out
+class ROMP(Base):
 
-
-class ROMPv1(nn.Module):
-
-    def __init__(self, **kwargs):
-        super(ROMPv1, self).__init__()
+    def __init__(self, backbone=None, **kwargs):
+        super(ROMP, self).__init__()
         None
-        self.backbone = HigherResolutionNet()
+        self.backbone = backbone
+        self._result_parser = ResultParser()
         self._build_head()
+        if args().model_return_loss:
+            self._calc_loss = Loss()
+        if not args().fine_tune and not args().eval:
+            self.init_weights()
+            self.backbone.load_pretrain_params()
+
+    def head_forward(self, x):
+        x = torch.cat((x, self.coordmaps.repeat(x.shape[0], 1, 1, 1)), 1)
+        params_maps = self.final_layers[1](x)
+        center_maps = self.final_layers[2](x)
+        if args().merge_smpl_camera_head:
+            cam_maps, params_maps = params_maps[:, :3], params_maps[:, 3:]
+        else:
+            cam_maps = self.final_layers[3](x)
+        cam_maps[:, 0] = torch.pow(1.1, cam_maps[:, 0])
+        params_maps = torch.cat([cam_maps, params_maps], 1)
+        output = {'params_maps': params_maps.float(), 'center_map': center_maps.float()}
+        return output
 
     def _build_head(self):
-        self.outmap_size = 64
-        params_num, cam_dim = 3 + 22 * 6 + 10, 3
-        self.head_cfg = {'NUM_HEADS': 1, 'NUM_CHANNELS': 64, 'NUM_BASIC_BLOCKS': 2}
+        self.outmap_size = args().centermap_size
+        params_num, cam_dim = 145, 3
+        self.head_cfg = {'NUM_HEADS': 1, 'NUM_CHANNELS': 64, 'NUM_BASIC_BLOCKS': args().head_block_num}
         self.output_cfg = {'NUM_PARAMS_MAP': params_num - cam_dim, 'NUM_CENTER_MAP': 1, 'NUM_CAM_MAP': cam_dim}
         self.final_layers = self._make_final_layers(self.backbone.backbone_channels)
         self.coordmaps = get_coord_maps(128)
 
     def _make_final_layers(self, input_channels):
-        final_layers = [None]
+        final_layers = []
+        final_layers.append(None)
         input_channels += 2
-        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP']))
-        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP']))
-        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CAM_MAP']))
+        if args().merge_smpl_camera_head:
+            final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP'] + self.output_cfg['NUM_CAM_MAP']))
+            final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP']))
+        else:
+            final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP']))
+            final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP']))
+            final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CAM_MAP']))
         return nn.ModuleList(final_layers)
 
     def _make_head_layers(self, input_channels, output_channels):
         head_layers = []
         num_channels = self.head_cfg['NUM_CHANNELS']
-        head_layers.append(nn.Sequential(nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True)))
+        kernel_sizes, strides, paddings = self._get_trans_cfg()
+        for kernel_size, padding, stride in zip(kernel_sizes, paddings, strides):
+            head_layers.append(nn.Sequential(nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=kernel_size, stride=stride, padding=padding), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True)))
         for i in range(self.head_cfg['NUM_HEADS']):
             layers = []
             for _ in range(self.head_cfg['NUM_BASIC_BLOCKS']):
@@ -3822,67 +4061,20 @@ class ROMPv1(nn.Module):
         head_layers.append(nn.Conv2d(in_channels=num_channels, out_channels=output_channels, kernel_size=1, stride=1, padding=0))
         return nn.Sequential(*head_layers)
 
-    @torch.no_grad()
-    def forward(self, image):
-        x = self.backbone(image)
-        x = torch.cat((x, self.coordmaps.repeat(x.shape[0], 1, 1, 1)), 1)
-        params_maps = self.final_layers[1](x)
-        center_maps = self.final_layers[2](x)
-        cam_maps = self.final_layers[3](x)
-        params_maps = torch.cat([cam_maps, params_maps], 1)
-        return center_maps, params_maps
-
-
-class SMPL_parser(nn.Module):
-
-    def __init__(self, model_path):
-        super(SMPL_parser, self).__init__()
-        self.smpl_model = SMPL(model_path)
-
-    def forward(self, outputs, root_align=False):
-        verts, joints, face = self.smpl_model(outputs['smpl_betas'], outputs['smpl_thetas'], root_align=root_align)
-        outputs.update({'verts': verts, 'joints': joints, 'smpl_face': face})
-        return outputs
-
-
-def convert_cam_to_3d_trans(cams, weight=2.0):
-    s, tx, ty = cams[:, 0], cams[:, 1], cams[:, 2]
-    depth, dx, dy = 1.0 / s, tx / s, ty / s
-    trans3d = torch.stack([dx, dy, depth], 1) * weight
-    return trans3d
-
-
-def euclidean_distance(detection, tracked_object):
-    return np.linalg.norm(detection.points - tracked_object.estimate)
-
-
-def get_tracked_ids(detections, tracked_objects):
-    tracked_ids_out = np.array([obj.id for obj in tracked_objects])
-    tracked_points = np.array([obj.last_detection.points[0] for obj in tracked_objects])
-    org_points = np.array([obj.points for obj in detections])
-    tracked_ids = [tracked_ids_out[np.argmin(np.linalg.norm(tracked_points - point[None], axis=1))] for point in org_points]
-    return tracked_ids
-
-
-def parameter_sampling(maps, batch_ids, flat_inds, use_transform=True):
-    if use_transform:
-        batch, channel = maps.shape[:2]
-        maps = maps.view(batch, channel, -1).permute((0, 2, 1)).contiguous()
-    results = maps[batch_ids, flat_inds].contiguous()
-    return results
-
-
-def parsing_outputs(center_maps, params_maps, centermap_parser):
-    center_preds_info = centermap_parser.parse_centermap(center_maps)
-    batch_ids, flat_inds, cyxs, center_confs = center_preds_info
-    if len(batch_ids) == 0:
-        None
-        return None
-    params_pred = parameter_sampling(params_maps, batch_ids, flat_inds, use_transform=True)
-    parsed_results = pack_params_dict(params_pred)
-    parsed_results['center_preds'] = torch.stack([flat_inds % 64, flat_inds // 64], 1) * 512 // 64
-    parsed_results['center_confs'] = parameter_sampling(center_maps, batch_ids, flat_inds, use_transform=True)
-    return parsed_results
+    def _get_trans_cfg(self):
+        if self.outmap_size == 32:
+            kernel_sizes = [3, 3]
+            paddings = [1, 1]
+            strides = [2, 2]
+        elif self.outmap_size == 64:
+            kernel_sizes = [3]
+            paddings = [1]
+            strides = [2]
+        elif self.outmap_size == 128:
+            kernel_sizes = [3]
+            paddings = [1]
+            strides = [1]
+        return kernel_sizes, strides, paddings
 
 
 class SMPLR(nn.Module):
@@ -3893,16 +4085,16 @@ class SMPLR(nn.Module):
         self.smpls = {}
         self.smpls['n'] = SMPL(args().smpl_model_path, model_type='smpl')
         if use_gender:
-            self.smpls['f'] = SMPL(os.path.join(config.smpl_model_dir, 'SMPL_FEMALE.pth'))
-            self.smpls['m'] = SMPL(os.path.join(config.smpl_model_dir, 'SMPL_MALE.pth'))
+            self.smpls['f'] = SMPL(args().smpl_model_path.replace('NEUTRAL', 'FEMALE'))
+            self.smpls['m'] = SMPL(args().smpl_model_path.replace('NEUTRAL', 'MALE'))
 
-    def forward(self, pose, betas, gender='n'):
+    def forward(self, pose, betas, gender='n', root_align=True):
         if isinstance(pose, np.ndarray):
             pose, betas = torch.from_numpy(pose).float(), torch.from_numpy(betas).float()
         if len(pose.shape) == 1:
             pose, betas = pose.unsqueeze(0), betas.unsqueeze(0)
-        verts, joints54_17 = self.smpls[gender](poses=pose, betas=betas)
-        return verts.numpy(), joints54_17[:, :54].numpy()
+        verts, joints44_17 = self.smpls[gender](poses=pose, betas=betas, root_align=root_align)
+        return verts.numpy(), joints44_17[:, :args().joint_num].numpy()
 
 
 class MeshRendererWithDepth(nn.Module):
@@ -3918,53 +4110,17 @@ class MeshRendererWithDepth(nn.Module):
         return images, fragments.zbuf
 
 
-class Renderer(object):
+mesh_color_table = {'pink': [0.7, 0.7, 0.9], 'neutral': [0.9, 0.9, 0.8], 'capsule': [0.7, 0.75, 0.5], 'yellow': [0.5, 0.7, 0.75]}
 
-    def __init__(self, focal_length=600, height=512, width=512, **kwargs):
-        self.renderer = pyrender.OffscreenRenderer(height, width)
-        self.camera_center = np.array([width / 2.0, height / 2.0])
-        self.focal_length = focal_length
-        self.colors = [(0.7, 0.7, 0.6, 1.0), (0.7, 0.5, 0.5, 1.0), (0.5, 0.5, 0.7, 1.0), (0.5, 0.55, 0.3, 1.0), (0.3, 0.5, 0.55, 1.0)]
 
-    def __call__(self, verts, faces, colors=None, focal_length=None, camera_pose=None, **kwargs):
-        rot = trimesh.transformations.rotation_matrix(np.radians(180), [1, 0, 0])
-        num_people = verts.shape[0]
-        verts = verts.detach().cpu().numpy()
-        if isinstance(faces, torch.Tensor):
-            faces = faces.detach().cpu().numpy()
-        scene = pyrender.Scene(bg_color=[0.0, 0.0, 0.0, 0.0], ambient_light=(0.3, 0.3, 0.3))
-        if camera_pose is None:
-            camera_pose = np.eye(4)
-        if focal_length is None:
-            fx, fy = self.focal_length, self.focal_length
-        else:
-            fx, fy = focal_length, focal_length
-        camera = pyrender.camera.IntrinsicsCamera(fx=fx, fy=fy, cx=self.camera_center[0], cy=self.camera_center[1])
-        scene.add(camera, pose=camera_pose)
-        light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=0.5)
-        for n in range(num_people):
-            mesh = trimesh.Trimesh(verts[n], faces[n])
-            mesh.apply_transform(rot)
-            trans = np.array([0, 0, 0])
-            if colors is None:
-                mesh_color = self.colors[0]
-            else:
-                mesh_color = colors[n % len(colors)]
-            material = pyrender.MetallicRoughnessMaterial(metallicFactor=0.2, alphaMode='OPAQUE', baseColorFactor=mesh_color)
-            mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
-            scene.add(mesh, 'mesh')
-            light_pose = np.eye(4)
-            light_pose[:3, 3] = np.array([0, -1, 1]) + trans
-            scene.add(light, pose=light_pose)
-            light_pose[:3, 3] = np.array([0, 1, 1]) + trans
-            scene.add(light, pose=light_pose)
-            light_pose[:3, 3] = np.array([1, 1, 2]) + trans
-            scene.add(light, pose=light_pose)
-        color, rend_depth = self.renderer.render(scene, flags=pyrender.RenderFlags.RGBA)
-        return color
-
-    def delete(self):
-        self.renderer.delete()
+def set_mesh_color(verts_rgb, colors):
+    if colors is None:
+        colors = torch.Tensor(mesh_color_table['neutral'])
+    if len(colors.shape) == 1:
+        verts_rgb[:, :] = colors
+    elif len(colors.shape) == 2:
+        verts_rgb[:, :] = colors.unsqueeze(1)
+    return verts_rgb
 
 
 def get_remove_keys(dt, keys=[]):
@@ -3974,6 +4130,37 @@ def get_remove_keys(dt, keys=[]):
     for key in keys:
         del dt[key]
     return targets
+
+
+def img_preprocess(image, imgpath, input_size=512, ds='internet', single_img_input=False):
+    image = image[:, :, ::-1]
+    image_size = image.shape[:2][::-1]
+    image_org = Image.fromarray(image)
+    resized_image_size = (float(input_size) / max(image_size) * np.array(image_size) // 2 * 2).astype(np.int32)
+    padding = tuple((input_size - resized_image_size) // 2)
+    transform = torchvision.transforms.Compose([torchvision.transforms.Resize([resized_image_size[1], resized_image_size[0]], interpolation=3), torchvision.transforms.Pad(padding, fill=0, padding_mode='constant')])
+    image = torch.from_numpy(np.array(transform(image_org))).float()
+    padding_org = tuple((max(image_size) - np.array(image_size)) // 2)
+    transform_org = torchvision.transforms.Compose([torchvision.transforms.Pad(padding_org, fill=0, padding_mode='constant'), torchvision.transforms.Resize((input_size * 2, input_size * 2), interpolation=3)])
+    image_org = torch.from_numpy(np.array(transform_org(image_org)))
+    padding_org = (np.array(list(padding_org)) * float(input_size * 2 / max(image_size))).astype(np.int32)
+    if padding_org[0] > 0:
+        image_org[:, :padding_org[0]] = 255
+        image_org[:, -padding_org[0]:] = 255
+    if padding_org[1] > 0:
+        image_org[:padding_org[1]] = 255
+        image_org[-padding_org[1]:] = 255
+    offset = (max(image_size) - np.array(image_size)) / 2
+    offsets = np.array([image_size[1], image_size[0], 0, resized_image_size[0] + padding[1], 0, resized_image_size[1] + padding[0], offset[1], resized_image_size[0], offset[0], resized_image_size[1], max(image_size)], dtype=np.int32)
+    offsets = torch.from_numpy(offsets).float()
+    name = os.path.basename(imgpath)
+    if single_img_input:
+        image = image.unsqueeze(0).contiguous()
+        image_org = image_org.unsqueeze(0).contiguous()
+        offsets = offsets.unsqueeze(0).contiguous()
+        imgpath, name, ds = [imgpath], [name], [ds]
+    input_data = {'image': image, 'image_org': image_org, 'imgpath': imgpath, 'offsets': offsets, 'name': name, 'data_set': ds}
+    return input_data
 
 
 def justify_detection_state(detection_flag, reorganize_idx):
@@ -4092,6 +4279,119 @@ class Time_counter:
     def reset(self):
         self.runtime = 0
         self.frame_num = 0
+
+
+def convert_cam_to_stand_on_image_trans(cam, enlarge_scale=3):
+    trans_3d = convert_cam_to_3d_trans(cam)
+    stand_on_image_trans = np.zeros(3)
+    stand_on_image_trans[0] = trans_3d[0] * 0.3
+    stand_on_image_trans[1] = 0.6
+    stand_on_image_trans[2] = trans_3d[1] * 0.4
+    stand_on_image_trans *= enlarge_scale
+    return stand_on_image_trans
+
+
+def parse_nvxia_uvmap(uvs, face):
+    verts_num = np.max(face) + 1
+    uvs_verts = np.zeros((verts_num, 2))
+    for uv, f in zip(uvs, face):
+        uvs_verts[f] = uv[:, :2]
+    return uvs_verts
+
+
+class Vedo_visualizer(object):
+
+    def __init__(self):
+        if args().character == 'smpl':
+            self.faces = torch.load(args().smpl_model_path)['f'].numpy()
+        elif args().character == 'nvxia':
+            params_dict = np.load(os.path.join(args().nvxia_model_path, 'nvxia.npz'), allow_pickle=True)
+            self.faces = np.array([np.array(face) for face in params_dict['polygons']])
+            self.texture_file = cv2.imread(os.path.join(args().nvxia_model_path, 'Kachujin_diffuse.png'))[:, :, ::-1]
+            self.uvs = parse_nvxia_uvmap(params_dict['uvmap'], self.faces)
+        self.scene_bg_color = [240, 255, 255]
+        self.default_camera = {'pos': {'far': (0, 800, 1000), 'close': (0, 200, 800)}[args().soi_camera]}
+        self.lights = [Light([0, 800, 1000], intensity=0.6, c='white'), Light([0, -800, 1000], intensity=0.6, c='white'), Light([0, 800, -1000], intensity=0.6, c='white'), Light([0, -800, -1000], intensity=0.6, c='white')]
+        vedo.settings.screeshotLargeImage = True
+        vedo.settings.screeshotScale = 2
+
+    def plot_multi_meshes_batch(self, vertices, cam_params, meta_data, reorganize_idx, save_img=True, interactive_show=False, rotate_frames=[]):
+        result_save_names = []
+        for inds, img_id in enumerate(np.unique(reorganize_idx)):
+            single_img_verts_inds = np.array(np.where(reorganize_idx == img_id)[0])
+            plt = self.plot_multi_meshes(vertices[single_img_verts_inds].detach().cpu().numpy(), cam_params[single_img_verts_inds].detach().cpu().numpy(), meta_data['image'][single_img_verts_inds[0]].cpu().numpy().astype(np.uint8), interactive_show=interactive_show)
+            if img_id in rotate_frames:
+                result_imgs, rot_angles = self.render_rotating(plt)
+                save_names = [os.path.join(args().output_dir, '3D_meshes-' + os.path.basename(meta_data['imgpath'][single_img_verts_inds[0]] + '_{:03d}.jpg'.format(ra))) for ra in rot_angles]
+            else:
+                result_imgs = self.render_one_time(plt, self.default_camera)
+                save_names = [os.path.join(args().output_dir, '3D_meshes-' + os.path.basename(meta_data['imgpath'][single_img_verts_inds[0]] + '.jpg'))]
+            plt.close()
+            result_save_names += save_names
+            if save_img:
+                for save_name, result_img in zip(save_names, result_imgs):
+                    cv2.imwrite(save_name, result_img[:, :, ::-1])
+        return result_save_names
+
+    def plot_multi_meshes(self, vertices, cam_params, img, mesh_colors=None, interactive_show=False, rotate_cam=False):
+        plt = Plotter(bg=[240, 255, 255], axes=0, offscreen=not interactive_show)
+        h, w = img.shape[:2]
+        pic = Picture(img)
+        pic.rotateX(-90).z(h // 2).x(-w // 2)
+        verts_enlarge_scale = max(h, w) / 5
+        cam_enlarge_scale = max(h, w) / 3
+        plt += pic
+        vertices_vis = []
+        for inds, (vert, cam) in enumerate(zip(vertices, cam_params)):
+            trans_3d = convert_cam_to_stand_on_image_trans(cam, cam_enlarge_scale)
+            vert[:, 1:] *= -1
+            vert = vert * verts_enlarge_scale
+            vert += trans_3d[None]
+            vertices_vis.append(vert)
+        vertices_vis = np.stack(vertices_vis, 0)
+        visulize_list = []
+        for inds, vert in enumerate(vertices_vis):
+            mesh = Mesh([vert, self.faces])
+            if args().character == 'smpl':
+                mesh = mesh.c([255, 255, 255]).smooth(niter=20)
+                if mesh_colors is not None:
+                    mesh.c(mesh_colors[inds].astype(np.uint8))
+            elif args().character == 'nvxia':
+                mesh.texture(self.texture_file, tcoords=self.uvs).smooth(niter=20)
+            visulize_list.append(mesh)
+        plt += visulize_list
+        for light in self.lights:
+            plt += light
+        return plt
+
+    def render_rotating(self, plt, internal=5):
+        result_imgs = []
+        pause_num = args().fps_save
+        pause = np.zeros(pause_num).astype(np.int32)
+        change_time = 90 // internal
+        roates = np.ones(change_time) * internal
+        go_up = np.sin(np.arange(change_time).astype(np.float32) / change_time) * 1
+        go_down = np.sin(np.arange(change_time).astype(np.float32) / change_time - 1) * 1
+        azimuth_angles = np.concatenate([pause, roates, roates, roates, roates])
+        elevation_angles = np.concatenate([pause, go_up, go_down, go_up, go_down])
+        plt.camera.Elevation(20)
+        for rid, azimuth_angle in enumerate(azimuth_angles):
+            plt.show(azimuth=azimuth_angle, elevation=elevation_angles[rid])
+            result_img = plt.topicture(scale=2)
+            rows, cols, _ = result_img._data.GetDimensions()
+            vtkimage = result_img._data.GetPointData().GetScalars()
+            image_result = vtk_to_numpy(vtkimage).reshape((rows, cols, 3))
+            result_imgs.append(image_result[::-1])
+        return result_imgs, np.arange(len(azimuth_angles))
+
+    def render_one_time(self, plt, camera_pose):
+        image_result = plt.show(camera=camera_pose)
+        result_img = plt.topicture(scale=2)
+        rows, cols, _ = result_img._data.GetDimensions()
+        vtkimage = result_img._data.GetPointData().GetScalars()
+        image_result = vtk_to_numpy(vtkimage).reshape((rows, cols, 3))
+        image_result = image_result[::-1]
+        return [image_result]
 
 
 def collect_image_list(image_folder=None, collect_subdirs=False, img_exts=None):
@@ -4429,30 +4729,14 @@ class BaseTrack(object):
 class STrack(BaseTrack):
     shared_kalman = KalmanFilter()
 
-    def __init__(self, trans_uv, body_pose, conf, buffer_size=30):
-        self._centers = np.asarray(trans_uv, dtype=np.float)
+    def __init__(self, trans, score, czyx):
+        self._trans = np.asarray(trans, dtype=np.float32)
         self.kalman_filter = None
         self.mean, self.covariance = None, None
         self.is_activated = False
-        self.score = conf
+        self.score = score
+        self.czyx = czyx
         self.tracklet_len = 0
-        self.smooth_feat = None
-        self.update_poses(body_pose)
-        self.features = deque([], maxlen=buffer_size)
-        self.alpha = 0.9
-
-    def update_poses(self, body_pose):
-        self.body_pose = body_pose
-        """
-        feat /= np.linalg.norm(feat)
-        self.curr_feat = feat
-        if self.smooth_feat is None:
-            self.smooth_feat = feat
-        else:
-            self.smooth_feat = self.alpha * self.smooth_feat + (1 - self.alpha) * feat
-        self.features.append(feat)
-        self.smooth_feat /= np.linalg.norm(self.smooth_feat)
-        """
 
     def predict(self):
         mean_state = self.mean.copy()
@@ -4465,9 +4749,10 @@ class STrack(BaseTrack):
         if len(stracks) > 0:
             multi_mean = np.asarray([st.mean.copy() for st in stracks])
             multi_covariance = np.asarray([st.covariance for st in stracks])
+            """ don't know why doing this """
             for i, st in enumerate(stracks):
                 if st.state != TrackState.Tracked:
-                    multi_mean[i][5] = 0
+                    multi_mean[i][7] = 0
             multi_mean, multi_covariance = STrack.shared_kalman.multi_predict(multi_mean, multi_covariance)
             for i, (mean, cov) in enumerate(zip(multi_mean, multi_covariance)):
                 stracks[i].mean = mean
@@ -4477,7 +4762,7 @@ class STrack(BaseTrack):
         """Start a new tracklet"""
         self.kalman_filter = kalman_filter
         self.track_id = self.next_id()
-        self.mean, self.covariance = self.kalman_filter.initiate(self.center)
+        self.mean, self.covariance = self.kalman_filter.initiate(self._trans)
         self.tracklet_len = 0
         self.state = TrackState.Tracked
         if frame_id == 1:
@@ -4486,15 +4771,16 @@ class STrack(BaseTrack):
         self.start_frame = frame_id
 
     def re_activate(self, new_track, frame_id, new_id=False):
-        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance, new_track.center)
+        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance, new_track.trans)
         self.tracklet_len = 0
         self.state = TrackState.Tracked
         self.is_activated = True
         self.frame_id = frame_id
         if new_id:
             self.track_id = self.next_id()
+        self.score = new_track.score
 
-    def update(self, new_track, frame_id, update_feature=True):
+    def update(self, new_track, frame_id):
         """
         Update a matched track
         :type new_track: STrack
@@ -4504,24 +4790,82 @@ class STrack(BaseTrack):
         """
         self.frame_id = frame_id
         self.tracklet_len += 1
-        new_center = new_track.center
-        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance, new_center)
+        new_trans = new_track.trans
+        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance, new_trans)
         self.state = TrackState.Tracked
         self.is_activated = True
+        self.czyx = new_track.czyx
         self.score = new_track.score
 
     @property
-    def center(self):
-        """Get current position in bounding box format `(top left x, top left y,
-                width, height)`.
+    def trans(self):
+        """Get current 3D body center position `(x,y,z)`.
         """
         if self.mean is None:
-            return np.concatenate([self._centers.copy(), self.score])
+            return self._trans.copy()
         ret = self.mean[:4].copy()
         return ret
 
     def __repr__(self):
         return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
+
+
+class STrack3D(BaseTrack):
+
+    def __init__(self, trans, score, czyx):
+        self._trans = np.asarray(trans, dtype=np.float32)
+        self.is_activated = False
+        self.score = score
+        self.czyx = czyx
+        self.tracklet_len = 0
+
+    def activate(self, frame_id):
+        """Start a new tracklet"""
+        self.track_id = self.next_id()
+        self.tracklet_len = 0
+        self.state = TrackState.Tracked
+        self.is_activated = True
+        self.frame_id = frame_id
+        self.start_frame = frame_id
+
+    def re_activate(self, new_track, frame_id, new_id=False):
+        self.tracklet_len = 0
+        self.state = TrackState.Tracked
+        self.is_activated = True
+        self.frame_id = frame_id
+        if new_id:
+            self.track_id = self.next_id()
+        self.score = new_track.score
+
+    def update(self, new_track, frame_id):
+        """
+        Update a matched track
+        :type new_track: STrack
+        :type frame_id: int
+        :type update_feature: bool
+        :return:
+        """
+        self.frame_id = frame_id
+        self.tracklet_len += 1
+        self._trans = new_track.trans
+        self.czyx = new_track.czyx
+        self.state = TrackState.Tracked
+        self.is_activated = True
+        self.score = new_track.score
+
+    @property
+    def trans(self):
+        """Get current 3D body center position `(x,y,z)`.
+        """
+        return self._trans.copy()
+
+    def __repr__(self):
+        return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
+
+
+def euclidean_distance(detection, tracked_object):
+    dist = np.linalg.norm(detection.points - tracked_object.estimate)
+    return dist
 
 
 def joint_stracks(tlista, tlistb):
@@ -4538,6 +4882,22 @@ def joint_stracks(tlista, tlistb):
     return res
 
 
+def remove_duplicate_stracks(stracksa, stracksb, dist_thresh=0.15):
+    pdist = matching.euclidean_distance(stracksa, stracksb, dim=2)
+    pairs = np.where(pdist < dist_thresh)
+    dupa, dupb = list(), list()
+    for p, q in zip(*pairs):
+        timep = stracksa[p].frame_id - stracksa[p].start_frame
+        timeq = stracksb[q].frame_id - stracksb[q].start_frame
+        if timep > timeq:
+            dupb.append(q)
+        else:
+            dupa.append(p)
+    resa = [t for i, t in enumerate(stracksa) if not i in dupa]
+    resb = [t for i, t in enumerate(stracksb) if not i in dupb]
+    return resa, resb
+
+
 def sub_stracks(tlista, tlistb):
     stracks = {}
     for t in tlista:
@@ -4551,37 +4911,128 @@ def sub_stracks(tlista, tlistb):
 
 class Tracker(object):
 
-    def __init__(self, seq_name='test', frame_rate=30):
-        self.seq_name = seq_name
+    def __init__(self, det_thresh=0.05, first_frame_det_thresh=0.12, match_thresh=1.0, accept_new_dets=False, new_subject_det_thresh=0.8, axis_times=np.array([1.1, 0.9, 10]), track_buffer=60, frame_rate=30):
         self.tracked_stracks = []
         self.lost_stracks = []
         self.removed_stracks = []
         self.frame_id = 0
-        self.buffer_size = int(frame_rate / 30.0 * 30)
-        self.max_time_lost = 15
-        self.kalman_filter = KalmanFilter()
-        self.deal_with_unconfirm = False
+        self.match_thresh = match_thresh
+        self.det_thresh = det_thresh
+        self.first_frame_det_thresh = first_frame_det_thresh
+        self.new_subject_det_thresh = 0.8
+        self.accept_new_dets = accept_new_dets
+        self.buffer_size = int(frame_rate / 30.0 * track_buffer)
+        self.max_time_lost = self.buffer_size
+        if args().tracking_with_kalman_filter:
+            self.kalman_filter = KalmanFilter()
+        self.duplicat_dist_thresh = 0.66
+        self.axis_times = axis_times
 
-    def post_process(self, outputs):
-        cams = [result['cam'] for result in outputs]
-        kp3ds = [result['j3d_all54'] for result in outputs]
-        center_conf = [result['center_conf'] for result in outputs]
-        return cams, kp3ds, center_conf
-
-    def update(self, outputs):
+    def update(self, trans3D, scores, last_trans3D, czyxs, debug=True, never_forget=False, tracking_target_max_num=100, using_motion_offsets=True):
         self.frame_id += 1
         activated_starcks = []
         refind_stracks = []
         lost_stracks = []
         removed_stracks = []
-        cams, kp3ds, center_conf = self.post_process(outputs)
-        if len(cams) > 0:
-            """Detections"""
-            detections = [STrack(trans_suv, body_pose, conf, 30) for trans_suv, body_pose, conf in zip(cams, kp3ds, center_conf)]
-            tracked_ids = np.zeros(len(detections))
+        if self.frame_id == 1:
+            remain_inds = scores > self.first_frame_det_thresh
+        else:
+            remain_inds = scores > self.det_thresh
+        dets = trans3D[remain_inds]
+        scores_keep = scores[remain_inds]
+        last_dets_keep = last_trans3D[remain_inds]
+        czyxs_keep = czyxs[remain_inds]
+        if len(dets) > 0:
+            detections = [STrack3D(np.array([*trans[:2], 1 / (1 + trans[2])]), s, czyx) for trans, s, czyx in zip(dets, scores_keep, czyxs_keep)]
+            detections_add_offsets = [STrack3D(np.array([*trans[:2], 1 / (1 + trans[2])]), s, czyx) for trans, s, czyx in zip(last_dets_keep, scores_keep, czyxs_keep)]
         else:
             detections = []
-            tracked_ids = np.array([0])
+            detections_add_offsets = []
+        """ Step 2: First association, with high score detection boxes"""
+        strack_pool = self.tracked_stracks
+        if debug:
+            None
+            if len(strack_pool) > 0:
+                None
+                None
+            if len(detections_add_offsets) > 0:
+                None
+                None
+        if using_motion_offsets:
+            dists = euclidean_distance(strack_pool, detections_add_offsets, dim=3, aug=self.axis_times)
+        else:
+            dists = euclidean_distance(strack_pool, detections, dim=3, aug=self.axis_times)
+        matches, u_track, u_detection = matching.linear_assignment(dists, thresh=self.match_thresh)
+        for itracked, idet in matches:
+            track = strack_pool[itracked]
+            det = detections_add_offsets[idet]
+            if track.state == TrackState.Tracked:
+                track.update(detections_add_offsets[idet], self.frame_id)
+                activated_starcks.append(track)
+            else:
+                track.re_activate(det, self.frame_id, new_id=False)
+                refind_stracks.append(track)
+        for it in u_track:
+            track = self.tracked_stracks[it]
+            if not track.state == TrackState.Lost:
+                track.mark_lost()
+            lost_stracks.append(track)
+        """ Step 4: Init new stracks with the strack is empty, like the first frame"""
+        if not self.accept_new_dets and len(self.tracked_stracks) < tracking_target_max_num:
+            u_detection = np.array(u_detection)
+            track_scores = np.array([detections[inew].score for inew in u_detection])
+            scale_ok_mask = track_scores > self.first_frame_det_thresh
+            u_detection = u_detection[scale_ok_mask]
+            track_scales = np.array([detections[inew]._trans[2] for inew in u_detection])
+            max_scale_subject_inds = u_detection[np.argsort(track_scales)[::-1][:tracking_target_max_num]]
+            for inew in max_scale_subject_inds:
+                track = detections[inew]
+                track.activate(self.frame_id)
+                activated_starcks.append(track)
+        elif self.accept_new_dets:
+            for inew in u_detection:
+                track = detections[inew]
+                if len(strack_pool) == 0 and track.score > self.first_frame_det_thresh:
+                    track.activate(self.frame_id)
+                    activated_starcks.append(track)
+                elif track.score > self.new_subject_det_thresh:
+                    track.activate(self.frame_id)
+                    activated_starcks.append(track)
+        self.tracked_stracks = joint_stracks(self.tracked_stracks, activated_starcks)
+        """ Step 5: Update state"""
+        for track in lost_stracks:
+            if debug:
+                None
+            if self.frame_id - track.end_frame > self.max_time_lost and not never_forget:
+                track.mark_removed()
+                removed_stracks.append(track)
+                self.tracked_stracks = sub_stracks(self.tracked_stracks, [track])
+        output_results = np.array([np.array([*track.trans[:3], track.track_id, track.score, track.state == TrackState.Tracked, *track.czyx]) for track in self.tracked_stracks if track.is_activated])
+        if debug:
+            None
+        return copy.deepcopy(output_results)
+
+    def update_BT(self, trans3D, scores, last_trans3D, czyxs, debug=True, det_thresh=0.12, low_conf_det_thresh=0.05, match_thresh=1):
+        self.frame_id += 1
+        activated_starcks = []
+        refind_stracks = []
+        lost_stracks = []
+        removed_stracks = []
+        remain_inds = scores > det_thresh
+        dets = trans3D[remain_inds]
+        scores_keep = scores[remain_inds]
+        last_dets_keep = trans3D[remain_inds]
+        czyxs_keep = czyxs[remain_inds]
+        inds_second = np.logical_and(scores > low_conf_det_thresh, scores < det_thresh)
+        dets_second = trans3D[inds_second]
+        scores_second = scores[inds_second]
+        last_dets_second = trans3D[inds_second]
+        czyxs_second = czyxs[inds_second]
+        if len(dets) > 0:
+            detections = [STrack(np.array([*trans, 1 / (1 + trans[2])]), s, czyx) for trans, s, czyx in zip(dets, scores_keep, czyxs_keep)]
+        else:
+            detections = []
+            detections_add_offsets = []
         """ Add newly detected tracklets to tracked_stracks"""
         unconfirmed = []
         tracked_stracks = []
@@ -4590,50 +5041,66 @@ class Tracker(object):
                 unconfirmed.append(track)
             else:
                 tracked_stracks.append(track)
-        """ Step 2: First association, with embedding"""
+        """ Step 2: First association, with high score detection boxes"""
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
         STrack.multi_predict(strack_pool)
-        dists = matching.gate_cost_matrix(self.kalman_filter, strack_pool, detections, only_position=True)
-        matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.4)
+        dists = matching.euclidean_distance(strack_pool, detections, dim=4)
+        matches, u_track, u_detection = matching.linear_assignment(dists, thresh=match_thresh)
         for itracked, idet in matches:
             track = strack_pool[itracked]
             det = detections[idet]
-            tracked_ids[idet] = track.track_id
             if track.state == TrackState.Tracked:
                 track.update(detections[idet], self.frame_id)
                 activated_starcks.append(track)
             else:
                 track.re_activate(det, self.frame_id, new_id=False)
                 refind_stracks.append(track)
+        """ Step 3: Second association, with low score detection boxes"""
+        if len(dets_second) > 0:
+            """Detections"""
+            detections_second = [STrack(np.concatenate([trans, np.array([1 / (1 + trans[2])])], 0), s, czyx) for trans, s, czyx in zip(dets_second, scores_second, czyxs_second)]
+        else:
+            detections_second = []
+            detections_add_offsets_second = []
         r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
-        for track in r_tracked_stracks:
+        dists = matching.euclidean_distance(r_tracked_stracks, detections_second, dim=4)
+        matches, u_track, u_detection_second = matching.linear_assignment(dists, thresh=match_thresh * 2)
+        for itracked, idet in matches:
+            track = r_tracked_stracks[itracked]
+            det = detections_second[idet]
+            if track.state == TrackState.Tracked:
+                track.update(det, self.frame_id)
+                activated_starcks.append(track)
+            else:
+                track.re_activate(det, self.frame_id, new_id=False)
+                refind_stracks.append(track)
+        for it in u_track:
+            track = r_tracked_stracks[it]
             if not track.state == TrackState.Lost:
                 track.mark_lost()
                 lost_stracks.append(track)
-        if self.deal_with_unconfirm:
-            """Deal with unconfirmed tracks, usually tracks with only one beginning frame"""
-            detections = [detections[i] for i in u_detection]
-            dists = matching.gate_cost_matrix(self.kalman_filter, unconfirmed, detections)
-            matches, u_unconfirmed, u_detection = matching.linear_assignment(dists, thresh=0.7)
-            for itracked, idet in matches:
-                unconfirmed[itracked].update(detections[idet], self.frame_id)
-                activated_starcks.append(unconfirmed[itracked])
-            for it in u_unconfirmed:
-                track = unconfirmed[it]
-                track.mark_removed()
-                removed_stracks.append(track)
-        else:
-            for track in unconfirmed:
-                track.mark_removed()
-                removed_stracks.append(track)
+        """Deal with unconfirmed tracks, usually tracks with only one beginning frame"""
+        detections = [detections[i] for i in u_detection]
+        dists = matching.euclidean_distance(unconfirmed, detections)
+        matches, u_unconfirmed, u_detection = matching.linear_assignment(dists, thresh=match_thresh * 3)
+        for itracked, idet in matches:
+            unconfirmed[itracked].update(detections[idet], self.frame_id)
+            activated_starcks.append(unconfirmed[itracked])
+        for it in u_unconfirmed:
+            track = unconfirmed[it]
+            track.mark_removed()
+            removed_stracks.append(track)
         """ Step 4: Init new stracks"""
         for inew in u_detection:
             track = detections[inew]
+            if track.score < self.det_thresh:
+                continue
             track.activate(self.kalman_filter, self.frame_id)
             activated_starcks.append(track)
-            tracked_ids[inew] = track.track_id
         """ Step 5: Update state"""
         for track in self.lost_stracks:
+            if debug:
+                None
             if self.frame_id - track.end_frame > self.max_time_lost:
                 track.mark_removed()
                 removed_stracks.append(track)
@@ -4644,21 +5111,113 @@ class Tracker(object):
         self.lost_stracks.extend(lost_stracks)
         self.lost_stracks = sub_stracks(self.lost_stracks, self.removed_stracks)
         self.removed_stracks.extend(removed_stracks)
-        output_stracks = [track for track in self.tracked_stracks if track.is_activated]
-        online_centers = []
-        online_ids = []
-        for t in output_stracks:
-            online_centers.append(t.center)
-            online_ids.append(t.track_id)
-        return online_ids
+        self.tracked_stracks, self.lost_stracks = remove_duplicate_stracks(self.tracked_stracks, self.lost_stracks, dist_thresh=self.duplicat_dist_thresh)
+        output_results = np.array([np.array([*track.trans[:3], track.track_id, track.score, track.state == TrackState.Tracked, *track.czyx]) for track in self.tracked_stracks if track.is_activated])
+        if debug:
+            None
+        return copy.deepcopy(output_results)
 
 
-def frames2video(images_path, video_name, fps=30):
+class LowPassFilter:
+
+    def __init__(self):
+        self.prev_raw_value = None
+        self.prev_filtered_value = None
+
+    def process(self, value, alpha):
+        if self.prev_raw_value is None:
+            s = value
+        else:
+            s = alpha * value + (1.0 - alpha) * self.prev_filtered_value
+        self.prev_raw_value = value
+        self.prev_filtered_value = s
+        return s
+
+
+class OneEuroFilter:
+
+    def __init__(self, mincutoff=1.0, beta=0.0, dcutoff=1.0, freq=30):
+        self.freq = freq
+        self.mincutoff = mincutoff
+        self.beta = beta
+        self.dcutoff = dcutoff
+        self.x_filter = LowPassFilter()
+        self.dx_filter = LowPassFilter()
+
+    def compute_alpha(self, cutoff):
+        te = 1.0 / self.freq
+        tau = 1.0 / (2 * np.pi * cutoff)
+        return 1.0 / (1.0 + tau / te)
+
+    def process(self, x, print_inter=False):
+        prev_x = self.x_filter.prev_raw_value
+        dx = 0.0 if prev_x is None else (x - prev_x) * self.freq
+        edx = self.dx_filter.process(dx, self.compute_alpha(self.dcutoff))
+        if isinstance(edx, float):
+            cutoff = self.mincutoff + self.beta * np.abs(edx)
+        elif isinstance(edx, np.ndarray):
+            cutoff = self.mincutoff + self.beta * np.abs(edx)
+        elif isinstance(edx, torch.Tensor):
+            cutoff = self.mincutoff + self.beta * torch.abs(edx)
+        if print_inter:
+            None
+        return self.x_filter.process(x, self.compute_alpha(cutoff))
+
+
+def create_OneEuroFilter(smooth_coeff):
+    return {'smpl_thetas': OneEuroFilter(smooth_coeff, 0.7), 'cam': OneEuroFilter(1.6, 0.7), 'smpl_betas': OneEuroFilter(0.6, 0.7), 'global_rot': OneEuroFilter(smooth_coeff, 0.7)}
+
+
+def frames2video(images_path, video_name, images=None, fps=30):
     writer = imageio.get_writer(video_name, format='mp4', mode='I', fps=fps)
-    for path in images_path:
-        image = imageio.imread(path)
-        writer.append_data(image)
+    if images is None:
+        for path in images_path:
+            image = imageio.imread(path)
+            writer.append_data(image)
+    else:
+        for image in images:
+            writer.append_data(image)
     writer.close()
+
+
+def get_tracked_ids(detections, tracked_objects):
+    tracked_ids_out = np.array([obj.id for obj in tracked_objects])
+    tracked_points = np.array([obj.last_detection.points for obj in tracked_objects])
+    org_points = np.array([obj.points for obj in detections])
+    tracked_ids, tracked_bbox_ids = [], []
+    for tid, tracked_point in enumerate(tracked_points):
+        org_p_id = np.argmin(np.array([np.linalg.norm(tracked_point - org_point) for org_point in org_points]))
+        tracked_bbox_ids.append(org_p_id)
+        tracked_ids.append(tracked_ids_out[tid])
+    return tracked_ids, tracked_bbox_ids
+
+
+def transform_rot_representation(rot, input_type='mat', out_type='quat', input_is_degrees=True):
+    """
+    make transformation between different representation of 3D rotation
+    input_type / out_type (np.array):
+        'mat': rotation matrix (3*3)
+        'quat': quaternion (4)
+        'vec': rotation vector (3)
+        'euler': Euler degrees (0-360 deg) in x,y,z (3)
+    """
+    if input_type == 'mat':
+        r = R.from_matrix(rot)
+    elif input_type == 'quat':
+        r = R.from_quat(rot)
+    elif input_type == 'vec':
+        r = R.from_rotvec(rot)
+    elif input_type == 'euler':
+        r = R.from_euler('xyz', rot, degrees=input_is_degrees)
+    if out_type == 'mat':
+        out = r.as_matrix()
+    elif out_type == 'quat':
+        out = r.as_quat()
+    elif out_type == 'vec':
+        out = r.as_rotvec()
+    elif out_type == 'euler':
+        out = r.as_euler('xyz', degrees=False)
+    return out
 
 
 def temporal_optimize_result(result, filter_dict):
@@ -4670,13 +5229,287 @@ def temporal_optimize_result(result, filter_dict):
     return result
 
 
-def video2frame(video_path, frame_save_dir=None):
-    cap = cv2.VideoCapture(video_path)
-    for frame_id in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
-        success_flag, frame = cap.read()
-        if success_flag:
-            save_path = os.path.join(frame_save_dir, '{:08d}.jpg'.format(frame_id))
-            cv2.imwrite(save_path, frame)
+class OpenCVCapture:
+
+    def __init__(self, video_file=None, show=False):
+        if video_file is None:
+            self.cap = cv2.VideoCapture(int(args().cam_id))
+        else:
+            self.cap = cv2.VideoCapture(video_file)
+            self.length = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        self.whether_to_show = show
+
+    def read(self, return_rgb=True):
+        flag, frame = self.cap.read()
+        if not flag:
+            return None
+        if self.whether_to_show:
+            cv2.imshow('webcam', frame)
+            cv2.waitKey(1)
+        if return_rgb:
+            frame = np.flip(frame, -1).copy()
+        return frame
+
+
+def video2frame(video_name, frame_save_dir=None):
+    cap = OpenCVCapture(video_name)
+    os.makedirs(frame_save_dir, exist_ok=True)
+    frame_list = []
+    for frame_id in range(int(cap.length)):
+        frame = cap.read(return_rgb=False)
+        save_path = os.path.join(frame_save_dir, '{:06d}.jpg'.format(frame_id))
+        cv2.imwrite(save_path, frame)
+        frame_list.append(save_path)
+    return frame_list
+
+
+def create_mesh(vertices, faces, colors=None, **kwargs):
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    if colors is not None:
+        mesh.vertex_colors = o3d.utility.Vector3dVector(colors)
+    else:
+        mesh.paint_uniform_color([1.0, 0.8, 0.8])
+    mesh.compute_vertex_normals()
+    return mesh
+
+
+def create_mesh_with_uvmap(vertices, faces, texture_path=None, uvs=None, **kwargs):
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    if texture_path is not None and uvs is not None:
+        if o3d_version == 9:
+            mesh.texture = o3d.io.read_image(texture_path)
+            mesh.triangle_uvs = uvs
+        elif o3d_version >= 11:
+            mesh.textures = [o3d.io.read_image(texture_path)]
+            mesh.triangle_uvs = o3d.utility.Vector2dVector(uvs)
+            mesh.triangle_material_ids = o3d.utility.IntVector(np.zeros(len(faces), dtype=np.int32))
+    mesh.compute_vertex_normals()
+    return mesh
+
+
+def get_uvs(uvmap_path):
+    uv_map_vt_ft = np.load(uvmap_path, allow_pickle=True)
+    vt, ft = uv_map_vt_ft['vt'], uv_map_vt_ft['ft']
+    uvs = np.concatenate([vt[ft[:, ind]][:, None] for ind in range(3)], 1).reshape(-1, 2)
+    uvs[:, 1] = 1 - uvs[:, 1]
+    return uvs
+
+
+class Open3d_visualizer(object):
+
+    def __init__(self, multi_mode=False):
+        self.view_mat = axangle2mat([1, 0, 0], np.pi)
+        self.window_size = 1080
+        smpl_param_dict = pickle.load(open(os.path.join(args().smpl_model_path, 'smpl', 'SMPL_NEUTRAL.pkl'), 'rb'), encoding='latin1')
+        self.faces = smpl_param_dict['f']
+        self.verts_mean = smpl_param_dict['v_template']
+        self.viewer = o3d.visualization.Visualizer()
+        self.viewer.create_window(width=self.window_size + 1, height=self.window_size + 1, window_name='ROMP - output')
+        if multi_mode:
+            self.current_mesh_num = 10
+            self.zero_vertices = o3d.utility.Vector3dVector(np.zeros((6890, 3)))
+            self.meshes = []
+            for _ in range(self.current_mesh_num):
+                new_mesh = self.create_single_mesh(self.verts_mean)
+                self.meshes.append(new_mesh)
+            self.set_meshes_zero(list(range(self.current_mesh_num)))
+        else:
+            self.mesh = self.create_single_mesh(self.verts_mean)
+        view_control = self.viewer.get_view_control()
+        cam_params = view_control.convert_to_pinhole_camera_parameters()
+        extrinsic = cam_params.extrinsic.copy()
+        extrinsic[0:3, 3] = 0
+        cam_params.extrinsic = extrinsic
+        self.count = 0
+        view_control.convert_from_pinhole_camera_parameters(cam_params)
+        view_control.set_constant_z_far(1000)
+        render_option = self.viewer.get_render_option()
+        render_option.load_from_json('romp/lib/visualization/vis_cfgs/render_option.json')
+        self.viewer.update_renderer()
+        self.mesh_smoother = OneEuroFilter(4.0, 0.0)
+
+    def set_meshes_zero(self, mesh_ids):
+        for ind in mesh_ids:
+            self.meshes[ind].vertices = self.zero_vertices
+
+    def run(self, verts):
+        verts = self.mesh_smoother.process(verts)
+        verts = np.matmul(self.view_mat, verts.T).T
+        self.mesh.vertices = o3d.utility.Vector3dVector(verts)
+        self.mesh.compute_triangle_normals()
+        self.mesh.compute_vertex_normals()
+        self.viewer.update_geometry(self.mesh)
+        self.viewer.poll_events()
+
+    def run_multiperson(self, verts):
+        None
+        geometries = []
+        for v_id, vert in enumerate(verts):
+            self.meshes[v_id].vertices = o3d.utility.Vector3dVector(vert)
+            self.meshes[v_id].compute_triangle_normals()
+            self.viewer.update_geometry(self.meshes[v_id])
+        self.viewer.poll_events()
+        self.viewer.update_renderer()
+
+    def create_single_mesh(self, vertices):
+        if args().cloth in constants.wardrobe or args().cloth == 'random':
+            uvs = get_uvs()
+            if args().cloth == 'random':
+                cloth_id = random.sample(list(constants.wardrobe.keys()), 1)[0]
+                None
+                texture_file = os.path.join(args().wardrobe, constants.wardrobe[cloth_id])
+            else:
+                texture_file = os.path.join(args().wardrobe, constants.wardrobe[args().cloth])
+            mesh = create_mesh_with_uvmap(vertices, self.faces, texture_path=texture_file, uvs=uvs)
+        elif args().cloth in constants.mesh_color_dict:
+            mesh_color = np.array(constants.mesh_color_dict[args().cloth]) / 255.0
+            mesh = create_mesh(vertices=vertices, faces=self.faces, colors=mesh_color)
+        else:
+            mesh = create_mesh(vertices=vertices, faces=self.faces)
+        self.viewer.add_geometry(mesh)
+        return mesh
+
+
+def myarray2string(array, separator=', ', fmt='%.3f', indent=8):
+    assert len(array.shape) == 2, 'Only support MxN matrix, {}'.format(array.shape)
+    blank = ' ' * indent
+    res = ['[']
+    for i in range(array.shape[0]):
+        res.append(blank + '  ' + '[{}]'.format(separator.join([(fmt % d) for d in array[i]])))
+        if i != array.shape[0] - 1:
+            res[-1] += ', '
+    res.append(blank + ']')
+    return '\r\n'.join(res)
+
+
+def write_common_results(dumpname=None, results=[], keys=[], fmt='%2.3f'):
+    format_out = {'float_kind': lambda x: fmt % x}
+    out_text = []
+    out_text.append('[\n')
+    for idata, data in enumerate(results):
+        out_text.append('    {\n')
+        output = {}
+        output['id'] = data['id']
+        for key in keys:
+            if key not in data.keys():
+                continue
+            output[key] = myarray2string(data[key], separator=', ', fmt=fmt)
+        out_keys = list(output.keys())
+        for key in out_keys:
+            out_text.append('        "{}": {}'.format(key, output[key]))
+            if key != out_keys[-1]:
+                out_text.append(',\n')
+            else:
+                out_text.append('\n')
+        out_text.append('    }')
+        if idata != len(results) - 1:
+            out_text.append(',\n')
+        else:
+            out_text.append('\n')
+    out_text.append(']\n')
+    if dumpname is not None:
+        mkout(dumpname)
+        with open(dumpname, 'w') as f:
+            f.writelines(out_text)
+    else:
+        return ''.join(out_text)
+
+
+def encode_detect(data):
+    res = write_common_results(None, data, ['keypoints3d'])
+    res = res.replace('\r', '').replace('\n', '').replace(' ', '')
+    return res.encode('ascii')
+
+
+def encode_smpl(data):
+    res = write_common_results(None, data, ['poses', 'betas', 'vertices', 'transl'])
+    res = res.replace('\r', '').replace('\n', '').replace(' ', '')
+    return res.encode('ascii')
+
+
+class BaseSocketClient:
+
+    def __init__(self, host='127.0.0.1', port=9999) ->None:
+        if host == 'auto':
+            host = socket.gethostname()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        self.s = s
+
+    def send(self, data):
+        val = encode_detect(data)
+        self.s.send(bytes('{}\n'.format(len(val)), 'ascii'))
+        self.s.sendall(val)
+
+    def send_smpl(self, data):
+        val = encode_smpl(data)
+        self.s.send(bytes('{}\n'.format(len(val)), 'ascii'))
+        self.s.sendall(val)
+
+    def close(self):
+        self.s.close()
+
+
+def log(x):
+    time_now = datetime.now().strftime('%m-%d-%H:%M:%S.%f ')
+    None
+
+
+class Results_sender:
+
+    def __init__(self):
+        self.client = BaseSocketClient()
+        self.queue = Queue()
+        self.t = Thread(target=self.run)
+        self.t.start()
+
+    def run(self):
+        while True:
+            time.sleep(1)
+            while not self.queue.empty():
+                log('update')
+                data = self.queue.get()
+                self.client.send_smpl(data)
+
+    def send_results(self, poses=None, betas=None, verts=None, kp3ds=None, trans=None, ids=[]):
+        results = []
+        None
+        for ind, pid in enumerate(ids):
+            result = {}
+            result['id'] = pid
+            if trans is not None:
+                result['transl'] = trans[[ind]]
+            if poses is not None:
+                result['poses'] = poses[[ind]]
+            if betas is not None:
+                result['betas'] = betas[[ind]]
+            results.append(result)
+        self.queue.put(results)
+
+
+class SocketClient_blender:
+
+    def __init__(self, host='127.0.0.1', port=9999) ->None:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((host, port))
+        s.listen(1)
+        None
+        self.sock, addr = s.accept()
+        self.s = s
+
+    def send(self, data_list):
+        d = self.sock.recv(1024)
+        if not d:
+            self.close()
+        data_send = json.dumps(data_list).encode('utf-8')
+        self.sock.send(data_send)
+
+    def close(self):
+        self.s.close()
 
 
 class Webcam_processor(Predictor):
@@ -4848,25 +5681,3215 @@ class AverageMeter_Dict(object):
         return dict_avg
 
 
-def determ_worst_best(VIS_IDX, top_n=2):
-    sellected_ids, sellected_errors = [], []
-    if VIS_IDX is not None:
-        for ds_type in VIS_IDX:
-            for error, idx in zip(VIS_IDX[ds_type]['error'], VIS_IDX[ds_type]['idx']):
-                if torch.is_tensor(error):
-                    error, idx = error.cpu().numpy(), idx.cpu().numpy()
-                worst_id = np.argsort(error)[-top_n:]
-                sellected_ids.append(idx[worst_id])
-                sellected_errors.append(error[worst_id])
-                best_id = np.argsort(error)[:top_n]
-                sellected_ids.append(idx[best_id])
-                sellected_errors.append(error[best_id])
-    if len(sellected_ids) > 0 and len(sellected_errors) > 0:
-        sellected_ids = np.concatenate(sellected_ids).tolist()
-        sellected_errors = np.concatenate(sellected_errors).tolist()
+class AlternateCorrBlock:
+
+    def __init__(self, fmap1, fmap2, num_levels=4, radius=4):
+        self.num_levels = num_levels
+        self.radius = radius
+        self.pyramid = [(fmap1, fmap2)]
+        for i in range(self.num_levels):
+            fmap1 = F.avg_pool2d(fmap1, 2, stride=2)
+            fmap2 = F.avg_pool2d(fmap2, 2, stride=2)
+            self.pyramid.append((fmap1, fmap2))
+
+    def __call__(self, coords):
+        coords = coords.permute(0, 2, 3, 1)
+        B, H, W, _ = coords.shape
+        dim = self.pyramid[0][0].shape[1]
+        corr_list = []
+        for i in range(self.num_levels):
+            r = self.radius
+            fmap1_i = self.pyramid[0][0].permute(0, 2, 3, 1).contiguous()
+            fmap2_i = self.pyramid[i][1].permute(0, 2, 3, 1).contiguous()
+            coords_i = (coords / 2 ** i).reshape(B, 1, H, W, 2).contiguous()
+            corr, = alt_cuda_corr.forward(fmap1_i, fmap2_i, coords_i, r)
+            corr_list.append(corr.squeeze(1))
+        corr = torch.stack(corr_list, dim=1)
+        corr = corr.reshape(B, -1, H, W)
+        return corr / torch.sqrt(torch.tensor(dim).float())
+
+
+class ResidualBlock(nn.Module):
+
+    def __init__(self, in_planes, planes, norm_fn='group', stride=1):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, stride=stride)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1)
+        self.relu = nn.ReLU(inplace=True)
+        num_groups = planes // 8
+        if norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+            self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+            if not stride == 1:
+                self.norm3 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+        elif norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(planes)
+            self.norm2 = nn.BatchNorm2d(planes)
+            if not stride == 1:
+                self.norm3 = nn.BatchNorm2d(planes)
+        elif norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(planes)
+            self.norm2 = nn.InstanceNorm2d(planes)
+            if not stride == 1:
+                self.norm3 = nn.InstanceNorm2d(planes)
+        elif norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+            self.norm2 = nn.Sequential()
+            if not stride == 1:
+                self.norm3 = nn.Sequential()
+        if stride == 1:
+            self.downsample = None
+        else:
+            self.downsample = nn.Sequential(nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride), self.norm3)
+
+    def forward(self, x):
+        y = x
+        y = self.relu(self.norm1(self.conv1(y)))
+        y = self.relu(self.norm2(self.conv2(y)))
+        if self.downsample is not None:
+            x = self.downsample(x)
+        return self.relu(x + y)
+
+
+class BasicEncoder(nn.Module):
+
+    def __init__(self, output_dim=128, norm_fn='batch', dropout=0.0):
+        super(BasicEncoder, self).__init__()
+        self.norm_fn = norm_fn
+        if self.norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=8, num_channels=64)
+        elif self.norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(64)
+        elif self.norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(64)
+        elif self.norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.in_planes = 64
+        self.layer1 = self._make_layer(64, stride=1)
+        self.layer2 = self._make_layer(96, stride=2)
+        self.layer3 = self._make_layer(128, stride=2)
+        self.conv2 = nn.Conv2d(128, output_dim, kernel_size=1)
+        self.dropout = None
+        if dropout > 0:
+            self.dropout = nn.Dropout2d(p=dropout)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
+                if m.weight is not None:
+                    nn.init.constant_(m.weight, 1)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, dim, stride=1):
+        layer1 = ResidualBlock(self.in_planes, dim, self.norm_fn, stride=stride)
+        layer2 = ResidualBlock(dim, dim, self.norm_fn, stride=1)
+        layers = layer1, layer2
+        self.in_planes = dim
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        is_list = isinstance(x, tuple) or isinstance(x, list)
+        if is_list:
+            batch_dim = x[0].shape[0]
+            x = torch.cat(x, dim=0)
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = self.relu1(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.conv2(x)
+        if self.training and self.dropout is not None:
+            x = self.dropout(x)
+        if is_list:
+            x = torch.split(x, [batch_dim, batch_dim], dim=0)
+        return x
+
+
+class BasicMotionEncoder(nn.Module):
+
+    def __init__(self, corr_levels, corr_radius):
+        super(BasicMotionEncoder, self).__init__()
+        cor_planes = corr_levels * (2 * corr_radius + 1) ** 2
+        self.convc1 = nn.Conv2d(cor_planes, 256, 1, padding=0)
+        self.convc2 = nn.Conv2d(256, 192, 3, padding=1)
+        self.convf1 = nn.Conv2d(2, 128, 7, padding=3)
+        self.convf2 = nn.Conv2d(128, 64, 3, padding=1)
+        self.conv = nn.Conv2d(64 + 192, 128 - 2, 3, padding=1)
+
+    def forward(self, flow, corr):
+        cor = F.relu(self.convc1(corr))
+        cor = F.relu(self.convc2(cor))
+        flo = F.relu(self.convf1(flow))
+        flo = F.relu(self.convf2(flo))
+        cor_flo = torch.cat([cor, flo], dim=1)
+        out = F.relu(self.conv(cor_flo))
+        return torch.cat([out, flow], dim=1)
+
+
+class FlowHead(nn.Module):
+
+    def __init__(self, input_dim=128, hidden_dim=256):
+        super(FlowHead, self).__init__()
+        self.conv1 = nn.Conv2d(input_dim, hidden_dim, 3, padding=1)
+        self.conv2 = nn.Conv2d(hidden_dim, 2, 3, padding=1)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        return self.conv2(self.relu(self.conv1(x)))
+
+
+class SepConvGRU(nn.Module):
+
+    def __init__(self, hidden_dim=128, input_dim=192 + 128):
+        super(SepConvGRU, self).__init__()
+        self.convz1 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (1, 5), padding=(0, 2))
+        self.convr1 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (1, 5), padding=(0, 2))
+        self.convq1 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (1, 5), padding=(0, 2))
+        self.convz2 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (5, 1), padding=(2, 0))
+        self.convr2 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (5, 1), padding=(2, 0))
+        self.convq2 = nn.Conv2d(hidden_dim + input_dim, hidden_dim, (5, 1), padding=(2, 0))
+
+    def forward(self, h, x):
+        hx = torch.cat([h, x], dim=1)
+        z = torch.sigmoid(self.convz1(hx))
+        r = torch.sigmoid(self.convr1(hx))
+        q = torch.tanh(self.convq1(torch.cat([r * h, x], dim=1)))
+        h = (1 - z) * h + z * q
+        hx = torch.cat([h, x], dim=1)
+        z = torch.sigmoid(self.convz2(hx))
+        r = torch.sigmoid(self.convr2(hx))
+        q = torch.tanh(self.convq2(torch.cat([r * h, x], dim=1)))
+        h = (1 - z) * h + z * q
+        return h
+
+
+class BasicUpdateBlock(nn.Module):
+
+    def __init__(self, corr_levels, corr_radius, hidden_dim=128, input_dim=128):
+        super(BasicUpdateBlock, self).__init__()
+        self.encoder = BasicMotionEncoder(corr_levels, corr_radius)
+        self.gru = SepConvGRU(hidden_dim=hidden_dim, input_dim=128 + hidden_dim)
+        self.flow_head = FlowHead(hidden_dim, hidden_dim=256)
+        self.mask = nn.Sequential(nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(256, 64 * 9, 1, padding=0))
+
+    def forward(self, net, inp, corr, flow, upsample=True):
+        motion_features = self.encoder(flow, corr)
+        inp = torch.cat([inp, motion_features], dim=1)
+        net = self.gru(net, inp)
+        delta_flow = self.flow_head(net)
+        mask = 0.25 * self.mask(net)
+        return net, mask, delta_flow
+
+
+def bilinear_sampler(img, coords, mode='bilinear', mask=False):
+    """ Wrapper for grid_sample, uses pixel coordinates """
+    H, W = img.shape[-2:]
+    xgrid, ygrid = coords.split([1, 1], dim=-1)
+    xgrid = 2 * xgrid / (W - 1) - 1
+    ygrid = 2 * ygrid / (H - 1) - 1
+    grid = torch.cat([xgrid, ygrid], dim=-1)
+    img = F.grid_sample(img, grid, align_corners=True)
+    if mask:
+        mask = (xgrid > -1) & (ygrid > -1) & (xgrid < 1) & (ygrid < 1)
+        return img, mask.float()
+    return img
+
+
+class CorrBlock:
+
+    def __init__(self, fmap1, fmap2, num_levels=4, radius=4):
+        self.num_levels = num_levels
+        self.radius = radius
+        self.corr_pyramid = []
+        corr = CorrBlock.corr(fmap1, fmap2)
+        batch, h1, w1, dim, h2, w2 = corr.shape
+        corr = corr.reshape(batch * h1 * w1, dim, h2, w2)
+        self.corr_pyramid.append(corr)
+        for i in range(self.num_levels - 1):
+            corr = F.avg_pool2d(corr, 2, stride=2)
+            self.corr_pyramid.append(corr)
+
+    def __call__(self, coords):
+        r = self.radius
+        coords = coords.permute(0, 2, 3, 1)
+        batch, h1, w1, _ = coords.shape
+        out_pyramid = []
+        for i in range(self.num_levels):
+            corr = self.corr_pyramid[i]
+            dx = torch.linspace(-r, r, 2 * r + 1, device=coords.device)
+            dy = torch.linspace(-r, r, 2 * r + 1, device=coords.device)
+            delta = torch.stack(torch.meshgrid(dy, dx), axis=-1)
+            centroid_lvl = coords.reshape(batch * h1 * w1, 1, 1, 2) / 2 ** i
+            delta_lvl = delta.view(1, 2 * r + 1, 2 * r + 1, 2)
+            coords_lvl = centroid_lvl + delta_lvl
+            corr = bilinear_sampler(corr, coords_lvl)
+            corr = corr.view(batch, h1, w1, -1)
+            out_pyramid.append(corr)
+        out = torch.cat(out_pyramid, dim=-1)
+        return out.permute(0, 3, 1, 2).contiguous().float()
+
+    @staticmethod
+    def corr(fmap1, fmap2):
+        batch, dim, ht, wd = fmap1.shape
+        fmap1 = fmap1.view(batch, dim, ht * wd)
+        fmap2 = fmap2.view(batch, dim, ht * wd)
+        corr = torch.matmul(fmap1.transpose(1, 2), fmap2)
+        corr = corr.view(batch, ht, wd, 1, ht, wd)
+        return corr / torch.sqrt(torch.tensor(dim).float())
+
+
+class BottleneckBlock(nn.Module):
+
+    def __init__(self, in_planes, planes, norm_fn='group', stride=1):
+        super(BottleneckBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_planes, planes // 4, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(planes // 4, planes // 4, kernel_size=3, padding=1, stride=stride)
+        self.conv3 = nn.Conv2d(planes // 4, planes, kernel_size=1, padding=0)
+        self.relu = nn.ReLU(inplace=True)
+        num_groups = planes // 8
+        if norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=planes // 4)
+            self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes // 4)
+            self.norm3 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+            if not stride == 1:
+                self.norm4 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+        elif norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(planes // 4)
+            self.norm2 = nn.BatchNorm2d(planes // 4)
+            self.norm3 = nn.BatchNorm2d(planes)
+            if not stride == 1:
+                self.norm4 = nn.BatchNorm2d(planes)
+        elif norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(planes // 4)
+            self.norm2 = nn.InstanceNorm2d(planes // 4)
+            self.norm3 = nn.InstanceNorm2d(planes)
+            if not stride == 1:
+                self.norm4 = nn.InstanceNorm2d(planes)
+        elif norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+            self.norm2 = nn.Sequential()
+            self.norm3 = nn.Sequential()
+            if not stride == 1:
+                self.norm4 = nn.Sequential()
+        if stride == 1:
+            self.downsample = None
+        else:
+            self.downsample = nn.Sequential(nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride), self.norm4)
+
+    def forward(self, x):
+        y = x
+        y = self.relu(self.norm1(self.conv1(y)))
+        y = self.relu(self.norm2(self.conv2(y)))
+        y = self.relu(self.norm3(self.conv3(y)))
+        if self.downsample is not None:
+            x = self.downsample(x)
+        return self.relu(x + y)
+
+
+class SmallEncoder(nn.Module):
+
+    def __init__(self, output_dim=128, norm_fn='batch', dropout=0.0):
+        super(SmallEncoder, self).__init__()
+        self.norm_fn = norm_fn
+        if self.norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=8, num_channels=32)
+        elif self.norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(32)
+        elif self.norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(32)
+        elif self.norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=7, stride=2, padding=3)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.in_planes = 32
+        self.layer1 = self._make_layer(32, stride=1)
+        self.layer2 = self._make_layer(64, stride=2)
+        self.layer3 = self._make_layer(96, stride=2)
+        self.dropout = None
+        if dropout > 0:
+            self.dropout = nn.Dropout2d(p=dropout)
+        self.conv2 = nn.Conv2d(96, output_dim, kernel_size=1)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
+                if m.weight is not None:
+                    nn.init.constant_(m.weight, 1)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, dim, stride=1):
+        layer1 = BottleneckBlock(self.in_planes, dim, self.norm_fn, stride=stride)
+        layer2 = BottleneckBlock(dim, dim, self.norm_fn, stride=1)
+        layers = layer1, layer2
+        self.in_planes = dim
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        is_list = isinstance(x, tuple) or isinstance(x, list)
+        if is_list:
+            batch_dim = x[0].shape[0]
+            x = torch.cat(x, dim=0)
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = self.relu1(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.conv2(x)
+        if self.training and self.dropout is not None:
+            x = self.dropout(x)
+        if is_list:
+            x = torch.split(x, [batch_dim, batch_dim], dim=0)
+        return x
+
+
+class ConvGRU(nn.Module):
+
+    def __init__(self, hidden_dim=128, input_dim=192 + 128):
+        super(ConvGRU, self).__init__()
+        self.convz = nn.Conv2d(hidden_dim + input_dim, hidden_dim, 3, padding=1)
+        self.convr = nn.Conv2d(hidden_dim + input_dim, hidden_dim, 3, padding=1)
+        self.convq = nn.Conv2d(hidden_dim + input_dim, hidden_dim, 3, padding=1)
+
+    def forward(self, h, x):
+        hx = torch.cat([h, x], dim=1)
+        z = torch.sigmoid(self.convz(hx))
+        r = torch.sigmoid(self.convr(hx))
+        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)))
+        h = (1 - z) * h + z * q
+        return h
+
+
+class SmallMotionEncoder(nn.Module):
+
+    def __init__(self, corr_levels, corr_radius):
+        super(SmallMotionEncoder, self).__init__()
+        cor_planes = corr_levels * (2 * corr_radius + 1) ** 2
+        self.convc1 = nn.Conv2d(cor_planes, 96, 1, padding=0)
+        self.convf1 = nn.Conv2d(2, 64, 7, padding=3)
+        self.convf2 = nn.Conv2d(64, 32, 3, padding=1)
+        self.conv = nn.Conv2d(128, 80, 3, padding=1)
+
+    def forward(self, flow, corr):
+        cor = F.relu(self.convc1(corr))
+        flo = F.relu(self.convf1(flow))
+        flo = F.relu(self.convf2(flo))
+        cor_flo = torch.cat([cor, flo], dim=1)
+        out = F.relu(self.conv(cor_flo))
+        return torch.cat([out, flow], dim=1)
+
+
+class SmallUpdateBlock(nn.Module):
+
+    def __init__(self, corr_levels, corr_radius, hidden_dim=96):
+        super(SmallUpdateBlock, self).__init__()
+        self.encoder = SmallMotionEncoder(corr_levels, corr_radius)
+        self.gru = ConvGRU(hidden_dim=hidden_dim, input_dim=82 + 64)
+        self.flow_head = FlowHead(hidden_dim, hidden_dim=128)
+
+    def forward(self, net, inp, corr, flow):
+        motion_features = self.encoder(flow, corr)
+        inp = torch.cat([inp, motion_features], dim=1)
+        net = self.gru(net, inp)
+        delta_flow = self.flow_head(net)
+        return net, None, delta_flow
+
+
+def coords_grid(batch, ht, wd, device):
+    coords = torch.meshgrid(torch.arange(ht, device=device), torch.arange(wd, device=device))
+    coords = torch.stack(coords[::-1], dim=0).float()
+    return coords[None].repeat(batch, 1, 1, 1)
+
+
+def upflow8(flow, mode='bilinear'):
+    new_size = 8 * flow.shape[2], 8 * flow.shape[3]
+    return 8 * F.interpolate(flow, size=new_size, mode=mode, align_corners=True)
+
+
+class RAFT(nn.Module):
+
+    def __init__(self, small=False):
+        super(RAFT, self).__init__()
+        if small:
+            self.hidden_dim = hdim = 96
+            self.context_dim = cdim = 64
+            self.corr_levels = 4
+            self.corr_radius = 3
+        else:
+            self.hidden_dim = hdim = 128
+            self.context_dim = cdim = 128
+            self.corr_levels = 4
+            self.corr_radius = 4
+        self.alternate_corr = False
+        if small:
+            self.fnet = SmallEncoder(output_dim=128, norm_fn='instance', dropout=0)
+            self.cnet = SmallEncoder(output_dim=hdim + cdim, norm_fn='none', dropout=0)
+            self.update_block = SmallUpdateBlock(self.corr_levels, self.corr_radius, hidden_dim=hdim)
+        else:
+            self.fnet = BasicEncoder(output_dim=256, norm_fn='instance', dropout=0)
+            self.cnet = BasicEncoder(output_dim=hdim + cdim, norm_fn='batch', dropout=0)
+            self.update_block = BasicUpdateBlock(self.corr_levels, self.corr_radius, hidden_dim=hdim)
+
+    def freeze_bn(self):
+        for m in self.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.eval()
+
+    def initialize_flow(self, img):
+        """ Flow is represented as difference between two coordinate grids flow = coords1 - coords0"""
+        N, C, H, W = img.shape
+        coords0 = coords_grid(N, H // 8, W // 8, device=img.device)
+        coords1 = coords_grid(N, H // 8, W // 8, device=img.device)
+        return coords0, coords1
+
+    def upsample_flow(self, flow, mask):
+        """ Upsample flow field [H/8, W/8, 2] -> [H, W, 2] using convex combination """
+        N, _, H, W = flow.shape
+        mask = mask.view(N, 1, 9, 8, 8, H, W)
+        mask = torch.softmax(mask, dim=2)
+        up_flow = F.unfold(8 * flow, [3, 3], padding=1)
+        up_flow = up_flow.view(N, 2, 9, 1, 1, H, W)
+        up_flow = torch.sum(mask * up_flow, dim=2)
+        up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
+        return up_flow.reshape(N, 2, 8 * H, 8 * W)
+
+    def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
+        """ Estimate optical flow between pair of frames """
+        image1 = 2 * (image1 / 255.0) - 1.0
+        image2 = 2 * (image2 / 255.0) - 1.0
+        image1 = image1.contiguous()
+        image2 = image2.contiguous()
+        hdim = self.hidden_dim
+        cdim = self.context_dim
+        with autocast(enabled=True):
+            fmap1, fmap2 = self.fnet([image1, image2])
+        fmap1 = fmap1.float()
+        fmap2 = fmap2.float()
+        if self.alternate_corr:
+            corr_fn = AlternateCorrBlock(fmap1, fmap2, radius=self.corr_radius)
+        else:
+            corr_fn = CorrBlock(fmap1, fmap2, radius=self.corr_radius)
+        with autocast(enabled=True):
+            cnet = self.cnet(image1)
+            net, inp = torch.split(cnet, [hdim, cdim], dim=1)
+            net = torch.tanh(net)
+            inp = torch.relu(inp)
+        coords0, coords1 = self.initialize_flow(image1)
+        if flow_init is not None:
+            coords1 = coords1 + flow_init
+        flow_predictions = []
+        for itr in range(iters):
+            coords1 = coords1.detach()
+            corr = corr_fn(coords1)
+            flow = coords1 - coords0
+            with autocast(enabled=True):
+                net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
+            coords1 = coords1 + delta_flow
+            if up_mask is None:
+                flow_up = upflow8(coords1 - coords0)
+            else:
+                flow_up = self.upsample_flow(coords1 - coords0, up_mask)
+            flow_predictions.append(flow_up)
+        if test_mode:
+            return coords1 - coords0, flow_up
+        return flow_predictions
+
+
+class FlowExtract(nn.Module):
+
+    def __init__(self, device='cuda'):
+        super(FlowExtract, self).__init__()
+        model = torch.nn.DataParallel(RAFT())
+        model.load_state_dict(torch.load(args().raft_model_path))
+        self.device = device
+        self.model = model.module.eval()
+
+    @torch.no_grad()
+    def forward(self, images, seq_inds):
+        input_images = images.permute(0, 3, 1, 2)
+        clip_ids = seq_inds[:, 1]
+        target_img_inds = torch.arange(len(input_images))
+        source_img_inds = target_img_inds - 1
+        source_img_inds[clip_ids == 0] = target_img_inds[clip_ids == 0]
+        num = len(source_img_inds) // 2
+        flows_low1, flows_high1 = self.model(input_images[source_img_inds[:num]].contiguous(), input_images[target_img_inds[:num]].contiguous(), iters=20, upsample=False, test_mode=True)
+        flows_low2, flows_high2 = self.model(input_images[source_img_inds[num:]].contiguous(), input_images[target_img_inds[num:]].contiguous(), iters=20, upsample=False, test_mode=True)
+        flows = F.interpolate(torch.cat([flows_high1, flows_high2], 0), size=(128, 128), mode='bilinear', align_corners=True) / 8
+        return flows
+
+
+def huber_d_kernel(s_sqrt, delta, eps: 'float'=1e-10):
+    if s_sqrt.requires_grad or delta.requires_grad:
+        rho_d_sqrt = (delta.clamp(min=eps).sqrt() * s_sqrt.clamp(min=eps).rsqrt()).clamp(max=1.0)
     else:
-        sellected_ids, sellected_errors = [0], [0]
-    return sellected_ids, sellected_errors
+        rho_d_sqrt = (delta / s_sqrt.clamp_(min=eps)).clamp_(max=1.0).sqrt_()
+    return rho_d_sqrt
+
+
+def huber_kernel(s_sqrt, delta):
+    half_rho = torch.where(s_sqrt <= delta, 0.5 * torch.square(s_sqrt), delta * s_sqrt - 0.5 * torch.square(delta))
+    return half_rho
+
+
+class HuberPnPCost(object):
+
+    def __init__(self, delta=1.0, eps=1e-10):
+        super(HuberPnPCost, self).__init__()
+        self.eps = eps
+        self.delta = delta
+
+    def set_param(self, *args, **kwargs):
+        pass
+
+    def compute(self, x2d_proj, x2d, w2d, jac_cam=None, out_residual=False, out_cost=False, out_jacobian=False):
+        """
+        Args:
+            x2d_proj: Shape (*, n, 2)
+            x2d: Shape (*, n, 2)
+            w2d: Shape (*, n, 2)
+            jac_cam: Shape (*, n, 2, 4 or 6), Jacobian of x2d_proj w.r.t. pose
+            out_residual (Tensor | bool): Shape (*, n*2) or equivalent shape
+            out_cost (Tensor | bool): Shape (*, )
+            out_jacobian (Tensor | bool): Shape (*, n*2, 4 or 6) or equivalent shape
+        """
+        bs = x2d_proj.shape[:-2]
+        pn = x2d_proj.size(-2)
+        delta = self.delta
+        if not isinstance(delta, torch.Tensor):
+            delta = x2d.new_tensor(delta)
+        delta = delta[..., None]
+        residual = (x2d_proj - x2d) * w2d
+        s_sqrt = residual.norm(dim=-1)
+        if out_cost is not False:
+            half_rho = huber_kernel(s_sqrt, delta)
+            if not isinstance(out_cost, torch.Tensor):
+                out_cost = None
+            cost = torch.sum(half_rho, dim=-1, out=out_cost)
+        else:
+            cost = None
+        if out_residual is not False or out_jacobian is not False:
+            rho_d_sqrt = huber_d_kernel(s_sqrt, delta, eps=self.eps)
+            if out_residual is not False:
+                if isinstance(out_residual, torch.Tensor):
+                    out_residual = out_residual.view(*bs, pn, 2)
+                else:
+                    out_residual = None
+                residual = torch.mul(residual, rho_d_sqrt[..., None], out=out_residual).view(*bs, pn * 2)
+            if out_jacobian is not False:
+                assert jac_cam is not None
+                dof = jac_cam.size(-1)
+                if isinstance(out_jacobian, torch.Tensor):
+                    out_jacobian = out_jacobian.view(*bs, pn, 2, dof)
+                else:
+                    out_jacobian = None
+                jacobian = torch.mul(jac_cam, (w2d * rho_d_sqrt[..., None])[..., None], out=out_jacobian).view(*bs, pn * 2, dof)
+        if out_residual is False:
+            residual = None
+        if out_jacobian is False:
+            jacobian = None
+        return residual, cost, jacobian
+
+    def reshape_(self, *batch_shape):
+        if isinstance(self.delta, torch.Tensor):
+            self.delta = self.delta.reshape(*batch_shape)
+        return self
+
+    def expand_(self, *batch_shape):
+        if isinstance(self.delta, torch.Tensor):
+            self.delta = self.delta.expand(*batch_shape)
+        return self
+
+    def repeat_(self, *batch_repeat):
+        if isinstance(self.delta, torch.Tensor):
+            self.delta = self.delta.repeat(*batch_repeat)
+        return self
+
+    def shallow_copy(self):
+        return HuberPnPCost(delta=self.delta, eps=self.eps)
+
+
+class AdaptiveHuberPnPCost(HuberPnPCost):
+
+    def __init__(self, delta=None, relative_delta=0.5, eps=1e-10):
+        super(HuberPnPCost, self).__init__()
+        self.delta = delta
+        self.relative_delta = relative_delta
+        self.eps = eps
+
+    def set_param(self, x2d, w2d):
+        x2d_std = torch.var(x2d, dim=-2).sum(dim=-1).sqrt()
+        self.delta = w2d.mean(dim=(-2, -1)) * x2d_std * self.relative_delta
+
+    def shallow_copy(self):
+        return AdaptiveHuberPnPCost(delta=self.delta, relative_delta=self.relative_delta, eps=self.eps)
+
+
+def evaluate_pnp(x3d, x2d, w2d, pose, camera, cost_fun, out_jacobian=False, out_residual=False, out_cost=False, **kwargs):
+    """
+    Args:
+        x3d (torch.Tensor): Shape (*, n, 3)
+        x2d (torch.Tensor): Shape (*, n, 2)
+        w2d (torch.Tensor): Shape (*, n, 2)
+        pose (torch.Tensor): Shape (*, 4 or 7)
+        camera: Camera object of batch size (*, )
+        cost_fun: PnPCost object of batch size (*, )
+        out_jacobian (torch.Tensor | bool): When a tensor is passed, treated as the output tensor;
+            when True, returns the Jacobian; when False, skip the computation and returns None
+        out_residual (torch.Tensor | bool): When a tensor is passed, treated as the output tensor;
+            when True, returns the residual; when False, skip the computation and returns None
+        out_cost (torch.Tensor | bool): When a tensor is passed, treated as the output tensor;
+            when True, returns the cost; when False, skip the computation and returns None
+
+    Returns:
+        Tuple:
+            residual (torch.Tensor | None): Shape (*, n*2)
+            cost (torch.Tensor | None): Shape (*, )
+            jacobian (torch.Tensor | None): Shape (*, n*2, 4 or 6)
+    """
+    x2d_proj, jac_cam = camera.project(x3d, pose, out_jac=out_jacobian.view(x2d.shape[:-1] + (2, out_jacobian.size(-1))) if isinstance(out_jacobian, torch.Tensor) else out_jacobian, **kwargs)
+    residual, cost, jacobian = cost_fun.compute(x2d_proj, x2d, w2d, jac_cam=jac_cam, out_residual=out_residual, out_cost=out_cost, out_jacobian=out_jacobian)
+    return residual, cost, jacobian
+
+
+def skew(x):
+    """
+    Args:
+        x (torch.Tensor): shape (*, 3)
+
+    Returns:
+        torch.Tensor: (*, 3, 3), skew symmetric matrices
+    """
+    mat = x.new_zeros(x.shape[:-1] + (3, 3))
+    mat[..., [2, 0, 1], [1, 2, 0]] = x
+    mat[..., [1, 2, 0], [2, 0, 1]] = -x
+    return mat
+
+
+def quaternion_to_rot_mat(quaternions):
+    """
+    Args:
+        quaternions (torch.Tensor): (*, 4)
+
+    Returns:
+        torch.Tensor: (*, 3, 3)
+    """
+    if quaternions.requires_grad:
+        w, i, j, k = torch.unbind(quaternions, -1)
+        rot_mats = torch.stack((1 - 2 * (j * j + k * k), 2 * (i * j - k * w), 2 * (i * k + j * w), 2 * (i * j + k * w), 1 - 2 * (i * i + k * k), 2 * (j * k - i * w), 2 * (i * k - j * w), 2 * (j * k + i * w), 1 - 2 * (i * i + j * j)), dim=-1).reshape(quaternions.shape[:-1] + (3, 3))
+    else:
+        w, v = quaternions.split([1, 3], dim=-1)
+        rot_mats = 2 * (w.unsqueeze(-1) * skew(v) + v.unsqueeze(-1) * v.unsqueeze(-2))
+        diag = torch.diagonal(rot_mats, dim1=-2, dim2=-1)
+        diag += w * w - (v.unsqueeze(-2) @ v.unsqueeze(-1)).squeeze(-1)
+    return rot_mats
+
+
+def yaw_to_rot_mat(yaw):
+    """
+    Args:
+        yaw (torch.Tensor): (*)
+
+    Returns:
+        torch.Tensor: (*, 3, 3)
+    """
+    sin_yaw = torch.sin(yaw)
+    cos_yaw = torch.cos(yaw)
+    rot_mats = yaw.new_zeros(yaw.shape + (3, 3))
+    rot_mats[..., 0, 0] = cos_yaw
+    rot_mats[..., 2, 2] = cos_yaw
+    rot_mats[..., 0, 2] = sin_yaw
+    rot_mats[..., 2, 0] = -sin_yaw
+    rot_mats[..., 1, 1] = 1
+    return rot_mats
+
+
+def pnp_denormalize(offset, pose_norm):
+    pose = torch.empty_like(pose_norm)
+    pose[..., 3:] = pose_norm[..., 3:]
+    pose[..., :3] = pose_norm[..., :3] - ((yaw_to_rot_mat(pose_norm[..., 3]) if pose_norm.size(-1) == 4 else quaternion_to_rot_mat(pose_norm[..., 3:])) @ offset.unsqueeze(-1)).squeeze(-1)
+    return pose
+
+
+def pnp_normalize(x3d, pose=None, detach_transformation=True):
+    """
+    Args:
+        x3d (torch.Tensor): Shape (*, n, 3)
+        pose (torch.Tensor | None): Shape (*, 4)
+        detach_transformation (bool)
+
+    Returns:
+        Tuple[torch.Tensor]:
+            offset: Shape (*, 1, 3)
+            x3d_norm: Shape (*, n, 3), normalized x3d
+            pose_norm: Shape (*, ), transformed pose
+    """
+    offset = torch.mean(x3d.detach() if detach_transformation else x3d, dim=-2)
+    x3d_norm = x3d - offset.unsqueeze(-2)
+    if pose is not None:
+        pose_norm = torch.empty_like(pose)
+        pose_norm[..., 3:] = pose[..., 3:]
+        pose_norm[..., :3] = pose[..., :3] + ((yaw_to_rot_mat(pose[..., 3]) if pose.size(-1) == 4 else quaternion_to_rot_mat(pose[..., 3:])) @ offset.unsqueeze(-1)).squeeze(-1)
+    else:
+        pose_norm = None
+    return offset, x3d_norm, pose_norm
+
+
+class EProPnPBase(torch.nn.Module, metaclass=ABCMeta):
+    """
+    End-to-End Probabilistic Perspective-n-Points.
+
+    Args:
+        mc_samples (int): Number of total Monte Carlo samples
+        num_iter (int): Number of AMIS iterations
+        normalize (bool)
+        eps (float)
+        solver (dict): PnP solver
+    """
+
+    def __init__(self, mc_samples=512, num_iter=4, normalize=False, eps=1e-05, solver=None):
+        super(EProPnPBase, self).__init__()
+        assert num_iter > 0
+        assert mc_samples % num_iter == 0
+        self.mc_samples = mc_samples
+        self.num_iter = num_iter
+        self.iter_samples = self.mc_samples // self.num_iter
+        self.eps = eps
+        self.normalize = normalize
+        self.solver = solver
+
+    @abstractmethod
+    def allocate_buffer(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def initial_fit(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def gen_new_distr(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def gen_old_distr(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def estimate_params(self, *args, **kwargs):
+        pass
+
+    def forward(self, *args, **kwargs):
+        return self.solver(*args, **kwargs)
+
+    def monte_carlo_forward(self, x3d, x2d, w2d, camera, cost_fun, pose_init=None, force_init_solve=True, **kwargs):
+        """
+        Monte Carlo PnP forward. Returns weighted pose samples drawn from the probability
+        distribution of pose defined by the correspondences {x_{3D}, x_{2D}, w_{2D}}.
+
+        Args:
+            x3d (Tensor): Shape (num_obj, num_points, 3)
+            x2d (Tensor): Shape (num_obj, num_points, 2)
+            w2d (Tensor): Shape (num_obj, num_points, 2)
+            camera: Camera object of batch size (num_obj, )
+            cost_fun: PnPCost object of batch size (num_obj, )
+            pose_init (Tensor | None): Shape (num_obj, 4 or 7), optional. The target pose
+                (y_{gt}) can be passed for training with Monte Carlo pose loss
+            force_init_solve (bool): Whether to force using the initialization solver when
+                pose_init is not None
+
+        Returns:
+            Tuple:
+                pose_opt (Tensor): Shape (num_obj, 4 or 7), PnP solution y*
+                cost (Tensor | None): Shape (num_obj, ), is not None when with_cost=True
+                pose_opt_plus (Tensor | None): Shape (num_obj, 4 or 7), y* + Δy, used in derivative
+                    regularization loss, is not None when with_pose_opt_plus=True, can be backpropagated
+                pose_samples (Tensor): Shape (mc_samples, num_obj, 4 or 7)
+                pose_sample_logweights (Tensor): Shape (mc_samples, num_obj), can be backpropagated
+                cost_init (Tensor | None): Shape (num_obj, ), is None when pose_init is None, can be
+                    backpropagated
+        """
+        if self.normalize:
+            transform, x3d, pose_init = pnp_normalize(x3d, pose_init, detach_transformation=True)
+        assert x3d.dim() == x2d.dim() == w2d.dim() == 3
+        num_obj = x3d.size(0)
+        evaluate_fun = partial(evaluate_pnp, x3d=x3d, x2d=x2d, w2d=w2d, camera=camera, cost_fun=cost_fun, out_cost=True)
+        cost_init = evaluate_fun(pose=pose_init)[1] if pose_init is not None else None
+        pose_opt, pose_cov, cost, pose_opt_plus = self.solver(x3d, x2d, w2d, camera, cost_fun, pose_init=pose_init, cost_init=cost_init, with_pose_cov=True, force_init_solve=force_init_solve, normalize_override=False, **kwargs)
+        if num_obj > 0:
+            pose_samples = x3d.new_empty((self.num_iter, self.iter_samples) + pose_opt.size())
+            logprobs = x3d.new_empty((self.num_iter, self.num_iter, self.iter_samples, num_obj))
+            cost_pred = x3d.new_empty((self.num_iter, self.iter_samples, num_obj))
+            distr_params = self.allocate_buffer(num_obj, dtype=x3d.dtype, device=x3d.device)
+            with torch.no_grad():
+                self.initial_fit(pose_opt, pose_cov, camera, *distr_params)
+            for i in range(self.num_iter):
+                new_trans_distr, new_rot_distr = self.gen_new_distr(i, *distr_params)
+                pose_samples[i, :, :, :3] = new_trans_distr.sample((self.iter_samples,))
+                pose_samples[i, :, :, 3:] = new_rot_distr.sample((self.iter_samples,))
+                cost_pred[i] = evaluate_fun(pose=pose_samples[i])[1]
+                logprobs[i, :i + 1] = new_trans_distr.log_prob(pose_samples[:i + 1, :, :, :3]) + new_rot_distr.log_prob(pose_samples[:i + 1, :, :, 3:]).flatten(2)
+                if i > 0:
+                    old_trans_distr, old_rot_distr = self.gen_old_distr(i, *distr_params)
+                    logprobs[:i, i] = old_trans_distr.log_prob(pose_samples[i, :, :, :3]) + old_rot_distr.log_prob(pose_samples[i, :, :, 3:]).flatten(2)
+                mix_logprobs = torch.logsumexp(logprobs[:i + 1, :i + 1], dim=0) - math.log(i + 1)
+                pose_sample_logweights = -cost_pred[:i + 1] - mix_logprobs
+                if i == self.num_iter - 1:
+                    break
+                with torch.no_grad():
+                    self.estimate_params(i, pose_samples[:i + 1].reshape(((i + 1) * self.iter_samples,) + pose_opt.size()), pose_sample_logweights.reshape((i + 1) * self.iter_samples, num_obj), *distr_params)
+            pose_samples = pose_samples.reshape((self.mc_samples,) + pose_opt.size())
+            pose_sample_logweights = pose_sample_logweights.reshape(self.mc_samples, num_obj)
+        else:
+            pose_samples = x2d.new_zeros((self.mc_samples,) + pose_opt.size())
+            pose_sample_logweights = x3d.reshape(self.mc_samples, 0) + x2d.reshape(self.mc_samples, 0) + w2d.reshape(self.mc_samples, 0)
+        if self.normalize:
+            pose_opt = pnp_denormalize(transform, pose_opt)
+            pose_samples = pnp_denormalize(transform, pose_samples)
+            if pose_opt_plus is not None:
+                pose_opt_plus = pnp_denormalize(transform, pose_opt_plus)
+        return pose_opt, cost, pose_opt_plus, pose_samples, pose_sample_logweights, cost_init
+
+
+def cholesky_wrapper(mat, default_diag=None, force_cpu=True):
+    device = mat.device
+    if force_cpu:
+        mat = mat.cpu()
+    try:
+        tril = torch.cholesky(mat, upper=False)
+    except RuntimeError:
+        n_dims = mat.size(-1)
+        tril = []
+        default_tril_single = torch.diag(mat.new_tensor(default_diag)) if default_diag is not None else torch.eye(n_dims, dtype=mat.dtype, device=mat.device)
+        for cov in mat.reshape(-1, n_dims, n_dims):
+            try:
+                tril.append(torch.cholesky(cov, upper=False))
+            except RuntimeError:
+                tril.append(default_tril_single)
+        tril = torch.stack(tril, dim=0).reshape(mat.shape)
+    return tril
+
+
+class EProPnP6DoF(EProPnPBase):
+    """
+    End-to-End Probabilistic Perspective-n-Points for 6DoF pose estimation.
+    The pose is parameterized as [x, y, z, w, i, j, k], where [w, i, j, k]
+    is the unit quaternion.
+    Adopted proposal distributions:
+        position: multivariate t-distribution, degrees of freedom = 3
+        orientation: angular central Gaussian distribution
+    """
+
+    def __init__(self, *args, acg_mle_iter=3, acg_dispersion=0.001, **kwargs):
+        super(EProPnP6DoF, self).__init__(*args, **kwargs)
+        self.acg_mle_iter = acg_mle_iter
+        self.acg_dispersion = acg_dispersion
+
+    def allocate_buffer(self, num_obj, dtype=torch.float32, device=None):
+        trans_mode = torch.empty((self.num_iter, num_obj, 3), dtype=dtype, device=device)
+        trans_cov_tril = torch.empty((self.num_iter, num_obj, 3, 3), dtype=dtype, device=device)
+        rot_cov_tril = torch.empty((self.num_iter, num_obj, 4, 4), dtype=dtype, device=device)
+        return trans_mode, trans_cov_tril, rot_cov_tril
+
+    def initial_fit(self, pose_opt, pose_cov, camera, trans_mode, trans_cov_tril, rot_cov_tril):
+        trans_mode[0], rot_mode = pose_opt.split([3, 4], dim=-1)
+        trans_cov_tril[0] = cholesky_wrapper(pose_cov[:, :3, :3])
+        eye_4 = torch.eye(4, dtype=pose_opt.dtype, device=pose_opt.device)
+        transform_mat = camera.get_quaternion_transfrom_mat(rot_mode)
+        rot_cov = (transform_mat @ pose_cov[:, 3:, 3:].inverse() @ transform_mat.transpose(-1, -2) + eye_4).inverse()
+        rot_cov.div_(rot_cov.diagonal(offset=0, dim1=-1, dim2=-2).sum(-1)[..., None, None])
+        rot_cov_tril[0] = cholesky_wrapper(rot_cov + rot_cov.det()[:, None, None] ** 0.25 * (self.acg_dispersion * eye_4))
+
+    @staticmethod
+    def gen_new_distr(iter_id, trans_mode, trans_cov_tril, rot_cov_tril):
+        new_trans_distr = MultivariateStudentT(3, trans_mode[iter_id], trans_cov_tril[iter_id])
+        new_rot_distr = AngularCentralGaussian(rot_cov_tril[iter_id])
+        return new_trans_distr, new_rot_distr
+
+    @staticmethod
+    def gen_old_distr(iter_id, trans_mode, trans_cov_tril, rot_cov_tril):
+        mix_trans_distr = MultivariateStudentT(3, trans_mode[:iter_id, None], trans_cov_tril[:iter_id, None])
+        mix_rot_distr = AngularCentralGaussian(rot_cov_tril[:iter_id, None])
+        return mix_trans_distr, mix_rot_distr
+
+    def estimate_params(self, iter_id, pose_samples, pose_sample_logweights, trans_mode, trans_cov_tril, rot_cov_tril):
+        sample_weights_norm = torch.softmax(pose_sample_logweights, dim=0)
+        trans_mode[iter_id + 1] = (sample_weights_norm[..., None] * pose_samples[..., :3]).sum(dim=0)
+        trans_dev = pose_samples[..., :3] - trans_mode[iter_id + 1]
+        trans_cov = (sample_weights_norm[..., None, None] * trans_dev.unsqueeze(-1) * trans_dev.unsqueeze(-2)).sum(dim=0)
+        trans_cov_tril[iter_id + 1] = cholesky_wrapper(trans_cov)
+        eye_4 = torch.eye(4, dtype=pose_samples.dtype, device=pose_samples.device)
+        rot = pose_samples[..., 3:]
+        r_r_t = rot[:, :, :, None] * rot[:, :, None, :]
+        rot_cov = eye_4.expand(pose_samples.size(1), 4, 4).clone()
+        for _ in range(self.acg_mle_iter):
+            M = rot[:, :, None, :] @ rot_cov.inverse() @ rot[:, :, :, None]
+            invM_weighted = sample_weights_norm[..., None, None] / M.clamp(min=self.eps)
+            invM_weighted_norm = invM_weighted / invM_weighted.sum(dim=0)
+            rot_cov = (invM_weighted_norm * r_r_t).sum(dim=0) + eye_4 * self.eps
+        rot_cov_tril[iter_id + 1] = cholesky_wrapper(rot_cov + rot_cov.det()[:, None, None] ** 0.25 * (self.acg_dispersion * eye_4))
+
+
+def solve_wrapper(b, A):
+    if A.numel() > 0:
+        return torch.linalg.solve(A, b)
+    else:
+        return b + A.reshape_as(b)
+
+
+class LMSolver(nn.Module):
+    """
+    Levenberg-Marquardt solver, with fixed number of iterations.
+
+    - For 4DoF case, the pose is parameterized as [x, y, z, yaw], where yaw is the
+    rotation around the Y-axis in radians.
+    - For 6DoF case, the pose is parameterized as [x, y, z, w, i, j, k], where
+    [w, i, j, k] is the unit quaternion.
+    """
+
+    def __init__(self, dof=4, num_iter=10, min_lm_diagonal=1e-06, max_lm_diagonal=1e+32, min_relative_decrease=0.001, initial_trust_region_radius=30.0, max_trust_region_radius=1e+16, eps=1e-05, normalize=False, init_solver=None):
+        super(LMSolver, self).__init__()
+        self.dof = dof
+        self.num_iter = num_iter
+        self.min_lm_diagonal = min_lm_diagonal
+        self.max_lm_diagonal = max_lm_diagonal
+        self.min_relative_decrease = min_relative_decrease
+        self.initial_trust_region_radius = initial_trust_region_radius
+        self.max_trust_region_radius = max_trust_region_radius
+        self.eps = eps
+        self.normalize = normalize
+        self.init_solver = init_solver
+
+    def forward(self, x3d, x2d, w2d, camera, cost_fun, with_pose_opt_plus=False, pose_init=None, normalize_override=None, **kwargs):
+        if isinstance(normalize_override, bool):
+            normalize = normalize_override
+        else:
+            normalize = self.normalize
+        if normalize:
+            transform, x3d, pose_init = pnp_normalize(x3d, pose_init, detach_transformation=True)
+        pose_opt, pose_cov, cost = self.solve(x3d, x2d, w2d, camera, cost_fun, pose_init=pose_init, **kwargs)
+        if with_pose_opt_plus:
+            step = self.gn_step(x3d, x2d, w2d, pose_opt, camera, cost_fun)
+            pose_opt_plus = self.pose_add(pose_opt, step, camera)
+        else:
+            pose_opt_plus = None
+        if normalize:
+            pose_opt = pnp_denormalize(transform, pose_opt)
+            if pose_cov is not None:
+                raise NotImplementedError('Normalized covariance unsupported')
+            if pose_opt_plus is not None:
+                pose_opt_plus = pnp_denormalize(transform, pose_opt_plus)
+        return pose_opt, pose_cov, cost, pose_opt_plus
+
+    def solve(self, x3d, x2d, w2d, camera, cost_fun, pose_init=None, cost_init=None, with_pose_cov=False, with_cost=False, force_init_solve=False, fast_mode=False):
+        """
+        Args:
+            x3d (Tensor): Shape (num_obj, num_pts, 3)
+            x2d (Tensor): Shape (num_obj, num_pts, 2)
+            w2d (Tensor): Shape (num_obj, num_pts, 2)
+            camera: Camera object of batch size (num_obj, )
+            cost_fun: PnPCost object of batch size (num_obj, )
+            pose_init (None | Tensor): Shape (num_obj, 4 or 7) in [x, y, z, yaw], optional
+            cost_init (None | Tensor): Shape (num_obj, ), PnP cost of pose_init, optional
+            with_pose_cov (bool): Whether to compute the covariance of pose_opt
+            with_cost (bool): Whether to compute the cost of pose_opt
+            force_init_solve (bool): Whether to force using the initialization solver when
+                pose_init is not None
+            fast_mode (bool): Fall back to Gauss-Newton for fast inference
+
+        Returns:
+            tuple:
+                pose_opt (Tensor): Shape (num_obj, 4 or 7)
+                pose_cov (Tensor | None): Shape (num_obj, 4, 4) or (num_obj, 6, 6), covariance
+                    of local pose parameterization
+                cost (Tensor | None): Shape (num_obj, )
+        """
+        with torch.no_grad():
+            num_obj, num_pts, _ = x2d.size()
+            tensor_kwargs = dict(dtype=x2d.dtype, device=x2d.device)
+            if num_obj > 0:
+                evaluate_fun = partial(evaluate_pnp, x3d=x3d, x2d=x2d, w2d=w2d, camera=camera, cost_fun=cost_fun, clip_jac=not fast_mode)
+                if pose_init is None or force_init_solve:
+                    assert self.init_solver is not None
+                    if pose_init is None:
+                        pose_init_solve, _, _ = self.init_solver.solve(x3d, x2d, w2d, camera, cost_fun, fast_mode=fast_mode)
+                        pose_opt = pose_init_solve
+                    else:
+                        if cost_init is None:
+                            cost_init = evaluate_fun(pose=pose_init, out_cost=True)[1]
+                        pose_init_solve, _, cost_init_solve = self.init_solver.solve(x3d, x2d, w2d, camera, cost_fun, with_cost=True, fast_mode=fast_mode)
+                        use_init = cost_init < cost_init_solve
+                        pose_init_solve[use_init] = pose_init[use_init]
+                        pose_opt = pose_init_solve
+                else:
+                    pose_opt = pose_init.clone()
+                jac = torch.empty((num_obj, num_pts * 2, self.dof), **tensor_kwargs)
+                residual = torch.empty((num_obj, num_pts * 2), **tensor_kwargs)
+                cost = torch.empty((num_obj,), **tensor_kwargs)
+                if fast_mode:
+                    for i in range(self.num_iter):
+                        evaluate_fun(pose=pose_opt, out_jacobian=jac, out_residual=residual, out_cost=cost)
+                        jac_t = jac.transpose(-1, -2)
+                        jtj = jac_t @ jac
+                        diagonal = torch.diagonal(jtj, dim1=-2, dim2=-1)
+                        diagonal += self.eps
+                        gradient = jac_t @ residual.unsqueeze(-1)
+                        if self.dof == 4:
+                            pose_opt -= solve_wrapper(gradient, jtj).squeeze(-1)
+                        else:
+                            step = -solve_wrapper(gradient, jtj).squeeze(-1)
+                            pose_opt[..., :3] += step[..., :3]
+                            pose_opt[..., 3:] = F.normalize(pose_opt[..., 3:] + (camera.get_quaternion_transfrom_mat(pose_opt[..., 3:]) @ step[..., 3:, None]).squeeze(-1), dim=-1)
+                else:
+                    evaluate_fun(pose=pose_opt, out_jacobian=jac, out_residual=residual, out_cost=cost)
+                    jac_new = torch.empty_like(jac)
+                    residual_new = torch.empty_like(residual)
+                    cost_new = torch.empty_like(cost)
+                    radius = x2d.new_full((num_obj,), self.initial_trust_region_radius)
+                    decrease_factor = x2d.new_full((num_obj,), 2.0)
+                    step_is_successful = x2d.new_zeros((num_obj,), dtype=torch.bool)
+                    i = 0
+                    while i < self.num_iter:
+                        self._lm_iter(pose_opt, jac, residual, cost, jac_new, residual_new, cost_new, step_is_successful, radius, decrease_factor, evaluate_fun, camera)
+                        i += 1
+                    if with_pose_cov:
+                        jac[step_is_successful] = jac_new[step_is_successful]
+                        jtj = jac.transpose(-1, -2) @ jac
+                        diagonal = torch.diagonal(jtj, dim1=-2, dim2=-1)
+                        diagonal += self.eps
+                    if with_cost:
+                        cost[step_is_successful] = cost_new[step_is_successful]
+                if with_pose_cov:
+                    pose_cov = torch.inverse(jtj)
+                else:
+                    pose_cov = None
+                if not with_cost:
+                    cost = None
+            else:
+                pose_opt = torch.empty((0, 4 if self.dof == 4 else 7), **tensor_kwargs)
+                pose_cov = torch.empty((0, self.dof, self.dof), **tensor_kwargs) if with_pose_cov else None
+                cost = torch.empty((0,), **tensor_kwargs) if with_cost else None
+            return pose_opt, pose_cov, cost
+
+    def _lm_iter(self, pose_opt, jac, residual, cost, jac_new, residual_new, cost_new, step_is_successful, radius, decrease_factor, evaluate_fun, camera):
+        jac[step_is_successful] = jac_new[step_is_successful]
+        residual[step_is_successful] = residual_new[step_is_successful]
+        cost[step_is_successful] = cost_new[step_is_successful]
+        residual_ = residual.unsqueeze(-1)
+        jac_t = jac.transpose(-1, -2)
+        jtj = jac_t @ jac
+        jtj_lm = jtj.clone()
+        diagonal = torch.diagonal(jtj_lm, dim1=-2, dim2=-1)
+        diagonal += diagonal.clamp(min=self.min_lm_diagonal, max=self.max_lm_diagonal) / radius[:, None] + self.eps
+        gradient = jac_t @ residual_
+        step_ = -solve_wrapper(gradient, jtj_lm)
+        pose_new = self.pose_add(pose_opt, step_.squeeze(-1), camera)
+        evaluate_fun(pose=pose_new, out_jacobian=jac_new, out_residual=residual_new, out_cost=cost_new)
+        model_cost_change = -(step_.transpose(-1, -2) @ (jtj @ step_ / 2 + gradient)).flatten()
+        relative_decrease = (cost - cost_new) / model_cost_change
+        torch.bitwise_and(relative_decrease >= self.min_relative_decrease, model_cost_change > 0.0, out=step_is_successful)
+        pose_opt[step_is_successful] = pose_new[step_is_successful]
+        radius[step_is_successful] /= (1.0 - (2.0 * relative_decrease[step_is_successful] - 1.0) ** 3).clamp(min=1.0 / 3.0)
+        radius.clamp_(max=self.max_trust_region_radius, min=self.eps)
+        decrease_factor.masked_fill_(step_is_successful, 2.0)
+        radius[~step_is_successful] /= decrease_factor[~step_is_successful]
+        decrease_factor[~step_is_successful] *= 2.0
+        return
+
+    def gn_step(self, x3d, x2d, w2d, pose, camera, cost_fun):
+        residual, _, jac = evaluate_pnp(x3d, x2d, w2d, pose, camera, cost_fun, out_jacobian=True, out_residual=True)
+        jac_t = jac.transpose(-1, -2)
+        jtj = jac_t @ jac
+        jtj = jtj + torch.eye(self.dof, device=jtj.device, dtype=jtj.dtype) * self.eps
+        gradient = jac_t @ residual.unsqueeze(-1)
+        step = -solve_wrapper(gradient, jtj).squeeze(-1)
+        return step
+
+    def pose_add(self, pose_opt, step, camera):
+        if self.dof == 4:
+            pose_new = pose_opt + step
+        else:
+            pose_new = torch.cat((pose_opt[..., :3] + step[..., :3], F.normalize(pose_opt[..., 3:] + (camera.get_quaternion_transfrom_mat(pose_opt[..., 3:]) @ step[..., 3:, None]).squeeze(-1), dim=-1)), dim=-1)
+        return pose_new
+
+
+def project_a(x3d, pose, cam_mats, z_min: 'float'):
+    if pose.size(-1) == 4:
+        x3d_rot = x3d @ yaw_to_rot_mat(pose[..., -1]).transpose(-1, -2)
+    else:
+        x3d_rot = x3d @ quaternion_to_rot_mat(pose[..., 3:]).transpose(-1, -2)
+    x2dh_proj = (x3d_rot + pose[..., None, :3]) @ cam_mats.transpose(-1, -2)
+    z = x2dh_proj[..., 2:3].clamp(min=z_min)
+    x2d_proj = x2dh_proj[..., :2] / z
+    return x2d_proj, x3d_rot, z
+
+
+def project_b(x3d, pose, cam_mats, z_min: 'float'):
+    if pose.size(-1) == 4:
+        x2dh_proj = x3d @ (cam_mats @ yaw_to_rot_mat(pose[..., -1])).transpose(-1, -2) + (cam_mats @ pose[..., :3, None]).squeeze(-1).unsqueeze(-2)
+    else:
+        x2dh_proj = x3d @ (cam_mats @ quaternion_to_rot_mat(pose[..., 3:])).transpose(-1, -2) + (cam_mats @ pose[..., :3, None]).squeeze(-1).unsqueeze(-2)
+    z = x2dh_proj[..., 2:3].clamp(min=z_min)
+    x2d_proj = x2dh_proj[..., :2] / z
+    return x2d_proj, z
+
+
+class PerspectiveCamera(object):
+
+    def __init__(self, cam_mats=None, z_min=0.1, img_shape=None, allowed_border=200, lb=None, ub=None):
+        """
+        Args:
+            cam_mats (Tensor): Shape (*, 3, 3)
+            img_shape (Tensor | None): Shape (*, 2) in [h, w]
+            lb (Tensor | None): Shape (*, 2), lower bound in [x, y]
+            ub (Tensor | None): Shape (*, 2), upper bound in [x, y]
+        """
+        super(PerspectiveCamera, self).__init__()
+        self.z_min = z_min
+        self.allowed_border = allowed_border
+        self.set_param(cam_mats, img_shape, lb, ub)
+
+    def set_param(self, cam_mats, img_shape=None, lb=None, ub=None):
+        self.cam_mats = cam_mats
+        if img_shape is not None:
+            self.lb = -0.5 - self.allowed_border
+            self.ub = img_shape[..., [1, 0]] + (-0.5 + self.allowed_border)
+        else:
+            self.lb = lb
+            self.ub = ub
+
+    def project(self, x3d, pose, out_jac=False, clip_jac=True):
+        """
+        Args:
+            x3d (Tensor): Shape (*, n, 3)
+            pose (Tensor): Shape (*, 4 or 7)
+            out_jac (bool | Tensor): Shape (*, n, 2, 4 or 6)
+
+        Returns:
+            Tuple[Tensor]:
+                x2d_proj: Shape (*, n, 2)
+                jac: Shape (*, n, 2, 4 or 6), Jacobian w.r.t. the local pose in tangent space
+        """
+        if out_jac is not False:
+            x2d_proj, x3d_rot, zcam = project_a(x3d, pose, self.cam_mats, self.z_min)
+        else:
+            x2d_proj, zcam = project_b(x3d, pose, self.cam_mats, self.z_min)
+        lb, ub = self.lb, self.ub
+        if lb is not None and ub is not None:
+            requires_grad = x2d_proj.requires_grad
+            if isinstance(lb, torch.Tensor):
+                lb = lb.unsqueeze(-2)
+                x2d_proj = torch.max(lb, x2d_proj, out=x2d_proj if not requires_grad else None)
+            else:
+                x2d_proj.clamp_(min=lb)
+            if isinstance(ub, torch.Tensor):
+                ub = ub.unsqueeze(-2)
+                x2d_proj = torch.min(x2d_proj, ub, out=x2d_proj if not requires_grad else None)
+            else:
+                x2d_proj.clamp_(max=ub)
+        if out_jac is not False:
+            if not isinstance(out_jac, torch.Tensor):
+                out_jac = None
+            jac = self.project_jacobian(x3d_rot, zcam, x2d_proj, out_jac=out_jac, dof=4 if pose.size(-1) == 4 else 6)
+            if clip_jac:
+                if lb is not None and ub is not None:
+                    clip_mask = (zcam == self.z_min) | ((x2d_proj == lb) | (x2d_proj == ub))
+                else:
+                    clip_mask = zcam == self.z_min
+                jac.masked_fill_(clip_mask[..., None], 0)
+        else:
+            jac = None
+        return x2d_proj, jac
+
+    def project_jacobian(self, x3d_rot, zcam, x2d_proj, out_jac, dof):
+        if dof == 4:
+            d_xzcam_d_yaw = torch.stack((x3d_rot[..., 2], -x3d_rot[..., 0]), dim=-1).unsqueeze(-1)
+        elif dof == 6:
+            d_x3dcam_d_rot = skew(x3d_rot * 2)
+        else:
+            raise ValueError('dof must be 4 or 6')
+        if zcam.requires_grad or x2d_proj.requires_grad:
+            assert out_jac is None, 'out_jac is not supported for backward'
+            d_x2d_d_x3dcam = torch.cat((self.cam_mats[..., None, :2, :2] / zcam.unsqueeze(-1), (self.cam_mats[..., None, :2, 2:3] - x2d_proj.unsqueeze(-1)) / zcam.unsqueeze(-1)), dim=-1)
+            jac = torch.cat((d_x2d_d_x3dcam, d_x2d_d_x3dcam[..., ::2] @ d_xzcam_d_yaw if dof == 4 else d_x2d_d_x3dcam @ d_x3dcam_d_rot), dim=-1)
+        else:
+            if out_jac is None:
+                jac = torch.empty(x3d_rot.shape[:-1] + (2, dof), device=x3d_rot.device, dtype=x3d_rot.dtype)
+            else:
+                jac = out_jac
+            jac[..., :2] = self.cam_mats[..., None, :2, :2] / zcam.unsqueeze(-1)
+            jac[..., 2:3] = (self.cam_mats[..., None, :2, 2:3] - x2d_proj.unsqueeze(-1)) / zcam.unsqueeze(-1)
+            jac[..., 3:] = jac[..., ::2] @ d_xzcam_d_yaw if dof == 4 else jac[..., :3] @ d_x3dcam_d_rot
+        return jac
+
+    @staticmethod
+    def get_quaternion_transfrom_mat(quaternions):
+        """
+        Get the transformation matrix that maps the local rotation delta in 3D tangent
+        space to the 4D space where the quaternion is embedded.
+
+        Args:
+            quaternions (torch.Tensor): (*, 4), the quaternion that determines the source
+                tangent space
+
+        Returns:
+            torch.Tensor: (*, 4, 3)
+        """
+        w, i, j, k = torch.unbind(quaternions, -1)
+        transfrom_mat = torch.stack((i, j, k, -w, -k, j, k, -w, -i, -j, i, -w), dim=-1)
+        return transfrom_mat.reshape(quaternions.shape[:-1] + (4, 3))
+
+    def reshape_(self, *batch_shape):
+        self.cam_mats = self.cam_mats.reshape(*batch_shape, 3, 3)
+        if isinstance(self.lb, torch.Tensor):
+            self.lb = self.lb.reshape(*batch_shape, 2)
+        if isinstance(self.ub, torch.Tensor):
+            self.ub = self.ub.reshape(*batch_shape, 2)
+        return self
+
+    def expand_(self, *batch_shape):
+        self.cam_mats = self.cam_mats.expand(*batch_shape, -1, -1)
+        if isinstance(self.lb, torch.Tensor):
+            self.lb = self.lb.expand(*batch_shape, -1)
+        if isinstance(self.ub, torch.Tensor):
+            self.ub = self.ub.expand(*batch_shape, -1)
+        return self
+
+    def repeat_(self, *batch_repeat):
+        self.cam_mats = self.cam_mats.repeat(*batch_repeat, 1, 1)
+        if isinstance(self.lb, torch.Tensor):
+            self.lb = self.lb.repeat(*batch_repeat, 1)
+        if isinstance(self.ub, torch.Tensor):
+            self.ub = self.ub.repeat(*batch_repeat, 1)
+        return self
+
+    def shallow_copy(self):
+        return PerspectiveCamera(cam_mats=self.cam_mats, z_min=self.z_min, allowed_border=self.allowed_border, lb=self.lb, ub=self.ub)
+
+
+class RSLMSolver(LMSolver):
+    """
+    Random Sample Levenberg-Marquardt solver, a generalization of RANSAC.
+    Used for initialization in ambiguous problems.
+    """
+
+    def __init__(self, num_points=16, num_proposals=64, num_iter=3, **kwargs):
+        super(RSLMSolver, self).__init__(num_iter=num_iter, **kwargs)
+        self.num_points = num_points
+        self.num_proposals = num_proposals
+
+    def center_based_init(self, x2d, x3d, camera, eps=1e-06):
+        x2dc = solve_wrapper(F.pad(x2d, [0, 1], mode='constant', value=1.0).transpose(-1, -2), camera.cam_mats).transpose(-1, -2)
+        x2dc = x2dc[..., :2] / x2dc[..., 2:].clamp(min=eps)
+        x2dc_std, x2dc_mean = torch.std_mean(x2dc, dim=-2)
+        x3d_std = torch.std(x3d, dim=-2)
+        if self.dof == 4:
+            t_vec = F.pad(x2dc_mean, [0, 1], mode='constant', value=1.0) * (x3d_std[..., 1] / x2dc_std[..., 1].clamp(min=eps)).unsqueeze(-1)
+        else:
+            t_vec = F.pad(x2dc_mean, [0, 1], mode='constant', value=1.0) * (math.sqrt(2 / 3) * x3d_std.norm(dim=-1) / x2dc_std.norm(dim=-1).clamp(min=eps)).unsqueeze(-1)
+        return t_vec
+
+    def solve(self, x3d, x2d, w2d, camera, cost_fun, **kwargs):
+        with torch.no_grad():
+            bs, pn, _ = x2d.size()
+            if bs > 0:
+                mean_weight = w2d.mean(dim=-1).reshape(1, bs, pn).expand(self.num_proposals, -1, -1)
+                inds = torch.multinomial(mean_weight.reshape(-1, pn), self.num_points).reshape(self.num_proposals, bs, self.num_points)
+                bs_inds = torch.arange(bs, device=inds.device)
+                inds += (bs_inds * pn)[:, None]
+                x2d_samples = x2d.reshape(-1, 2)[inds]
+                x3d_samples = x3d.reshape(-1, 3)[inds]
+                w2d_samples = w2d.reshape(-1, 2)[inds]
+                pose_init = x2d.new_empty((self.num_proposals, bs, 4 if self.dof == 4 else 7))
+                pose_init[..., :3] = self.center_based_init(x2d, x3d, camera)
+                if self.dof == 4:
+                    pose_init[..., 3] = torch.rand((self.num_proposals, bs), dtype=x2d.dtype, device=x2d.device) * (2 * math.pi)
+                else:
+                    pose_init[..., 3:] = torch.randn((self.num_proposals, bs, 4), dtype=x2d.dtype, device=x2d.device)
+                    q_norm = pose_init[..., 3:].norm(dim=-1)
+                    pose_init[..., 3:] /= q_norm.unsqueeze(-1)
+                    pose_init.view(-1, 7)[(q_norm < self.eps).flatten(), 3:] = x2d.new_tensor([1, 0, 0, 0])
+                camera_expand = camera.shallow_copy()
+                camera_expand.repeat_(self.num_proposals)
+                cost_fun_expand = cost_fun.shallow_copy()
+                cost_fun_expand.repeat_(self.num_proposals)
+                pose, _, _ = super(RSLMSolver, self).solve(x3d_samples.reshape(self.num_proposals * bs, self.num_points, 3), x2d_samples.reshape(self.num_proposals * bs, self.num_points, 2), w2d_samples.reshape(self.num_proposals * bs, self.num_points, 2), camera_expand, cost_fun_expand, pose_init=pose_init.reshape(self.num_proposals * bs, pose_init.size(-1)), **kwargs)
+                pose = pose.reshape(self.num_proposals, bs, pose.size(-1))
+                cost = evaluate_pnp(x3d, x2d, w2d, pose, camera, cost_fun, out_cost=True)[1]
+                min_cost, min_cost_ind = cost.min(dim=0)
+                pose = pose[min_cost_ind, torch.arange(bs, device=pose.device)]
+            else:
+                pose = x2d.new_empty((0, 4 if self.dof == 4 else 7))
+                min_cost = x2d.new_empty((0,))
+            return pose, None, min_cost
+
+
+def prepare_camera_mats(fovs, length, device):
+    cam_mats = torch.zeros(length, 3, 3)
+    if fovs is not None:
+        cam_mats[:, 0, 0] = cam_mats[:, 1, 1] = fovs
+    else:
+        cam_mats[:, 0, 0] = cam_mats[:, 1, 1] = 1.0 / np.tan(np.radians(args().FOV / 2))
+    cam_mats[:, 2, 2] = 1
+    return cam_mats
+
+
+class EProPnP6DoFSolver(nn.Module):
+
+    def __init__(self):
+        super(EProPnP6DoFSolver, self).__init__()
+        self.epropnp = EProPnP6DoF(mc_samples=512, num_iter=4, solver=LMSolver(dof=6, num_iter=10, init_solver=RSLMSolver(dof=6, num_points=8, num_proposals=128, num_iter=5)))
+        self.camera = PerspectiveCamera()
+        self.cost_fun = AdaptiveHuberPnPCost(relative_delta=0.5)
+        self.log_weight_scale = nn.Parameter(torch.zeros(2))
+
+    def epro_pnp_train(self, x3d, x2d, w2d, cam_mats, out_pose):
+        with torch.autocast(device_type='cuda', dtype=torch.float32):
+            self.camera.set_param(cam_mats)
+            self.cost_fun.set_param(x2d, w2d)
+            pose_opt, cost, pose_opt_plus, pose_samples, pose_sample_logweights, cost_tgt = self.epropnp.monte_carlo_forward(x3d.detach(), x2d, w2d, self.camera, self.cost_fun, pose_init=out_pose, force_init_solve=True, with_pose_opt_plus=True)
+        return pose_opt, cost, pose_opt_plus, pose_samples, pose_sample_logweights, cost_tgt
+
+    def epro_pnp_inference(self, x3d, x2d, w2d, cam_mats, fast_mode=False):
+        with torch.autocast(device_type='cuda', dtype=torch.float32):
+            self.camera.set_param(cam_mats)
+            self.cost_fun.set_param(x2d, w2d)
+            pose_opt, _, _, _ = self.epropnp(x3d.detach(), x2d, w2d, self.camera, self.cost_fun, fast_mode=fast_mode)
+        return pose_opt
+
+    def solve(self, x3ds, x2ds, w2ds, fovs, fast_mode=True):
+        cam_mats = prepare_camera_mats(fovs, len(x3ds), x3ds.device)
+        self.camera.set_param(cam_mats)
+        self.cost_fun.set_param(x2ds.detach(), w2ds)
+        pose_opt, _, _, _ = self.epropnp(x3ds, x2ds, w2ds, self.camera, self.cost_fun, fast_mode=fast_mode)
+        return pose_opt
+
+
+class HeatmapGenerator:
+
+    def __init__(self, output_res, num_joints, sigma=-1):
+        self.output_res = output_res
+        self.num_joints = num_joints
+        if sigma < 0:
+            sigma = self.output_res / 64
+        self.sigma = sigma
+        size = 6 * sigma + 3
+        x = np.arange(0, size, 1, float)
+        y = x[:, np.newaxis]
+        x0, y0 = 3 * sigma + 1, 3 * sigma + 1
+        gaussian_distribution = -((x - x0) ** 2 + (y - y0) ** 2) / (2 * sigma ** 2)
+        self.g = np.exp(gaussian_distribution)
+
+    def single_process(self, joints):
+        hms = np.zeros((self.num_joints, self.output_res, self.output_res), dtype=np.float32)
+        sigma = self.sigma
+        for p in joints:
+            for idx, pt in enumerate(p):
+                if pt[2] > 0:
+                    x, y = int(pt[0]), int(pt[1])
+                    if x < 0 or y < 0 or x >= self.output_res or y >= self.output_res:
+                        continue
+                    ul = int(np.round(x - 3 * sigma - 1)), int(np.round(y - 3 * sigma - 1))
+                    br = int(np.round(x + 3 * sigma + 2)), int(np.round(y + 3 * sigma + 2))
+                    c, d = max(0, -ul[0]), min(br[0], self.output_res) - ul[0]
+                    a, b = max(0, -ul[1]), min(br[1], self.output_res) - ul[1]
+                    cc, dd = max(0, ul[0]), min(br[0], self.output_res)
+                    aa, bb = max(0, ul[1]), min(br[1], self.output_res)
+                    hms[idx, aa:bb, cc:dd] = np.maximum(hms[idx, aa:bb, cc:dd], self.g[a:b, c:d])
+        return hms
+
+    def batch_process(self, batch_joints):
+        vis = ((batch_joints > -1.0).sum(-1) == batch_joints.shape[-1]).unsqueeze(-1).float()
+        batch_joints = (torch.cat([batch_joints, vis], -1).unsqueeze(1) + 1) / 2 * self.output_res
+        heatmaps = []
+        for joints in batch_joints:
+            heatmaps.append(torch.from_numpy(self.single_process(joints)))
+        return torch.stack(heatmaps)
+
+
+class JointsGenerator:
+
+    def __init__(self, max_num_people, num_joints, output_res, tag_per_joint):
+        self.max_num_people = max_num_people
+        self.num_joints = num_joints
+        self.output_res = output_res
+        self.tag_per_joint = tag_per_joint
+
+    def single_process(self, joints):
+        visible_nodes = np.zeros((self.max_num_people, self.num_joints, 2))
+        output_res = self.output_res
+        for i in range(min(len(joints), self.max_num_people)):
+            tot = 0
+            for idx, pt in enumerate(joints[i]):
+                x, y = int(pt[0]), int(pt[1])
+                if pt[2] > 0 and x >= 0 and y >= 0 and x < self.output_res and y < self.output_res:
+                    if self.tag_per_joint:
+                        visible_nodes[i][tot] = idx * output_res ** 2 + y * output_res + x, 1
+                    else:
+                        visible_nodes[i][tot] = y * output_res + x, 1
+                    tot += 1
+        return visible_nodes
+
+    def batch_process(self, batch_joints):
+        vis = ((batch_joints > -1.0).sum(-1) == batch_joints.shape[-1]).unsqueeze(-1).float()
+        batch_joints = (torch.cat([batch_joints, vis], -1).unsqueeze(1) + 1) / 2 * self.output_res
+        joints_processed = []
+        for joints in batch_joints:
+            joints_processed.append(self.single_process(joints))
+        return torch.from_numpy(np.array(joints_processed)).long()
+
+
+def paste_over(im_src, im_dst, center):
+    """Pastes `im_src` onto `im_dst` at a specified position, with alpha blending, in place.
+    Locations outside the bounds of `im_dst` are handled as expected (only a part or none of
+    `im_src` becomes visible).
+    Args:
+        im_src: The RGBA image to be pasted onto `im_dst`. Its size can be arbitrary.
+        im_dst: The target image.
+        alpha: A float (0.0-1.0) array of the same size as `im_src` controlling the alpha blending
+            at each pixel. Large values mean more visibility for `im_src`.
+        center: coordinates in `im_dst` where the center of `im_src` should be placed.
+    """
+    width_height_src = np.asarray([im_src.shape[1], im_src.shape[0]])
+    width_height_dst = np.asarray([im_dst.shape[1], im_dst.shape[0]])
+    center = np.round(center).astype(np.int32)
+    raw_start_dst = center - width_height_src // 2
+    raw_end_dst = raw_start_dst + width_height_src
+    start_dst = np.clip(raw_start_dst, 0, width_height_dst)
+    end_dst = np.clip(raw_end_dst, 0, width_height_dst)
+    region_dst = im_dst[start_dst[1]:end_dst[1], start_dst[0]:end_dst[0]]
+    start_src = start_dst - raw_start_dst
+    end_src = width_height_src + (end_dst - raw_end_dst)
+    region_src = im_src[start_src[1]:end_src[1], start_src[0]:end_src[0]]
+    color_src = region_src[..., 0:3]
+    alpha = region_src[..., 3:].astype(np.float32) / 255
+    im_dst[start_dst[1]:end_dst[1], start_dst[0]:end_dst[0]] = alpha * color_src + (1 - alpha) * region_dst
+
+
+def resize_by_factor(im, factor):
+    """Returns a copy of `im` resized by `factor`, using bilinear interp for up and area interp
+    for downscaling.
+    """
+    new_size = tuple(np.round(np.array([im.shape[1], im.shape[0]]) * factor).astype(int))
+    interp = cv2.INTER_LINEAR if factor > 1.0 else cv2.INTER_AREA
+    return cv2.resize(im, new_size, fx=factor, fy=factor, interpolation=interp)
+
+
+def occlude_with_objects(im, occluders, occluder=None, center=None):
+    """Returns an augmented version of `im`, containing some occluders from the Pascal VOC dataset."""
+    result = im.copy()
+    width_height = np.asarray([im.shape[1], im.shape[0]])
+    im_scale_factor = min(width_height) / 256
+    if occluder is None:
+        occluder_name = random.choice(occluders)
+        occluder = np.load(occluder_name, allow_pickle=True)
+        random_scale_factor = np.random.uniform(0.3, 0.6)
+        scale_factor = random_scale_factor * im_scale_factor
+        occluder = resize_by_factor(occluder, scale_factor)
+    if center is None:
+        center = np.random.uniform(width_height / 4, width_height * 3 / 4)
+    paste_over(im_src=occluder, im_dst=result, center=center)
+    return result, occluder, center
+
+
+class Synthetic_occlusion(object):
+
+    def __init__(self, path):
+        None
+        if not os.path.exists(path):
+            path = '/home/yusun/DataCenter2/datasets/VOC2012'
+        occluders_dir = os.path.join(path, 'syn_occlusion_objects')
+        self.occluders = glob.glob(os.path.join(occluders_dir, '*.npy'))
+        None
+
+    def __call__(self, img, occluder=None, center=None):
+        occluded_img, occluder, center = occlude_with_objects(img, self.occluders, occluder=occluder, center=center)
+        return occluded_img, occluder, center
+
+
+def calc_aabb(ptSets):
+    ptLeftTop = np.array([np.min(ptSets[:, 0]), np.min(ptSets[:, 1])])
+    ptRightBottom = np.array([np.max(ptSets[:, 0]), np.max(ptSets[:, 1])])
+    return np.array([ptLeftTop, ptRightBottom])
+
+
+def _calc_bbox_normed(full_kps):
+    bboxes = []
+    for kps_i in full_kps:
+        if (kps_i[:, 0] > -2).sum() > 0:
+            bboxes.append(calc_aabb(kps_i[kps_i[:, 0] > -2]))
+        else:
+            bboxes.append(np.zeros((2, 2)))
+    return bboxes
+
+
+def _check_upper_bound_lower_bound_(kps, ub=1, lb=-1):
+    for k in kps:
+        if k >= ub or k <= lb:
+            return False
+    return True
+
+
+def convert_bbox2scale(ltrb, input_size):
+    h, w = input_size
+    l, t, r, b = ltrb
+    scale = max((r - l) / w, (b - t) / h)
+    return scale
+
+
+def convert_scale_to_depth_level(scale):
+    cam3dmap_anchors = cam3dmap_anchor[None]
+    return torch.argmin(torch.abs(scale[:, None].repeat(1, scale_num) - cam3dmap_anchors), dim=1)
+
+
+def detect_occluded_person(person_centers, full_kp2ds, thresh=2 * 64 / 512.0):
+    person_num = len(person_centers)
+    occluded_by_who = np.ones(person_num) * -1
+    if person_num > 1:
+        for inds, (person_center, kp2d) in enumerate(zip(person_centers, full_kp2ds)):
+            dist = np.sqrt(((person_centers - person_center) ** 2).sum(-1))
+            if (dist > 0).sum() > 0:
+                if (dist[dist > 0] < thresh).sum() > 0:
+                    closet_idx = np.where(dist == np.min(dist[dist > 0]))[0][0]
+                    if occluded_by_who[closet_idx] < 0:
+                        occluded_by_who[inds] = closet_idx
+    return occluded_by_who.astype(np.int32)
+
+
+def get_bounding_bbox(full_kp2d):
+    full_kp2d = full_kp2d[(full_kp2d != -2).sum(-1) >= 2]
+    if len(full_kp2d) > 0:
+        box = calc_aabb(full_kp2d)
+        return box
+    else:
+        return np.array([[0, 0], [512, 512]])
+
+
+def get_image_cut_box(leftTop, rightBottom, ExpandsRatio, Center=None, force_square=False):
+    ExpandsRatio = [ExpandsRatio, ExpandsRatio, ExpandsRatio, ExpandsRatio]
+
+    def _expand_crop_box(lt, rb, scale):
+        center = (lt + rb) / 2.0
+        xl, xr, yt, yb = lt[0] - center[0], rb[0] - center[0], lt[1] - center[1], rb[1] - center[1]
+        xl, xr, yt, yb = xl * scale[0], xr * scale[1], yt * scale[2], yb * scale[3]
+        lt, rb = np.array([center[0] + xl, center[1] + yt]), np.array([center[0] + xr, center[1] + yb])
+        lb, rt = np.array([center[0] + xl, center[1] + yb]), np.array([center[0] + xr, center[1] + yt])
+        center = (lt + rb) / 2
+        return center, lt, rt, rb, lb
+    if Center == None:
+        Center = (leftTop + rightBottom) // 2
+    Center, leftTop, rightTop, rightBottom, leftBottom = _expand_crop_box(leftTop, rightBottom, ExpandsRatio)
+    offset = (rightBottom - leftTop) // 2
+    cx = offset[0]
+    cy = offset[1]
+    if force_square:
+        r = max(cx, cy)
+        cx = r
+        cy = r
+    x = int(Center[0])
+    y = int(Center[1])
+    return [x - cx, y - cy], [x + cx, y + cy]
+
+
+def flip_pose(pose):
+    flipped_parts = constants.SMPL_POSE_FLIP_PERM
+    pose = pose[flipped_parts]
+    pose[1::3] = -pose[1::3]
+    pose[2::3] = -pose[2::3]
+    return pose
+
+
+def rot_aa(aa, rot):
+    """Rotate axis angle parameters."""
+    R = np.array([[np.cos(np.deg2rad(rot)), -np.sin(np.deg2rad(rot)), 0], [np.sin(np.deg2rad(rot)), np.cos(np.deg2rad(rot)), 0], [0, 0, 1]])
+    per_rdg, _ = cv2.Rodrigues(aa)
+    resrot, _ = cv2.Rodrigues(np.dot(R, per_rdg))
+    aa = resrot.T[0]
+    return aa
+
+
+def pose_processing(pose, rot, flip, valid_grot=False, valid_pose=False):
+    """Process SMPL theta parameters  and apply all augmentation transforms."""
+    if valid_grot:
+        pose[:3] = rot_aa(pose[:3], rot)
+    if flip and valid_pose:
+        pose = flip_pose(pose)
+    return pose
+
+
+def image_pad_white_bg(image, pad_trbl=None, pad_ratio=1.0, pad_cval=255):
+    if pad_trbl is None:
+        pad_trbl = compute_paddings_to_reach_aspect_ratio(image.shape, pad_ratio)
+    pad_func = iaa.Sequential([iaa.Pad(px=pad_trbl, keep_size=False, pad_mode='constant', pad_cval=pad_cval)])
+    image_aug = pad_func(image=image)
+    return image_aug, np.array([*image_aug.shape[:2], *[0, 0, 0, 0], *pad_trbl])
+
+
+def convert2keypointsonimage(kp2d, image_shape):
+    kps = KeypointsOnImage([Keypoint(x=x, y=y) for x, y in kp2d], shape=image_shape)
+    return kps
+
+
+def img_kp_rotate(image, kp2ds=None, rotate=0):
+    """
+    Perform augmentation of image (and kp2ds) via rotation.
+    Input args:
+        image : np.array, size H x W x 3
+        kp2ds : np.array, size N x K x 2/3, the K 2D joints of N people
+        rotate : int, radians angle of rotation on image plane, such as 30 degree
+    return:
+        augmented image: np.array, size H x W x 3
+        augmented kp2ds if given, in the same size as input kp2ds
+    """
+    aug_list = []
+    if rotate != 0:
+        aug_list += [iaa.Affine(rotate=rotate)]
+        aug_seq = iaa.Sequential(aug_list)
+        image_aug = np.array(aug_seq(image=image))
+        if kp2ds is not None:
+            kp2ds_aug = []
+            invalid_mask = [(kp2d <= 0) for kp2d in kp2ds]
+            for idx, kp2d in enumerate(kp2ds):
+                kps = convert2keypointsonimage(kp2d[:, :2], image.shape)
+                kps_aug = aug_seq(keypoints=kps)
+                kp2d[:, :2] = kps_aug.to_xy_array()
+                kp2d[invalid_mask[idx]] = -2.0
+                kp2ds_aug.append(kp2d)
+        else:
+            kp2ds_aug = None
+    if kp2ds is not None:
+        return image_aug, kp2ds_aug
+    else:
+        return image_aug
+
+
+def process_image(originImage, full_kp2ds=None, augments=None, is_pose2d=[True], random_crop=False, syn_occlusion=None):
+    orgImage_white_bg, pad_trbl = image_pad_white_bg(originImage)
+    if full_kp2ds is None and augments is None:
+        return orgImage_white_bg, pad_trbl
+    if syn_occlusion is not None:
+        synthetic_occlusion, occluder, center = syn_occlusion
+        if random.random() < 0.1:
+            center = center + np.random.uniform([-16, -16], [16, 16])
+        originImage, _, _ = synthetic_occlusion(originImage, occluder, center)
+    crop_bbox = np.array([0, 0, originImage.shape[1], originImage.shape[0]])
+    if augments is not None:
+        rot, flip, crop_bbox, img_scale = augments
+        if rot != 0:
+            originImage, full_kp2ds = img_kp_rotate(originImage, full_kp2ds, rot)
+        if flip:
+            originImage = np.fliplr(originImage)
+            full_kp2ds = [flip_kps(kps_i, width=originImage.shape[1], is_pose=is_2d_pose) for kps_i, is_2d_pose in zip(full_kp2ds, is_pose2d)]
+    image_aug, kp2ds_aug, offsets = image_crop_pad(originImage, bbox=crop_bbox, kp2ds=full_kp2ds, pad_ratio=1.0)
+    return image_aug, orgImage_white_bg, kp2ds_aug, offsets
+
+
+def rot_imgplane(kp3d, angle):
+    if angle == 0:
+        return kp3d
+    invalid_mask = kp3d[:, -1] == -2
+    rot_mat = np.eye(3)
+    rot_rad = angle * np.pi / 180
+    sn, cs = np.sin(rot_rad), np.cos(rot_rad)
+    rot_mat[0, :2] = [cs, -sn]
+    rot_mat[1, :2] = [sn, cs]
+    kp3d = np.einsum('ij,kj->ki', rot_mat, kp3d)
+    kp3d[invalid_mask] = -2
+    return kp3d
+
+
+def angle_axis_to_rotation_matrix(angle_axis: 'torch.Tensor') ->torch.Tensor:
+    """Convert 3d vector of axis-angle rotation to 3x3 rotation matrix
+    Args:
+        angle_axis (torch.Tensor): tensor of 3d vector of axis-angle rotations.
+    Returns:
+        torch.Tensor: tensor of 3x3 rotation matrices.
+    Shape:
+        - Input: :math:`(N, 3)`
+        - Output: :math:`(N, 3, 3)`
+    Example:
+        >>> input = torch.rand(1, 3)  # Nx3
+        >>> output = angle_axis_to_rotation_matrix(input)  # Nx3x3
+    """
+    if not isinstance(angle_axis, torch.Tensor):
+        raise TypeError('Input type is not a torch.Tensor. Got {}'.format(type(angle_axis)))
+    if not angle_axis.shape[-1] == 3:
+        raise ValueError('Input size must be a (*, 3) tensor. Got {}'.format(angle_axis.shape))
+
+    def _compute_rotation_matrix(angle_axis, theta2, eps=1e-06):
+        k_one = 1.0
+        theta = torch.sqrt(theta2)
+        wxyz = angle_axis / (theta + eps)
+        wx, wy, wz = torch.chunk(wxyz, 3, dim=1)
+        cos_theta = torch.cos(theta)
+        sin_theta = torch.sin(theta)
+        r00 = cos_theta + wx * wx * (k_one - cos_theta)
+        r10 = wz * sin_theta + wx * wy * (k_one - cos_theta)
+        r20 = -wy * sin_theta + wx * wz * (k_one - cos_theta)
+        r01 = wx * wy * (k_one - cos_theta) - wz * sin_theta
+        r11 = cos_theta + wy * wy * (k_one - cos_theta)
+        r21 = wx * sin_theta + wy * wz * (k_one - cos_theta)
+        r02 = wy * sin_theta + wx * wz * (k_one - cos_theta)
+        r12 = -wx * sin_theta + wy * wz * (k_one - cos_theta)
+        r22 = cos_theta + wz * wz * (k_one - cos_theta)
+        rotation_matrix = torch.cat([r00, r01, r02, r10, r11, r12, r20, r21, r22], dim=1)
+        return rotation_matrix.view(-1, 3, 3)
+
+    def _compute_rotation_matrix_taylor(angle_axis):
+        rx, ry, rz = torch.chunk(angle_axis, 3, dim=1)
+        k_one = torch.ones_like(rx)
+        rotation_matrix = torch.cat([k_one, -rz, ry, rz, k_one, -rx, -ry, rx, k_one], dim=1)
+        return rotation_matrix.view(-1, 3, 3)
+    _angle_axis = torch.unsqueeze(angle_axis, dim=1)
+    theta2 = torch.matmul(_angle_axis, _angle_axis.transpose(1, 2))
+    theta2 = torch.squeeze(theta2, dim=1)
+    rotation_matrix_normal = _compute_rotation_matrix(angle_axis, theta2)
+    rotation_matrix_taylor = _compute_rotation_matrix_taylor(angle_axis)
+    eps = 1e-06
+    mask = (theta2 > eps).view(-1, 1, 1)
+    mask_pos = mask.type_as(theta2)
+    mask_neg = (mask == False).type_as(theta2)
+    batch_size = angle_axis.shape[0]
+    rotation_matrix = torch.eye(3).type_as(angle_axis)
+    rotation_matrix = rotation_matrix.view(1, 3, 3).repeat(batch_size, 1, 1)
+    rotation_matrix[..., :3, :3] = mask_pos * rotation_matrix_normal + mask_neg * rotation_matrix_taylor
+    return rotation_matrix
+
+
+def camera_pitch_yaw_roll2rotation_matrix(pitch, yaw, roll=0):
+    z_axis = np.array([0.0, 0.0, 1.0], np.float32)
+    y_axis = np.array([0.0, 1.0, 0.0], np.float32)
+    x_axis = np.array([1.0, 0.0, 0.0], np.float32)
+    Rx, _ = cv2.Rodrigues(x_axis * np.radians(pitch))
+    Ry, _ = cv2.Rodrigues(y_axis * np.radians(yaw))
+    Rz, _ = cv2.Rodrigues(z_axis * np.radians(roll))
+    R = Rz @ Ry @ Rx
+    return R
+
+
+def convertRT2transform(R, T):
+    transform4x4 = np.eye(4)
+    transform4x4[:3, :3] = R
+    transform4x4[:3, 3] = T
+    return transform4x4
+
+
+def inverse_transform(transform_mat):
+    transform_inv = np.zeros_like(transform_mat)
+    transform_inv[:3, :3] = np.transpose(transform_mat[:3, :3], (1, 0))
+    transform_inv[:3, 3] = -np.matmul(transform_mat[:3, 3][None], transform_mat[:3, :3])
+    transform_inv[3, 3] = 1.0
+    return transform_inv
+
+
+def transform_trans(transform_mat, trans):
+    trans = np.concatenate((trans, np.ones_like(trans[[0]])), axis=-1)[None, :]
+    trans_new = np.matmul(trans, np.transpose(transform_mat, (1, 0)))[0, :3]
+    return trans_new
+
+
+def convert_camera2world_RT(body_rots_cam, body_trans_cam, fov, pitch_yaw_roll):
+    camera_R_mat = camera_pitch_yaw_roll2rotation_matrix(*pitch_yaw_roll)
+    camera_T = np.zeros(3)
+    world2camera = convertRT2transform(camera_R_mat, camera_T)
+    camera2world = inverse_transform(world2camera)
+    body_R_in_world = np.stack([np.matmul(camera2world[:3, :3], body_R_in_cam) for body_R_in_cam in body_rots_cam], 0)
+    body_R_in_world = rotation_matrix_to_angle_axis(torch.from_numpy(body_R_in_world).float())
+    body_T_in_world = np.stack([transform_trans(camera2world, body_T_in_cam) for body_T_in_cam in body_trans_cam], 0)
+    return body_R_in_world, body_T_in_world, world2camera
+
+
+def convert_camera2world_RT2(body_rots_cam, body_trans_cam, world2camera):
+    camera2world = inverse_transform(world2camera)
+    body_R_in_world = np.stack([np.matmul(camera2world[:3, :3], body_R_in_cam) for body_R_in_cam in body_rots_cam], 0)
+    body_R_in_world = rotation_matrix_to_angle_axis(torch.from_numpy(body_R_in_world).float())
+    body_T_in_world = np.stack([transform_trans(camera2world, body_T_in_cam) for body_T_in_cam in body_trans_cam], 0)
+    return body_R_in_world, body_T_in_world
+
+
+def normalize_trans_to_cam_params(trans):
+    normed_cams = np.zeros_like(trans)
+    normed_cams[..., 0] = 1 / (trans[..., 2] * tan_fov)
+    normed_cams[..., 1] = trans[..., 1] / (trans[..., 2] * tan_fov)
+    normed_cams[..., 2] = trans[..., 0] / (trans[..., 2] * tan_fov)
+    _check_valid_cam(normed_cams)
+    return normed_cams
+
+
+def perspective_projection_withfovs(points, translation=None, rotation=None, keep_dim=False, fovs=None):
+    """
+    This function computes the perspective projection of a set of points.
+    Input:
+        points (bs, N, 3): 3D points
+        rotation (bs, 3, 3): Camera rotation
+        translation (bs, 3): Camera translation
+        focal_length (bs,) or scalar: Focal length
+        camera_center (bs, 2): Camera center
+    """
+    if isinstance(points, np.ndarray):
+        points = torch.from_numpy(points).float()
+    if isinstance(translation, np.ndarray):
+        translation = torch.from_numpy(translation).float()
+    batch_size = points.shape[0]
+    K = torch.zeros([batch_size, 3, 3], device=points.device)
+    K[:, 0, 0] = fovs
+    K[:, 1, 1] = fovs
+    K[:, 2, 2] = 1.0
+    if rotation is not None:
+        points = torch.einsum('bij,bkj->bki', rotation, points)
+    if translation is not None:
+        points = points + translation.unsqueeze(1)
+    projected_points = points / (points[:, :, -1].unsqueeze(-1) + 0.0001)
+    if torch.isnan(points).sum() > 0 or torch.isnan(projected_points).sum() > 0:
+        None
+    projected_points = torch.matmul(projected_points.contiguous(), K.contiguous())
+    if not keep_dim:
+        projected_points = projected_points[:, :, :-1].contiguous()
+    return projected_points
+
+
+def pack_data(vertex_save_dir, data_folder, split, annots_path):
+    import pandas
+    annots = {}
+    smpl_subject_dict, subject_id = {}, 0
+    os.makedirs(vertex_save_dir, exist_ok=True)
+    all_annot_paths = glob.glob(os.path.join(data_folder, 'CAM2', '{}*_withj2.pkl'.format(split)))
+    for af_ind, annot_file in enumerate(all_annot_paths):
+        annot = pandas.read_pickle(annot_file)
+        annot_dicts = annot.to_dict(orient='records')
+        for annot_ind, annot_dict in enumerate(annot_dicts):
+            None
+            img_annot, img_verts, valid_num = [], [], 0
+            pimg_annot = {'cam_locs': np.array([annot_dict['camX'], annot_dict['camY'], annot_dict['camZ'], annot_dict['camYaw']]), 'trans': np.array([annot_dict['X'], annot_dict['Y'], annot_dict['Z'], annot_dict['Yaw']]).transpose((1, 0)), 'props': np.array([annot_dict['gender'], annot_dict['kid'], annot_dict['occlusion'], annot_dict['age'], annot_dict['ethnicity']]), 'isValid': annot_dict['isValid'], 'gt_path_smpl': annot_dict['gt_path_smpl'], 'gt_path_smplx': annot_dict['gt_path_smplx']}
+            for ind, smpl_annot_path in enumerate(annot_dict['gt_path_smpl']):
+                if annot_dict['isValid'][ind]:
+                    valid_num += 1
+                subj_annot = {}
+                smpl_annot = pandas.read_pickle(os.path.join(data_folder, smpl_annot_path.replace('.obj', '.pkl')))
+                subj_annot['body_pose'] = smpl_annot['body_pose'].detach().cpu().numpy()
+                subj_annot['betas'] = smpl_annot['betas'].detach().cpu().numpy()
+                subj_annot['root_rot'] = smpl_annot['root_pose'].detach().cpu().numpy()
+                subj_annot['props'] = [annot_dict['gender'][ind], 'kid' if annot_dict['kid'][ind] else 'adult', annot_dict['age'][ind], annot_dict['ethnicity'][ind]]
+                if annot_dict['gt_path_smpl'][ind].replace('.obj', '') not in smpl_subject_dict:
+                    smpl_subject_dict[annot_dict['gt_path_smpl'][ind].replace('.obj', '')] = subject_id
+                    subject_id += 1
+                subj_annot['ID'] = smpl_subject_dict[annot_dict['gt_path_smpl'][ind].replace('.obj', '')]
+                subj_annot['occlusion'] = annot_dict['occlusion'][ind]
+                subj_annot['isValid'] = annot_dict['isValid'][ind]
+                subj_annot['kp2d'] = annot_dict['gt_joints_2d'][ind]
+                subj_annot['kp3d'] = annot_dict['gt_joints_3d'][ind]
+                subj_annot['cam_locs'] = pimg_annot['cam_locs']
+                subj_annot['smpl_trans'] = pimg_annot['trans'][ind]
+                subj_annot['camMats'] = annot_dict['camMats'][ind]
+                subj_annot['root_rotMats'] = annot_dict['root_rotMats'][ind]
+                img_annot.append(subj_annot)
+            if valid_num != 0:
+                annots[annot_dict['imgPath']] = img_annot
+            vertex_save_name = os.path.join(vertex_save_dir, os.path.basename(annot_dict['imgPath']).replace('.png', '.npz'))
+            np.savez(vertex_save_name, verts=img_verts)
+        np.savez(self.annots_path.replace('.npz', '_{}.npz'.format(af_ind)), annots=annots)
+    np.savez(annots_path, annots=annots)
+    np.savez(os.path.join(self.data_folder, 'subject_IDs_dict_{}.npz'.format(self.split)), subject_ids=smpl_subject_dict)
+    return annots
+
+
+def line_intersect(sa, sb):
+    al, ar, bl, br = sa[0], sa[1], sb[0], sb[1]
+    assert al <= ar and bl <= br
+    if al >= br or bl >= ar:
+        return False
+    return True
+
+
+def rectangle_intersect(ra, rb):
+    ax = [ra[0][0], ra[1][0]]
+    ay = [ra[0][1], ra[1][1]]
+    bx = [rb[0][0], rb[1][0]]
+    by = [rb[0][1], rb[1][1]]
+    return line_intersect(ax, bx) and line_intersect(ay, by)
+
+
+def get_intersected_rectangle(lt0, rb0, lt1, rb1):
+    if not rectangle_intersect([lt0, rb0], [lt1, rb1]):
+        return None, None
+    lt = lt0.copy()
+    rb = rb0.copy()
+    lt[0] = max(lt[0], lt1[0])
+    lt[1] = max(lt[1], lt1[1])
+    rb[0] = min(rb[0], rb1[0])
+    rb[1] = min(rb[1], rb1[1])
+    return lt, rb
+
+
+def get_rectangle_area(lt, rb):
+    return (rb[0] - lt[0]) * (rb[1] - lt[1])
+
+
+def get_union_rectangle(lt0, rb0, lt1, rb1):
+    lt = lt0.copy()
+    rb = rb0.copy()
+    lt[0] = min(lt[0], lt1[0])
+    lt[1] = min(lt[1], lt1[1])
+    rb[0] = max(rb[0], rb1[0])
+    rb[1] = max(rb[1], rb1[1])
+    return lt, rb
+
+
+def get_rectangle_intersect_ratio(lt0, rb0, lt1, rb1):
+    (lt0, rb0), (lt1, rb1) = get_intersected_rectangle(lt0, rb0, lt1, rb1), get_union_rectangle(lt0, rb0, lt1, rb1)
+    if lt0 is None:
+        return 0.0
+    else:
+        return 1.0 * get_rectangle_area(lt0, rb0) / get_rectangle_area(lt1, rb1)
+
+
+def _isArrayLike(obj):
+    return hasattr(obj, '__iter__') and hasattr(obj, '__len__')
+
+
+class COCO:
+
+    def __init__(self, annotation_file=None):
+        """
+        Constructor of Microsoft COCO helper class for reading and visualizing annotations.
+        :param annotation_file (str): location of annotation file
+        :param image_folder (str): location to the folder that hosts images.
+        :return:
+        """
+        self.dataset, self.anns, self.cats, self.imgs = dict(), dict(), dict(), dict()
+        self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
+        self.anno_file = [annotation_file]
+        if not annotation_file == None:
+            None
+            tic = time.time()
+            dataset = json.load(open(annotation_file, 'r'))
+            assert type(dataset) == dict, 'annotation file format {} not supported'.format(type(dataset))
+            None
+            self.dataset = dataset
+            self.createIndex()
+
+    def createIndex(self):
+        None
+        anns, cats, imgs = {}, {}, {}
+        imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
+        if 'annotations' in self.dataset:
+            for ann in self.dataset['annotations']:
+                imgToAnns[ann['image_id']].append(ann)
+                anns[ann['id']] = ann
+        if 'images' in self.dataset:
+            for img in self.dataset['images']:
+                imgs[img['id']] = img
+        if 'categories' in self.dataset:
+            for cat in self.dataset['categories']:
+                cats[cat['id']] = cat
+        if 'annotations' in self.dataset and 'categories' in self.dataset:
+            for ann in self.dataset['annotations']:
+                catToImgs[ann['category_id']].append(ann['image_id'])
+        None
+        self.anns = anns
+        self.imgToAnns = imgToAnns
+        self.catToImgs = catToImgs
+        self.imgs = imgs
+        self.cats = cats
+
+    def info(self):
+        """
+        Print information about the annotation file.
+        :return:
+        """
+        for key, value in self.dataset['info'].items():
+            None
+
+    def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
+        """
+        Get ann ids that satisfy given filter conditions. default skips that filter
+        :param imgIds  (int array)     : get anns for given imgs
+               catIds  (int array)     : get anns for given cats
+               areaRng (float array)   : get anns for given area range (e.g. [0 inf])
+               iscrowd (boolean)       : get anns for given crowd label (False or True)
+        :return: ids (int array)       : integer array of ann ids
+        """
+        imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
+        catIds = catIds if _isArrayLike(catIds) else [catIds]
+        if len(imgIds) == len(catIds) == len(areaRng) == 0:
+            anns = self.dataset['annotations']
+        else:
+            if not len(imgIds) == 0:
+                lists = [self.imgToAnns[imgId] for imgId in imgIds if imgId in self.imgToAnns]
+                anns = list(itertools.chain.from_iterable(lists))
+            else:
+                anns = self.dataset['annotations']
+            anns = anns if len(catIds) == 0 else [ann for ann in anns if ann['category_id'] in catIds]
+            anns = anns if len(areaRng) == 0 else [ann for ann in anns if ann['area'] > areaRng[0] and ann['area'] < areaRng[1]]
+        if not iscrowd == None:
+            ids = [ann['id'] for ann in anns if ann['iscrowd'] == iscrowd]
+        else:
+            ids = [ann['id'] for ann in anns]
+        return ids
+
+    def getCatIds(self, catNms=[], supNms=[], catIds=[]):
+        """
+        filtering parameters. default skips that filter.
+        :param catNms (str array)  : get cats for given cat names
+        :param supNms (str array)  : get cats for given supercategory names
+        :param catIds (int array)  : get cats for given cat ids
+        :return: ids (int array)   : integer array of cat ids
+        """
+        catNms = catNms if _isArrayLike(catNms) else [catNms]
+        supNms = supNms if _isArrayLike(supNms) else [supNms]
+        catIds = catIds if _isArrayLike(catIds) else [catIds]
+        if len(catNms) == len(supNms) == len(catIds) == 0:
+            cats = self.dataset['categories']
+        else:
+            cats = self.dataset['categories']
+            cats = cats if len(catNms) == 0 else [cat for cat in cats if cat['name'] in catNms]
+            cats = cats if len(supNms) == 0 else [cat for cat in cats if cat['supercategory'] in supNms]
+            cats = cats if len(catIds) == 0 else [cat for cat in cats if cat['id'] in catIds]
+        ids = [cat['id'] for cat in cats]
+        return ids
+
+    def getImgIds(self, imgIds=[], catIds=[]):
+        """
+        Get img ids that satisfy given filter conditions.
+        :param imgIds (int array) : get imgs for given ids
+        :param catIds (int array) : get imgs with all given cats
+        :return: ids (int array)  : integer array of img ids
+        """
+        imgIds = imgIds if _isArrayLike(imgIds) else [imgIds]
+        catIds = catIds if _isArrayLike(catIds) else [catIds]
+        if len(imgIds) == len(catIds) == 0:
+            ids = self.imgs.keys()
+        else:
+            ids = set(imgIds)
+            for i, catId in enumerate(catIds):
+                if i == 0 and len(ids) == 0:
+                    ids = set(self.catToImgs[catId])
+                else:
+                    ids &= set(self.catToImgs[catId])
+        return list(ids)
+
+    def loadAnns(self, ids=[]):
+        """
+        Load anns with the specified ids.
+        :param ids (int array)       : integer ids specifying anns
+        :return: anns (object array) : loaded ann objects
+        """
+        if _isArrayLike(ids):
+            return [self.anns[id] for id in ids]
+        elif type(ids) == int:
+            return [self.anns[ids]]
+
+    def loadCats(self, ids=[]):
+        """
+        Load cats with the specified ids.
+        :param ids (int array)       : integer ids specifying cats
+        :return: cats (object array) : loaded cat objects
+        """
+        if _isArrayLike(ids):
+            return [self.cats[id] for id in ids]
+        elif type(ids) == int:
+            return [self.cats[ids]]
+
+    def loadImgs(self, ids=[]):
+        """
+        Load anns with the specified ids.
+        :param ids (int array)       : integer ids specifying img
+        :return: imgs (object array) : loaded img objects
+        """
+        if _isArrayLike(ids):
+            return [self.imgs[id] for id in ids]
+        elif type(ids) == int:
+            return [self.imgs[ids]]
+
+    def loadRes(self, resFile):
+        """
+        Load result file and return a result api object.
+        :param   resFile (str)     : file name of result file
+        :return: res (obj)         : result api object
+        """
+        res = COCO()
+        res.dataset['images'] = [img for img in self.dataset['images']]
+        self.anno_file.append(resFile)
+        None
+        tic = time.time()
+        if type(resFile) == str or type(resFile) == unicode:
+            anns = json.load(open(resFile))
+        elif type(resFile) == np.ndarray:
+            anns = self.loadNumpyAnnotations(resFile)
+        else:
+            anns = resFile
+        assert type(anns) == list, 'results in not an array of objects'
+        annsImgIds = [ann['image_id'] for ann in anns]
+        assert set(annsImgIds) == set(annsImgIds) & set(self.getImgIds()), 'Results do not correspond to current coco set'
+        if 'caption' in anns[0]:
+            imgIds = set([img['id'] for img in res.dataset['images']]) & set([ann['image_id'] for ann in anns])
+            res.dataset['images'] = [img for img in res.dataset['images'] if img['id'] in imgIds]
+            for id, ann in enumerate(anns):
+                ann['id'] = id + 1
+        elif 'bbox' in anns[0] and not anns[0]['bbox'] == []:
+            res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+            for id, ann in enumerate(anns):
+                bb = ann['bbox']
+                x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
+                if not 'segmentation' in ann:
+                    ann['segmentation'] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+                ann['area'] = bb[2] * bb[3]
+                ann['id'] = id + 1
+                ann['iscrowd'] = 0
+        elif 'segmentation' in anns[0]:
+            res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+            for id, ann in enumerate(anns):
+                ann['area'] = maskUtils.area(ann['segmentation'])
+                if not 'bbox' in ann:
+                    ann['bbox'] = maskUtils.toBbox(ann['segmentation'])
+                ann['id'] = id + 1
+                ann['iscrowd'] = 0
+        elif 'keypoints' in anns[0]:
+            res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+            for id, ann in enumerate(anns):
+                s = ann['keypoints']
+                x = s[0::3]
+                y = s[1::3]
+                x0, x1, y0, y1 = np.min(x), np.max(x), np.min(y), np.max(y)
+                ann['area'] = (x1 - x0) * (y1 - y0)
+                ann['id'] = id + 1
+                ann['bbox'] = [x0, y0, x1 - x0, y1 - y0]
+        None
+        res.dataset['annotations'] = anns
+        res.createIndex()
+        return res
+
+    def download(self, tarDir=None, imgIds=[]):
+        """
+        Download COCO images from mscoco.org server.
+        :param tarDir (str): COCO results directory name
+               imgIds (list): images to be downloaded
+        :return:
+        """
+        if tarDir is None:
+            None
+            return -1
+        if len(imgIds) == 0:
+            imgs = self.imgs.values()
+        else:
+            imgs = self.loadImgs(imgIds)
+        N = len(imgs)
+        if not os.path.exists(tarDir):
+            os.makedirs(tarDir)
+        for i, img in enumerate(imgs):
+            tic = time.time()
+            fname = os.path.join(tarDir, img['file_name'])
+            if not os.path.exists(fname):
+                urlretrieve(img['coco_url'], fname)
+            None
+
+    def loadNumpyAnnotations(self, data):
+        """
+        Convert result data from a numpy array [Nx7] where each row contains {imageID,x1,y1,w,h,score,class}
+        :param  data (numpy.ndarray)
+        :return: annotations (python nested list)
+        """
+        None
+        assert type(data) == np.ndarray
+        None
+        assert data.shape[1] == 7
+        N = data.shape[0]
+        ann = []
+        for i in range(N):
+            if i % 1000000 == 0:
+                None
+            ann += [{'image_id': int(data[i, 0]), 'bbox': [data[i, 1], data[i, 2], data[i, 3], data[i, 4]], 'score': data[i, 5], 'category_id': int(data[i, 6])}]
+        return ann
+
+    def annToRLE(self, ann):
+        """
+        Convert annotation which can be polygons, uncompressed RLE to RLE.
+        :return: binary mask (numpy 2D array)
+        """
+        t = self.imgs[ann['image_id']]
+        h, w = t['height'], t['width']
+        segm = ann['segmentation']
+        if type(segm) == list:
+            rles = maskUtils.frPyObjects(segm, h, w)
+            rle = maskUtils.merge(rles)
+        elif type(segm['counts']) == list:
+            rle = maskUtils.frPyObjects(segm, h, w)
+        else:
+            rle = ann['segmentation']
+        return rle
+
+    def annToMask(self, ann):
+        """
+        Convert annotation which can be polygons, uncompressed RLE, or RLE to binary mask.
+        :return: binary mask (numpy 2D array)
+        """
+        rle = self.annToRLE(ann)
+        m = maskUtils.decode(rle)
+        return m
+
+
+def load_func(fpath):
+    None
+    with open(fpath, 'r') as fid:
+        lines = fid.readlines()
+    records = [json.loads(line.strip('\n')) for line in lines]
+    return records
+
+
+h36m_cameras_intrinsic_params = [{'id': '54138969', 'center': [512.54150390625, 515.4514770507812], 'focal_length': [1145.0494384765625, 1143.7811279296875], 'radial_distortion': [-0.20709891617298126, 0.24777518212795258, -0.0030751503072679043], 'tangential_distortion': [-0.0009756988729350269, -0.00142447161488235], 'res_w': 1000, 'res_h': 1002, 'azimuth': 70}, {'id': '55011271', 'center': [508.8486328125, 508.0649108886719], 'focal_length': [1149.6756591796875, 1147.5916748046875], 'radial_distortion': [-0.1942136287689209, 0.2404085397720337, 0.006819975562393665], 'tangential_distortion': [-0.0016190266469493508, -0.0027408944442868233], 'res_w': 1000, 'res_h': 1000, 'azimuth': -70}, {'id': '58860488', 'center': [519.8158569335938, 501.40264892578125], 'focal_length': [1149.1407470703125, 1148.7989501953125], 'radial_distortion': [-0.2083381861448288, 0.25548800826072693, -0.0024604974314570427], 'tangential_distortion': [0.0014843869721516967, -0.0007599993259645998], 'res_w': 1000, 'res_h': 1000, 'azimuth': 110}, {'id': '60457274', 'center': [514.9682006835938, 501.88201904296875], 'focal_length': [1145.5113525390625, 1144.77392578125], 'radial_distortion': [-0.198384091258049, 0.21832367777824402, -0.008947807364165783], 'tangential_distortion': [-0.0005872055771760643, -0.0018133620033040643], 'res_w': 1000, 'res_h': 1002, 'azimuth': -110}]
+
+
+def _check_visible(joints, w=2048, h=2048, get_mask=False):
+    visibility = True
+    x_in = np.logical_and(joints[:, 0] < w, joints[:, 0] >= 0)
+    y_in = np.logical_and(joints[:, 1] < h, joints[:, 1] >= 0)
+    ok_pts = np.logical_and(x_in, y_in)
+    if np.sum(ok_pts) < 16:
+        visibility = False
+    if get_mask:
+        return ok_pts
+    return visibility
+
+
+def read_calibration(calib_file, vid_list):
+    Ks, Rs, Ts = [], [], []
+    file = open(calib_file, 'r')
+    content = file.readlines()
+    for vid_i in vid_list:
+        K = np.array([float(s) for s in content[vid_i * 7 + 5][11:-2].split()])
+        K = np.reshape(K, (4, 4))
+        RT = np.array([float(s) for s in content[vid_i * 7 + 6][11:-2].split()])
+        RT = np.reshape(RT, (4, 4))
+        R = RT[:3, :3]
+        T = RT[:3, 3] / 1000
+        Ks.append(K)
+        Rs.append(R)
+        Ts.append(T)
+    return Ks, Rs, Ts
+
+
+def calculate_score(output_path, annot_path, thr=250):
+    with open(output_path, 'r') as f:
+        output = json.load(f)
+
+    def return_score(pred):
+        return pred['score']
+    output.sort(reverse=True, key=return_score)
+    db = COCO(annot_path)
+    gt_num = len([k for k, v in db.anns.items() if v['is_valid'] == 1])
+    tp_acc = 0
+    fp_acc = 0
+    precision = []
+    recall = []
+    is_matched = {}
+    for n in range(len(output)):
+        image_id = output[n]['image_id']
+        pred_root = output[n]['root_cam']
+        score = output[n]['score']
+        img = db.loadImgs(image_id)[0]
+        ann_ids = db.getAnnIds(image_id)
+        anns = db.loadAnns(ann_ids)
+        valid_frame_num = len([item for item in anns if item['is_valid'] == 1])
+        if valid_frame_num == 0:
+            continue
+        if str(image_id) not in is_matched:
+            is_matched[str(image_id)] = [(0) for _ in range(len(anns))]
+        min_dist = 9999
+        save_ann_id = -1
+        for ann_id, ann in enumerate(anns):
+            if ann['is_valid'] == 0:
+                continue
+            gt_root = np.array(ann['keypoints_cam'])
+            root_idx = 14
+            gt_root = gt_root[root_idx]
+            dist = math.sqrt(np.sum((pred_root - gt_root) ** 2))
+            if min_dist > dist:
+                min_dist = dist
+                save_ann_id = ann_id
+        is_tp = False
+        if save_ann_id != -1 and min_dist < thr:
+            if is_matched[str(image_id)][save_ann_id] == 0:
+                is_tp = True
+                is_matched[str(image_id)][save_ann_id] = 1
+        if is_tp:
+            tp_acc += 1
+        else:
+            fp_acc += 1
+        precision.append(tp_acc / (tp_acc + fp_acc))
+        recall.append(tp_acc / gt_num)
+    AP = 0
+    for n in range(len(precision) - 1):
+        AP += precision[n + 1] * (recall[n + 1] - recall[n])
+    None
+
+
+def pixel2cam(pixel_coord, f, c):
+    x = (pixel_coord[:, 0] - c[0]) / f[0] * pixel_coord[:, 2]
+    y = (pixel_coord[:, 1] - c[1]) / f[1] * pixel_coord[:, 2]
+    z = pixel_coord[:, 2]
+    cam_coord = np.concatenate((x[:, None], y[:, None], z[:, None]), 1)
+    return cam_coord
+
+
+def vis_keypoints(img, kps, kps_lines, kp_thresh=0.4, alpha=1):
+    cmap = plt.get_cmap('rainbow')
+    colors = [cmap(i) for i in np.linspace(0, 1, len(kps_lines) + 2)]
+    colors = [(c[2] * 255, c[1] * 255, c[0] * 255) for c in colors]
+    kp_mask = np.copy(img)
+    for l in range(len(kps_lines)):
+        i1 = kps_lines[l][0]
+        i2 = kps_lines[l][1]
+        p1 = kps[0, i1].astype(np.int32), kps[1, i1].astype(np.int32)
+        p2 = kps[0, i2].astype(np.int32), kps[1, i2].astype(np.int32)
+        if kps[2, i1] > kp_thresh and kps[2, i2] > kp_thresh:
+            cv2.line(kp_mask, p1, p2, color=colors[l], thickness=2, lineType=cv2.LINE_AA)
+        if kps[2, i1] > kp_thresh:
+            cv2.circle(kp_mask, p1, radius=3, color=colors[l], thickness=-1, lineType=cv2.LINE_AA)
+        if kps[2, i2] > kp_thresh:
+            cv2.circle(kp_mask, p2, radius=3, color=colors[l], thickness=-1, lineType=cv2.LINE_AA)
+    return cv2.addWeighted(img, 1.0 - alpha, kp_mask, alpha, 0)
+
+
+PW3D_OCsubset = ['courtyard_backpack', 'courtyard_basketball', 'courtyard_bodyScannerMotions', 'courtyard_box', 'courtyard_golf', 'courtyard_jacket', 'courtyard_laceShoe', 'downtown_stairs', 'flat_guitar', 'flat_packBags', 'outdoors_climbing', 'outdoors_crosscountry', 'outdoors_fencing', 'outdoors_freestyle', 'outdoors_golf', 'outdoors_parcours', 'outdoors_slalom']
+
+
+PW3D_PCsubset = {'courtyard_basketball_00': [200, 280], 'courtyard_captureSelfies_00': [500, 600], 'courtyard_dancing_00': [60, 370], 'courtyard_dancing_01': [60, 270], 'courtyard_hug_00': [100, 500], 'downtown_bus_00': [1620, 1900]}
+
+
+Backbones = {'hrnet': HigherResolutionNet, 'resnet': ResNet_50}
+
+
+def build_model(backbone, model_version, **kwargs):
+    if backbone in Backbones:
+        backbone = Backbones[backbone]()
+    else:
+        raise NotImplementedError('Backbone is not recognized')
+    if model_version in Heads:
+        ROMP = Heads[model_version]
+    else:
+        raise NotImplementedError('Head is not recognized')
+    model = ROMP(backbone=backbone, **kwargs)
+    return model
+
+
+class DeformConvFunction(Function):
+
+    @staticmethod
+    def forward(ctx, input, offset, weight, stride=1, padding=0, dilation=1, groups=1, deformable_groups=1, im2col_step=80):
+        if input is not None and input.dim() != 4:
+            raise ValueError('Expected 4D tensor as input, got {}D tensor instead.'.format(input.dim()))
+        ctx.stride = _pair(stride)
+        ctx.padding = _pair(padding)
+        ctx.dilation = _pair(dilation)
+        ctx.groups = groups
+        ctx.deformable_groups = deformable_groups
+        ctx.im2col_step = im2col_step
+        ctx.save_for_backward(input, offset, weight)
+        output = input.new_empty(DeformConvFunction._output_size(input, weight, ctx.padding, ctx.dilation, ctx.stride))
+        ctx.bufs_ = [input.new_empty(0), input.new_empty(0)]
+        if not input.is_cuda:
+            raise NotImplementedError
+        else:
+            cur_im2col_step = min(ctx.im2col_step, input.shape[0])
+            assert input.shape[0] % cur_im2col_step == 0, 'im2col step must divide batchsize'
+            deform_conv_cuda.deform_conv_forward_cuda(input, weight, offset, output, ctx.bufs_[0], ctx.bufs_[1], weight.size(3), weight.size(2), ctx.stride[1], ctx.stride[0], ctx.padding[1], ctx.padding[0], ctx.dilation[1], ctx.dilation[0], ctx.groups, ctx.deformable_groups, cur_im2col_step)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, offset, weight = ctx.saved_tensors
+        grad_input = grad_offset = grad_weight = None
+        if not grad_output.is_cuda:
+            raise NotImplementedError
+        else:
+            cur_im2col_step = min(ctx.im2col_step, input.shape[0])
+            assert input.shape[0] % cur_im2col_step == 0, 'im2col step must divide batchsize'
+            if ctx.needs_input_grad[0] or ctx.needs_input_grad[1]:
+                grad_input = torch.zeros_like(input)
+                grad_offset = torch.zeros_like(offset)
+                deform_conv_cuda.deform_conv_backward_input_cuda(input, offset, grad_output, grad_input, grad_offset, weight, ctx.bufs_[0], weight.size(3), weight.size(2), ctx.stride[1], ctx.stride[0], ctx.padding[1], ctx.padding[0], ctx.dilation[1], ctx.dilation[0], ctx.groups, ctx.deformable_groups, cur_im2col_step)
+            if ctx.needs_input_grad[2]:
+                grad_weight = torch.zeros_like(weight)
+                deform_conv_cuda.deform_conv_backward_parameters_cuda(input, offset, grad_output, grad_weight, ctx.bufs_[0], ctx.bufs_[1], weight.size(3), weight.size(2), ctx.stride[1], ctx.stride[0], ctx.padding[1], ctx.padding[0], ctx.dilation[1], ctx.dilation[0], ctx.groups, ctx.deformable_groups, 1, cur_im2col_step)
+        return grad_input, grad_offset, grad_weight, None, None, None, None, None
+
+    @staticmethod
+    def _output_size(input, weight, padding, dilation, stride):
+        channels = weight.size(0)
+        output_size = input.size(0), channels
+        for d in range(input.dim() - 2):
+            in_size = input.size(d + 2)
+            pad = padding[d]
+            kernel = dilation[d] * (weight.size(d + 2) - 1) + 1
+            stride_ = stride[d]
+            output_size += (in_size + 2 * pad - kernel) // stride_ + 1,
+        if not all(map(lambda s: s > 0, output_size)):
+            raise ValueError('convolution input is too small (output would be {})'.format('x'.join(map(str, output_size))))
+        return output_size
+
+
+deform_conv = DeformConvFunction.apply
+
+
+class DeformConv(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, deformable_groups=1, bias=False):
+        super(DeformConv, self).__init__()
+        assert not bias
+        assert in_channels % groups == 0, 'in_channels {} cannot be divisible by groups {}'.format(in_channels, groups)
+        assert out_channels % groups == 0, 'out_channels {} cannot be divisible by groups {}'.format(out_channels, groups)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = _pair(kernel_size)
+        self.stride = _pair(stride)
+        self.padding = _pair(padding)
+        self.dilation = _pair(dilation)
+        self.groups = groups
+        self.deformable_groups = deformable_groups
+        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // self.groups, *self.kernel_size))
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        n = self.in_channels
+        for k in self.kernel_size:
+            n *= k
+        stdv = 1.0 / math.sqrt(n)
+        self.weight.data.uniform_(-stdv, stdv)
+
+    def forward(self, x, offset):
+        return deform_conv(x, offset, self.weight, self.stride, self.padding, self.dilation, self.groups, self.deformable_groups)
+
+
+class TempResultParser(nn.Module):
+
+    def __init__(self, **kwargs):
+        super(TempResultParser, self).__init__()
+        self.map_size = args().centermap_size
+        self.params_map_parser = SMPLWrapper()
+        self.centermap_parser = CenterMap()
+
+    def matching_forward(self, outputs, meta_data, cfg):
+        outputs, meta_data = self.match_params_traj(outputs, meta_data, cfg)
+        outputs = self.params_map_parser(outputs, meta_data)
+        return outputs, meta_data
+
+    @torch.no_grad()
+    def parsing_forward(self, outputs, meta_data, cfg):
+        outputs, meta_data = self.parse_maps(outputs, meta_data, cfg)
+        outputs = self.params_map_parser(outputs, meta_data)
+        return outputs, meta_data
+
+    def match_params_traj(self, outputs, meta_data, cfg):
+        org_traj_gt_ids = meta_data['traj_gt_ids'].long()
+        pred_traj_gt_inds = outputs['traj_gt_inds']
+        batch_ids = org_traj_gt_ids[pred_traj_gt_inds[:, 0], pred_traj_gt_inds[:, 1], pred_traj_gt_inds[:, 2], 0] * args().temp_clip_length + org_traj_gt_ids[pred_traj_gt_inds[:, 0], pred_traj_gt_inds[:, 1], pred_traj_gt_inds[:, 2], 1]
+        person_ids = org_traj_gt_ids[pred_traj_gt_inds[:, 0], pred_traj_gt_inds[:, 1], pred_traj_gt_inds[:, 2], 2]
+        batch_ids -= meta_data['batch_ids'][0]
+        meta_data['traj3D_gts'] = meta_data['traj3D_gts'][pred_traj_gt_inds[:, 0], pred_traj_gt_inds[:, 1]]
+        meta_data['traj2D_gts'] = meta_data['traj2D_gts'][pred_traj_gt_inds[:, 0], pred_traj_gt_inds[:, 1]]
+        gt_keys = ['params', 'full_kp2d', 'kp_3d', 'valid_masks', 'subject_ids', 'verts', 'cam_mask', 'kid_shape_offsets', 'root_trans_cam', 'cams', 'world_global_rots']
+        if args().learn_relative:
+            gt_keys += ['depth_info']
+        if args().learn_cam_with_fbboxes:
+            gt_keys += ['full_body_bboxes']
+        if args().dynamic_augment:
+            gt_keys += ['dynamic_kp2ds', 'world_cams', 'world_cam_mask', 'world_root_trans']
+        exclude_keys = ['heatmap', 'centermap', 'AE_joints', 'person_centers', 'fovs', 'seq_inds', 'params_pred', 'all_person_detected_mask', 'person_scales', 'dynamic_supervise']
+        exclude_keys += ['traj3D_gts', 'traj2D_gts', 'Tj_flag', 'traj_gt_ids']
+        exclude_keys += ['centermap_3d', 'valid_centermap3d_mask']
+        outputs['pred_batch_ids'] += meta_data['batch_ids'][0]
+        outputs, meta_data = reorganize_data(outputs, meta_data, exclude_keys, gt_keys, batch_ids, person_ids)
+        outputs['center_preds'] = outputs['pred_czyxs'] * args().input_size / args().centermap_size
+        outputs['center_confs'] = outputs['top_score']
+        return outputs, meta_data
+
+    def adjust_to_joint_level_sampling(self, param_preds, joint_sampler, param_maps, batch_ids, rot_dim=3):
+        sampler_flat_inds = self.process_joint_sampler(joint_sampler)
+        batch, channel = param_maps.shape[:2]
+        param_maps = param_maps.view(batch, channel, -1).permute((0, 2, 1)).contiguous()
+        for inds, joint_inds in enumerate(constants.joint_sampler_relationship):
+            start_inds = joint_inds * rot_dim + args().cam_dim
+            end_inds = start_inds + rot_dim
+            _check_params_sampling_(param_maps.shape, start_inds, end_inds, batch_ids, sampler_flat_inds[inds])
+            param_preds[..., start_inds:end_inds] = param_maps[..., start_inds:end_inds][batch_ids, sampler_flat_inds[inds]].contiguous()
+        return param_preds
+
+    def process_joint_sampler(self, joint_sampler, thresh=0.999):
+        joint_sampler = torch.clamp(joint_sampler, -1 * thresh, thresh)
+        joint_sampler = (joint_sampler + 1) * self.map_size // 2
+        xs, ys = joint_sampler[:, ::2], joint_sampler[:, 1::2]
+        sampler_flat_inds = (ys * self.map_size + xs).permute((1, 0)).long().contiguous()
+        return sampler_flat_inds
+
+    def parameter_sampling(self, maps, batch_ids, flat_inds, use_transform=True):
+        device = maps.device
+        if use_transform:
+            batch, channel = maps.shape[:2]
+            maps = maps.view(batch, channel, -1).permute((0, 2, 1)).contiguous()
+        results = maps[batch_ids, flat_inds].contiguous()
+        return results
+
+    @torch.no_grad()
+    def parse_maps(self, outputs, meta_data, cfg):
+        if 'pred_batch_ids' in outputs:
+            batch_ids = outputs['pred_batch_ids'].long()
+            outputs['center_preds'] = outputs['pred_czyxs'] * args().input_size / args().centermap_size
+            outputs['center_confs'] = outputs['top_score']
+        else:
+            batch_ids, flat_inds, cyxs, top_score = self.centermap_parser.parse_centermap_heatmap_adaptive_scale_batch(outputs['center_map'])
+            if len(batch_ids) == 0:
+                batch_ids, flat_inds, cyxs, top_score = self.centermap_parser.parse_centermap_heatmap_adaptive_scale_batch(outputs['center_map'], top_n_people=1)
+                outputs['detection_flag'] = torch.Tensor([(False) for _ in range(len(batch_ids))])
+        if 'params_pred' not in outputs and 'params_maps' in outputs:
+            outputs['params_pred'] = self.parameter_sampling(outputs['params_maps'], batch_ids, flat_inds, use_transform=True)
+        if 'center_preds' not in outputs:
+            outputs['center_preds'] = torch.stack([flat_inds % args().centermap_size, flat_inds // args().centermap_size], 1) * args().input_size / args().centermap_size
+            outputs['center_confs'] = self.parameter_sampling(outputs['center_map'], batch_ids, flat_inds, use_transform=True)
+        if 'joint_sampler_maps_filtered' in outputs:
+            outputs['joint_sampler'] = self.parameter_sampling(outputs['joint_sampler_maps_filtered'], batch_ids, flat_inds, use_transform=True)
+            if 'params_pred' in outputs:
+                _check_params_pred_(outputs['params_pred'].shape, len(batch_ids))
+                self.adjust_to_joint_level_sampling(outputs['params_pred'], outputs['joint_sampler'], outputs['params_maps'], batch_ids)
+        if 'reid_map' in outputs:
+            outputs['reid_embeds'] = self.parameter_sampling(outputs['reid_map'], batch_ids, flat_inds, use_transform=True)
+        if 'uncertainty_map' in outputs:
+            outputs['uncertainty_pred'] = torch.sqrt(self.parameter_sampling(outputs['uncertainty_map'], batch_ids, flat_inds, use_transform=True) ** 2) + 1
+        outputs['reorganize_idx'] = meta_data['batch_ids'][batch_ids]
+        info_vis = ['image', 'offsets', 'imgpath', 'camMats']
+        meta_data = reorganize_gts_cpu(meta_data, info_vis, batch_ids)
+        if 'pred_batch_ids' in outputs:
+            outputs['pred_batch_ids'] += meta_data['batch_ids'][0]
+        return outputs, meta_data
+
+
+class TemporalEncoder(nn.Module):
+
+    def __init__(self, with_gru=False, input_size=128, out_size=[6], n_gru_layers=1, hidden_size=128):
+        super(TemporalEncoder, self).__init__()
+        self.regressor = nn.Sequential(nn.Linear(input_size, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size), nn.ReLU(inplace=True))
+        self.out_layers = nn.ModuleList([nn.Linear(hidden_size, size) for size in out_size])
+
+    def forward(self, x, *args):
+        n, t, f = x.shape
+        y = self.regressor(x.reshape(-1, f))
+        y = torch.cat([self.out_layers[ind](y) for ind in range(len(self.out_layers))], -1)
+        return y.reshape(n, t, -1)
+
+    def image_forward(self, x):
+        y = self.regressor(x)
+        y = torch.cat([self.out_layers[ind](y) for ind in range(len(self.out_layers))], -1)
+        return y
+
+
+def merge_item(source, target, key):
+    if key not in target:
+        target[key] = source[key].cpu()
+    else:
+        target[key] = torch.cat([target[key], source[key].cpu()], 0)
+
+
+def merge_output(outs, meta_data, outputs):
+    keys = ['meta_data', 'params_pred', 'reorganize_idx', 'j3d', 'verts', 'verts_camed_org', 'world_cams', 'world_trans', 'world_global_rots', 'world_verts', 'world_j3d', 'world_verts_camed_org', 'pj2d_org', 'pj2d', 'cam_trans', 'detection_flag', 'pj2d_org_h36m17', 'joints_h36m17', 'center_confs', 'track_ids', 'smpl_thetas', 'smpl_betas']
+    for key in keys:
+        if key == 'meta_data':
+            for key1 in meta_data:
+                merge_item(meta_data, outputs['meta_data'], key1)
+        elif key in outs:
+            merge_item(outs, outputs, key)
+
+
+def convertback2batch(tensor):
+    return tensor[::args().temp_clip_length].contiguous()
+
+
+def reorganize_trajectory_info(meta_data):
+    for item in ['traj3D_gts', 'traj2D_gts', 'Tj_flag', 'traj_gt_ids']:
+        if item in meta_data:
+            meta_data[item] = convertback2batch(meta_data[item])
+    return meta_data
+
+
+class VideoBase(Base):
+
+    def forward(self, feat_inputs, meta_data=None, **cfg):
+        if cfg['mode'] == 'matching_gts':
+            meta_data = reorganize_trajectory_info(meta_data)
+            return self.matching_forward(feat_inputs, meta_data, **cfg)
+        elif cfg['mode'] == 'parsing':
+            return self.parsing_forward(feat_inputs, meta_data, **cfg)
+        elif cfg['mode'] == 'forward':
+            return self.pure_forward(feat_inputs, meta_data, **cfg)
+        else:
+            raise NotImplementedError('forward mode is not recognized! please set proper mode (parsing/matching_gts)')
+
+    def matching_forward(self, feat_inputs, meta_data, **cfg):
+        if args().model_precision == 'fp16':
+            with autocast():
+                outputs = self.train_forward(feat_inputs, traj2D_gts=meta_data['traj2D_gts'])
+                outputs, meta_data = self._result_parser.matching_forward(outputs, meta_data, cfg)
+        else:
+            outputs = self.train_forward(feat_inputs, traj2D_gts=meta_data['traj2D_gts'])
+            outputs, meta_data = self._result_parser.matching_forward(outputs, meta_data, cfg)
+        outputs['meta_data'] = meta_data
+        if cfg['calc_loss']:
+            outputs.update(self._calc_loss(outputs))
+        return outputs
+
+    @torch.no_grad()
+    def parsing_forward(self, feat_inputs, meta_data, **cfg):
+        if args().model_precision == 'fp16':
+            with autocast():
+                sequence_length = feat_inputs['image_feature_maps'].shape[0]
+                outputs = {'meta_data': {}, 'params': {}}
+                memory5D, hidden_state, tracker, init_world_cams, init_world_grots = None, None, None, None, None
+                track_id_start = 0
+                for iter_num in range(int(np.ceil(sequence_length / float(args().temp_clip_length_eval)))):
+                    start, end = iter_num * args().temp_clip_length_eval, (iter_num + 1) * args().temp_clip_length_eval
+                    seq_inds = feat_inputs['seq_inds'][start:end]
+                    seq_inds[:, :3] = seq_inds[:, :3] - seq_inds[[0], :3]
+                    split_outputs, hidden_state, memory5D, tracker, init_world_cams, init_world_grots = self.inference_forward({'image_feature_maps': feat_inputs['image_feature_maps'][start:end], 'seq_inds': seq_inds, 'optical_flows': feat_inputs['optical_flows'][start:end]}, hidden_state=hidden_state, memory5D=memory5D, temp_clip_length=args().temp_clip_length_eval, track_id_start=track_id_start, tracker=tracker, init_world_cams=init_world_cams, init_world_grots=init_world_grots, seq_cfgs=cfg['seq_cfgs'])
+                    if split_outputs is None:
+                        continue
+                    split_meta_data = {k: v[start:end] for k, v in meta_data.items()}
+                    split_outputs, split_meta_data = self._result_parser.parsing_forward(split_outputs, split_meta_data, cfg)
+                    merge_output(split_outputs, split_meta_data, outputs)
+                torch.cuda.empty_cache()
+        else:
+            outputs, hidden_state, tracker = self.inference_forward(feat_inputs)
+            outputs, meta_data = self._result_parser.parsing_forward(outputs, meta_data, cfg)
+            outputs['meta_data'] = meta_data
+        BaseTrack._count = 0
+        return outputs
+
+    @torch.no_grad()
+    def pure_forward(self, feat_inputs, meta_data, **cfg):
+        default_cfgs = {'tracker_det_thresh': args().tracker_det_thresh, 'tracker_match_thresh': args().tracker_match_thresh, 'first_frame_det_thresh': args().first_frame_det_thresh, 'accept_new_dets': args().accept_new_dets, 'new_subject_det_thresh': args().new_subject_det_thresh, 'time2forget': args().time2forget, 'large_object_thresh': args().large_object_thresh, 'suppress_duplicate_thresh': args().suppress_duplicate_thresh, 'motion_offset3D_norm_limit': args().motion_offset3D_norm_limit, 'feature_update_thresh': args().feature_update_thresh, 'feature_inherent': args().feature_inherent, 'occlusion_cam_inherent_or_interp': args().occlusion_cam_inherent_or_interp, 'tracking_target_max_num': args().tracking_target_max_num, 'axis_times': np.array([1.2, 2.5, 25]), 'smooth_pose_shape': args().smooth_pose_shape, 'pose_smooth_coef': args().pose_smooth_coef, 'smooth_pos_cam': False}
+        if args().model_precision == 'fp16':
+            with autocast():
+                outputs, hidden_state, memory5D, tracker, init_world_cams = self.inference_forward({'image_feature_maps': feat_inputs['image_feature_maps'], 'seq_inds': feat_inputs['seq_inds'], 'optical_flows': feat_inputs['optical_flows']}, seq_cfgs=default_cfgs)
+        else:
+            outputs, hidden_state, tracker = self.feed_forward(feat_inputs)
+        return outputs
+
+    def head_forward(self, x):
+        return NotImplementedError
+
+    def make_backbone(self):
+        return NotImplementedError
+
+    def backbone_forward(self, x):
+        return NotImplementedError
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.001)
+                for name, _ in m.named_parameters():
+                    if name in ['bias']:
+                        nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.ConvTranspose2d):
+                nn.init.normal_(m.weight, std=0.001)
+                for name, _ in m.named_parameters():
+                    if name in ['bias']:
+                        nn.init.constant_(m.bias, 0)
+
+
+def rotation_6d_to_matrix(d6: 'torch.Tensor') ->torch.Tensor:
+    """
+    Converts 6D rotation representation by Zhou et al. [1] to rotation matrix
+    using Gram--Schmidt orthogonalisation per Section B of [1].
+    Args:
+        d6: 6D rotation representation, of size (*, 6)
+
+    Returns:
+        batch of rotation matrices of size (*, 3, 3)
+
+    [1] Zhou, Y., Barnes, C., Lu, J., Yang, J., & Li, H.
+    On the Continuity of Rotation Representations in Neural Networks.
+    IEEE Conference on Computer Vision and Pattern Recognition, 2019.
+    Retrieved from http://arxiv.org/abs/1812.07035
+    """
+    a1, a2 = d6[..., :3], d6[..., 3:]
+    b1 = F.normalize(a1, dim=-1)
+    b2 = a2 - (b1 * a2).sum(-1, keepdim=True) * b1
+    b2 = F.normalize(b2, dim=-1)
+    b3 = torch.cross(b1, b2, dim=-1)
+    return torch.stack((b1, b2, b3), dim=-2)
+
+
+def angle_between(rot1: 'torch.Tensor', rot2: 'torch.Tensor'):
+    """
+    Calculate the angle in radians between two rotations. (torch, batch)
+    :param rot1: Rotation tensor 1 that can reshape to [batch_size, rep_dim].
+    :param rot2: Rotation tensor 2 that can reshape to [batch_size, rep_dim].
+    :param rep: The rotation representation used in the input.
+    :return: Tensor in shape [batch_size] for angles in radians.
+    """
+    rot_mat1 = rotation_6d_to_matrix(rot1[None])
+    rot_mat2 = rotation_6d_to_matrix(rot2[None])
+    offsets = rot_mat1.transpose(1, 2).bmm(rot_mat2)
+    angles = rotation_matrix_to_angle_axis(offsets).norm(dim=1)
+    return angles[0].item() * 180 / np.pi
+
+
+def assert_detection_flag(center_maps, pred_batch_ids, pred_czyxs, top_scores, outmap_size):
+    detection_flag = torch.Tensor([(False) for _ in range(len(center_maps))])
+    if len(pred_czyxs) == 0:
+        device = center_maps.device
+        pred_batch_ids = torch.arange(1)
+        pred_czyxs = torch.Tensor([[outmap_size // 4, outmap_size // 2, outmap_size // 2]]).long()
+        top_scores = torch.ones(1)
+    else:
+        detection_flag[pred_batch_ids] = True
+    return pred_batch_ids, pred_czyxs, top_scores, detection_flag
+
+
+def convert_traj2D2center_yxs(traj2D_gts, outmap_size, seq_mask):
+    """
+    Flattening N valuable trajectories in 2D body centers, traj2D_gts,
+        from shape (batch, 64, 8, 2) to (N, 8, 2).
+    Inputs:
+        traj2D_gts: torch.Tensor, shape [batch, person_num, clip, 2] the ground truth 2D body centers
+    Return:
+        batch_inds: torch.Tensor, shape [N]  
+        traj2D_cyxs: torch.Tensor, shape [N, clip, 2]  
+        top_scores: torch.Tensor, shape [N]  
+        gt_inds: torch.Tensor, shape [N, 2]  the (batch, subject) Index in gts matrix.
+    """
+    batch_size, max_person_num, clip_length, dim = traj2D_gts.shape
+    device = traj2D_gts.device
+    batch_inds = []
+    gt_inds = []
+    traj2D_cyxs = []
+    seq_masks = []
+    for batch_id in range(batch_size):
+        for person_id in range(max_person_num):
+            valid_mask = traj2D_gts[batch_id, person_id][:, 0] != -2
+            if valid_mask.sum() == 0:
+                break
+            if valid_mask.sum() != clip_length and seq_mask[batch_id * clip_length]:
+                continue
+            cyxs = traj2D_gts[batch_id, person_id].clone()
+            cyxs[valid_mask] = (cyxs[valid_mask] + 1) / 2 * outmap_size
+            if not seq_mask[batch_id * clip_length]:
+                cyxs = cyxs[valid_mask]
+                valid_clip_inds = torch.where(valid_mask)[0].cpu()
+                batch_ind = torch.Tensor([(batch_id * clip_length + i) for i in valid_clip_inds]).long()
+                valid_mask = valid_mask[valid_mask]
+                seq_masks.append(torch.zeros(len(batch_ind)).bool())
+            else:
+                batch_ind = torch.Tensor([(batch_id * clip_length + i) for i in range(clip_length)]).long()
+                seq_masks.append(torch.ones(len(batch_ind)).bool())
+                valid_clip_inds = torch.arange(clip_length)
+            batch_ind[~valid_mask] = -1
+            traj2D_cyxs.append(cyxs)
+            batch_inds.append(batch_ind)
+            gt_inds.append(torch.stack([torch.ones(len(valid_clip_inds)) * batch_id, torch.ones(len(valid_clip_inds)) * person_id, valid_clip_inds], 1).long())
+    traj2D_cyxs = torch.cat(traj2D_cyxs, 0).long()
+    batch_inds = torch.cat(batch_inds, 0)
+    gt_inds = torch.cat(gt_inds, 0)
+    seq_masks = torch.cat(seq_masks, 0)
+    top_scores = torch.ones(len(batch_inds))
+    return batch_inds, traj2D_cyxs, top_scores, gt_inds, seq_masks
+
+
+def get_3Dcoord_maps_zeroz(size, zsize=64):
+    range_arr = torch.arange(size, dtype=torch.float32)
+    Y_map = range_arr.reshape(1, 1, size, 1, 1).repeat(1, zsize, 1, size, 1) / size * 2 - 1
+    X_map = range_arr.reshape(1, 1, 1, size, 1).repeat(1, zsize, size, 1, 1) / size * 2 - 1
+    Z_map = torch.zeros_like(Y_map)
+    out = torch.cat([Z_map, Y_map, X_map], dim=-1)
+    return out
+
+
+def infilling_cams_of_low_quality_dets(normed_cams, seq_trackIDs, memory5D, seq_inherent_flags, direct_inherent=False, smooth_cam=True, pose_smooth_coef=1.0):
+    for ind, track_id in enumerate(seq_trackIDs):
+        track_id = track_id.item()
+        clip_cams = normed_cams[ind]
+        infilling_clip_ids = torch.where(seq_inherent_flags[0][track_id])[0]
+        good_clip_ids = torch.where(~seq_inherent_flags[0][track_id])[0]
+        if smooth_cam:
+            if 'cams' not in memory5D[0][track_id]:
+                memory5D[0][track_id]['cams'] = OneEuroFilter(pose_smooth_coef, 0.7)
+            if len(infilling_clip_ids) > 0:
+                for clip_id in infilling_clip_ids:
+                    fore_clips_ids = torch.where(~seq_inherent_flags[0][track_id][:clip_id])[0]
+                    if len(fore_clips_ids) == 0:
+                        if memory5D[0][track_id]['cams'].x_filter.prev_raw_value is not None:
+                            normed_cams[ind, clip_id] = memory5D[0][track_id]['cams'].x_filter.prev_raw_value
+                        continue
+                    after_clips_ids = torch.where(~seq_inherent_flags[0][track_id][clip_id:])[0]
+                    if len(after_clips_ids) == 0:
+                        normed_cams[ind, clip_id] = clip_cams[good_clip_ids[-1]]
+                        continue
+                    valid_fore_ind = fore_clips_ids[-1]
+                    valid_after_ind = after_clips_ids[0] + clip_id
+                    normed_cams[ind, clip_id] = (valid_after_ind - clip_id) / (valid_after_ind - valid_fore_ind) * clip_cams[valid_fore_ind] + (clip_id - valid_fore_ind) / (valid_after_ind - valid_fore_ind) * clip_cams[valid_after_ind]
+            for clip_id in range(len(clip_cams)):
+                normed_cams[ind, clip_id] = memory5D[0][track_id]['cams'].process(clip_cams[clip_id])
+        else:
+            if 'cams' not in memory5D[0][track_id]:
+                memory5D[0][track_id]['cams'] = clip_cams[good_clip_ids[0]] if len(good_clip_ids) > 0 else None
+            if direct_inherent:
+                for clip_id in range(normed_cams.shape[1]):
+                    if seq_inherent_flags[0][track_id][clip_id] and memory5D[0][track_id]['cams'] is not None:
+                        normed_cams[ind, clip_id] = memory5D[0][track_id]['cams']
+                    elif not seq_inherent_flags[0][track_id][clip_id]:
+                        memory5D[0][track_id]['cams'] = normed_cams[ind, clip_id]
+            else:
+                if len(infilling_clip_ids) > 0:
+                    for clip_id in infilling_clip_ids:
+                        fore_clips_ids = torch.where(~seq_inherent_flags[0][track_id][:clip_id])[0]
+                        if len(fore_clips_ids) == 0:
+                            if memory5D[0][track_id]['cams'] is not None:
+                                normed_cams[ind, clip_id] = memory5D[0][track_id]['cams']
+                            continue
+                        after_clips_ids = torch.where(~seq_inherent_flags[0][track_id][clip_id:])[0]
+                        if len(after_clips_ids) == 0:
+                            normed_cams[ind, clip_id] = clip_cams[good_clip_ids[-1]]
+                            continue
+                        valid_fore_ind = fore_clips_ids[-1]
+                        valid_after_ind = after_clips_ids[0] + clip_id
+                        normed_cams[ind, clip_id] = (valid_after_ind - clip_id) / (valid_after_ind - valid_fore_ind) * clip_cams[valid_fore_ind] + (clip_id - valid_fore_ind) / (valid_after_ind - valid_fore_ind) * clip_cams[valid_after_ind]
+                if len(good_clip_ids) > 0:
+                    memory5D[0][track_id]['cams'] = clip_cams[good_clip_ids[-1]]
+    return normed_cams, memory5D
+
+
+def make_heatmaps_composite(heatmaps, image=None):
+    if image is None:
+        image = np.ones((512, 512, 3), dtype=np.uint8) * 255
+    heatmaps = torch.nn.functional.interpolate(heatmaps[None].float(), size=image.shape[:2], mode='bilinear')[0]
+    heatmaps = heatmaps.mul(255).clamp(0, 255).byte().detach().cpu().numpy()
+    num_joints, height, width = heatmaps.shape
+    image_grid = np.zeros((height, num_joints * width, 3), dtype=np.uint8)
+    for j in range(num_joints):
+        heatmap = heatmaps[j, :, :]
+        colored_heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        image_fused = colored_heatmap * 0.7 + image * 0.3
+        width_begin = width * j
+        width_end = width * (j + 1)
+        image_grid[:, width_begin:width_end, :] = image_fused
+    return image_grid
+
+
+def filter_out_small_objects(cams, thresh=0.1):
+    large_object_mask = cams[:, 0] > thresh
+    return large_object_mask
+
+
+def parse_tracking_ids(seq_tracking_ids, pred_batch_ids, clip_length):
+    all_track_results = torch.cat([v[0] for k, v in seq_tracking_ids.items()], 0)
+    all_track_ids = torch.unique(all_track_results[:, 3].long())
+    seq_tracking_results = {tid.item(): torch.zeros(clip_length, 3).long() for tid in all_track_ids}
+    seq_tracking_batch_inds = {tid.item(): (torch.ones(clip_length).long() * -1) for tid in all_track_ids}
+    seq_tracking_quality = {tid.item(): torch.zeros(clip_length, 2).float() for tid in all_track_ids}
+    seq_masks = {tid.item(): (True) for tid in all_track_ids}
+    valid_tracked_num = {tid.item(): (0) for tid in all_track_ids}
+    frame_ids = sorted(seq_tracking_ids.keys())
+    subject_traj_dict = {}
+    for frame_id in frame_ids:
+        trans_track_ids, batch_ids, org_trans, czyxs = seq_tracking_ids[frame_id]
+        trans_tracked = trans_track_ids[:, :3]
+        detected_track_ids = trans_track_ids[:, 3]
+        tracked_det_conf = trans_track_ids[:, 4]
+        tracked_flag = trans_track_ids[:, 5]
+        tracked_czyx = trans_track_ids[:, 6:9]
+        for track_id in seq_tracking_results:
+            this_subject_mask = detected_track_ids == track_id
+            if this_subject_mask.sum() == 0:
+                continue
+            seq_tracking_results[track_id][frame_id] = tracked_czyx[this_subject_mask]
+            seq_tracking_quality[track_id][frame_id, 0] = tracked_det_conf[this_subject_mask]
+            seq_tracking_quality[track_id][frame_id, 1] = tracked_flag[this_subject_mask]
+            seq_tracking_batch_inds[track_id][frame_id] = batch_ids[0]
+            valid_tracked_num[track_id] += 1
+    for tid, valid_num in valid_tracked_num.items():
+        if valid_num < min(len(frame_ids), 6):
+            del seq_tracking_results[tid], seq_tracking_batch_inds[tid], seq_masks[tid], seq_tracking_quality[tid]
+    return seq_tracking_results, seq_tracking_batch_inds, seq_masks, seq_tracking_quality
+
+
+def suppress_duplicate_dets(cams, det_confs, thresh=0.1):
+    sdd_mask = torch.ones(len(cams)).bool()
+    if len(cams) > 1:
+        del_index = []
+        for ind in range(len(cams)):
+            dists = torch.sort(torch.norm(cams - cams[[ind]], p=2, dim=-1), descending=False)
+            dup_inds = dists.indices[dists.values < thresh][1:].tolist()
+            if len(dup_inds) > 0:
+                dup_inds = dup_inds + [ind]
+                dup_inds_inds = torch.sort(det_confs[dup_inds], descending=True).indices[1:].tolist()
+                det_ind_with_nonmaximum_conf = [dup_inds[i] for i in dup_inds_inds]
+                sdd_mask[det_ind_with_nonmaximum_conf] = False
+    return sdd_mask
+
+
+def seach_clip_id(batch_id, seq_inds):
+    batch_ids = seq_inds[:, 2]
+    clip_id = seq_inds[torch.where(batch_ids == batch_id)[0], 1]
+    return clip_id
+
+
+def prepare_complete_trajectory_features(self, seq_tracking_results, mesh_feature_maps, seq_inds):
+    seq_traj_features = {}
+    seq_traj_czyxs = {}
+    seq_traj_batch_inds = {}
+    seq_traj_valid_masks = {}
+    seq_masks = {}
+    seq_track_ids = {}
+    for seq_id, (center_traj3Ds, batch_inds, seq_flags) in seq_tracking_results.items():
+        seq_traj_features[seq_id] = []
+        seq_traj_czyxs[seq_id] = []
+        seq_traj_batch_inds[seq_id] = []
+        seq_traj_valid_masks[seq_id] = []
+        seq_masks[seq_id] = []
+        seq_track_ids[seq_id] = []
+        for track_id in center_traj3Ds:
+            subj_center3D_traj = center_traj3Ds[track_id]
+            subj_batch_inds = batch_inds[track_id]
+            seq_flag = seq_flags[track_id]
+            valid_mask = torch.ones(len(subj_batch_inds)).bool()
+            fore_subj_center3D_traj = subj_center3D_traj.clone().detach()
+            fore_subj_center3D_traj_weight = torch.zeros(len(subj_center3D_traj)) + 0.5
+            fore_subj_batch_inds = subj_batch_inds.clone().detach()
+            after_subj_center3D_traj = subj_center3D_traj.clone().detach()
+            after_subj_center3D_traj_weight = torch.zeros(len(subj_center3D_traj)) + 0.5
+            after_subj_batch_inds = subj_batch_inds.clone().detach()
+            for sbid in range(len(subj_batch_inds)):
+                subj_batch_ind = subj_batch_inds[sbid]
+                if sbid == 0 and subj_batch_ind == -1:
+                    valid_ind = torch.where(subj_batch_inds != -1)[0]
+                    if len(valid_ind) == 0:
+                        None
+                    valid_ind = 0 if len(valid_ind) == 0 else valid_ind[0]
+                    fore_subj_center3D_traj[sbid] = fore_subj_center3D_traj[valid_ind]
+                    after_subj_center3D_traj[sbid] = after_subj_center3D_traj[valid_ind]
+                    fore_subj_batch_inds[sbid] = subj_batch_inds[valid_ind]
+                    after_subj_batch_inds[sbid] = subj_batch_inds[valid_ind]
+                    subj_batch_inds[0] = subj_batch_inds[valid_ind] - seach_clip_id(subj_batch_inds[valid_ind], seq_inds)
+                    valid_mask[0] = False
+                if subj_batch_ind == -1:
+                    valid_fore_ind = torch.where(subj_batch_inds[:sbid] != -1)[0].max()
+                    if len(torch.where(subj_batch_inds[sbid + 1:] != -1)[0]) > 0:
+                        valid_after_ind = sbid + 1 + torch.where(subj_batch_inds[sbid + 1:] != -1)[0].min()
+                        if valid_after_ind == valid_fore_ind:
+                            None
+                            None
+                            None
+                            None
+                        fore_subj_center3D_traj_weight[sbid] = (valid_after_ind - sbid) / (valid_after_ind - valid_fore_ind)
+                        after_subj_center3D_traj_weight[sbid] = (sbid - valid_fore_ind) / (valid_after_ind - valid_fore_ind)
+                    else:
+                        valid_after_ind = valid_fore_ind
+                    fore_subj_center3D_traj[sbid] = fore_subj_center3D_traj[valid_fore_ind]
+                    after_subj_center3D_traj[sbid] = after_subj_center3D_traj[valid_after_ind]
+                    fore_subj_batch_inds[sbid] = subj_batch_inds[valid_fore_ind]
+                    after_subj_batch_inds[sbid] = subj_batch_inds[valid_after_ind]
+                    subj_batch_inds[sbid] = sbid + subj_batch_inds[valid_fore_ind] - seach_clip_id(subj_batch_inds[valid_fore_ind], seq_inds)
+                    valid_mask[sbid] = False
+            fore_subj_features = self.image_feature_sampling(mesh_feature_maps, fore_subj_center3D_traj, fore_subj_batch_inds)
+            after_subj_features = self.image_feature_sampling(mesh_feature_maps, after_subj_center3D_traj, after_subj_batch_inds)
+            subj_features = fore_subj_features * fore_subj_center3D_traj_weight.unsqueeze(1) + after_subj_center3D_traj_weight.unsqueeze(1) * after_subj_features
+            subj_czyxs = fore_subj_center3D_traj * fore_subj_center3D_traj_weight.unsqueeze(1) + after_subj_center3D_traj * after_subj_center3D_traj_weight.unsqueeze(1)
+            seq_traj_features[seq_id].append(subj_features)
+            seq_traj_czyxs[seq_id].append(subj_czyxs.long())
+            seq_traj_batch_inds[seq_id].append(subj_batch_inds)
+            seq_traj_valid_masks[seq_id].append(valid_mask)
+            seq_masks[seq_id].append(seq_flag)
+            seq_track_ids[seq_id].append(track_id * torch.ones(len(subj_features)))
+    traj_batch_inds = []
+    traj_czyxs = []
+    traj_features = []
+    traj_masks = []
+    traj_seq_masks = []
+    sample_seq_masks = []
+    traj_track_ids = []
+    for seq_id, subj_features_list in seq_traj_features.items():
+        traj_features.append(torch.stack(subj_features_list))
+        traj_czyxs.append(torch.stack(seq_traj_czyxs[seq_id]))
+        traj_batch_inds.append(torch.stack(seq_traj_batch_inds[seq_id]))
+        traj_masks.append(torch.stack(seq_traj_valid_masks[seq_id]))
+        traj_seq_masks = traj_seq_masks + seq_masks[seq_id]
+        sample_seq_masks.append(torch.Tensor(seq_masks[seq_id]).sum() > 0)
+        traj_track_ids.append(torch.stack(seq_track_ids[seq_id]).long())
+    traj_seq_masks = torch.Tensor(traj_seq_masks).bool().reshape(-1)
+    sample_seq_masks = torch.Tensor(sample_seq_masks).bool().reshape(-1)
+    return traj_features, traj_czyxs, traj_batch_inds, traj_masks, traj_seq_masks, sample_seq_masks, traj_track_ids
+
+
+def prepare_complete_trajectory_features_withmemory(self, seq_tracking_results, mesh_feature_maps, seq_inds, memory5D=None, det_conf_thresh=0.2, inherent_previous=True):
+    if memory5D is None:
+        memory5D = {seq_id: None for seq_id in seq_tracking_results}
+    seq_traj_features = {}
+    seq_traj_czyxs = {}
+    seq_traj_batch_inds = {}
+    seq_traj_valid_masks = {}
+    seq_masks = {}
+    seq_track_ids = {}
+    seq_inherent_flags = {}
+    for seq_id, (center_traj3Ds, batch_inds, seq_flags, track_quality) in seq_tracking_results.items():
+        seq_traj_features[seq_id] = []
+        seq_traj_czyxs[seq_id] = []
+        seq_traj_batch_inds[seq_id] = []
+        seq_traj_valid_masks[seq_id] = []
+        seq_masks[seq_id] = []
+        seq_track_ids[seq_id] = []
+        seq_inherent_flags[seq_id] = {}
+        if memory5D[seq_id] is None:
+            memory5D[seq_id] = {track_id: {'feature': None, 'inherent_flag': {}} for track_id in center_traj3Ds}
+        for track_id in center_traj3Ds:
+            subj_center3D_traj = center_traj3Ds[track_id]
+            subj_batch_inds = batch_inds[track_id]
+            seq_flag = seq_flags[track_id]
+            det_confs = track_quality[track_id][:, 0]
+            tracked_states = track_quality[track_id][:, 1]
+            valid_mask = torch.ones(len(subj_batch_inds)).bool()
+            if track_id not in memory5D[seq_id]:
+                memory5D[seq_id][track_id] = {'feature': None, 'inherent_flag': {}}
+            for sbid in range(len(subj_batch_inds)):
+                subj_batch_ind = subj_batch_inds[sbid]
+                if subj_batch_ind == -1:
+                    valid_mask[sbid] = False
+            subj_features = self.image_feature_sampling(mesh_feature_maps, subj_center3D_traj, subj_batch_inds)
+            inherent_flags = torch.ones(len(subj_features)).bool()
+            if inherent_previous:
+                for clip_id in range(len(subj_features)):
+                    inherent_flag = True
+                    if valid_mask[clip_id]:
+                        if det_confs[clip_id] > det_conf_thresh and tracked_states[clip_id] > 0.99:
+                            memory5D[seq_id][track_id]['feature'] = subj_features[clip_id]
+                            inherent_flag = False
+                        elif det_confs[clip_id] <= det_conf_thresh and memory5D[seq_id][track_id]['feature'] is not None:
+                            subj_features[clip_id] = memory5D[seq_id][track_id]['feature']
+                        elif tracked_states[clip_id] < 0.99 and memory5D[seq_id][track_id]['feature'] is not None:
+                            subj_features[clip_id] = memory5D[seq_id][track_id]['feature']
+                    memory5D[seq_id][track_id]['inherent_flag'][clip_id] = inherent_flag
+                    inherent_flags[clip_id] = inherent_flag
+            subj_czyxs = subj_center3D_traj
+            seq_traj_features[seq_id].append(subj_features)
+            seq_traj_czyxs[seq_id].append(subj_czyxs.long())
+            seq_traj_batch_inds[seq_id].append(subj_batch_inds)
+            seq_traj_valid_masks[seq_id].append(valid_mask)
+            seq_masks[seq_id].append(seq_flag)
+            seq_track_ids[seq_id].append(track_id * torch.ones(len(subj_features)))
+            seq_inherent_flags[seq_id][track_id] = inherent_flags
+    traj_batch_inds = []
+    traj_czyxs = []
+    traj_features = []
+    traj_masks = []
+    traj_seq_masks = []
+    sample_seq_masks = []
+    traj_track_ids = []
+    for seq_id, subj_features_list in seq_traj_features.items():
+        traj_features.append(torch.stack(subj_features_list))
+        traj_czyxs.append(torch.stack(seq_traj_czyxs[seq_id]))
+        traj_batch_inds.append(torch.stack(seq_traj_batch_inds[seq_id]))
+        traj_masks.append(torch.stack(seq_traj_valid_masks[seq_id]))
+        traj_seq_masks = traj_seq_masks + seq_masks[seq_id]
+        sample_seq_masks.append(torch.Tensor(seq_masks[seq_id]).sum() > 0)
+        traj_track_ids.append(torch.stack(seq_track_ids[seq_id]).long())
+    traj_seq_masks = torch.Tensor(traj_seq_masks).bool().reshape(-1)
+    sample_seq_masks = torch.Tensor(sample_seq_masks).bool().reshape(-1)
+    return traj_features, traj_czyxs, traj_batch_inds, traj_masks, traj_seq_masks, sample_seq_masks, traj_track_ids, seq_inherent_flags, memory5D
+
+
+def progressive_multiply_global_rotation(grots_offsets, cam_rots, clip_length, init_world_grots=None, accum_way='multiply'):
+    grots_offsets = grots_offsets.reshape(-1, clip_length, 6)
+    cam_grots = cam_rots.detach().reshape(-1, clip_length, 6)
+    clip_num = len(grots_offsets)
+    if accum_way == 'multiply':
+        grots_offsets[..., [0, 4]] = grots_offsets[..., [0, 4]] + 1
+        grots_offsets_mat = torch.stack([rotation_6d_to_matrix(grots_offsets[ind]) for ind in range(clip_num)], 0)
+        cam_grots_mat = torch.stack([rotation_6d_to_matrix(cam_grots[ind]) for ind in range(clip_num)], 0)
+        world_grots_offset_mat = [grots_offsets_mat[:, 0]]
+        if init_world_grots is not None:
+            world_grots_offset_mat[0] = torch.matmul(world_grots_offset_mat[0], init_world_grots)
+        for ind in range(1, clip_length):
+            world_grot_offset_mat = torch.matmul(grots_offsets_mat[:, ind], world_grots_offset_mat[-1])
+            world_grots_offset_mat.append(world_grot_offset_mat)
+        world_grots_offset_mat = torch.stack(world_grots_offset_mat, 1)
+        world_grots_mat = torch.matmul(world_grots_offset_mat, cam_grots_mat)
+        world_grots = torch.stack([rotation_matrix_to_angle_axis(world_grots_mat[ind]) for ind in range(clip_num)], 0).reshape(-1, 3)
+        if init_world_grots is None:
+            return world_grots, world_grots_offset_mat.reshape(-1, 3, 3), None
+        else:
+            return world_grots, world_grots_offset_mat.reshape(-1, 3, 3), world_grots_offset_mat[:, [-1]]
+    elif accum_way == 'add':
+        accum_offsets = torch.cumsum(cam_grots, -2)
+        world_grots = cam_grots + accum_offsets
+        if init_world_grots is not None:
+            world_grots = world_grots + init_world_grots
+        init_world_grots = accum_offsets[:, [-1]]
+        world_grots = torch.stack([rot6D_to_angular(world_grots[ind]) for ind in range(clip_num)], 0).reshape(-1, 3)
+        return world_grots, None, init_world_grots
+
+
+def add_image2fig(image, suf_w=128, suf_h=128):
+    eight_bit_img = Image.fromarray(image[:, ::-1]).convert('P', palette='WEB', dither=None)
+    idx_to_color = np.array(eight_bit_img.getpalette()).reshape((-1, 3))
+    colorscale = [[i / 255.0, 'rgb({}, {}, {})'.format(*rgb)] for i, rgb in enumerate(idx_to_color)]
+    h, w = image.shape[:2]
+    x = np.linspace(1, suf_w, w)
+    y = np.linspace(1, suf_h, h)
+    z = np.zeros((h, w))
+    image_fig = go.Surface(x=x, y=y, z=z, surfacecolor=eight_bit_img, cmin=0, cmax=255, colorscale=colorscale, showscale=False, lighting_diffuse=1, lighting_ambient=1, lighting_fresnel=1, lighting_roughness=1, lighting_specular=0.5)
+    return image_fig
+
+
+def prepare_coord_map(d, h, w):
+    d_map = np.zeros((d, h, w))
+    for ind in range(d):
+        d_map[ind] = d - 1 - ind
+    h_map = np.zeros((d, h, w))
+    for ind in range(h):
+        h_map[:, ind] = ind
+    w_map = np.zeros((d, h, w))
+    for ind in range(w):
+        w_map[:, :, ind] = w - 1 - ind
+    return [w_map, h_map, d_map]
+
+
+whd_map = prepare_coord_map(64, 128, 128)
+
+
+def plot_3D_volume(volume):
+    X, Y, Z = whd_map
+    fig = go.Figure()
+    volume_fig = go.Volume(x=X.flatten(), y=Y.flatten(), z=Z.flatten(), value=volume.flatten(), opacity=0.3, opacityscale=[[-1, 0], [0, 0], [0.3, 1]], surface_count=10, colorscale='RdBu')
+    return volume_fig
+
+
+def update_centermap_layout(fig):
+    fig.update_layout(title='CenterMap 3D', width=800, height=800, scene=dict(xaxis_visible=True, yaxis_visible=True, zaxis_visible=True, xaxis_title='W', yaxis_title='H', zaxis_title='D'))
+    return fig
+
+
+def show_plotly_figure(volume=None, image=None):
+    fig = go.Figure()
+    if volume is not None:
+        volume_fig = plot_3D_volume(volume)
+        fig.add_trace(volume_fig)
+    if image is not None:
+        image_fig = add_image2fig(image)
+        fig.add_trace(image_fig)
+    fig = update_centermap_layout(fig)
+    fig.show()
+
+
+def build_temporal_model(model_type='conv3D', head=1):
+    model = THeads[head](model_type=model_type)
+    return model
+
+
+def check_input_data_quality(meta_data, min_num=2):
+    return meta_data['all_person_detected_mask'].sum() > min_num
 
 
 def fix_backbone(params, exclude_key=['backbone.']):
@@ -4876,6 +8899,22 @@ def fix_backbone(params, exclude_key=['backbone.']):
                 param.requires_grad = False
     logging.info('Fix params that include in {}'.format(exclude_key))
     return params
+
+
+def flatten_clip_data(meta_data):
+    seq_num, clip_length = meta_data['image'].shape[:2]
+    key_names = list(meta_data.keys())
+    for key in key_names:
+        if isinstance(meta_data[key], torch.Tensor):
+            shape_list = meta_data[key].shape
+            if len(shape_list) > 2:
+                meta_data[key] = meta_data[key].view(-1, *shape_list[2:])
+            else:
+                meta_data[key] = meta_data[key].view(-1)
+        elif isinstance(meta_data[key], list):
+            meta_data[key] = list(np.array(meta_data[key]).transpose(1, 0).reshape(-1))
+    meta_data['seq_inds'] = torch.stack([torch.arange(seq_num).unsqueeze(1).repeat(1, clip_length).reshape(-1), torch.arange(clip_length).unsqueeze(0).repeat(seq_num, 1).reshape(-1), torch.arange(seq_num * clip_length), torch.ones(seq_num * clip_length)], 1).long()
+    return meta_data
 
 
 def init_seeds(seed=0, cuda_deterministic=False):
@@ -4891,6 +8930,50 @@ def init_seeds(seed=0, cuda_deterministic=False):
         torch.backends.cudnn.enabled = True
 
 
+def load_model(path, model, prefix='module.', drop_prefix='', optimizer=None, **kwargs):
+    logging.info('using fine_tune model: {}'.format(path))
+    if os.path.exists(path):
+        pretrained_model = torch.load(path)
+        current_model = model.state_dict()
+        if isinstance(pretrained_model, dict):
+            if 'model_state_dict' in pretrained_model:
+                pretrained_model = pretrained_model['model_state_dict']
+        copy_state_dict(current_model, pretrained_model, prefix=prefix, drop_prefix=drop_prefix, **kwargs)
+    else:
+        logging.warning('model {} not exist!'.format(path))
+    return model
+
+
+def convert2BDsplit(tensor):
+    """
+    B batch size, N person number, T temp_clip_length, {} means might have this dimension for some input tensor but not all.
+    Convert the input tensor from shape (B,...) to (BxT, ...), expanded [0,1,2,...] as [0,0,0,0,0, 1,1,1,1,1, 2,2,2,2,2, ...] if T=5.
+    The shape of image feature maps is (BxT) x C x H x W
+    In this way, we can use the balanced dataparallel to split data of shape (BxT) to multiple GPUs.
+    """
+    shape = list(tensor.shape)
+    shape[0] = shape[0] * args().temp_clip_length
+    repeat_times = [(1) for _ in range(len(shape) + 1)]
+    repeat_times[1] = args().temp_clip_length
+    return tensor.unsqueeze(1).repeat(*repeat_times).reshape(*shape)
+
+
+def full_body_bboxes2person_centers(full_body_bboxes):
+    valid_mask = (full_body_bboxes != -2).sum(-1) == 0
+    person_centers = (full_body_bboxes[:, :, :2] + full_body_bboxes[:, :, 2:]) / 2
+    person_centers[~valid_mask] = -2.0
+    return person_centers
+
+
+def ordered_organize_frame_outputs_to_clip(seq_inds, person_centers=None, track_ids=None, cam_params=None, cam_mask=None, full_body_bboxes=None):
+    seq_sampling_index = seq_inds[:, 2].reshape(-1, args().temp_clip_length).numpy()
+    if full_body_bboxes is not None:
+        person_centers = full_body_bboxes2person_centers(full_body_bboxes)
+    person_centers_inputs, track_ids_inputs, cam_params_inputs, cam_mask_inputs = [torch.stack([item[ids] for ids in seq_sampling_index], 0).contiguous() for item in [person_centers, track_ids, cam_params, cam_mask]]
+    trajectory_info, track_ids_flatten = convert_centers_to_trajectory(person_centers_inputs, track_ids_inputs, cam_params_inputs, cam_mask_inputs, seq_inds=seq_inds)
+    return trajectory_info, track_ids_flatten
+
+
 def save_single_model(model, path):
     logging.info('saving {}'.format(path))
     torch.save(model.module.state_dict(), path)
@@ -4904,400 +8987,6 @@ def save_model(model, title, parent_folder=None):
     save_single_model(model, title)
 
 
-def train_entire_model(net):
-    exclude_layer = []
-    for index, (name, param) in enumerate(net.named_parameters()):
-        if 'smpl' not in name:
-            param.requires_grad = True
-        else:
-            if param.requires_grad:
-                exclude_layer.append(name)
-            param.requires_grad = False
-    if len(exclude_layer) == 0:
-        logging.info('Training all layers.')
-    else:
-        logging.info('Train all layers, except: {}'.format(exclude_layer))
-    return net
-
-
-def _init_error_dict():
-    ED = {}
-    ED['MPJPE'], ED['PA_MPJPE'], ED['PCK3D'], ED['imgpaths'] = [{ds: [] for ds in constants.dataset_involved} for _ in range(4)]
-    ED['MPJAE'] = {ds: [] for ds in constants.MPJAE_ds}
-    ED['PVE_new'] = {ds: [] for ds in constants.PVE_ds}
-    ED['PVE'] = {ds: {'target_theta': [], 'pred_theta': []} for ds in constants.PVE_ds}
-    ED['ds_bias'] = {ds: {'scale': [], 'trans': []} for ds in constants.dataset_involved}
-    ED['root_depth'] = {ds: [] for ds in constants.dataset_depth}
-    ED['mPCKh'] = {ds: [] for ds in constants.dataset_kp2ds}
-    ED['depth_relative'] = {ds: {'eq': [], 'cd': [], 'fd': [], 'eq_age': [], 'cd_age': [], 'fd_age': []} for ds in constants.dataset_relative_depth + constants.dataset_depth}
-    ED['age_relative'] = {ds: {age_name: [] for age_name in constants.relative_age_types} for ds in constants.dataset_relative_age}
-    return ED
-
-
-def _calc_joint_angle_error(pred_mat, gt_mat, return_axis_angle=False):
-    """
-    Compute the geodesic distance between the two input matrices.
-    :param pred_mat: predicted rotation matrices. Shape: ( Seq, 9g, 3, 3)
-    :param gt_mat: ground truth rotation matrices. Shape: ( Seq, 9, 3, 3)
-    :return: Mean geodesic distance between input matrices.
-    """
-    r1 = pred_mat.reshape(-1, 3, 3)
-    r2 = gt_mat.reshape(-1, 3, 3)
-    r2t = r2.permute(0, 2, 1)
-    r = torch.matmul(r1, r2t)
-    axis_angles = rotation_matrix_to_angle_axis(r)
-    angles = torch.norm(axis_angles, dim=-1) * (180.0 / np.pi)
-    if return_axis_angle:
-        return angles, axis_angles
-    return angles
-
-
-def trans_relative_rot_to_global_rotmat(params, with_global_rot=False):
-    """
-    calculate absolute rotation matrix in the global coordinate frame of K body parts. 
-    The rotation is the map from the local bone coordinate frame to the global one.
-    K= 9 parts in the following order: 
-    root (JOINT 0) , left hip  (JOINT 1), right hip (JOINT 2), left knee (JOINT 4), right knee (JOINT 5), 
-    left shoulder (JOINT 16), right shoulder (JOINT 17), left elbow (JOINT 18), right elbow (JOINT 19).
-    parent kinetic tree [-1,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  9,  9, 12, 13, 14, 16, 17, 18, 19, 20, 21]
-    """
-    batch_size, param_num = params.shape[0], params.shape[1] // 3
-    pose_rotmat = batch_rodrigues(params.reshape(-1, 3)).view(batch_size, param_num, 3, 3).contiguous()
-    if with_global_rot:
-        sellect_joints = np.array([0, 1, 2, 4, 5, 16, 17, 18, 19], dtype=np.int)
-        results = [pose_rotmat[:, 0]]
-        for idx in range(param_num - 1):
-            i_val = int(idx + 1)
-            joint_rot = pose_rotmat[:, i_val]
-            parent = constants.kintree_parents[i_val]
-            glob_transf_mat = torch.matmul(results[parent], joint_rot)
-            results.append(glob_transf_mat)
-    else:
-        sellect_joints = np.array([1, 2, 4, 5, 16, 17, 18, 19], dtype=np.int) - 1
-        results = [torch.eye(3, 3)[None].repeat(batch_size, 1, 1)]
-        for i_val in range(param_num - 1):
-            joint_rot = pose_rotmat[:, i_val]
-            parent = constants.kintree_parents[i_val + 1]
-            glob_transf_mat = torch.matmul(results[parent], joint_rot)
-            results.append(glob_transf_mat)
-    global_rotmat = torch.stack(results, axis=1)[:, sellect_joints].contiguous()
-    return global_rotmat
-
-
-def _calc_MPJAE(rel_pose_pred, rel_pose_real):
-    global_pose_rotmat_pred = trans_relative_rot_to_global_rotmat(rel_pose_pred, with_global_rot=True)
-    global_pose_rotmat_real = trans_relative_rot_to_global_rotmat(rel_pose_real, with_global_rot=True)
-    MPJAE_error = _calc_joint_angle_error(global_pose_rotmat_pred, global_pose_rotmat_real).cpu().numpy()
-    return MPJAE_error
-
-
-def _calc_relative_age_error_weak_(age_preds, age_gts, matched_mask=None):
-    valid_mask = age_gts != -1
-    if matched_mask is not None:
-        valid_mask *= matched_mask
-    error_dict = {age_name: [] for age_name in constants.relative_age_types}
-    if valid_mask.sum() > 0:
-        for age_id, age_name in enumerate(constants.relative_age_types):
-            age_gt = age_gts[valid_mask].long() == age_id
-            age_pred = age_preds[valid_mask][age_gt].long()
-            error_dict.update({age_name: [age_pred]})
-    return error_dict
-
-
-relative_age_types = ['adult', 'teen', 'kid', 'baby']
-
-
-def _calc_relative_depth_error_weak_(pred_depths, depth_ids, reorganize_idx, age_gts=None, matched_mask=None):
-    depth_ids = depth_ids
-    depth_ids_vmask = depth_ids != -1
-    pred_depths_valid = pred_depths[depth_ids_vmask]
-    valid_inds = reorganize_idx[depth_ids_vmask]
-    depth_ids = depth_ids[depth_ids_vmask]
-    age_gts = age_gts[depth_ids_vmask]
-    error_dict = {'eq': [], 'cd': [], 'fd': [], 'eq_age': [], 'cd_age': [], 'fd_age': []}
-    error_each_age = {age_type: [] for age_type in relative_age_types}
-    for b_ind in torch.unique(valid_inds):
-        sample_inds = valid_inds == b_ind
-        if matched_mask is not None:
-            sample_inds *= matched_mask[depth_ids_vmask]
-        did_num = sample_inds.sum()
-        if did_num > 1:
-            pred_depths_sample = pred_depths_valid[sample_inds]
-            triu_mask = torch.triu(torch.ones(did_num, did_num), diagonal=1).bool()
-            dist_mat = (pred_depths_sample.unsqueeze(0).repeat(did_num, 1) - pred_depths_sample.unsqueeze(1).repeat(1, did_num))[triu_mask]
-            did_mat = (depth_ids[sample_inds].unsqueeze(0).repeat(did_num, 1) - depth_ids[sample_inds].unsqueeze(1).repeat(1, did_num))[triu_mask]
-            error_dict['eq'].append(dist_mat[did_mat == 0])
-            error_dict['cd'].append(dist_mat[did_mat < 0])
-            error_dict['fd'].append(dist_mat[did_mat > 0])
-            if age_gts is not None:
-                age_sample = age_gts[sample_inds]
-                age_mat = torch.cat([age_sample.unsqueeze(0).repeat(did_num, 1).unsqueeze(-1), age_sample.unsqueeze(1).repeat(1, did_num).unsqueeze(-1)], -1)[triu_mask]
-                error_dict['eq_age'].append(age_mat[did_mat == 0])
-                error_dict['cd_age'].append(age_mat[did_mat < 0])
-                error_dict['fd_age'].append(age_mat[did_mat > 0])
-    return error_dict
-
-
-def _calc_relative_depth_error_withgts_(pred_depths, depth_gts, reorganize_idx, age_gts=None, thresh=0.3, matched_mask=None):
-    depth_gts = depth_gts
-    error_dict = {'eq': [], 'cd': [], 'fd': [], 'eq_age': [], 'cd_age': [], 'fd_age': []}
-    for b_ind in torch.unique(reorganize_idx):
-        sample_inds = reorganize_idx == b_ind
-        if matched_mask is not None:
-            sample_inds *= matched_mask
-        did_num = sample_inds.sum()
-        if did_num > 1:
-            pred_depths_sample = pred_depths[sample_inds]
-            triu_mask = torch.triu(torch.ones(did_num, did_num), diagonal=1).bool()
-            dist_mat = (pred_depths_sample.unsqueeze(0).repeat(did_num, 1) - pred_depths_sample.unsqueeze(1).repeat(1, did_num))[triu_mask]
-            dist_mat_gt = (depth_gts[sample_inds].unsqueeze(0).repeat(did_num, 1) - depth_gts[sample_inds].unsqueeze(1).repeat(1, did_num))[triu_mask]
-            error_dict['eq'].append(dist_mat[torch.abs(dist_mat_gt) < thresh])
-            error_dict['cd'].append(dist_mat[dist_mat_gt < -thresh])
-            error_dict['fd'].append(dist_mat[dist_mat_gt > thresh])
-            if age_gts is not None:
-                age_sample = age_gts[sample_inds]
-                age_mat = torch.cat([age_sample.unsqueeze(0).repeat(did_num, 1).unsqueeze(-1), age_sample.unsqueeze(1).repeat(1, did_num).unsqueeze(-1)], -1)[triu_mask]
-                error_dict['eq_age'].append(age_mat[torch.abs(dist_mat_gt) < thresh])
-                error_dict['cd_age'].append(age_mat[dist_mat_gt < -thresh])
-                error_dict['fd_age'].append(age_mat[dist_mat_gt > thresh])
-    return error_dict
-
-
-def calc_pck(real, pred, align_inds=None, pck_joints=None):
-    vis_mask = real[:, :, 0] != -2.0
-    pred_aligned = align_by_parts(pred, align_inds=align_inds)
-    real_aligned = align_by_parts(real, align_inds=align_inds)
-    mpjpe_pck_batch = compute_mpjpe(pred_aligned, real_aligned, vis_mask, pck_joints=pck_joints)
-    return mpjpe_pck_batch
-
-
-def calc_outputs_evaluation_matrix(self, outputs, ED):
-    for ds in set(outputs['meta_data']['data_set']):
-        val_idx = np.where(np.array(outputs['meta_data']['data_set']) == ds)[0]
-        real_3d = outputs['meta_data']['kp_3d'][val_idx].contiguous()
-        if ds in constants.dataset_smpl2lsp:
-            real_3d = real_3d[:, self.All54_to_LSP14_mapper].contiguous()
-            if (self.All54_to_LSP14_mapper == -1).sum() > 0:
-                real_3d[:, self.All54_to_LSP14_mapper == -1] = -2.0
-            predicts = outputs['joints_h36m17'][:, :14].contiguous()
-            align_inds = [constants.LSP_14['R_Hip'], constants.LSP_14['L_Hip']]
-            bones, colors, kp_colors = constants.lsp14_connMat, constants.cm_body14, constants.lsp14_kpcm
-        else:
-            predicts = outputs['j3d'][val_idx, :24].contiguous()
-            real_3d = real_3d[:, :24].contiguous()
-            align_inds = [constants.SMPL_24['Pelvis_SMPL']]
-            bones, colors, kp_colors = constants.smpl24_connMat, constants.cm_smpl24, constants.smpl24_kpcm
-        mPCKh = _calc_matched_PCKh_(outputs['meta_data']['full_kp2d'].float(), outputs['pj2d'].float(), outputs['meta_data']['valid_masks'][:, 0])
-        ED['mPCKh'][ds].append(mPCKh)
-        matched_mask = mPCKh > args().matching_pckh_thresh
-        if ds in constants.dataset_depth:
-            predicts_j3ds = outputs['j3d'][val_idx].contiguous().detach().cpu().numpy()
-            predicts_pj2ds = outputs['pj2d_org'].detach().cpu().numpy()
-            if ds in ['agora', 'mini']:
-                predicts_j3ds = predicts_j3ds[:, :24] - predicts_j3ds[:, [0]]
-                predicts_pj2ds = predicts_pj2ds[:, :24]
-            trans_preds = outputs['cam_trans'].detach().cpu()
-            trans_gts = outputs['meta_data']['root_trans']
-            ED['root_depth'][ds].append(np.concatenate([trans_preds.numpy()[None], trans_gts.cpu().numpy()[None]]))
-            age_gts = outputs['meta_data']['depth_info'][:, 0] if 'depth_info' in outputs['meta_data'] else None
-            relative_depth_errors = _calc_relative_depth_error_withgts_(trans_preds[:, 2], trans_gts[:, 2], outputs['reorganize_idx'], age_gts=age_gts, matched_mask=matched_mask)
-            for dr_type in constants.relative_depth_types:
-                ED['depth_relative'][ds][dr_type] += relative_depth_errors[dr_type]
-                ED['depth_relative'][ds][dr_type + '_age'] += relative_depth_errors[dr_type + '_age']
-        if ds in ED['depth_relative']:
-            age_gts = outputs['meta_data']['depth_info'][:, 0] if 'depth_info' in outputs['meta_data'] else None
-            relative_depth_errors = _calc_relative_depth_error_weak_(outputs['cam_trans'][:, 2], outputs['meta_data']['depth_info'][:, 3], outputs['reorganize_idx'], age_gts=age_gts, matched_mask=matched_mask)
-            for dr_type in constants.relative_depth_types:
-                ED['depth_relative'][ds][dr_type] += relative_depth_errors[dr_type]
-                ED['depth_relative'][ds][dr_type + '_age'] += relative_depth_errors[dr_type + '_age']
-        if ds in ED['age_relative'] and args().learn_relative:
-            relative_age_errors = _calc_relative_age_error_weak_(outputs['Age_preds'], outputs['meta_data']['depth_info'][:, 0], matched_mask=matched_mask)
-            for age_type in constants.relative_age_types:
-                ED['age_relative'][ds][age_type] += relative_age_errors[age_type]
-        if ds not in constants.dataset_nokp3ds:
-            if args().calc_PVE_error and ds in constants.PVE_ds:
-                batch_PVE = torch.norm(outputs['meta_data']['verts'][val_idx] - outputs['verts'][val_idx], p=2, dim=-1).mean(-1)
-                ED['PVE_new'][ds].append(batch_PVE)
-            abs_error, aligned_poses = calc_mpjpe(real_3d, predicts, align_inds=align_inds, return_org=True)
-            abs_error = abs_error.float().cpu().numpy() * 1000
-            rt_error = calc_pampjpe(real_3d, predicts).float().cpu().numpy() * 1000
-            kp3d_vis = *aligned_poses, bones
-            if self.calc_pck:
-                pck_joints_sampled = constants.SMPL_MAJOR_JOINTS if real_3d.shape[1] == 24 else np.arange(12)
-                mpjpe_pck_batch = calc_pck(real_3d, predicts, lrhip=lrhip, pck_joints=pck_joints_sampled).cpu().numpy() * 1000
-                ED['PCK3D'][ds].append((mpjpe_pck_batch.reshape(-1) < self.PCK_thresh).astype(np.float32) * 100)
-                if ds in constants.MPJAE_ds:
-                    rel_pose_pred = torch.cat([outputs['params']['global_orient'][val_idx], outputs['params']['body_pose'][val_idx]], 1)[:, :22 * 3].contiguous()
-                    rel_pose_real = outputs['meta_data']['params'][val_idx, :22 * 3]
-                    MPJAE_error = _calc_MPJAE(rel_pose_pred, rel_pose_real)
-                    ED['MPJAE'][ds].append(MPJAE_error)
-            ED['MPJPE'][ds].append(abs_error.astype(np.float32))
-            ED['PA_MPJPE'][ds].append(rt_error.astype(np.float32))
-            ED['imgpaths'][ds].append(np.array(outputs['meta_data']['imgpath'])[val_idx])
-        else:
-            kp3d_vis = None
-    return ED, kp3d_vis
-
-
-def h36m_evaluation_act_wise(results, imgpaths, action_names):
-    actions = []
-    action_results = []
-    for imgpath in imgpaths:
-        actions.append(os.path.basename(imgpath).split('.jpg')[0].split('_')[1].split(' ')[0])
-    for action_name in action_names:
-        action_idx = np.where(np.array(actions) == action_name)[0]
-        action_results.append('{:.2f}'.format(results[action_idx].mean()))
-    return action_results
-
-
-def print_table(eval_results):
-    matrix_dict = {}
-    em_col_id = 0
-    matrix_list = []
-    for name in eval_results:
-        ds, em = name.split('-')
-        if em not in matrix_dict:
-            matrix_dict[em] = em_col_id
-            matrix_list.append(em)
-            em_col_id += 1
-    raw_dict = {}
-    for name, result in eval_results.items():
-        ds, em = name.split('-')
-        if ds not in raw_dict:
-            raw_dict[ds] = np.zeros(em_col_id).tolist()
-        raw_dict[ds][matrix_dict[em]] = '{:.3f}'.format(result)
-    table = PrettyTable(['DS/EM'] + matrix_list)
-    for idx, (ds, mat_list) in enumerate(raw_dict.items()):
-        table.add_row([ds] + mat_list)
-    None
-    None
-
-
-def process_matrix(matrix, name, times=1.0):
-    eval_results = {}
-    for ds, error_list in matrix.items():
-        if len(error_list) > 0:
-            result = np.concatenate(error_list, axis=0)
-            result = result[~np.isnan(result)].mean()
-            eval_results['{}-{}'.format(ds, name)] = result * times
-    return eval_results
-
-
-def print_results(ED):
-    eval_results = {}
-    for key, results in ED['root_depth'].items():
-        if len(results) > 0:
-            results_all = np.concatenate(results, axis=1)
-            axis_error = np.abs(results_all[0] - results_all[1]).mean(0)
-            root_error = np.sqrt(np.sum((results_all[0] - results_all[1]) ** 2, axis=1)).mean()
-            None
-    for ds, results in ED['depth_relative'].items():
-        result_length = sum([len(ED['depth_relative'][ds][dr_type]) for dr_type in constants.relative_depth_types])
-        if result_length > 0:
-            eq_dists = torch.cat(ED['depth_relative'][ds]['eq'], 0)
-            cd_dists = torch.cat(ED['depth_relative'][ds]['cd'], 0)
-            fd_dists = torch.cat(ED['depth_relative'][ds]['fd'], 0)
-            age_flag = len(ED['depth_relative'][ds]['eq_age']) > 0
-            if age_flag:
-                eq_age_ids = torch.cat(ED['depth_relative'][ds]['eq_age'], 0)
-                cd_age_ids = torch.cat(ED['depth_relative'][ds]['cd_age'], 0)
-                fd_age_ids = torch.cat(ED['depth_relative'][ds]['fd_age'], 0)
-                dr_age_ids = torch.cat([eq_age_ids, cd_age_ids, fd_age_ids], 0)
-            dr_all = np.array([len(eq_dists), len(cd_dists), len(fd_dists)])
-            for dr_thresh in [0.2]:
-                dr_corrects = [torch.abs(eq_dists) < dr_thresh, cd_dists < -dr_thresh, fd_dists > dr_thresh]
-                None
-                dr_corrects = torch.cat(dr_corrects, 0)
-                eval_results['{}-PCRD_{}'.format(ds, dr_thresh)] = dr_corrects.sum() / dr_all.sum()
-                if age_flag:
-                    for age_ind, age_name in enumerate(constants.relative_age_types):
-                        age_mask = (dr_age_ids == age_ind).sum(-1).bool()
-                        if age_mask.sum() > 0:
-                            eval_results['{}-PCRD_{}_{}'.format(ds, dr_thresh, age_name)] = dr_corrects[age_mask].sum() / age_mask.sum()
-    for ds, results in ED['age_relative'].items():
-        result_length = sum([len(ED['age_relative'][ds][age_type]) for age_type in constants.relative_age_types])
-        if result_length > 0:
-            None
-            age_error_results = {}
-            for age_id, age_type in enumerate(constants.relative_age_types):
-                age_pred_ids = torch.cat(ED['age_relative'][ds][age_type], 0)
-                age_error_results[age_type] = (age_pred_ids == age_id).float()
-                if age_id == 0:
-                    near_error_results = (age_pred_ids == 1).float()
-                elif age_id == 1:
-                    near_error_results = (age_pred_ids == 0).float() + (age_pred_ids == 2).float()
-                elif age_id == 2:
-                    near_error_results = (age_pred_ids == 1).float() + (age_pred_ids == 3).float()
-                elif age_id == 3:
-                    near_error_results = (age_pred_ids == 2).float()
-                age_error_results[age_type] += near_error_results.float() * 0.667
-                eval_results['{}-acc_{}'.format(ds, age_type)] = age_error_results[age_type].sum() / len(age_error_results[age_type])
-            age_all_results = torch.cat(list(age_error_results.values()), 0)
-            eval_results['{}-age_acc'.format(ds)] = age_all_results.sum() / len(age_all_results)
-    for ds, results in ED['mPCKh'].items():
-        if len(ED['mPCKh'][ds]) > 0:
-            mPCKh = torch.cat(ED['mPCKh'][ds], 0)
-            mPCKh = mPCKh[mPCKh != -1]
-            for thresh in range(6, 7):
-                thresh = thresh / 10.0
-                eval_results['{}-mPCKh_{}'.format(ds, thresh)] = (mPCKh >= thresh).sum() / len(mPCKh)
-    eval_results.update(process_matrix(ED['MPJPE'], 'MPJPE'))
-    eval_results.update(process_matrix(ED['PA_MPJPE'], 'PA_MPJPE'))
-    if args().calc_pck:
-        eval_results.update(process_matrix(ED['PCK3D'], 'PCK3D'))
-    if args().calc_PVE_error:
-        for ds_name in constants.PVE_ds:
-            if len(ED['PVE_new'][ds_name]) > 0:
-                eval_results['{}-PVE'.format(ds_name)] = torch.cat(ED['PVE_new'][ds_name], 0).mean() * 1000
-    for ds_name in constants.MPJAE_ds:
-        if ds_name in ED['MPJAE']:
-            if len(ED['MPJAE'][ds_name]) > 0:
-                eval_results['{}-MPJAE'.format(ds_name)] = np.concatenate(ED['MPJAE'][ds_name], axis=0).mean()
-    print_table(eval_results)
-    if len(ED['MPJPE']['h36m']) > 0:
-        None
-        PA_MPJPE_acts = h36m_evaluation_act_wise(np.concatenate(ED['PA_MPJPE']['h36m'], axis=0), np.concatenate(np.array(ED['imgpaths']['h36m']), axis=0), constants.h36m_action_names)
-        MPJPE_acts = h36m_evaluation_act_wise(np.concatenate(ED['MPJPE']['h36m'], axis=0), np.concatenate(np.array(ED['imgpaths']['h36m']), axis=0), constants.h36m_action_names)
-        table = PrettyTable(['Protocol'] + constants.h36m_action_names)
-        table.add_row(['1'] + MPJPE_acts)
-        table.add_row(['2'] + PA_MPJPE_acts)
-        None
-    return eval_results
-
-
-@torch.no_grad()
-def val_result(self, loader_val, evaluation=False, vis_results=False):
-    eval_model = nn.DataParallel(self.model.module).eval()
-    ED = _init_error_dict()
-    for iter_num, meta_data in enumerate(loader_val):
-        if meta_data is None:
-            continue
-        meta_data_org = meta_data.copy()
-        try:
-            outputs = self.network_forward(eval_model, meta_data, self.eval_cfg)
-        except:
-            continue
-        if outputs['detection_flag'].sum() == 0:
-            None
-            continue
-        ED, kp3d_vis = calc_outputs_evaluation_matrix(self, outputs, ED)
-        if iter_num % (self.val_batch_size * 2) == 0:
-            None
-            if not evaluation:
-                outputs = self.network_forward(eval_model, meta_data_org, self.val_cfg)
-            vis_ids = np.arange(max(min(self.val_batch_size, len(outputs['reorganize_idx'])), 8) // 4), None
-            save_name = '{}_{}'.format(self.global_count, iter_num)
-            for ds_name in set(outputs['meta_data']['data_set']):
-                save_name += '_{}'.format(ds_name)
-            show_items = ['mesh', 'joint_sampler', 'pj2d', 'classify']
-            if kp3d_vis is not None:
-                show_items.append('j3d')
-            self.visualizer.visulize_result(outputs, outputs['meta_data'], show_items=show_items, vis_cfg={'settings': ['save_img'], 'vids': vis_ids, 'save_dir': self.result_img_dir, 'save_name': save_name}, kp3ds=kp3d_vis)
-    None
-    eval_results = print_results(ED)
-    return eval_results
-
-
 def write2log(log_file, massage):
     with open(log_file, 'a') as f:
         f.write(massage)
@@ -5307,52 +8996,160 @@ class Trainer(Base):
 
     def __init__(self):
         super(Trainer, self).__init__()
-        self._build_model_()
-        self._build_optimizer()
-        self.set_up_val_loader()
-        self._calc_loss = Loss()
-        self.loader = self._create_data_loader(train_flag=True)
-        self.merge_losses = Learnable_Loss(self.loader.dataset._get_ID_num_())
-        self.train_cfg = {'mode': 'matching_gts', 'is_training': True, 'update_data': True, 'calc_loss': True if self.model_return_loss else False, 'with_nms': False, 'with_2d_matching': True, 'new_training': args().new_training}
+        self.determine_root_dir()
+        self._load_image_model_()
+        self._build_video_model_()
+        self.flow_estimator = FlowExtract(torch.device('cuda:{}'.format(self.gpus[0] if len(self.gpus) == 1 else self.gpus[1])))
+        self._build_optimizer_video_()
+        self.mutli_task_uncertainty_weighted_loss = Learnable_Loss()
+        self.loader = self._create_data_loader_video_(train_flag=True)
+        self.video_train_cfg = {'mode': 'matching_gts', 'sequence_input': True, 'is_training': True, 'update_data': True, 'calc_loss': True if self.model_return_loss else False, 'input_type': 'sequence', 'with_nms': False, 'with_2d_matching': True, 'new_training': args().new_training, 'regress_params': True, 'traj_conf_threshold': 0.12}
+        self.seq_cacher = {}
         logging.info('Initialization of Trainer finished!')
 
-    def train(self):
-        init_seeds(self.local_rank, cuda_deterministic=False)
-        logging.info('start training')
-        self.model.train()
-        if self.fix_backbone_training_scratch:
-            fix_backbone(self.model, exclude_key=['backbone.'])
+    def determine_root_dir(self):
+        local_root_dir = '/home/yusun'
+        remote_root_dir = '/home/sunyu15'
+        self.show_tracking_results = False
+        if os.path.isdir(local_root_dir):
+            self.root_dir = local_root_dir
+            self.tracking_results_save_dir = '/home/yusun/DataCenter/demo_results/tracking_results'
+            self.dataset_dir = '/home/yusun/DataCenter/datasets'
+            self.model_path = os.path.join('/home/yusun/Infinity/project_data/trace_data/trained_models', os.path.basename(self.model_path))
+            self.temp_model_path = self.temp_model_path
+            self.show_tracking_results = False
+        elif os.path.isdir(remote_root_dir):
+            self.root_dir = remote_root_dir
+            self.tracking_results_save_dir = os.path.join(remote_root_dir, 'tracking_results')
+            self.dataset_dir = '/home/sunyu15/datasets'
         else:
-            train_entire_model(self.model)
-        for epoch in range(self.epoch):
-            if epoch == 1:
-                train_entire_model(self.model)
-            self.train_epoch(epoch)
-        self.summary_writer.close()
+            raise NotImplementedError("both path : {} and {} don't exist".format(local_root_dir, remote_root_dir))
+
+    def _load_image_model_(self):
+        model = build_model(self.backbone, self.model_version, with_loss=False)
+        drop_prefix = ''
+        model = load_model(self.model_path, model, prefix='module.', drop_prefix=drop_prefix, fix_loaded=True)
+        if not args().train_backbone:
+            fix_backbone(model, exclude_key=['backbone.', 'head.'])
+        if self.train_backbone:
+            self.image_model = nn.DataParallel(model)
+        else:
+            self.image_model_device_id = self.gpus[0] if len(self.gpus) == 1 else self.gpus[1]
+            torch.cuda.set_device(self.image_model_device_id)
+            self.image_model_device = torch.device(f'cuda:{self.image_model_device_id}')
+            self.local_device = torch.device(f'cuda:{self.image_model_device_id}')
+            self.image_model = nn.DataParallel(model, device_ids=[self.image_model_device_id])
+        if not args().train_backbone:
+            self.image_model = self.image_model.eval()
+        else:
+            self.image_model = self.image_model.train()
+
+    def _build_video_model_(self):
+        logging.info('start building learnable video model.')
+        temporal_model = build_temporal_model(model_type=args().tmodel_type, head=args().tmodel_version)
+        if len(self.temp_model_path) > 0:
+            prefix = 'module.' if 'TROMP_v2' in self.temp_model_path else ''
+            temporal_model = load_model(self.temp_model_path, temporal_model, prefix=prefix, drop_prefix='', fix_loaded=False)
+            if self.loading_bev_head_parameters:
+                copy_state_dict(temporal_model.state_dict(), torch.load(self.model_path), prefix='module.')
+        self.train_devices = self.gpus
+        self.temp_model_device = torch.device(f'cuda:{self.train_devices[0]}')
+        if self.master_batch_size != -1:
+            self.temporal_model = DataParallel(temporal_model, device_ids=self.train_devices, chunk_sizes=self.chunk_sizes)
+        else:
+            self.temporal_model = nn.DataParallel(temporal_model, device_ids=self.train_devices)
+
+    def _build_optimizer_video_(self):
+        if not args().train_backbone:
+            self.optimizer = torch.optim.Adam(list(self.image_model.parameters()) + list(self.temporal_model.parameters()), lr=self.lr)
+        else:
+            self.optimizer = torch.optim.Adam(self.temporal_model.parameters(), lr=self.lr)
+        if self.model_precision == 'fp16':
+            self.scaler = GradScaler()
+        self.e_sche = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[60, 80], gamma=self.adjust_lr_factor)
+        logging.info('finished build model.')
+
+    def _create_single_video_sequence_data_loader(self, **kwargs):
+        logging.info('gathering a single video datasets, loading a sequence at each time.')
+        dataset = SingleVideoDataset(**kwargs)
+        batch_size = self.batch_size if kwargs['train_flag'] else self.val_batch_size
+        batch_sampler = SequentialBatchSampler('ordered', False, batch_size, dataset)
+        data_loader = DataLoader(dataset=dataset, batch_sampler=batch_sampler, pin_memory=True, num_workers=self.nw)
+        return data_loader
+
+    def _create_data_loader_video_(self, train_flag=True):
+        dataset_names = self.datasets.split(',')
+        loading_modes = ['video_relative' for _ in range(len(dataset_names))]
+        datasets = MixedDataset(dataset_names, self.sample_prob_dict, loading_modes=loading_modes, train_flag=train_flag)
+        batch_size = self.batch_size
+        None
+        data_loader = DataLoader(dataset=datasets, batch_size=batch_size, shuffle=True, drop_last=True if train_flag else False, pin_memory=True, num_workers=self.nw)
+        return data_loader
+
+    def reorganize_meta_data(self, meta_data, sampled_ids):
+        new_meta_data = {}
+        for key in meta_data:
+            try:
+                if isinstance(meta_data[key], torch.Tensor):
+                    new_meta_data[key] = meta_data[key][sampled_ids]
+                elif isinstance(meta_data[key], list):
+                    new_meta_data[key] = [meta_data[key][ind] for ind in sampled_ids]
+                else:
+                    None
+            except:
+                None
+            None
+        return new_meta_data
+
+    def reorganize_clip_data(self, meta_data, cfg_dict):
+        """Each batch contains multiple video clips, this function reorganize them (0,1,2,3,4,5,6,7,8,9,10,11,12,13, ...)
+        to each 7 small clips [(0,1,2,3,4,5,6), (7,8,9,10,11,12,13), ...] """
+        trajectory_info, meta_data['subject_ids'] = ordered_organize_frame_outputs_to_clip(meta_data['seq_inds'], person_centers=meta_data['person_centers'], track_ids=meta_data['subject_ids'], cam_params=meta_data['cams'], cam_mask=meta_data['cam_mask'])
+        meta_data.update(trajectory_info)
+        return meta_data
+
+    def network_forward(self, temporal_model, image_model, meta_data, cfg_dict):
+        ds_org, imgpath_org = get_remove_keys(meta_data, keys=['data_set', 'imgpath'])
+        with autocast():
+            if self.train_backbone:
+                image_inputs = {'image': meta_data['image']}
+            else:
+                image_inputs = {'image': meta_data['image']}
+            image_outputs = image_model(image_inputs, **{'mode': 'extract_img_feature_maps'})
+            meta_data = self.reorganize_clip_data(meta_data, cfg_dict)
+            meta_data['batch_ids'] = meta_data['seq_inds'][:, 2]
+            temp_inputs = {'image_feature_maps': image_outputs['image_feature_maps'], 'seq_inds': meta_data['seq_inds']}
+            if not args().train_backbone:
+                temp_inputs['image_feature_maps'] = temp_inputs['image_feature_maps'].detach()
+            if args().use_optical_flow:
+                optical_flows = self.flow_estimator(image_inputs['image'], meta_data['seq_inds'])
+                temp_inputs['optical_flows'] = optical_flows
+            outputs = temporal_model(temp_inputs, meta_data, **cfg_dict)
+        meta_data.update({'imgpath': imgpath_org, 'data_set': ds_org})
+        outputs['meta_data']['data_set'], outputs['meta_data']['imgpath'] = reorganize_items([ds_org, imgpath_org], outputs['reorganize_idx'].cpu().numpy())
+        return outputs, image_outputs
 
     def train_step(self, meta_data):
         self.optimizer.zero_grad()
-        outputs = self.network_forward(self.model, meta_data, self.train_cfg)
+        outputs, BEV_outputs = self.network_forward(self.temporal_model, self.image_model, meta_data, self.video_train_cfg)
         if not self.model_return_loss:
             outputs.update(self._calc_loss(outputs))
-        loss, outputs = self.merge_losses(outputs, self.train_cfg['new_training'])
-        if torch.isnan(loss):
-            return outputs, torch.zeros(1)
-        if self.model_precision == 'fp16':
-            self.scaler.scale(loss).backward()
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
-        else:
-            loss.backward()
-            self.optimizer.step()
+        loss, outputs = self.mutli_task_uncertainty_weighted_loss(outputs, new_training=self.video_train_cfg['new_training'])
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
         return outputs, loss
+
+    def remove_params_loss(self, outputs, keeped_loss_names=['CenterMap'], remove_loss_names=['MPJPE', 'PAMPJPE', 'P_KP2D', 'Pose', 'Shape', 'Cam']):
+        outputs['loss_dict'] = {loss_name: outputs['loss_dict'][loss_name] for loss_name in keeped_loss_names if loss_name in outputs['loss_dict']}
+        return outputs
 
     def train_log_visualization(self, outputs, loss, run_time, data_time, losses, losses_dict, epoch, iter_index):
         losses.update(loss.item())
         losses_dict.update(outputs['loss_dict'])
         if self.global_count % self.print_freq == 0:
             message = 'Epoch: [{0}][{1}/{2}] Time {data_time.avg:.2f} RUN {run_time.avg:.2f} Lr {lr} Loss {loss.avg:.2f} | Losses {3}'.format(epoch, iter_index + 1, len(self.loader), losses_dict.avg(), data_time=data_time, run_time=run_time, loss=losses, lr=self.optimizer.param_groups[0]['lr'])
-            logging.info(message)
+            None
             write2log(self.log_file, '%s\n' % message)
             self.summary_writer.add_scalar('loss', losses.avg, self.global_count)
             self.summary_writer.add_scalars('loss_items', losses_dict.avg(), self.global_count)
@@ -5360,190 +9157,1702 @@ class Trainer(Base):
             losses_dict.reset()
             data_time.reset()
             self.summary_writer.flush()
-        if self.global_count % (4 * self.print_freq) == 0 or self.global_count == 50:
-            vis_ids, vis_errors = determ_worst_best(outputs['kp_error'], top_n=3)
+        if self.global_count % (4 * self.print_freq) == 0 or self.global_count == 1:
             save_name = '{}'.format(self.global_count)
             for ds_name in set(outputs['meta_data']['data_set']):
                 save_name += '_{}'.format(ds_name)
-            train_vis_dict = self.visualizer.visulize_result(outputs, outputs['meta_data'], show_items=['org_img', 'mesh', 'joint_sampler', 'pj2d', 'centermap'], vis_cfg={'settings': ['save_img'], 'vids': vis_ids, 'save_dir': self.train_img_dir, 'save_name': save_name, 'verrors': [vis_errors], 'error_names': ['E']})
+            self.visualizer.visulize_video_result(outputs, outputs['meta_data'], show_items=['mesh', 'motion_offset', 'centermap'], vis_cfg={'settings': ['save_img'], 'save_dir': self.train_img_dir, 'save_name': save_name, 'error_names': ['E']})
 
     def train_epoch(self, epoch):
         run_time, data_time, losses = [AverageMeter() for i in range(3)]
         losses_dict = AverageMeter_Dict()
         batch_start_time = time.time()
         for iter_index, meta_data in enumerate(self.loader):
-            if self.fast_eval_iter == 0:
-                self.validation(epoch)
-                break
             self.global_count += 1
-            if args().new_training:
-                if self.global_count == args().new_training_iters:
-                    self.train_cfg['new_training'], self.val_cfg['new_training'], self.eval_cfg['new_training'] = False, False, False
+            if args().new_training and self.global_count == args().new_training_iters:
+                self.video_train_cfg['new_training'], self.video_eval_cfg['new_training'] = False, False
             data_time.update(time.time() - batch_start_time)
             run_start_time = time.time()
-            outputs, loss = self.train_step(meta_data)
-            if self.local_rank in [-1, 0]:
-                run_time.update(time.time() - run_start_time)
-                self.train_log_visualization(outputs, loss, run_time, data_time, losses, losses_dict, epoch, iter_index)
+            meta_data = flatten_clip_data(meta_data)
+            if check_input_data_quality(meta_data):
+                outputs, loss = self.train_step(meta_data)
+                if self.local_rank in [-1, 0]:
+                    run_time.update(time.time() - run_start_time)
+                    self.train_log_visualization(outputs, loss, run_time, data_time, losses, losses_dict, epoch, iter_index)
             if self.global_count % self.test_interval == 0 or self.global_count == self.fast_eval_iter:
-                save_model(self.model, '{}_val_cache.pkl'.format(self.tab), parent_folder=self.model_save_dir)
-                self.validation(epoch)
+                title = '{}_val_{}'.format(self.tab, self.global_count)
+                self.save_all_models(title)
             if self.distributed_training:
                 torch.distributed.barrier()
             batch_start_time = time.time()
-        title = '{}_epoch_{}.pkl'.format(self.tab, epoch)
-        save_model(self.model, title, parent_folder=self.model_save_dir)
+        title = '{}_epoch_{}'.format(self.tab, epoch)
+        self.save_all_models(title)
         self.e_sche.step()
+        self.loader.dataset.resampling_video_clips()
 
-    def validation(self, epoch):
-        logging.info('evaluation result on {} iters: '.format(epoch))
-        for ds_name, val_loader in self.dataset_val_list.items():
-            logging.info('Evaluation on {}'.format(ds_name))
-            eval_results = val_result(self, loader_val=val_loader, evaluation=False)
-            if ds_name == 'relative':
-                if 'relativity-PCRD_0.2' not in eval_results:
-                    continue
-                PCRD = eval_results['relativity-PCRD_0.2']
-                age_baby_acc = eval_results['relativity-acc_baby']
-                if PCRD > max(self.evaluation_results_dict['relative']['PCRD']) or age_baby_acc > max(self.evaluation_results_dict['relative']['AGE_baby']):
-                    eval_results = val_result(self, loader_val=self.dataset_test_list['relative'], evaluation=True)
-                self.evaluation_results_dict['relative']['PCRD'].append(PCRD)
-                self.evaluation_results_dict['relative']['AGE_baby'].append(age_baby_acc)
-            else:
-                MPJPE, PA_MPJPE = eval_results['{}-{}'.format(ds_name, 'MPJPE')], eval_results['{}-{}'.format(ds_name, 'PA_MPJPE')]
-                test_flag = False
-                if ds_name in self.dataset_test_list:
-                    test_flag = True
-                    if ds_name in self.val_best_PAMPJPE:
-                        if PA_MPJPE < self.val_best_PAMPJPE[ds_name]:
-                            self.val_best_PAMPJPE[ds_name] = PA_MPJPE
-                        else:
-                            test_flag = False
-                if test_flag or self.test_interval < 100:
-                    eval_results = val_result(self, loader_val=self.dataset_test_list[ds_name], evaluation=True)
-                    self.summary_writer.add_scalars('{}-test'.format(ds_name), eval_results, self.global_count)
-        title = '{}_{:.4f}_{:.4f}_{}.pkl'.format(epoch, MPJPE, PA_MPJPE, self.tab)
-        logging.info('Model saved as {}'.format(title))
-        save_model(self.model, title, parent_folder=self.model_save_dir)
-        self.model.train()
-        self.summary_writer.flush()
+    def save_all_models(self, title, ext='.pkl', parent_folder=None):
+        parent_folder = self.model_save_dir if parent_folder is None else parent_folder
+        save_model(self.temporal_model, title + ext, parent_folder=parent_folder)
+        if args().train_backbone:
+            save_model(self.image_model, title + '_backbone' + ext, parent_folder=parent_folder)
 
-    def get_running_results(self, ds):
-        mpjpe = np.array(self.evaluation_results_dict[ds]['MPJPE'])
-        pampjpe = np.array(self.evaluation_results_dict[ds]['PAMPJPE'])
-        mpjpe_mean, mpjpe_var, pampjpe_mean, pampjpe_var = np.mean(mpjpe), np.var(mpjpe), np.mean(pampjpe), np.var(pampjpe)
-        return mpjpe_mean, mpjpe_var, pampjpe_mean, pampjpe_var
+    def train(self):
+        init_seeds(self.local_rank, cuda_deterministic=False)
+        logging.info('start training')
+        self.temporal_model.train()
+        for epoch in range(self.epoch):
+            self.train_epoch(epoch)
+        self.summary_writer.close()
 
 
-class Demo(Base):
+def get_tracked_ids_byte(tracking_points, tracked_objects):
+    tracked_ids_out = np.array([obj[4] for obj in tracked_objects])
+    tracked_points = np.array([obj[:4] for obj in tracked_objects])
+    tracked_ids, tracked_bbox_ids = [], []
+    for tid, tracked_point in enumerate(tracked_points):
+        org_p_id = np.argmin(np.array([np.linalg.norm(tracked_point - org_point) for org_point in tracking_points]))
+        tracked_bbox_ids.append(org_p_id)
+        tracked_ids.append(int(tracked_ids_out[tid]))
+    return tracked_ids, tracked_bbox_ids
 
-    def __init__(self):
-        super(Demo, self).__init__()
-        self._build_model_()
-        self.test_cfg = {'mode': 'parsing', 'calc_loss': False, 'with_nms': True, 'new_training': args().new_training}
-        self.eval_dataset = args().eval_dataset
-        self.save_mesh = False
+
+def process_idx(reorganize_idx, vids=None):
+    result_size = reorganize_idx.shape[0]
+    reorganize_idx = reorganize_idx.cpu().numpy()
+    used_org_inds = np.unique(reorganize_idx)
+    per_img_inds = [np.where(reorganize_idx == org_idx)[0] for org_idx in used_org_inds]
+    return used_org_inds, per_img_inds
+
+
+color_list = np.array([[0.7, 0.7, 0.6], [0.7, 0.5, 0.5], [0.5, 0.5, 0.7], [0.5, 0.55, 0.3], [0.3, 0.5, 0.55], [1, 0.855, 0.725], [0.588, 0.804, 0.804], [1, 0.757, 0.757], [0.933, 0.474, 0.258], [0.847, 191 / 255, 0.847], [0.941, 1, 1]])
+
+
+def convert_front_view_to_bird_view_video(verts_t, bv_trans=None, h=512, w=512, focal_length=50):
+    R_bv = torch.zeros(3, 3, device=verts_t.device)
+    R_bv[0, 0] = R_bv[2, 1] = 1
+    R_bv[1, 2] = -1
+    verts_tr = torch.einsum('bij,kj->bik', verts_t, R_bv)
+    verts_tfar = verts_tr
+    p_min, p_max = verts_tfar.view(-1, 3).min(0)[0], verts_tfar.view(-1, 3).max(0)[0]
+    p_center = 0.5 * (p_min + p_max)
+    verts_center = (verts_tfar.view(-1, 3) - p_center).view(verts_t.shape[0], -1, 3)
+    dis_min, dis_max = (verts_tfar.view(-1, 3) - p_center).min(0)[0], (verts_tfar.view(-1, 3) - p_center).max(0)[0]
+    ratio_max = abs(0.9 - 0.5)
+    z_x = dis_max[0] * focal_length / (ratio_max * w) + torch.abs(dis_min[2])
+    z_y = dis_max[1] * focal_length / (ratio_max * h) + torch.abs(dis_min[2])
+    z_x_0 = -dis_min[0] * focal_length / (ratio_max * w) + torch.abs(dis_min[2])
+    z_y_0 = -dis_min[1] * focal_length / (ratio_max * h) + torch.abs(dis_min[2])
+    z = max(z_x, z_y, z_x_0, z_y_0)
+    if bv_trans is None:
+        pass
+    else:
+        p_center, z = bv_trans
+        p_center, z = p_center, z
+    verts_right = verts_tfar - p_center + torch.tensor([0, 0, z], device=verts_t.device)
+    return verts_right
+
+
+INVALID_TRANS = np.ones(3) * -1
+
+
+def rendering_mesh_to_image(self, outputs, seq_save_dirs):
+    used_org_inds, per_img_inds = process_idx(outputs['reorganize_idx'])
+    seq_save_dirs = [seq_save_dirs[ind] for ind in used_org_inds]
+    mesh_colors = torch.Tensor([color_list[idx % len(color_list)] for idx in range(len(outputs['reorganize_idx']))])
+    if args().model_version == 1:
+        predicts_j3ds = outputs['j3d'].contiguous().detach().cpu().numpy()
+        predicts_pj2ds = (outputs['pj2d'].detach().cpu().numpy() + 1) * 256
+        predicts_j3ds = predicts_j3ds[:, :24]
+        predicts_pj2ds = predicts_pj2ds[:, :24]
+        outputs['cam_trans'] = estimate_translation(predicts_j3ds, predicts_pj2ds, focal_length=args().focal_length, img_size=np.array([512, 512]), pnp_algorithm='cv2')
+    img_orgs = [outputs['meta_data']['image_1024'][img_id].cpu().numpy().astype(np.uint8) for img_id in range(len(per_img_inds))]
+    img_verts = [outputs['verts'][inds] for inds in per_img_inds]
+    img_trans = [outputs['cam_trans'][inds] for inds in per_img_inds]
+    img_verts_bv = [convert_front_view_to_bird_view_video((iverts + itrans.unsqueeze(1)).detach(), None) for iverts, itrans in zip(img_verts, img_trans)]
+    img_names = [np.array(outputs['meta_data']['imgpath'])[inds[0]] for inds in per_img_inds]
+    for batch_idx, img_org in enumerate(img_orgs):
+        try:
+            img_org = img_org[:, :, ::-1]
+            rendered_img = self.pyrender_render(img_org[None], [img_verts[batch_idx]], [img_trans[batch_idx]])[0]
+            result_image_bv = self.pyrender_render_bv([np.ones_like(img_org) * 255], [img_verts_bv[batch_idx]], [torch.zeros_like(img_trans[batch_idx])])[0]
+            render_fv = rendered_img.transpose((1, 2, 0))
+            render_bv = result_image_bv.transpose((1, 2, 0))
+            save_path = os.path.join(seq_save_dirs[batch_idx], os.path.basename(img_names[batch_idx]))
+            img_results = np.concatenate([img_org, render_fv, np.ones((1024, 1024, 3)) * 255], 1)
+            img_results[256:256 + 512, 1024 * 2:1024 * 2 + 512] = cv2.resize(render_bv, (512, 512))
+            img_results = img_results[200:-200]
+            img_results = img_results[:, :-512]
+            cv2.imwrite(save_path, img_results)
+        except Exception as error:
+            None
+
+
+def reorganize_results(outputs, img_paths, reorganize_idx):
+    results = {}
+    cam_results = outputs['cam_trans'].detach().cpu().numpy().astype(np.float16)
+    pj2d_org_results = outputs['pj2d_org'].detach().cpu().numpy().astype(np.float16)
+    center_confs = outputs['center_confs'].detach().cpu().numpy().astype(np.float16)
+    vids_org = np.unique(reorganize_idx)
+    for idx, vid in enumerate(vids_org):
+        verts_vids = np.where(reorganize_idx == vid)[0]
+        img_path = img_paths[verts_vids[0]]
+        results[img_path] = [{} for idx in range(len(verts_vids))]
+        for subject_idx, batch_idx in enumerate(verts_vids):
+            results[img_path][subject_idx]['cam_trans'] = cam_results[batch_idx]
+            results[img_path][subject_idx]['pj2d_org'] = pj2d_org_results[batch_idx]
+            results[img_path][subject_idx]['center_conf'] = center_confs[batch_idx]
+    return results
+
+
+class CenterMap3D(object):
+
+    def __init__(self, conf_thresh):
         None
+        self.size = 128
+        self.max_person = 64
+        self.sigma = 1
+        self.conf_thresh = conf_thresh
+        self.gk_group, self.pool_group = self.generate_kernels([5])
+        self.prepare_parsing()
 
-    def test_eval(self):
-        if self.eval_dataset == 'pw3d_test':
-            data_loader = self._create_single_data_loader(dataset='pw3d', train_flag=False, mode='vibe', split='test')
-        elif self.eval_dataset == 'pw3d_oc':
-            data_loader = self._create_single_data_loader(dataset='pw3d', train_flag=False, split='all', mode='OC')
-        elif self.eval_dataset == 'pw3d_pc':
-            data_loader = self._create_single_data_loader(dataset='pw3d', train_flag=False, split='all', mode='PC')
-        elif self.eval_dataset == 'pw3d_nc':
-            data_loader = self._create_single_data_loader(dataset='pw3d', train_flag=False, split='all', mode='NC')
-        MPJPE, PA_MPJPE, eval_results = val_result(self, loader_val=data_loader, evaluation=True)
+    def prepare_parsing(self):
+        self.coordmap_3d = get_3Dcoord_maps(size=self.size)
+        self.maxpool3d = torch.nn.MaxPool3d(5, 1, (5 - 1) // 2)
 
-    def net_forward(self, meta_data, mode='val'):
-        if mode == 'val':
-            cfg_dict = self.test_cfg
-        elif mode == 'eval':
-            cfg_dict = self.eval_cfg
-        ds_org, imgpath_org = get_remove_keys(meta_data, keys=['data_set', 'imgpath'])
-        meta_data['batch_ids'] = torch.arange(len(meta_data['image']))
-        if self.model_precision == 'fp16':
-            with autocast():
-                outputs = self.model(meta_data, **cfg_dict)
-        else:
-            outputs = self.model(meta_data, **cfg_dict)
-        outputs['meta_data']['data_set'], outputs['meta_data']['imgpath'] = reorganize_items([ds_org, imgpath_org], outputs['reorganize_idx'].cpu().numpy())
+    def generate_kernels(self, kernel_size_list):
+        gk_group, pool_group = {}, {}
+        for kernel_size in set(kernel_size_list):
+            x = np.arange(0, kernel_size, 1, float)
+            y = x[:, np.newaxis]
+            x0, y0 = (kernel_size - 1) // 2, (kernel_size - 1) // 2
+            gaussian_distribution = -((x - x0) ** 2 + (y - y0) ** 2) / (2 * self.sigma ** 2)
+            gk_group[kernel_size] = np.exp(gaussian_distribution)
+            pool_group[kernel_size] = torch.nn.MaxPool2d(kernel_size, 1, (kernel_size - 1) // 2)
+        return gk_group, pool_group
+
+    def parse_3dcentermap(self, center_maps):
+        center_map_nms = nms(center_maps, pool_func=self.maxpool3d).squeeze(1)
+        b, c, h, w = center_map_nms.shape
+        K = self.max_person
+        topk_scores, topk_inds = torch.topk(center_map_nms.reshape(b, c, -1), K)
+        topk_inds = topk_inds % (h * w)
+        topk_ys = (topk_inds.long() // w).float()
+        topk_xs = (topk_inds % w).int().float()
+        topk_score, index = torch.topk(topk_scores.reshape(b, -1), K)
+        topk_inds = gather_feature(topk_inds.view(b, -1, 1), index).reshape(b, K)
+        topk_zs = index.long() // K
+        topk_ys = gather_feature(topk_ys.reshape(b, -1, 1), index).reshape(b, K)
+        topk_xs = gather_feature(topk_xs.reshape(b, -1, 1), index).reshape(b, K)
+        mask = topk_score > self.conf_thresh
+        batch_ids = torch.where(mask)[0]
+        center_zyxs = torch.stack([topk_zs[mask].long(), topk_ys[mask].long(), topk_xs[mask].long()]).permute((1, 0)).long()
+        return [batch_ids, center_zyxs, topk_score[mask]]
+
+
+def get_cam3dmap_anchor(FOV, centermap_size):
+    depth_level = np.array([1, 10, 20, 100], dtype=np.float32)
+    map_coord_range_each_level = (np.array([2 / 64.0, 25 / 64.0, 3 / 64.0, 2 / 64.0], dtype=np.float32) * centermap_size).astype(np.int32)
+    scale_level = 1 / np.tan(np.radians(FOV / 2.0)) / depth_level
+    cam3dmap_anchor = []
+    scale_cache = 8
+    for scale, coord_range in zip(scale_level, map_coord_range_each_level):
+        cam3dmap_anchor.append(scale_cache - np.arange(1, coord_range + 1) / coord_range * (scale_cache - scale))
+        scale_cache = scale
+    cam3dmap_anchor = np.concatenate(cam3dmap_anchor)
+    return cam3dmap_anchor
+
+
+class BEVv1(nn.Module):
+
+    def __init__(self, **kwargs):
+        super(BEVv1, self).__init__()
+        None
+        self.backbone = HigherResolutionNet()
+        self._build_head()
+        self._build_parser(conf_thresh=kwargs.get('center_thresh', 0.1))
+
+    def _build_parser(self, conf_thresh=0.12):
+        self.centermap_parser = CenterMap3D(conf_thresh=conf_thresh)
+
+    def _build_head(self):
+        params_num, cam_dim = 3 + 22 * 6 + 11, 3
+        self.outmap_size = 128
+        self.output_cfg = {'NUM_PARAMS_MAP': params_num - cam_dim, 'NUM_CENTER_MAP': 1, 'NUM_CAM_MAP': cam_dim}
+        self.head_cfg = {'NUM_BASIC_BLOCKS': 1, 'NUM_CHANNELS': 128}
+        self.bv_center_cfg = {'NUM_DEPTH_LEVEL': self.outmap_size // 2, 'NUM_BLOCK': 2}
+        self.backbone_channels = self.backbone.backbone_channels
+        self.transformer_cfg = {'INPUT_C': self.head_cfg['NUM_CHANNELS'], 'NUM_CHANNELS': 512}
+        self._make_transformer()
+        self.cam3dmap_anchor = torch.from_numpy(get_cam3dmap_anchor(60, self.outmap_size)).float()
+        self.register_buffer('coordmap_3d', get_3Dcoord_maps_halfz(self.outmap_size, z_base=self.cam3dmap_anchor))
+        self._make_final_layers(self.backbone_channels)
+
+    def _make_transformer(self, drop_ratio=0.2):
+        self.position_embeddings = nn.Embedding(self.outmap_size, self.transformer_cfg['INPUT_C'], padding_idx=0)
+        self.transformer = nn.Sequential(nn.Linear(self.transformer_cfg['INPUT_C'], self.transformer_cfg['NUM_CHANNELS']), nn.ReLU(inplace=True), nn.Dropout(drop_ratio), nn.Linear(self.transformer_cfg['NUM_CHANNELS'], self.transformer_cfg['NUM_CHANNELS']), nn.ReLU(inplace=True), nn.Dropout(drop_ratio), nn.Linear(self.transformer_cfg['NUM_CHANNELS'], self.output_cfg['NUM_PARAMS_MAP']))
+
+    def _make_final_layers(self, input_channels):
+        self.det_head = self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP'])
+        self.param_head = self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP'], with_outlayer=False)
+        self._make_bv_center_layers(input_channels, self.bv_center_cfg['NUM_DEPTH_LEVEL'] * 2)
+        self._make_3D_map_refiner()
+
+    def _make_head_layers(self, input_channels, output_channels, num_channels=None, with_outlayer=True):
+        head_layers = []
+        if num_channels is None:
+            num_channels = self.head_cfg['NUM_CHANNELS']
+        for _ in range(self.head_cfg['NUM_BASIC_BLOCKS']):
+            head_layers.append(nn.Sequential(BasicBlock(input_channels, num_channels, downsample=nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0))))
+            input_channels = num_channels
+        if with_outlayer:
+            head_layers.append(nn.Conv2d(in_channels=num_channels, out_channels=output_channels, kernel_size=1, stride=1, padding=0))
+        return nn.Sequential(*head_layers)
+
+    def _make_bv_center_layers(self, input_channels, output_channels):
+        num_channels = self.outmap_size // 8
+        self.bv_pre_layers = nn.Sequential(nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True), nn.Conv2d(in_channels=num_channels, out_channels=num_channels, kernel_size=3, stride=1, padding=1), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True), nn.Conv2d(in_channels=num_channels, out_channels=num_channels, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True))
+        input_channels = (num_channels + self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP']) * self.outmap_size
+        inter_channels = 512
+        self.bv_out_layers = nn.Sequential(BasicBlock_1D(input_channels, inter_channels), BasicBlock_1D(inter_channels, inter_channels), BasicBlock_1D(inter_channels, output_channels))
+
+    def _make_3D_map_refiner(self):
+        self.center_map_refiner = nn.Sequential(BasicBlock_3D(self.output_cfg['NUM_CENTER_MAP'], self.output_cfg['NUM_CENTER_MAP']))
+        self.cam_map_refiner = nn.Sequential(BasicBlock_3D(self.output_cfg['NUM_CAM_MAP'], self.output_cfg['NUM_CAM_MAP']))
+
+    def fv_conditioned_bv_estimation(self, x, center_maps_fv, cam_maps_offset):
+        img_feats = self.bv_pre_layers(x)
+        summon_feats = torch.cat([center_maps_fv, cam_maps_offset, img_feats], 1).view(img_feats.size(0), -1, self.outmap_size)
+        outputs_bv = self.bv_out_layers(summon_feats)
+        center_maps_bv = outputs_bv[:, :self.bv_center_cfg['NUM_DEPTH_LEVEL']]
+        cam_maps_offset_bv = outputs_bv[:, self.bv_center_cfg['NUM_DEPTH_LEVEL']:]
+        center_map_3d = center_maps_fv.repeat(1, self.bv_center_cfg['NUM_DEPTH_LEVEL'], 1, 1) * center_maps_bv.unsqueeze(2).repeat(1, 1, self.outmap_size, 1)
+        return center_map_3d, cam_maps_offset_bv
+
+    def coarse2fine_localization(self, x):
+        maps_fv = self.det_head(x)
+        center_maps_fv = maps_fv[:, :self.output_cfg['NUM_CENTER_MAP']]
+        cam_maps_offset = maps_fv[:, self.output_cfg['NUM_CENTER_MAP']:self.output_cfg['NUM_CENTER_MAP'] + self.output_cfg['NUM_CAM_MAP']]
+        center_maps_3d, cam_maps_offset_bv = self.fv_conditioned_bv_estimation(x, center_maps_fv, cam_maps_offset)
+        center_maps_3d = self.center_map_refiner(center_maps_3d.unsqueeze(1)).squeeze(1)
+        cam_maps_3d = self.coordmap_3d + cam_maps_offset.unsqueeze(-1).transpose(4, 1).contiguous()
+        cam_maps_3d[:, :, :, :, 2] = cam_maps_3d[:, :, :, :, 2] + cam_maps_offset_bv.unsqueeze(2).contiguous()
+        cam_maps_3d = self.cam_map_refiner(cam_maps_3d.unsqueeze(1).transpose(5, 1).squeeze(-1))
+        return center_maps_3d, cam_maps_3d, center_maps_fv
+
+    def differentiable_person_feature_sampling(self, feature, pred_czyxs, pred_batch_ids):
+        cz, cy, cx = pred_czyxs[:, 0], pred_czyxs[:, 1], pred_czyxs[:, 2]
+        position_encoding = self.position_embeddings(cz)
+        feature_sampled = feature[pred_batch_ids, :, cy, cx]
+        input_features = feature_sampled + position_encoding
+        return input_features
+
+    def mesh_parameter_regression(self, fv_f, cams_preds, pred_batch_ids):
+        cam_czyx = denormalize_center(convert_cam_params_to_centermap_coords(cams_preds.clone(), self.cam3dmap_anchor), size=self.outmap_size)
+        feature_sampled = self.differentiable_person_feature_sampling(fv_f, cam_czyx, pred_batch_ids)
+        params_preds = self.transformer(feature_sampled)
+        params_preds = torch.cat([cams_preds, params_preds], 1)
+        return params_preds, cam_czyx
+
+    @torch.no_grad()
+    def forward(self, x):
+        x = self.backbone(x)
+        center_maps_3d, cam_maps_3d, center_maps_fv = self.coarse2fine_localization(x)
+        center_preds_info_3d = self.centermap_parser.parse_3dcentermap(center_maps_3d)
+        if len(center_preds_info_3d[0]) == 0:
+            None
+            return None
+        pred_batch_ids, pred_czyxs, center_confs = center_preds_info_3d
+        cams_preds = cam_maps_3d[pred_batch_ids, :, pred_czyxs[:, 0], pred_czyxs[:, 1], pred_czyxs[:, 2]]
+        front_view_features = self.param_head(x)
+        params_preds, cam_czyx = self.mesh_parameter_regression(front_view_features, cams_preds, pred_batch_ids)
+        output = {'params_pred': params_preds.float(), 'cam_czyx': cam_czyx.float(), 'center_map': center_maps_fv.float(), 'center_map_3d': center_maps_3d.float().squeeze(), 'pred_batch_ids': pred_batch_ids, 'pred_czyxs': pred_czyxs, 'center_confs': center_confs}
+        return output
+
+
+class ROMPv1(nn.Module):
+
+    def __init__(self, **kwargs):
+        super(ROMPv1, self).__init__()
+        None
+        self.backbone = HigherResolutionNet()
+        self._build_head()
+
+    def _build_head(self):
+        self.outmap_size = 64
+        params_num, cam_dim = 3 + 22 * 6 + 10, 3
+        self.head_cfg = {'NUM_HEADS': 1, 'NUM_CHANNELS': 64, 'NUM_BASIC_BLOCKS': 2}
+        self.output_cfg = {'NUM_PARAMS_MAP': params_num - cam_dim, 'NUM_CENTER_MAP': 1, 'NUM_CAM_MAP': cam_dim}
+        self.final_layers = self._make_final_layers(self.backbone.backbone_channels)
+        self.coordmaps = get_coord_maps(128)
+
+    def _make_final_layers(self, input_channels):
+        final_layers = [None]
+        input_channels += 2
+        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_PARAMS_MAP']))
+        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CENTER_MAP']))
+        final_layers.append(self._make_head_layers(input_channels, self.output_cfg['NUM_CAM_MAP']))
+        return nn.ModuleList(final_layers)
+
+    def _make_head_layers(self, input_channels, output_channels):
+        head_layers = []
+        num_channels = self.head_cfg['NUM_CHANNELS']
+        head_layers.append(nn.Sequential(nn.Conv2d(in_channels=input_channels, out_channels=num_channels, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(num_channels, momentum=BN_MOMENTUM), nn.ReLU(inplace=True)))
+        for i in range(self.head_cfg['NUM_HEADS']):
+            layers = []
+            for _ in range(self.head_cfg['NUM_BASIC_BLOCKS']):
+                layers.append(nn.Sequential(BasicBlock(num_channels, num_channels)))
+            head_layers.append(nn.Sequential(*layers))
+        head_layers.append(nn.Conv2d(in_channels=num_channels, out_channels=output_channels, kernel_size=1, stride=1, padding=0))
+        return nn.Sequential(*head_layers)
+
+    @torch.no_grad()
+    def forward(self, image):
+        x = self.backbone(image)
+        x = torch.cat((x, self.coordmaps.repeat(x.shape[0], 1, 1, 1)), 1)
+        params_maps = self.final_layers[1](x)
+        center_maps = self.final_layers[2](x)
+        cam_maps = self.final_layers[3](x)
+        params_maps = torch.cat([cam_maps, params_maps], 1)
+        return center_maps, params_maps
+
+
+class SMPL_parser(nn.Module):
+
+    def __init__(self, model_path):
+        super(SMPL_parser, self).__init__()
+        self.smpl_model = SMPL(model_path)
+
+    def forward(self, outputs, root_align=False):
+        verts, joints, face = self.smpl_model(outputs['smpl_betas'], outputs['smpl_thetas'], root_align=root_align)
+        outputs.update({'verts': verts, 'joints': joints, 'smpl_face': face})
         return outputs
 
-    def test_cmu_panoptic(self):
-        action_name = ['haggling', 'mafia', 'ultimatum', 'pizza']
-        mpjpe_cacher = {aname: AverageMeter() for aname in action_name}
-        J_regressor_h36m = torch.from_numpy(np.load(args().smpl_J_reg_h37m_path)).float()
-        data_loader = self._create_single_data_loader(dataset='cmup', train_flag=False, split='test')
-        bias = []
-        self.model.eval()
-        with torch.no_grad():
-            for test_iter, meta_data in enumerate(data_loader):
-                outputs = self.net_forward(meta_data, mode='eval')
-                meta_data = outputs['meta_data']
-                pred_vertices = outputs['verts'].float()
-                J_regressor_batch = J_regressor_h36m[None, :].expand(pred_vertices.shape[0], -1, -1)
-                pred_kp3ds = torch.matmul(J_regressor_batch, pred_vertices)
-                gt_kp3ds = meta_data['kp_3d']
-                visible_kpts = (gt_kp3ds[:, :, 0] > -2.0).float()
-                pred_kp3ds -= pred_kp3ds[:, [0]]
-                gt_kp3ds -= gt_kp3ds[:, [0]]
-                mpjpes = torch.sqrt(((pred_kp3ds - gt_kp3ds) ** 2).sum(dim=-1)) * visible_kpts * 1000
-                mpjpes = mpjpes.mean(-1)
-                pampjpes, transform_mat = calc_pampjpe(gt_kp3ds, pred_kp3ds, return_transform_mat=True)
-                pampjpes = pampjpes * 1000
-                bias.append(transform_mat[2].reshape(-1, 3).mean(0).cpu().numpy())
-                for img_path, mpjpe in zip(meta_data['imgpath'], mpjpes):
-                    for aname in action_name:
-                        if aname in os.path.basename(img_path):
-                            mpjpe_cacher[aname].update(float(mpjpe.item()))
-                if test_iter % 50 == 0:
-                    None
-                    None
-                    for key, value in mpjpe_cacher.items():
-                        None
-        None
-        None
-        None
-        avg_all = []
-        for key, value in mpjpe_cacher.items():
-            None
-            avg_all.append(value.avg)
-        None
 
-    def test_crowdpose(self, set_name='val'):
-        predicted_results = []
-        test_save_dir = os.path.join(config.project_dir, 'results_out/results_crowdpose')
-        os.makedirs(test_save_dir, exist_ok=True)
-        results_json_name = os.path.join(config.project_dir, 'results_out/V{}_crowdpose_{}_{}.json'.format(self.model_version, set_name, self.backbone))
-        self.model.eval()
-        kp2d_mapper = constants.joint_mapping(constants.SMPL_ALL_54, constants.Crowdpose_14)
-        data_loader = self._create_single_data_loader(dataset='crowdpose', train_flag=False, split=set_name)
-        vis_dict = {}
-        with torch.no_grad():
-            for test_iter, meta_data in enumerate(data_loader):
-                outputs = self.net_forward(meta_data, mode='val')
-                meta_data = outputs['meta_data']
-                pj2ds_onorg = outputs['pj2d_org'][:, kp2d_mapper].detach().contiguous().cpu().numpy()
-                for batch_idx, (pj2d_onorg, imgpath) in enumerate(zip(pj2ds_onorg, meta_data['imgpath'])):
-                    image_id = int(os.path.basename(imgpath).split('.')[0])
-                    keypoints = np.concatenate([pj2d_onorg, np.ones((pj2d_onorg.shape[0], 1))], 1).reshape(-1).tolist()
-                    predicted_results.append({'image_id': image_id, 'category_id': 1, 'keypoints': keypoints, 'score': 1})
-                    if imgpath not in vis_dict:
-                        vis_dict[imgpath] = []
-                    vis_dict[imgpath].append(pj2d_onorg)
-                if test_iter % 50 == 0:
-                    None
-        with open(results_json_name, 'w') as f:
-            json.dump(predicted_results, f)
-        gt_file = os.path.join(args().dataset_rootdir, 'crowdpose/json/crowdpose_{}.json'.format(set_name))
-        cocoGt = COCO(gt_file)
-        cocoDt = cocoGt.loadRes(results_json_name)
-        cocoEval = COCOeval(cocoGt, cocoDt, 'keypoints')
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize()
+keypoints_select = np.array([4, 5, 7, 8, 16, 17, 18, 19, 20, 21, 24, 35, 36, 12])
+
+
+def collect_kp_results(outputs, img_paths):
+    seq_kp3d_results = {}
+    for ind, img_path in enumerate(img_paths):
+        img_name = os.path.basename(img_path)
+        if img_name not in seq_kp3d_results:
+            seq_kp3d_results[img_name] = []
+        subject_results = [outputs['pj2d_org'][ind].cpu().numpy(), outputs['j3d'][ind].cpu().numpy(), outputs['pj2d_org_h36m17'][ind].cpu().numpy(), outputs['joints_h36m17'][ind].cpu().numpy(), outputs['smpl_thetas'][ind].cpu().numpy(), outputs['smpl_betas'][ind].cpu().numpy(), outputs['cam_trans'][ind].cpu().numpy()]
+        seq_kp3d_results[img_name].append(subject_results)
+    return seq_kp3d_results
+
+
+def pj2ds_to_bbox(pj2ds):
+    tracked_bbox = np.array([pj2ds[:, 0].min(), pj2ds[:, 1].min(), pj2ds[:, 0].max(), pj2ds[:, 1].max()])
+    tracked_bbox[2:] = tracked_bbox[2:] - tracked_bbox[:2]
+    return tracked_bbox
+
+
+def vis_track_bbox(image_path, tracked_ids, tracked_bbox):
+    org_img = cv2.imread(image_path)
+    for tid, bbox in zip(tracked_ids, tracked_bbox):
+        org_img = cv2.rectangle(org_img, tuple(bbox[:2]), tuple(bbox[2:] + bbox[:2]), (255, 0, 0), 3)
+        org_img = cv2.putText(org_img, '{}'.format(tid), tuple(bbox[:2]), cv2.FONT_HERSHEY_COMPLEX, 3, (0, 255, 0), 2)
+    h, w = org_img.shape[:2]
+    cv2.imshow('bbox', cv2.resize(org_img, (w // 2, h // 2)))
+    cv2.waitKey(10)
+
+
+def collect_sequence_tracking_results(outputs, img_paths, reorganize_idx, visualize_results=False):
+    track_ids = outputs['track_ids'].numpy()
+    pj2d_org_results = outputs['pj2d_org'].detach().cpu().numpy().astype(np.float16)
+    tracking_results = {}
+    for frame_id, img_path in enumerate(img_paths):
+        pred_ids = np.where(reorganize_idx == frame_id)[0]
+        img_name = os.path.basename(img_path)
+        tracking_results[img_name] = {'track_ids': [], 'track_bbox': [], 'pj2ds': []}
+        for batch_id in pred_ids:
+            track_id = track_ids[batch_id]
+            pj2d_org = pj2d_org_results[batch_id]
+            bbox = pj2ds_to_bbox(pj2d_org)
+            tracking_results[img_name]['track_ids'].append(track_id)
+            tracking_results[img_name]['track_bbox'].append(bbox)
+            tracking_results[img_name]['pj2ds'].append(pj2d_org)
+        if visualize_results:
+            vis_track_bbox(img_path, tracking_results[img_name]['track_ids'], tracking_results[img_name]['track_bbox'])
+    return tracking_results
+
+
+def extract_seq_data(meta_data, seq_num=1):
+    collect_items = ['image', 'data_set', 'imgpath', 'offsets']
+    seq_data = {key: [] for key in collect_items}
+    for key in seq_data:
+        if isinstance(meta_data[key], torch.Tensor):
+            seq_data[key].append(meta_data[key])
+        elif isinstance(seq_data[key], list):
+            seq_data[key] += [i[0] for i in meta_data[key]]
+    seq_name = meta_data['seq_name'][0]
+    for key in collect_items:
+        if isinstance(seq_data[key][0], torch.Tensor):
+            seq_data[key] = torch.cat(seq_data[key], 1).squeeze(0)
+    return seq_data, seq_name
+
+
+def get_seq_cfgs(args):
+    default_cfgs = {'tracker_det_thresh': args.tracker_det_thresh, 'tracker_match_thresh': args.tracker_match_thresh, 'first_frame_det_thresh': args.first_frame_det_thresh, 'accept_new_dets': args.accept_new_dets, 'new_subject_det_thresh': args.new_subject_det_thresh, 'time2forget': args.time2forget, 'large_object_thresh': args.large_object_thresh, 'suppress_duplicate_thresh': args.suppress_duplicate_thresh, 'motion_offset3D_norm_limit': args.motion_offset3D_norm_limit, 'feature_update_thresh': args.feature_update_thresh, 'feature_inherent': args.feature_inherent, 'occlusion_cam_inherent_or_interp': args.occlusion_cam_inherent_or_interp, 'subject_num': args.subject_num, 'axis_times': np.array([1.2, 2.5, 25]), 'smooth_pose_shape': args.smooth_pose_shape, 'pose_smooth_coef': args.pose_smooth_coef, 'smooth_pos_cam': False}
+    return default_cfgs
+
+
+def insert_last_human_state(current, last_state, key, init=None):
+    if key in last_state:
+        return torch.cat([last_state[key], current], 0).contiguous()
+    if key not in last_state:
+        return torch.cat([current[[0]], current], 0).contiguous()
+
+
+def load_config_dict(self, config_dict):
+    hparams_dict = {}
+    for i, j in config_dict.items():
+        setattr(self, i, j)
+        hparams_dict[i] = j
+    return hparams_dict
+
+
+class preds_save_paths(object):
+
+    def __init__(self, results_save_dir, prefix='test'):
+        self.seq_save_dir = os.path.join(results_save_dir, prefix)
+        os.makedirs(self.seq_save_dir, exist_ok=True)
+        self.tracking_matrix_save_path = os.path.join(self.seq_save_dir, 'TRACE_{}.txt'.format(prefix))
+        self.seq_results_save_path = os.path.join(results_save_dir, prefix + '.npz')
+        self.seq_tracking_results_save_path = os.path.join(results_save_dir, prefix + '_tracking.npz')
+
+
+def prepare_data_loader(sequence_dict, val_batch_size):
+    datasets = InternetVideo(sequence_dict)
+    data_loader = DataLoader(dataset=datasets, shuffle=False, batch_size=val_batch_size, drop_last=False, pin_memory=True)
+    return data_loader
+
+
+delete_output_keys = ['params_pred', 'verts', 'verts_camed_org', 'world_verts', 'world_j3d', 'world_verts_camed_org', 'detection_flag']
+
+
+def remove_large_keys(outputs, del_keys=delete_output_keys):
+    save_outputs = copy.deepcopy(outputs)
+    for key in del_keys:
+        del save_outputs[key]
+    rest_keys = list(save_outputs.keys())
+    for key in rest_keys:
+        if torch.is_tensor(save_outputs[key]):
+            save_outputs[key] = save_outputs[key].detach().cpu().numpy()
+    return save_outputs
+
+
+def save_last_human_state(cacher, last_state, key):
+    if key not in cacher:
+        cacher = {}
+    cacher[key] = last_state
+    return cacher
+
+
+def update_seq_cfgs(seq_name, default_cfgs):
+    seq_cfgs = copy.deepcopy(default_cfgs)
+    sequence_cfgs = {}
+    if seq_name in sequence_cfgs:
+        seq_cfgs.update(sequence_cfgs[seq_name])
+    return seq_cfgs
+
+
+def save_video(frame_save_paths, save_path, frame_rate=24):
+    if len(frame_save_paths) == 0:
+        return
+    height, width = cv2.imread(frame_save_paths[0]).shape[:2]
+    writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, (width, height))
+    for frame_path in frame_save_paths:
+        writer.write(cv2.imread(frame_path))
+    writer.release()
+
+
+def add_light(scene, light):
+    light_pose = np.eye(4)
+    light_pose[:3, 3] = np.array([0, -1, 1])
+    scene.add(light, pose=light_pose)
+    light_pose[:3, 3] = np.array([0, 1, 1])
+    scene.add(light, pose=light_pose)
+    light_pose[:3, 3] = np.array([1, 1, 2])
+    scene.add(light, pose=light_pose)
+
+
+class Py3DR(object):
+
+    def __init__(self, FOV=60, height=512, width=512, focal_length=None):
+        self.renderer = pyrender.OffscreenRenderer(height, width)
+        if focal_length is None:
+            self.focal_length = 1 / np.tan(np.radians(FOV / 2))
+        else:
+            self.focal_length = focal_length / max(height, width) * 2
+        self.rot = trimesh.transformations.rotation_matrix(np.radians(180), [1, 0, 0])
+        self.colors = [(0.7, 0.7, 0.6, 1.0), (0.7, 0.5, 0.5, 1.0), (0.5, 0.5, 0.7, 1.0), (0.5, 0.55, 0.3, 1.0), (0.3, 0.5, 0.55, 1.0)]
+
+    def __call__(self, vertices, triangles, image, mesh_colors=None, f=None, persp=True, camera_pose=None):
+        img_height, img_width = image.shape[:2]
+        self.renderer.viewport_height = img_height
+        self.renderer.viewport_width = img_width
+        scene = pyrender.Scene(bg_color=[0.0, 0.0, 0.0, 0.0], ambient_light=(0.3, 0.3, 0.3))
+        if camera_pose is None:
+            camera_pose = np.eye(4)
+        if persp:
+            if f is None:
+                f = self.focal_length * max(img_height, img_width) / 2
+            camera = pyrender.camera.IntrinsicsCamera(fx=f, fy=f, cx=img_width / 2.0, cy=img_height / 2.0)
+        else:
+            xmag = ymag = np.abs(vertices[:, :, :2]).max() * 1.05
+            camera = pyrender.camera.OrthographicCamera(xmag, ymag, znear=0.05, zfar=100.0, name=None)
+        scene.add(camera, pose=camera_pose)
+        if len(triangles.shape) == 2:
+            triangles = [triangles for _ in range(len(vertices))]
+        light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=0.5)
+        for n in range(vertices.shape[0]):
+            mesh = trimesh.Trimesh(vertices[n], triangles[n])
+            mesh.apply_transform(self.rot)
+            if mesh_colors is None:
+                mesh_color = self.colors[n % len(self.colors)]
+            else:
+                mesh_color = mesh_colors[n % len(mesh_colors)]
+            material = pyrender.MetallicRoughnessMaterial(metallicFactor=0.2, alphaMode='OPAQUE', baseColorFactor=mesh_color)
+            mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
+            scene.add(mesh, 'mesh')
+            add_light(scene, light)
+        color, rend_depth = self.renderer.render(scene, flags=pyrender.RenderFlags.RGBA)
+        color = color.astype(np.float32)
+        valid_mask = (rend_depth > 0)[:, :, None]
+        output_image = (color[:, :, :3] * valid_mask + (1 - valid_mask) * image).astype(np.uint8)
+        return output_image, rend_depth
+
+    def delete(self):
+        self.renderer.delete()
+
+
+_norm = lambda arr: arr / np.sqrt(np.sum(arr ** 2, axis=1))[:, None]
+
+
+def _to_ctype(arr):
+    if not arr.flags.c_contiguous:
+        return arr.copy(order='C')
+    return arr
+
+
+def convert_type(obj):
+    if isinstance(obj, tuple) or isinstance(obj, list):
+        return np.array(obj, dtype=np.float32)[None, :]
+    return obj
+
+
+def get_normal(vertices, triangles):
+    normal = np.zeros_like(vertices, dtype=np.float32)
+    Sim3DR_Cython.get_normal(normal, vertices, triangles, vertices.shape[0], triangles.shape[0])
+    return normal
+
+
+def norm_vertices(vertices):
+    vertices -= vertices.min(0)[None, :]
+    vertices /= vertices.max()
+    vertices *= 2
+    vertices -= vertices.max(0)[None, :] / 2
+    return vertices
+
+
+def rasterize(vertices, triangles, colors, bg=None, height=None, width=None, channel=None, reverse=False):
+    if bg is not None:
+        height, width, channel = bg.shape
+    else:
+        assert height is not None and width is not None and channel is not None
+        bg = np.zeros((height, width, channel), dtype=np.uint8)
+    buffer = np.zeros((height, width), dtype=np.float32) - 100000000.0
+    if colors.dtype != np.float32:
+        colors = colors.astype(np.float32)
+    Sim3DR_Cython.rasterize(bg, vertices, triangles, colors, buffer, triangles.shape[0], height, width, channel, reverse=reverse)
+    return bg
+
+
+class Sim3DR(object):
+
+    def __init__(self, **kwargs):
+        self.intensity_ambient = convert_type(kwargs.get('intensity_ambient', 0.66))
+        self.intensity_directional = convert_type(kwargs.get('intensity_directional', 0.36))
+        self.intensity_specular = convert_type(kwargs.get('intensity_specular', 0.1))
+        self.specular_exp = kwargs.get('specular_exp', 1)
+        self.color_directional = convert_type(kwargs.get('color_directional', (1, 1, 1)))
+        self.light_pos = convert_type(kwargs.get('light_pos', (0, 0, -5)))
+        self.view_pos = convert_type(kwargs.get('view_pos', (0, 0, 5)))
+
+    def update_light_pos(self, light_pos):
+        self.light_pos = convert_type(light_pos)
+
+    def render(self, vertices, triangles, bg, color=np.array([[1, 0.6, 0.4]]), texture=None):
+        normal = get_normal(vertices, triangles)
+        light = np.zeros_like(vertices, dtype=np.float32)
+        if self.intensity_ambient > 0:
+            light += self.intensity_ambient * np.array(color)
+        vertices_n = norm_vertices(vertices.copy())
+        if self.intensity_directional > 0:
+            direction = _norm(self.light_pos - vertices_n)
+            cos = np.sum(normal * direction, axis=1)[:, None]
+            light += self.intensity_directional * (self.color_directional * np.clip(cos, 0, 1))
+            if self.intensity_specular > 0:
+                v2v = _norm(self.view_pos - vertices_n)
+                reflection = 2 * cos * normal - direction
+                spe = np.sum((v2v * reflection) ** self.specular_exp, axis=1)[:, None]
+                spe = np.where(cos != 0, np.clip(spe, 0, 1), np.zeros_like(spe))
+                light += self.intensity_specular * self.color_directional * np.clip(spe, 0, 1)
+        light = np.clip(light, 0, 1)
+        if texture is None:
+            render_img = rasterize(vertices, triangles, light, bg=bg)
+            return render_img
+        else:
+            texture *= light
+            render_img = rasterize(vertices, triangles, texture, bg=bg)
+            return render_img
+
+    def __call__(self, verts_list, triangles, bg, mesh_colors=np.array([[1, 0.6, 0.4]])):
+        rendered_results = bg.copy()
+        if len(triangles.shape) == 2:
+            triangles = [triangles for _ in range(len(verts_list))]
+        for ind, verts in enumerate(verts_list):
+            verts = _to_ctype(verts)
+            rendered_results = self.render(verts, triangles[ind], rendered_results, mesh_colors[[ind % len(mesh_colors)]])
+        return rendered_results
+
+
+def setup_renderer(name='sim3dr', **kwargs):
+    if name == 'sim3dr':
+        renderer = Sim3DR(**kwargs)
+    elif name == 'pyrender':
+        renderer = Py3DR(**kwargs)
+    elif name == 'open3d':
+        renderer = O3DDR(multi_mode=True, **kwargs)
+    return renderer
+
+
+def visulize_result(renderer, outputs, seq_data, rendering_cfgs, save_dir, alpha=1):
+    used_org_inds, per_img_inds = process_idx(outputs['reorganize_idx'])
+
+
+def visualize_predictions(outputs, imgpath, FOV, seq_save_dir, smpl_model_path):
+    rendering_cfgs = {'mesh_color': 'identity', 'items': 'mesh,tracking', 'renderer': 'sim3dr'}
+    renderer = setup_renderer(name=rendering_cfgs['renderer'], FOV=FOV)
+    os.makedirs(seq_save_dir, exist_ok=True)
+    render_images_path = visulize_result(renderer, outputs, imgpath, rendering_cfgs, seq_save_dir, smpl_model_path)
+    save_video(render_images_path, seq_save_dir + '.mp4', frame_rate=25)
+
+
+class TRACE(nn.Module):
+
+    def __init__(self, args):
+        super(TRACE, self).__init__()
+        load_config_dict(self, vars(args))
+        self.default_seq_cfgs = get_seq_cfgs(args)
+        self.device = torch.device(f'cuda:{self.GPU}') if self.GPU > -1 else torch.device('cpu')
+        None
+        self.__load_models__()
+        self.video_eval_cfg = {'mode': 'parsing', 'sequence_input': True, 'is_training': False, 'update_data': True, 'calc_loss': False, 'input_type': 'sequence', 'with_nms': True, 'with_2d_matching': True, 'new_training': False, 'regress_params': True, 'traj_conf_threshold': 0.12, 'temp_clip_length_eval': 8, 'xs': 2, 'ys': 2}
+        self.continuous_state_cacher = {'image': {}, 'image_feats': {}, 'temp_state': {}}
+        self.track_id_start = 0
+
+    def __load_models__(self):
+        image_backbone = HigherResolutionNet()
+        image_backbone = load_model(self.image_backbone_model_path, image_backbone, prefix='module.backbone.', drop_prefix='', fix_loaded=True)
+        self.image_backbone = nn.DataParallel(image_backbone).eval()
+        self.motion_backbone = FlowExtract(self.raft_model_path, self.device)
+        self._result_parser = TempResultParser(self.smpl_path, self.center_thresh)
+        temporal_head_model = TRACE_head(self._result_parser, temp_clip_length=self.temp_clip_length, smpl_model_path=self.smpl_path)
+        temporal_head_model = load_model(self.trace_head_model_path, temporal_head_model, prefix='', drop_prefix='', fix_loaded=False)
+        self.temporal_head_model = nn.DataParallel(temporal_head_model)
+
+    def temp_head_forward(self, feat_inputs, meta_data, seq_name, **cfg):
+        temp_states = self.continuous_state_cacher['temp_state'][seq_name] if seq_name in self.continuous_state_cacher['temp_state'] else [None] * 5
+        outputs, temp_states = self.temporal_head_model({'image_feature_maps': feat_inputs['image_feature_maps'], 'optical_flows': feat_inputs['optical_flows']}, temp_states=temp_states, temp_clip_length=cfg['temp_clip_length_eval'], track_id_start=self.track_id_start, seq_cfgs=cfg['seq_cfgs'], xs=cfg['xs'], ys=cfg['ys'])
+        self.continuous_state_cacher['temp_state'][seq_name] = temp_states
+        if outputs is not None:
+            outputs, meta_data = self._result_parser.parsing_forward(outputs, meta_data, cfg)
+        return outputs
+
+    @torch.no_grad()
+    def sequence_inference(self, meta_data, seq_name, cfg_dict):
+        input_images = meta_data['image']
+        sequence_length = len(input_images)
+        image_feature_maps = self.image_backbone(input_images)
+        image_feature_maps = insert_last_human_state(image_feature_maps, self.continuous_state_cacher['image_feats'], seq_name)
+        padded_input_images = insert_last_human_state(input_images, self.continuous_state_cacher['image'], seq_name)
+        target_img_inds = torch.arange(1, len(padded_input_images))
+        source_img_inds = target_img_inds - 1
+        temp_inputs = {'image_feature_maps': image_feature_maps}
+        temp_inputs['optical_flows'] = self.motion_backbone(padded_input_images, source_img_inds, target_img_inds)
+        temp_meta_data = {'batch_ids': torch.arange(sequence_length), 'offsets': meta_data['offsets']}
+        outputs = self.temp_head_forward(temp_inputs, temp_meta_data, seq_name, **cfg_dict)
+        self.continuous_state_cacher['image'] = save_last_human_state(self.continuous_state_cacher['image'], input_images[[-1]], seq_name)
+        self.continuous_state_cacher['image_feats'] = save_last_human_state(self.continuous_state_cacher['image_feats'], image_feature_maps[[-1]], seq_name)
+        if outputs is None:
+            return None, meta_data, None, None
+        used_imgpath = reorganize_items([meta_data['imgpath']], outputs['reorganize_idx'].cpu().numpy())[0]
+        tracking_results = collect_sequence_tracking_results(outputs, used_imgpath, outputs['reorganize_idx'].cpu().numpy(), show=self.show_tracking)
+        kp3d_results = collect_kp_results(outputs, used_imgpath)
+        return outputs, meta_data, tracking_results, kp3d_results
+
+    def update_sequence_cfs(self, seq_name):
+        return update_seq_cfgs(seq_name, self.default_seq_cfgs)
+
+    @torch.no_grad()
+    def forward(self, sequence_dict):
+        """
+            Please input one sequence per time
+        """
+        data_loader = prepare_data_loader(sequence_dict, self.val_batch_size)
+        seq_outputs, tracking_results, kp3d_results, imgpaths = {}, {}, {}, {}
+        start_frame_id = 0
+        start_time = time.time()
+        None
+        for meta_data in data_loader:
+            seq_data, seq_name = extract_seq_data(meta_data)
+            start_frame_id += len(seq_data['image'])
+            if seq_name not in imgpaths:
+                imgpaths[seq_name] = []
+            imgpaths[seq_name] += seq_data['imgpath']
+            sfi = start_frame_id - len(seq_data['image'])
+            self.video_eval_cfg['seq_cfgs'] = self.update_sequence_cfs(seq_name)
+            outputs, meta_data, seq_tracking_results, seq_kp3d_results = self.sequence_inference(seq_data, seq_name, self.video_eval_cfg)
+            if outputs is None:
+                None
+                continue
+            outputs['reorganize_idx'] += sfi
+            if seq_name not in seq_outputs:
+                seq_outputs[seq_name], tracking_results[seq_name], kp3d_results[seq_name] = {}, {}, {}
+            seq_outputs[seq_name] = merge_output(outputs, seq_outputs[seq_name])
+            tracking_results[seq_name].update(seq_tracking_results)
+            kp3d_results[seq_name].update(seq_kp3d_results)
+        None
+        return seq_outputs, tracking_results, kp3d_results, imgpaths
+
+    def save_results(self, outputs, tracking_results, kp3d_results, imgpaths):
+        for seq_name in outputs:
+            save_paths = preds_save_paths(self.results_save_dir, prefix=seq_name)
+            np.savez(save_paths.seq_results_save_path, outputs=remove_large_keys(outputs[seq_name]), imgpaths=imgpaths[seq_name])
+            np.savez(save_paths.seq_tracking_results_save_path, tracking=tracking_results[seq_name], kp3ds=kp3d_results[seq_name])
+            if self.save_video:
+                visualize_predictions(outputs[seq_name], imgpaths[seq_name], self.FOV, save_paths.seq_save_dir, self.smpl_model_path)
+
+
+class ConvGRUCell(nn.Module):
+
+    def __init__(self, hidden_dim=128, input_dim=128 + 128, kernel_size=3):
+        super(ConvGRUCell, self).__init__()
+        self.convz = nn.Conv2d(hidden_dim + input_dim, hidden_dim, kernel_size, padding=1)
+        self.convr = nn.Conv2d(hidden_dim + input_dim, hidden_dim, kernel_size, padding=1)
+        self.convq = nn.Conv2d(hidden_dim + input_dim, hidden_dim, kernel_size, padding=1)
+
+    def forward(self, h, x):
+        hx = torch.cat([h, x], dim=1)
+        z = torch.sigmoid(self.convz(hx))
+        r = torch.sigmoid(self.convr(hx))
+        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)))
+        h = (1 - z) * h + z * q
+        return h
+
+
+class DeformConvPack(DeformConv):
+
+    def __init__(self, *args, **kwargs):
+        super(DeformConvPack, self).__init__(*args, **kwargs)
+        self.conv_offset = nn.Conv2d(self.in_channels, self.deformable_groups * 2 * self.kernel_size[0] * self.kernel_size[1], kernel_size=self.kernel_size, stride=_pair(self.stride), padding=_pair(self.padding), bias=True)
+        self.init_offset()
+
+    def init_offset(self):
+        self.conv_offset.weight.data.zero_()
+        self.conv_offset.bias.data.zero_()
+
+    def forward(self, x):
+        offset = self.conv_offset(x)
+        return deform_conv(x, offset, self.weight, self.stride, self.padding, self.dilation, self.groups, self.deformable_groups)
+
+
+class ModulatedDeformConvFunction(Function):
+
+    @staticmethod
+    def forward(ctx, input, offset, mask, weight, bias=None, stride=1, padding=0, dilation=1, groups=1, deformable_groups=1):
+        ctx.stride = stride
+        ctx.padding = padding
+        ctx.dilation = dilation
+        ctx.groups = groups
+        ctx.deformable_groups = deformable_groups
+        ctx.with_bias = bias is not None
+        if not ctx.with_bias:
+            bias = input.new_empty(1)
+        if not input.is_cuda:
+            raise NotImplementedError
+        if weight.requires_grad or mask.requires_grad or offset.requires_grad or input.requires_grad:
+            ctx.save_for_backward(input, offset, mask, weight, bias)
+        output = input.new_empty(ModulatedDeformConvFunction._infer_shape(ctx, input, weight))
+        ctx._bufs = [input.new_empty(0), input.new_empty(0)]
+        deform_conv_cuda.modulated_deform_conv_cuda_forward(input, weight, bias, ctx._bufs[0], offset, mask, output, ctx._bufs[1], weight.shape[2], weight.shape[3], ctx.stride, ctx.stride, ctx.padding, ctx.padding, ctx.dilation, ctx.dilation, ctx.groups, ctx.deformable_groups, ctx.with_bias)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        if not grad_output.is_cuda:
+            raise NotImplementedError
+        input, offset, mask, weight, bias = ctx.saved_tensors
+        grad_input = torch.zeros_like(input)
+        grad_offset = torch.zeros_like(offset)
+        grad_mask = torch.zeros_like(mask)
+        grad_weight = torch.zeros_like(weight)
+        grad_bias = torch.zeros_like(bias)
+        deform_conv_cuda.modulated_deform_conv_cuda_backward(input, weight, bias, ctx._bufs[0], offset, mask, ctx._bufs[1], grad_input, grad_weight, grad_bias, grad_offset, grad_mask, grad_output, weight.shape[2], weight.shape[3], ctx.stride, ctx.stride, ctx.padding, ctx.padding, ctx.dilation, ctx.dilation, ctx.groups, ctx.deformable_groups, ctx.with_bias)
+        if not ctx.with_bias:
+            grad_bias = None
+        return grad_input, grad_offset, grad_mask, grad_weight, grad_bias, None, None, None, None, None
+
+    @staticmethod
+    def _infer_shape(ctx, input, weight):
+        n = input.size(0)
+        channels_out = weight.size(0)
+        height, width = input.shape[2:4]
+        kernel_h, kernel_w = weight.shape[2:4]
+        height_out = (height + 2 * ctx.padding - (ctx.dilation * (kernel_h - 1) + 1)) // ctx.stride + 1
+        width_out = (width + 2 * ctx.padding - (ctx.dilation * (kernel_w - 1) + 1)) // ctx.stride + 1
+        return n, channels_out, height_out, width_out
+
+
+modulated_deform_conv = ModulatedDeformConvFunction.apply
+
+
+class ModulatedDeformConv(nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, deformable_groups=1, bias=True):
+        super(ModulatedDeformConv, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = _pair(kernel_size)
+        self.stride = stride
+        self.padding = padding
+        self.dilation = dilation
+        self.groups = groups
+        self.deformable_groups = deformable_groups
+        self.with_bias = bias
+        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // groups, *self.kernel_size))
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(out_channels))
+        else:
+            self.register_parameter('bias', None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        n = self.in_channels
+        for k in self.kernel_size:
+            n *= k
+        stdv = 1.0 / math.sqrt(n)
+        self.weight.data.uniform_(-stdv, stdv)
+        if self.bias is not None:
+            self.bias.data.zero_()
+
+    def forward(self, x, offset, mask):
+        return modulated_deform_conv(x, offset, mask, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups, self.deformable_groups)
+
+
+class ModulatedDeformConvPack(ModulatedDeformConv):
+
+    def __init__(self, *args, **kwargs):
+        super(ModulatedDeformConvPack, self).__init__(*args, **kwargs)
+        self.conv_offset_mask = nn.Conv2d(self.in_channels, self.deformable_groups * 3 * self.kernel_size[0] * self.kernel_size[1], kernel_size=self.kernel_size, stride=_pair(self.stride), padding=_pair(self.padding), bias=True)
+        self.init_offset()
+
+    def init_offset(self):
+        self.conv_offset_mask.weight.data.zero_()
+        self.conv_offset_mask.bias.data.zero_()
+
+    def forward(self, x):
+        out = self.conv_offset_mask(x)
+        o1, o2, mask = torch.chunk(out, 3, dim=1)
+        offset = torch.cat((o1, o2), dim=1)
+        mask = torch.sigmoid(mask)
+        return modulated_deform_conv(x, offset, mask, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups, self.deformable_groups)
+
+
+class DeformRoIPoolingFunction(Function):
+
+    @staticmethod
+    def forward(ctx, data, rois, offset, spatial_scale, out_size, out_channels, no_trans, group_size=1, part_size=None, sample_per_part=4, trans_std=0.0):
+        ctx.spatial_scale = spatial_scale
+        ctx.out_size = out_size
+        ctx.out_channels = out_channels
+        ctx.no_trans = no_trans
+        ctx.group_size = group_size
+        ctx.part_size = out_size if part_size is None else part_size
+        ctx.sample_per_part = sample_per_part
+        ctx.trans_std = trans_std
+        assert 0.0 <= ctx.trans_std <= 1.0
+        if not data.is_cuda:
+            raise NotImplementedError
+        n = rois.shape[0]
+        output = data.new_empty(n, out_channels, out_size, out_size)
+        output_count = data.new_empty(n, out_channels, out_size, out_size)
+        deform_pool_cuda.deform_psroi_pooling_cuda_forward(data, rois, offset, output, output_count, ctx.no_trans, ctx.spatial_scale, ctx.out_channels, ctx.group_size, ctx.out_size, ctx.part_size, ctx.sample_per_part, ctx.trans_std)
+        if data.requires_grad or rois.requires_grad or offset.requires_grad:
+            ctx.save_for_backward(data, rois, offset)
+        ctx.output_count = output_count
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        if not grad_output.is_cuda:
+            raise NotImplementedError
+        data, rois, offset = ctx.saved_tensors
+        output_count = ctx.output_count
+        grad_input = torch.zeros_like(data)
+        grad_rois = None
+        grad_offset = torch.zeros_like(offset)
+        deform_pool_cuda.deform_psroi_pooling_cuda_backward(grad_output, data, rois, offset, output_count, grad_input, grad_offset, ctx.no_trans, ctx.spatial_scale, ctx.out_channels, ctx.group_size, ctx.out_size, ctx.part_size, ctx.sample_per_part, ctx.trans_std)
+        return grad_input, grad_rois, grad_offset, None, None, None, None, None, None, None, None
+
+
+deform_roi_pooling = DeformRoIPoolingFunction.apply
+
+
+class DeformRoIPooling(nn.Module):
+
+    def __init__(self, spatial_scale, out_size, out_channels, no_trans, group_size=1, part_size=None, sample_per_part=4, trans_std=0.0):
+        super(DeformRoIPooling, self).__init__()
+        self.spatial_scale = spatial_scale
+        self.out_size = out_size
+        self.out_channels = out_channels
+        self.no_trans = no_trans
+        self.group_size = group_size
+        self.part_size = out_size if part_size is None else part_size
+        self.sample_per_part = sample_per_part
+        self.trans_std = trans_std
+
+    def forward(self, data, rois, offset):
+        if self.no_trans:
+            offset = data.new_empty(0)
+        return deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, self.no_trans, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+
+
+class DeformRoIPoolingPack(DeformRoIPooling):
+
+    def __init__(self, spatial_scale, out_size, out_channels, no_trans, group_size=1, part_size=None, sample_per_part=4, trans_std=0.0, num_offset_fcs=3, deform_fc_channels=1024):
+        super(DeformRoIPoolingPack, self).__init__(spatial_scale, out_size, out_channels, no_trans, group_size, part_size, sample_per_part, trans_std)
+        self.num_offset_fcs = num_offset_fcs
+        self.deform_fc_channels = deform_fc_channels
+        if not no_trans:
+            seq = []
+            ic = self.out_size * self.out_size * self.out_channels
+            for i in range(self.num_offset_fcs):
+                if i < self.num_offset_fcs - 1:
+                    oc = self.deform_fc_channels
+                else:
+                    oc = self.out_size * self.out_size * 2
+                seq.append(nn.Linear(ic, oc))
+                ic = oc
+                if i < self.num_offset_fcs - 1:
+                    seq.append(nn.ReLU(inplace=True))
+            self.offset_fc = nn.Sequential(*seq)
+            self.offset_fc[-1].weight.data.zero_()
+            self.offset_fc[-1].bias.data.zero_()
+
+    def forward(self, data, rois):
+        assert data.size(1) == self.out_channels
+        if self.no_trans:
+            offset = data.new_empty(0)
+            return deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, self.no_trans, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+        else:
+            n = rois.shape[0]
+            offset = data.new_empty(0)
+            x = deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, True, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+            offset = self.offset_fc(x.view(n, -1))
+            offset = offset.view(n, 2, self.out_size, self.out_size)
+            return deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, self.no_trans, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+
+
+class ModulatedDeformRoIPoolingPack(DeformRoIPooling):
+
+    def __init__(self, spatial_scale, out_size, out_channels, no_trans, group_size=1, part_size=None, sample_per_part=4, trans_std=0.0, num_offset_fcs=3, num_mask_fcs=2, deform_fc_channels=1024):
+        super(ModulatedDeformRoIPoolingPack, self).__init__(spatial_scale, out_size, out_channels, no_trans, group_size, part_size, sample_per_part, trans_std)
+        self.num_offset_fcs = num_offset_fcs
+        self.num_mask_fcs = num_mask_fcs
+        self.deform_fc_channels = deform_fc_channels
+        if not no_trans:
+            offset_fc_seq = []
+            ic = self.out_size * self.out_size * self.out_channels
+            for i in range(self.num_offset_fcs):
+                if i < self.num_offset_fcs - 1:
+                    oc = self.deform_fc_channels
+                else:
+                    oc = self.out_size * self.out_size * 2
+                offset_fc_seq.append(nn.Linear(ic, oc))
+                ic = oc
+                if i < self.num_offset_fcs - 1:
+                    offset_fc_seq.append(nn.ReLU(inplace=True))
+            self.offset_fc = nn.Sequential(*offset_fc_seq)
+            self.offset_fc[-1].weight.data.zero_()
+            self.offset_fc[-1].bias.data.zero_()
+            mask_fc_seq = []
+            ic = self.out_size * self.out_size * self.out_channels
+            for i in range(self.num_mask_fcs):
+                if i < self.num_mask_fcs - 1:
+                    oc = self.deform_fc_channels
+                else:
+                    oc = self.out_size * self.out_size
+                mask_fc_seq.append(nn.Linear(ic, oc))
+                ic = oc
+                if i < self.num_mask_fcs - 1:
+                    mask_fc_seq.append(nn.ReLU(inplace=True))
+                else:
+                    mask_fc_seq.append(nn.Sigmoid())
+            self.mask_fc = nn.Sequential(*mask_fc_seq)
+            self.mask_fc[-2].weight.data.zero_()
+            self.mask_fc[-2].bias.data.zero_()
+
+    def forward(self, data, rois):
+        assert data.size(1) == self.out_channels
+        if self.no_trans:
+            offset = data.new_empty(0)
+            return deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, self.no_trans, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+        else:
+            n = rois.shape[0]
+            offset = data.new_empty(0)
+            x = deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, True, self.group_size, self.part_size, self.sample_per_part, self.trans_std)
+            offset = self.offset_fc(x.view(n, -1))
+            offset = offset.view(n, 2, self.out_size, self.out_size)
+            mask = self.mask_fc(x.view(n, -1))
+            mask = mask.view(n, 1, self.out_size, self.out_size)
+            return deform_roi_pooling(data, rois, offset, self.spatial_scale, self.out_size, self.out_channels, self.no_trans, self.group_size, self.part_size, self.sample_per_part, self.trans_std) * mask
+
+
+class VonMisesUniformMix(VonMises):
+
+    def __init__(self, loc, concentration, uniform_mix=0.25, **kwargs):
+        super(VonMisesUniformMix, self).__init__(loc, concentration, **kwargs)
+        self.uniform_mix = uniform_mix
+
+    @torch.no_grad()
+    def sample(self, sample_shape=torch.Size()):
+        assert len(sample_shape) == 1
+        x = np.empty(tuple(self._extended_shape(sample_shape)), dtype=np.float32)
+        uniform_samples = round(sample_shape[0] * self.uniform_mix)
+        von_mises_samples = sample_shape[0] - uniform_samples
+        x[:uniform_samples] = np.random.uniform(-math.pi, math.pi, size=tuple(self._extended_shape((uniform_samples,))))
+        x[uniform_samples:] = np.random.vonmises(self.loc.cpu().numpy(), self.concentration.cpu().numpy(), size=tuple(self._extended_shape((von_mises_samples,))))
+        return torch.from_numpy(x)
+
+    def log_prob(self, value):
+        von_mises_log_prob = super(VonMisesUniformMix, self).log_prob(value) + np.log(1 - self.uniform_mix)
+        log_prob = torch.logaddexp(von_mises_log_prob, torch.full_like(von_mises_log_prob, math.log(self.uniform_mix / (2 * math.pi))))
+        return log_prob
+
+
+class EProPnP4DoF(EProPnPBase):
+    """
+    End-to-End Probabilistic Perspective-n-Points for 4DoF pose estimation.
+    The pose is parameterized as [x, y, z, yaw], where yaw is the
+    rotation around the Y-axis in radians.
+    Adopted proposal distributions:
+        position: multivariate t-distribution, degrees of freedom = 3
+        orientation: 0.75 von Mises distribution + 0.25 uniform distribution
+    """
+
+    def allocate_buffer(self, num_obj, dtype=torch.float32, device=None):
+        trans_mode = torch.empty((self.num_iter, num_obj, 3), dtype=dtype, device=device)
+        trans_cov_tril = torch.empty((self.num_iter, num_obj, 3, 3), dtype=dtype, device=device)
+        rot_mode = torch.empty((self.num_iter, num_obj, 1), dtype=dtype, device=device)
+        rot_kappa = torch.empty((self.num_iter, num_obj, 1), dtype=dtype, device=device)
+        return trans_mode, trans_cov_tril, rot_mode, rot_kappa
+
+    def initial_fit(self, pose_opt, pose_cov, camera, trans_mode, trans_cov_tril, rot_mode, rot_kappa):
+        trans_mode[0], rot_mode[0] = pose_opt.split([3, 1], dim=-1)
+        trans_cov_tril[0] = cholesky_wrapper(pose_cov[:, :3, :3], [1.0, 1.0, 4.0])
+        rot_kappa[0] = 0.33 / pose_cov[:, 3, 3, None].clamp(min=self.eps)
+
+    @staticmethod
+    def gen_new_distr(iter_id, trans_mode, trans_cov_tril, rot_mode, rot_kappa):
+        new_trans_distr = MultivariateStudentT(3, trans_mode[iter_id], trans_cov_tril[iter_id])
+        new_rot_distr = VonMisesUniformMix(rot_mode[iter_id], rot_kappa[iter_id])
+        return new_trans_distr, new_rot_distr
+
+    @staticmethod
+    def gen_old_distr(iter_id, trans_mode, trans_cov_tril, rot_mode, rot_kappa):
+        mix_trans_distr = MultivariateStudentT(3, trans_mode[:iter_id, None], trans_cov_tril[:iter_id, None])
+        mix_rot_distr = VonMisesUniformMix(rot_mode[:iter_id, None], rot_kappa[:iter_id, None])
+        return mix_trans_distr, mix_rot_distr
+
+    def estimate_params(self, iter_id, pose_samples, pose_sample_logweights, trans_mode, trans_cov_tril, rot_mode, rot_kappa):
+        sample_weights_norm = torch.softmax(pose_sample_logweights, dim=0)
+        trans_mode[iter_id + 1] = (sample_weights_norm[..., None] * pose_samples[..., :3]).sum(dim=0)
+        trans_dev = pose_samples[..., :3] - trans_mode[iter_id + 1]
+        trans_cov = (sample_weights_norm[..., None, None] * trans_dev.unsqueeze(-1) * trans_dev.unsqueeze(-2)).sum(dim=0)
+        trans_cov_tril[iter_id + 1] = cholesky_wrapper(trans_cov, [1.0, 1.0, 4.0])
+        mean_vector = pose_samples.new_empty((pose_samples.size(1), 2))
+        torch.sum(sample_weights_norm[..., None] * pose_samples[..., 3:].sin(), dim=0, out=mean_vector[:, :1])
+        torch.sum(sample_weights_norm[..., None] * pose_samples[..., 3:].cos(), dim=0, out=mean_vector[:, 1:])
+        rot_mode[iter_id + 1] = torch.atan2(mean_vector[:, :1], mean_vector[:, 1:])
+        r_sq = torch.square(mean_vector).sum(dim=-1, keepdim=True)
+        rot_kappa[iter_id + 1] = 0.33 * r_sq.sqrt().clamp(min=self.eps) * (2 - r_sq) / (1 - r_sq).clamp(min=self.eps)
+
+
+class Centermap3dLoss(nn.Module):
+
+    def __init__(self):
+        pass
+
+
+class Aggregate(nn.Module):
+
+    def __init__(self, args, dim, heads=4, dim_head=128):
+        super().__init__()
+        self.args = args
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        inner_dim = heads * dim_head
+        self.to_v = nn.Conv2d(dim, inner_dim, 1, bias=False)
+        self.gamma = nn.Parameter(torch.zeros(1))
+        if dim != inner_dim:
+            self.project = nn.Conv2d(inner_dim, dim, 1, bias=False)
+        else:
+            self.project = None
+
+    def forward(self, attn, fmap):
+        heads, b, c, h, w = self.heads, *fmap.shape
+        v = self.to_v(fmap)
+        v = rearrange(v, 'b (h d) x y -> b h (x y) d', h=heads)
+        out = einsum('b h i j, b h j d -> b h i d', attn, v)
+        out = rearrange(out, 'b h (x y) d -> b (h d) x y', x=h, y=w)
+        if self.project is not None:
+            out = self.project(out)
+        out = fmap + self.gamma * out
+        return out
+
+
+class GMAUpdateBlock(nn.Module):
+
+    def __init__(self, args, hidden_dim=128):
+        super().__init__()
+        self.args = args
+        self.encoder = BasicMotionEncoder(args)
+        self.gru = SepConvGRU(hidden_dim=hidden_dim, input_dim=128 + hidden_dim + hidden_dim)
+        self.flow_head = FlowHead(hidden_dim, hidden_dim=256)
+        self.mask = nn.Sequential(nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(256, 64 * 9, 1, padding=0))
+        self.use_setrans = args.use_setrans
+        if self.use_setrans:
+            self.intra_trans_config = args.intra_trans_config
+            self.aggregator = ExpandedFeatTrans(self.intra_trans_config, 'Motion Aggregator')
+        else:
+            self.aggregator = Aggregate(args=self.args, dim=128, dim_head=128, heads=self.args.num_heads)
+
+    def forward(self, net, inp, corr, flow, attention):
+        motion_features = self.encoder(flow, corr)
+        if self.use_setrans:
+            B, C, H, W = motion_features.shape
+            motion_features_3d = motion_features.view(B, C, H * W).permute(0, 2, 1)
+            motion_features_global_3d = self.aggregator(motion_features_3d, attention)
+            motion_features_global = motion_features_global_3d.view(B, H, W, C).permute(0, 3, 1, 2)
+        else:
+            motion_features_global = self.aggregator(attention, motion_features)
+        inp_cat = torch.cat([inp, motion_features, motion_features_global], dim=1)
+        net = self.gru(net, inp_cat)
+        delta_flow = self.flow_head(net)
+        mask = 0.25 * self.mask(net)
+        return net, mask, delta_flow
+
+
+class PreNormResidual(nn.Module):
+
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.fn = fn
+        self.norm = nn.LayerNorm(dim)
+
+    def forward(self, x):
+        return self.fn(self.norm(x)) + x
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model, max_len=1024):
+        super(PositionalEncoding, self).__init__()
+        self.pe = nn.Parameter(torch.randn(1, max_len, d_model))
+
+    def forward(self, x, start=0):
+        x = x + self.pe[:, start:start + x.size(1)]
+        return x
+
+
+class Attention(nn.Module):
+
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0.0):
+        super().__init__()
+        inner_dim = dim_head * heads
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
+        self.to_out = nn.Sequential(nn.Linear(inner_dim, dim), nn.Dropout(dropout))
+
+    def forward(self, x, mask=None):
+        """
+        Args:
+            - x: [batch_size,seq_len,dim]
+            - mask: [batch_size,seq_len] - dytpe= torch.bool - default True everywhere, if False it means that we don't pay attention to this timestep
+        """
+        b, n, _, h = *x.shape, self.heads
+        qkv = self.to_qkv(x).chunk(3, dim=-1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), qkv)
+        dots = torch.einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
+        mask_value = -torch.finfo(dots.dtype).max
+        if mask is not None:
+            assert mask.shape[-1] == dots.shape[-1], 'mask has incorrect dimensions'
+            mask = mask.unsqueeze(1).unsqueeze(1).repeat(1, 1, n, 1)
+            dots.masked_fill_(~mask, mask_value)
+            del mask
+        attn = dots.softmax(dim=-1)
+        out = torch.einsum('b h i j, b h j d -> b h i d', attn, v)
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = self.to_out(out)
+        return out
+
+
+class FeedForward(nn.Module):
+
+    def __init__(self, dim, hidden_dim, dropout=0.0):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(dim, hidden_dim), nn.GELU(), nn.Dropout(dropout), nn.Linear(hidden_dim, dim), nn.Dropout(dropout))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class FeedForwardResidual(nn.Module):
+
+    def __init__(self, dim, hidden_dim, dropout=0.0, out_dim=24 * 6):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(dim + out_dim, hidden_dim), nn.GELU(), nn.Dropout(dropout), nn.Linear(hidden_dim, out_dim))
+        nn.init.xavier_uniform_(self.net[-1].weight, gain=0.01)
+
+    def forward(self, x, init, n_iter=1):
+        pred_pose = init
+        for _ in range(n_iter):
+            xf = torch.cat([x, init], -1)
+            pred_pose = pred_pose + self.net(xf)
+        return pred_pose
+
+
+class PreNorm(nn.Module):
+
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.norm = nn.LayerNorm(dim)
+        self.fn = fn
+
+    def forward(self, x, **kwargs):
+        return self.fn(self.norm(x), **kwargs)
+
+
+class TransformerRegressor(nn.Module):
+
+    def __init__(self, dim, depth=2, heads=8, dim_head=32, mlp_dim=32, dropout=0.1, out=[22 * 6, 3], share_regressor=False, with_norm=True):
+        super().__init__()
+        self.layers = nn.ModuleList([])
+        for i in range(depth):
+            if with_norm:
+                list_modules = [PreNorm(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)), PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))]
+            else:
+                list_modules = [Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout), FeedForward(dim, mlp_dim, dropout=dropout)]
+            if i == 0 or not share_regressor:
+                for out_i in out:
+                    if with_norm:
+                        list_modules.append(PreNorm(dim, FeedForwardResidual(dim, mlp_dim, dropout=dropout, out_dim=out_i)))
+                    else:
+                        list_modules.append(FeedForwardResidual(dim, mlp_dim, dropout=dropout, out_dim=out_i))
+            else:
+                for j in range(2, len(self.layers[0])):
+                    list_modules.append(self.layers[0][j])
+            self.layers.append(nn.ModuleList(list_modules))
+
+    def forward(self, x, init, mask=None):
+        batch_size, seq_len, *_ = x.size()
+        y = init
+        for layers_i in self.layers:
+            attn, ff = layers_i[0], layers_i[1]
+            x = attn(x, mask=mask) + x
+            x = ff(x) + x
+            for j, reg in enumerate(layers_i[2:]):
+                y[j] = reg(x, init=y[j], n_iter=1)
+        return y
+
+
+class TemporalPoseRegressor(nn.Module):
+
+    def __init__(self, in_dim=128, n_jts_out=22, init_pose=None, jt_dim=6, dim=512, depth=2, heads=8, dim_head=64, mlp_dim=512, dropout=0.1, share_regressor=1, with_norm=True, *args, **kwargs):
+        super(TemporalPoseRegressor, self).__init__()
+        self.pos = PositionalEncoding(dim, 1024)
+        self.emb = nn.Linear(in_dim, dim)
+        self.mask_token = nn.Parameter(torch.randn(1, 1, dim))
+        self.decoder = TransformerRegressor(dim, depth, heads, dim_head, mlp_dim, dropout, [n_jts_out * jt_dim], share_regressor == 1, with_norm=with_norm)
+        if init_pose is None:
+            init_pose = torch.zeros(n_jts_out * jt_dim).float()
+        self.register_buffer('init_pose', init_pose.reshape(1, 1, -1))
+
+    def forward(self, x, mask=None):
+        """
+        Args:
+            - x: torch.Tensor - torch.float32 - [batch_size, seq_len, 128]
+            - mask: torch.Tensor - torch.bool - [batch_size, seq_len]
+        Return:
+            - y: torch.Tensor - [batch_size, seq_len, 24*6] - torch.float32
+        """
+        batch_size, seq_len, feature_ch = x.size()
+        if mask is None:
+            mask = torch.ones(batch_size, seq_len).type_as(x).bool()
+        x = self.emb(x)
+        x = x * mask.float().unsqueeze(-1) + self.mask_token * (1.0 - mask.float().unsqueeze(-1))
+        x = self.pos(x)
+        init = [self.init_pose.repeat(batch_size, seq_len, 1)]
+        y = self.decoder(x, init, mask)[0]
+        return y
+
+
+class TemporalSMPLShapeRegressor(nn.Module):
+
+    def __init__(self, in_dim=128, out_dim=21, init_shape=None, dim=256, depth=1, heads=8, dim_head=64, mlp_dim=512, dropout=0.1, share_regressor=1, *args, **kwargs):
+        super(TemporalSMPLShapeRegressor, self).__init__()
+        self.pos = PositionalEncoding(dim, 1024)
+        self.emb = nn.Linear(in_dim, dim)
+        self.mask_token = nn.Parameter(torch.randn(1, 1, dim))
+        self.decoder = TransformerRegressor(dim, depth, heads, dim_head, mlp_dim, dropout, [out_dim], share_regressor == 1)
+        if init_shape is None:
+            init_shape = torch.zeros(out_dim).float()
+        self.register_buffer('init_shape', init_shape.reshape(1, 1, -1))
+
+    def forward(self, x, mask=None):
+        """
+        Args:
+            - x: torch.Tensor - torch.float32 - [batch_size, seq_len, 128]
+            - mask: torch.Tensor - torch.bool - [batch_size, seq_len]
+        Return:
+            - y: torch.Tensor - [batch_size, seq_len, 24*6] - torch.float32
+        """
+        batch_size, seq_len, feature_ch = x.size()
+        if mask is None:
+            mask = torch.ones(batch_size, seq_len).type_as(x).bool()
+        x = self.emb(x)
+        x = x * mask.float().unsqueeze(-1) + self.mask_token * (1.0 - mask.float().unsqueeze(-1))
+        x = self.pos(x)
+        init = [self.init_shape.repeat(batch_size, seq_len, 1)]
+        y = self.decoder(x, init, mask)[0]
+        return y
+
+
+class Residual(nn.Module):
+
+    def __init__(self, fn):
+        super().__init__()
+        self.fn = fn
+
+    def forward(self, x, **kwargs):
+        return self.fn(x, **kwargs) + x
+
+
+class DataParallelModel(DataParallel):
+    """Implements data parallelism at the module level.
+
+    This container parallelizes the application of the given module by
+    splitting the input across the specified devices by chunking in the
+    batch dimension.
+    In the forward pass, the module is replicated on each device,
+    and each replica handles a portion of the input. During the backwards pass, gradients from each replica are summed into the original module.
+    Note that the outputs are not gathered, please use compatible
+    :class:`encoding.parallel.DataParallelCriterion`.
+
+    The batch size should be larger than the number of GPUs used. It should
+    also be an integer multiple of the number of GPUs so that each chunk is
+    the same size (so that each GPU processes the same number of samples).
+
+    Args:
+        module: module to be parallelized
+        device_ids: CUDA devices (default: all devices)
+
+    Reference:
+        Hang Zhang, Kristin Dana, Jianping Shi, Zhongyue Zhang, Xiaogang Wang, Ambrish Tyagi,
+        Amit Agrawal. “Context Encoding for Semantic Segmentation.
+        *The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2018*
+
+    Example::
+
+        >>> net = encoding.nn.DataParallelModel(model, device_ids=[0, 1, 2])
+        >>> y = net(x)
+    """
+
+    def gather(self, outputs, output_device):
+        return outputs
+
+    def replicate(self, module, device_ids):
+        modules = super(DataParallelModel, self).replicate(module, device_ids)
+        return modules
+
+
+class Reduce(Function):
+
+    @staticmethod
+    def forward(ctx, *inputs):
+        ctx.target_gpus = [inputs[i].get_device() for i in range(len(inputs))]
+        inputs = sorted(inputs, key=lambda i: i.get_device())
+        return comm.reduce_add(inputs)
+
+    @staticmethod
+    def backward(ctx, gradOutput):
+        return Broadcast.apply(ctx.target_gpus, gradOutput)
+
+
+def _criterion_parallel_apply(modules, inputs, targets, kwargs_tup=None, devices=None):
+    assert len(modules) == len(inputs)
+    assert len(targets) == len(inputs)
+    if kwargs_tup:
+        assert len(modules) == len(kwargs_tup)
+    else:
+        kwargs_tup = ({},) * len(modules)
+    if devices is not None:
+        assert len(modules) == len(devices)
+    else:
+        devices = [None] * len(modules)
+    lock = threading.Lock()
+    results = {}
+    grad_enabled = torch.is_grad_enabled()
+
+    def _worker(i, module, input, target, kwargs, device=None):
+        torch.set_grad_enabled(grad_enabled)
+        if device is None:
+            device = get_a_var(input).get_device()
+        try:
+            with torch.device(device):
+                output = module(*(input + target), **kwargs)
+            with lock:
+                results[i] = output
+        except Exception as e:
+            with lock:
+                results[i] = e
+    if len(modules) > 1:
+        threads = [threading.Thread(target=_worker, args=(i, module, input, target, kwargs, device)) for i, (module, input, target, kwargs, device) in enumerate(zip(modules, inputs, targets, kwargs_tup, devices))]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    else:
+        _worker(0, modules[0], inputs[0], kwargs_tup[0], devices[0])
+    outputs = []
+    for i in range(len(inputs)):
+        output = results[i]
+        if isinstance(output, Exception):
+            raise output
+        outputs.append(output)
+    return outputs
+
+
+class DataParallelCriterion(DataParallel):
+    """
+    Calculate loss in multiple-GPUs, which balance the memory usage for
+    Semantic Segmentation.
+
+    The targets are splitted across the specified devices by chunking in
+    the batch dimension. Please use together with :class:`encoding.parallel.DataParallelModel`.
+
+    Reference:
+        Hang Zhang, Kristin Dana, Jianping Shi, Zhongyue Zhang, Xiaogang Wang, Ambrish Tyagi,
+        Amit Agrawal. “Context Encoding for Semantic Segmentation.
+        *The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2018*
+
+    Example::
+
+        >>> net = encoding.nn.DataParallelModel(model, device_ids=[0, 1, 2])
+        >>> criterion = encoding.nn.DataParallelCriterion(criterion, device_ids=[0, 1, 2])
+        >>> y = net(x)
+        >>> loss = criterion(y, target)
+    """
+
+    def forward(self, inputs, *targets, **kwargs):
+        if not self.device_ids:
+            return self.module(inputs, *targets, **kwargs)
+        targets, kwargs = self.scatter(targets, kwargs, self.device_ids)
+        if len(self.device_ids) == 1:
+            return self.module(inputs, *targets[0], **kwargs[0])
+        replicas = self.replicate(self.module, self.device_ids[:len(inputs)])
+        outputs = _criterion_parallel_apply(replicas, inputs, targets, kwargs)
+        return Reduce.apply(*outputs) / len(outputs)
+
+
+class FLAME(nn.Module):
+    """
+    Given flame parameters this class generates a differentiable FLAME function
+    which outputs the a mesh and 3D facial landmarks
+    """
+
+    def __init__(self, config):
+        super(FLAME, self).__init__()
+        None
+        with open(config.flame_model_path, 'rb') as f:
+            self.flame_model = Struct(**pickle.load(f, encoding='latin1'))
+        self.NECK_IDX = 1
+        self.batch_size = config.batch_size
+        self.dtype = torch.float32
+        self.use_face_contour = config.use_face_contour
+        self.faces = self.flame_model.f
+        self.register_buffer('faces_tensor', to_tensor(to_np(self.faces, dtype=np.int64), dtype=torch.long))
+        default_shape = torch.zeros([self.batch_size, 300 - config.shape_params], dtype=self.dtype, requires_grad=False)
+        self.register_parameter('shape_betas', nn.Parameter(default_shape, requires_grad=False))
+        default_exp = torch.zeros([self.batch_size, 100 - config.expression_params], dtype=self.dtype, requires_grad=False)
+        self.register_parameter('expression_betas', nn.Parameter(default_exp, requires_grad=False))
+        default_eyball_pose = torch.zeros([self.batch_size, 6], dtype=self.dtype, requires_grad=False)
+        self.register_parameter('eye_pose', nn.Parameter(default_eyball_pose, requires_grad=False))
+        default_neck_pose = torch.zeros([self.batch_size, 3], dtype=self.dtype, requires_grad=False)
+        self.register_parameter('neck_pose', nn.Parameter(default_neck_pose, requires_grad=False))
+        self.use_3D_translation = config.use_3D_translation
+        default_transl = torch.zeros([self.batch_size, 3], dtype=self.dtype, requires_grad=False)
+        self.register_parameter('transl', nn.Parameter(default_transl, requires_grad=False))
+        self.register_buffer('v_template', to_tensor(to_np(self.flame_model.v_template), dtype=self.dtype))
+        shapedirs = self.flame_model.shapedirs
+        self.register_buffer('shapedirs', to_tensor(to_np(shapedirs), dtype=self.dtype))
+        j_regressor = to_tensor(to_np(self.flame_model.J_regressor), dtype=self.dtype)
+        self.register_buffer('J_regressor', j_regressor)
+        num_pose_basis = self.flame_model.posedirs.shape[-1]
+        posedirs = np.reshape(self.flame_model.posedirs, [-1, num_pose_basis]).T
+        self.register_buffer('posedirs', to_tensor(to_np(posedirs), dtype=self.dtype))
+        parents = to_tensor(to_np(self.flame_model.kintree_table[0])).long()
+        parents[0] = -1
+        self.register_buffer('parents', parents)
+        self.register_buffer('lbs_weights', to_tensor(to_np(self.flame_model.weights), dtype=self.dtype))
+        with open(config.static_landmark_embedding_path, 'rb') as f:
+            static_embeddings = Struct(**pickle.load(f, encoding='latin1'))
+        lmk_faces_idx = static_embeddings.lmk_face_idx.astype(np.int64)
+        self.register_buffer('lmk_faces_idx', torch.tensor(lmk_faces_idx, dtype=torch.long))
+        lmk_bary_coords = static_embeddings.lmk_b_coords
+        self.register_buffer('lmk_bary_coords', torch.tensor(lmk_bary_coords, dtype=self.dtype))
+        if self.use_face_contour:
+            conture_embeddings = np.load(config.dynamic_landmark_embedding_path, allow_pickle=True, encoding='latin1')
+            conture_embeddings = conture_embeddings[()]
+            dynamic_lmk_faces_idx = np.array(conture_embeddings['lmk_face_idx']).astype(np.int64)
+            dynamic_lmk_faces_idx = torch.tensor(dynamic_lmk_faces_idx, dtype=torch.long)
+            self.register_buffer('dynamic_lmk_faces_idx', dynamic_lmk_faces_idx)
+            dynamic_lmk_bary_coords = conture_embeddings['lmk_b_coords']
+            dynamic_lmk_bary_coords = torch.tensor(dynamic_lmk_bary_coords, dtype=self.dtype)
+            self.register_buffer('dynamic_lmk_bary_coords', dynamic_lmk_bary_coords)
+            neck_kin_chain = []
+            curr_idx = torch.tensor(self.NECK_IDX, dtype=torch.long)
+            while curr_idx != -1:
+                neck_kin_chain.append(curr_idx)
+                curr_idx = self.parents[curr_idx]
+            self.register_buffer('neck_kin_chain', torch.stack(neck_kin_chain))
+
+    def _find_dynamic_lmk_idx_and_bcoords(self, vertices, pose, dynamic_lmk_faces_idx, dynamic_lmk_b_coords, neck_kin_chain, dtype=torch.float32):
+        """
+            Selects the face contour depending on the reletive position of the head
+            Input:
+                vertices: N X num_of_vertices X 3
+                pose: N X full pose
+                dynamic_lmk_faces_idx: The list of contour face indexes
+                dynamic_lmk_b_coords: The list of contour barycentric weights
+                neck_kin_chain: The tree to consider for the relative rotation
+                dtype: Data type
+            return:
+                The contour face indexes and the corresponding barycentric weights
+            Source: Modified for batches from https://github.com/vchoutas/smplx
+        """
+        batch_size = vertices.shape[0]
+        aa_pose = torch.index_select(pose.view(batch_size, -1, 3), 1, neck_kin_chain)
+        rot_mats = batch_rodrigues(aa_pose.view(-1, 3), dtype=dtype).view(batch_size, -1, 3, 3)
+        rel_rot_mat = torch.eye(3, device=vertices.device, dtype=dtype).unsqueeze_(dim=0).expand(batch_size, -1, -1)
+        for idx in range(len(neck_kin_chain)):
+            rel_rot_mat = torch.bmm(rot_mats[:, idx], rel_rot_mat)
+        y_rot_angle = torch.round(torch.clamp(-rot_mat_to_euler(rel_rot_mat) * 180.0 / np.pi, max=39))
+        neg_mask = y_rot_angle.lt(0)
+        mask = y_rot_angle.lt(-39)
+        neg_vals = mask * 78 + (1 - mask) * (39 - y_rot_angle)
+        y_rot_angle = neg_mask * neg_vals + (1 - neg_mask) * y_rot_angle
+        dyn_lmk_faces_idx = torch.index_select(dynamic_lmk_faces_idx, 0, y_rot_angle)
+        dyn_lmk_b_coords = torch.index_select(dynamic_lmk_b_coords, 0, y_rot_angle)
+        return dyn_lmk_faces_idx, dyn_lmk_b_coords
+
+    def forward(self, shape_params=None, expression_params=None, pose_params=None, neck_pose=None, eye_pose=None, transl=None):
+        """
+            Input:
+                shape_params: N X number of shape parameters
+                expression_params: N X number of expression parameters
+                pose_params: N X number of pose parameters
+            return:
+                vertices: N X V X 3
+                landmarks: N X number of landmarks X 3
+        """
+        betas = torch.cat([shape_params, self.shape_betas, expression_params, self.expression_betas], dim=1)
+        neck_pose = neck_pose if neck_pose is not None else self.neck_pose
+        eye_pose = eye_pose if eye_pose is not None else self.eye_pose
+        transl = transl if transl is not None else self.transl
+        full_pose = torch.cat([pose_params[:, :3], neck_pose, pose_params[:, 3:], eye_pose], dim=1)
+        template_vertices = self.v_template.unsqueeze(0).repeat(self.batch_size, 1, 1)
+        vertices, _ = lbs(betas, full_pose, template_vertices, self.shapedirs, self.posedirs, self.J_regressor, self.parents, self.lbs_weights, dtype=self.dtype)
+        lmk_faces_idx = self.lmk_faces_idx.unsqueeze(dim=0).repeat(self.batch_size, 1)
+        lmk_bary_coords = self.lmk_bary_coords.unsqueeze(dim=0).repeat(self.batch_size, 1, 1)
+        if self.use_face_contour:
+            dyn_lmk_faces_idx, dyn_lmk_bary_coords = self._find_dynamic_lmk_idx_and_bcoords(vertices, full_pose, self.dynamic_lmk_faces_idx, self.dynamic_lmk_bary_coords, self.neck_kin_chain, dtype=self.dtype)
+            lmk_faces_idx = torch.cat([dyn_lmk_faces_idx, lmk_faces_idx], 1)
+            lmk_bary_coords = torch.cat([dyn_lmk_bary_coords, lmk_bary_coords], 1)
+        landmarks = vertices2landmarks(vertices, self.faces_tensor, lmk_faces_idx, lmk_bary_coords)
+        if self.use_3D_translation:
+            landmarks += transl.unsqueeze(dim=1)
+            vertices += transl.unsqueeze(dim=1)
+        return vertices, landmarks
+
+
+def _axis_angle_rotation(axis: 'str', angle: 'torch.Tensor') ->torch.Tensor:
+    """
+    Return the rotation matrices for one of the rotations about an axis
+    of which Euler angles describe, for each value of the angle given.
+
+    Args:
+        axis: Axis label "X" or "Y or "Z".
+        angle: any shape tensor of Euler angles in radians
+
+    Returns:
+        Rotation matrices as tensor of shape (..., 3, 3).
+    """
+    cos = torch.cos(angle)
+    sin = torch.sin(angle)
+    one = torch.ones_like(angle)
+    zero = torch.zeros_like(angle)
+    if axis == 'X':
+        R_flat = one, zero, zero, zero, cos, -sin, zero, sin, cos
+    elif axis == 'Y':
+        R_flat = cos, zero, sin, zero, one, zero, -sin, zero, cos
+    elif axis == 'Z':
+        R_flat = cos, -sin, zero, sin, cos, zero, zero, zero, one
+    else:
+        raise ValueError('letter must be either X, Y or Z.')
+    return torch.stack(R_flat, -1).reshape(angle.shape + (3, 3))
+
+
+def euler_angles_to_matrix(euler_angles, convention=('X', 'Y', 'Z')):
+    matrices = [_axis_angle_rotation(c, e) for c, e in zip(convention, torch.unbind(euler_angles, -1))]
+    return torch.matmul(torch.matmul(matrices[0], matrices[1]), matrices[2])
+
+
+class CamPose_IR(nn.Module):
+
+    def __init__(self, world_kp3d, pj2d, cam_K, init_pitch_tx, device=torch.device('cuda:0')):
+        super().__init__()
+        self.device = device
+        self.register_buffer('world_kp3d', world_kp3d.float())
+        self.register_buffer('pj2d', pj2d.float())
+        self.register_buffer('cam_K', torch.from_numpy(cam_K).float())
+        self.camera_pitch_tx = nn.Parameter(init_pitch_tx)
+
+    def forward(self):
+        camera_euler_angles = torch.cat([self.camera_pitch_tx[:2], torch.zeros(1)], 0)
+        cam_rot_mat = euler_angles_to_matrix(camera_euler_angles)
+        points = torch.einsum('ij,kj->ki', cam_rot_mat, self.world_kp3d)
+        points[:, 0] = points[:, 0] + self.camera_pitch_tx[2]
+        projected_points = points / points[:, -1].unsqueeze(-1)
+        projected_points = torch.matmul(self.cam_K[:3, :3], projected_points.contiguous().T).T
+        projected_points = projected_points[..., :2]
+        loss = torch.norm(projected_points - self.pj2d, p=2, dim=-1).mean()
+        return loss, projected_points
 
 
 import torch
@@ -5573,9 +10882,25 @@ TESTCASES = [
      lambda: ([], {'inplanes': 4, 'planes': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
+    (BasicEncoder,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 3, 64, 64])], {}),
+     False),
+    (BasicMotionEncoder,
+     lambda: ([], {'corr_levels': 4, 'corr_radius': 4}),
+     lambda: ([torch.rand([4, 2, 64, 64]), torch.rand([4, 324, 64, 64])], {}),
+     True),
     (CoordConv,
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4}),
      lambda: ([torch.rand([4, 2, 4, 4])], {}),
+     True),
+    (FeedForward,
+     lambda: ([], {'dim': 4, 'hidden_dim': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (FlowHead,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 128, 64, 64])], {}),
      True),
     (IBN_a,
      lambda: ([], {'planes': 4}),
@@ -5589,6 +10914,30 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (PositionalEncoding,
+     lambda: ([], {'d_model': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (PreNorm,
+     lambda: ([], {'dim': 4, 'fn': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (PreNormResidual,
+     lambda: ([], {'dim': 4, 'fn': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (Residual,
+     lambda: ([], {'fn': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (SmallEncoder,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 3, 64, 64])], {}),
+     False),
+    (SmallMotionEncoder,
+     lambda: ([], {'corr_levels': 4, 'corr_radius': 4}),
+     lambda: ([torch.rand([4, 2, 64, 64]), torch.rand([4, 324, 64, 64])], {}),
+     True),
 ]
 
 class Test_Arthur151_ROMP(_paritybench_base):
@@ -5618,4 +10967,34 @@ class Test_Arthur151_ROMP(_paritybench_base):
 
     def test_008(self):
         self._check(*TESTCASES[8])
+
+    def test_009(self):
+        self._check(*TESTCASES[9])
+
+    def test_010(self):
+        self._check(*TESTCASES[10])
+
+    def test_011(self):
+        self._check(*TESTCASES[11])
+
+    def test_012(self):
+        self._check(*TESTCASES[12])
+
+    def test_013(self):
+        self._check(*TESTCASES[13])
+
+    def test_014(self):
+        self._check(*TESTCASES[14])
+
+    def test_015(self):
+        self._check(*TESTCASES[15])
+
+    def test_016(self):
+        self._check(*TESTCASES[16])
+
+    def test_017(self):
+        self._check(*TESTCASES[17])
+
+    def test_018(self):
+        self._check(*TESTCASES[18])
 

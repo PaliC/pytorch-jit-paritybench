@@ -75,7 +75,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -375,7 +377,7 @@ class NaiveSyncBatchNorm3d(nn.BatchNorm3d):
         return input * scale + bias
 
 
-def get_same_padding(x: int, k: int, s: int, d: int):
+def get_same_padding(x: 'int', k: 'int', s: 'int', d: 'int'):
     return max((int(math.ceil(x // s)) - 1) * s + (k - 1) * d + 1 - x, 0)
 
 
@@ -387,7 +389,7 @@ def pad_same(x, k, s, d=(1, 1), value=0):
     return x
 
 
-def conv2d_same(x, weight: torch.Tensor, bias: Optional[torch.Tensor]=None, stride: Tuple[int, int]=(1, 1), padding: Tuple[int, int]=(0, 0), dilation: Tuple[int, int]=(1, 1), groups: int=1):
+def conv2d_same(x, weight: 'torch.Tensor', bias: 'Optional[torch.Tensor]'=None, stride: 'Tuple[int, int]'=(1, 1), padding: 'Tuple[int, int]'=(0, 0), dilation: 'Tuple[int, int]'=(1, 1), groups: 'int'=1):
     x = pad_same(x, weight.shape[-2:], stride, dilation)
     return F.conv2d(x, weight, bias, stride, (0, 0), dilation, groups)
 
@@ -405,7 +407,7 @@ class Conv2dSame(nn.Conv2d):
 
 class FeatureInfo:
 
-    def __init__(self, feature_info: List[Dict], out_indices: Tuple[int]):
+    def __init__(self, feature_info: 'List[Dict]', out_indices: 'Tuple[int]'):
         prev_reduction = 1
         for fi in feature_info:
             assert 'num_chs' in fi and fi['num_chs'] > 0
@@ -415,7 +417,7 @@ class FeatureInfo:
         self.out_indices = out_indices
         self.info = feature_info
 
-    def from_other(self, out_indices: Tuple[int]):
+    def from_other(self, out_indices: 'Tuple[int]'):
         return FeatureInfo(deepcopy(self.info), out_indices)
 
     def get(self, key, idx=None):
@@ -800,7 +802,7 @@ class X3DHead(nn.Module):
 
 class Linear(nn.Linear):
 
-    def forward(self, input: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor') ->torch.Tensor:
         if torch.jit.is_scripting():
             bias = self.bias if self.bias is not None else None
             return F.linear(input, self.weight, bias=bias)
@@ -1867,7 +1869,7 @@ class Attention(nn.Module):
         return x
 
 
-def drop_path(x, drop_prob: float=0.0, training: bool=False):
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
     This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
     the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...

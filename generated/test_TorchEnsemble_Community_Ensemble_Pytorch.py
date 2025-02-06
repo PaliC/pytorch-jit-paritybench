@@ -45,7 +45,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -651,7 +653,7 @@ def torchensemble_model_doc(header='', item='model'):
 
     def get_doc(item):
         """Return the selected item."""
-        __doc = {'model': const.__model_doc, 'seq_model': const.__seq_model_doc, 'tree_ensmeble_model': const.__tree_ensemble_doc, 'fit': const.__fit_doc, 'predict': const.__predict_doc, 'set_optimizer': const.__set_optimizer_doc, 'set_scheduler': const.__set_scheduler_doc, 'set_criterion': const.__set_criterion_doc, 'classifier_forward': const.__classification_forward_doc, 'classifier_evaluate': const.__classification_evaluate_doc, 'regressor_forward': const.__regression_forward_doc, 'regressor_evaluate': const.__regression_evaluate_doc}
+        __doc = {'model': const.__model_doc, 'seq_model': const.__seq_model_doc, 'tree_ensemble_model': const.__tree_ensemble_doc, 'fit': const.__fit_doc, 'predict': const.__predict_doc, 'set_optimizer': const.__set_optimizer_doc, 'set_scheduler': const.__set_scheduler_doc, 'set_criterion': const.__set_criterion_doc, 'classifier_forward': const.__classification_forward_doc, 'classifier_evaluate': const.__classification_evaluate_doc, 'regressor_forward': const.__regression_forward_doc, 'regressor_evaluate': const.__regression_evaluate_doc}
         return __doc[item]
 
     def adddoc(cls):
@@ -1000,9 +1002,10 @@ class _BaseSoftGradientBoosting(BaseModule):
     def _evaluate_during_fit(self, test_loader, epoch):
         """Evaluate the ensemble after each training epoch."""
 
-    def fit(self, train_loader, epochs=100, use_reduction_sum=True, log_interval=100, test_loader=None, save_model=True, save_dir=None):
-        for _ in range(self.n_estimators):
-            self.estimators_.append(self._make_estimator())
+    def fit(self, train_loader, epochs=100, use_reduction_sum=True, log_interval=100, test_loader=None, save_model=True, save_dir=None, on_epoch_end_cb=None):
+        if len(self.estimators_) != self.n_estimators:
+            for _ in range(self.n_estimators):
+                self.estimators_.append(self._make_estimator())
         self._validate_parameters(epochs, log_interval)
         self.n_outputs = self._decide_n_outputs(train_loader)
         criterion = nn.MSELoss(reduction='sum') if use_reduction_sum else nn.MSELoss()
@@ -1041,6 +1044,8 @@ class _BaseSoftGradientBoosting(BaseModule):
                         scheduler.step(loss)
                 else:
                     scheduler.step()
+            if on_epoch_end_cb:
+                on_epoch_end_cb(epoch)
         if save_model and not test_loader:
             io.save(self, save_dir, self.logger)
 

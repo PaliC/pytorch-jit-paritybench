@@ -81,7 +81,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -4529,10 +4531,6 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'stride': 1, 'padding': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (deconv2DBatchNormRelu,
-     lambda: ([], {'in_channels': 4, 'out_channels': 4, 'kernel_size': 4, 'stride': 1, 'padding': 4}),
-     lambda: ([torch.rand([4, 4, 64, 64])], {}),
-     True),
     (detnet_bottleneck,
      lambda: ([], {'in_planes': 4, 'planes': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -4784,7 +4782,4 @@ class Test_guanfuchen_semseg(_paritybench_base):
 
     def test_054(self):
         self._check(*TESTCASES[54])
-
-    def test_055(self):
-        self._check(*TESTCASES[55])
 

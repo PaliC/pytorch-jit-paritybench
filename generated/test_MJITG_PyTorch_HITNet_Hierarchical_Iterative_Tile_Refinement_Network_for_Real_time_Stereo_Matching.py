@@ -25,7 +25,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -524,7 +526,7 @@ class TileWarping(nn.Module):
         self.disp_up = DispUpsampleBySlantedPlane(4)
         self.build_l1_volume_chaos = BuildVolume2dChaos()
 
-    def forward(self, tile_plane: torch.Tensor, fea_l: torch.Tensor, fea_r: torch.Tensor):
+    def forward(self, tile_plane: 'torch.Tensor', fea_l: 'torch.Tensor', fea_r: 'torch.Tensor'):
         """
         local cost volume
         :param tile_plane: d, dx, dy
@@ -726,7 +728,7 @@ class TileWarping1(nn.Module):
         self.disp_up = DispUpsampleBySlantedPlane(tile_size)
         self.build_l1_volume_chaos = BuildVolume2dChaos()
 
-    def forward(self, tile_plane: torch.Tensor, fea_l: torch.Tensor, fea_r: torch.Tensor):
+    def forward(self, tile_plane: 'torch.Tensor', fea_l: 'torch.Tensor', fea_r: 'torch.Tensor'):
         """
         local cost volume
         :param tile_plane: d, dx, dy

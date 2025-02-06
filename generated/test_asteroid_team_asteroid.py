@@ -165,6 +165,7 @@ eval = _module
 preprocess_wsj0mix = _module
 metrics = _module
 model = _module
+separate = _module
 train = _module
 wsj0_mix_variable = _module
 eval = _module
@@ -215,7 +216,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -423,6 +426,9 @@ import copy
 import sklearn.preprocessing
 
 
+import torchaudio
+
+
 from torch.optim.lr_scheduler import ExponentialLR
 
 
@@ -438,7 +444,7 @@ from time import time
 from sklearn.cluster import KMeans
 
 
-from torch.testing import assert_allclose
+from torch.testing import assert_close
 
 
 from torch import optim
@@ -641,8 +647,50 @@ class ComplexMultiplicationWrapper(nn.Module):
         self.re_module = module_cls(*args, **kwargs)
         self.im_module = module_cls(*args, **kwargs)
 
-    def forward(self, x: ComplexTensor) ->ComplexTensor:
+    def forward(self, x: 'ComplexTensor') ->ComplexTensor:
         return torch_complex_from_reim(self.re_module(x.real) - self.im_module(x.imag), self.re_module(x.imag) + self.im_module(x.real))
+
+
+class SingleRNN(nn.Module):
+    """Module for a RNN block.
+
+    Inspired from https://github.com/yluo42/TAC/blob/master/utility/models.py
+    Licensed under CC BY-NC-SA 3.0 US.
+
+    Args:
+        rnn_type (str): Select from ``'RNN'``, ``'LSTM'``, ``'GRU'``. Can
+            also be passed in lowercase letters.
+        input_size (int): Dimension of the input feature. The input should have
+            shape [batch, seq_len, input_size].
+        hidden_size (int): Dimension of the hidden state.
+        n_layers (int, optional): Number of layers used in RNN. Default is 1.
+        dropout (float, optional): Dropout ratio. Default is 0.
+        bidirectional (bool, optional): Whether the RNN layers are
+            bidirectional. Default is ``False``.
+    """
+
+    def __init__(self, rnn_type, input_size, hidden_size, n_layers=1, dropout=0, bidirectional=False):
+        super(SingleRNN, self).__init__()
+        assert rnn_type.upper() in ['RNN', 'LSTM', 'GRU']
+        rnn_type = rnn_type.upper()
+        self.rnn_type = rnn_type
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.n_layers = n_layers
+        self.dropout = dropout
+        self.bidirectional = bidirectional
+        self.rnn = getattr(nn, rnn_type)(input_size, hidden_size, num_layers=n_layers, dropout=dropout, batch_first=True, bidirectional=bool(bidirectional))
+
+    @property
+    def output_size(self):
+        return self.hidden_size * (2 if self.bidirectional else 1)
+
+    def forward(self, inp):
+        """Input shape [batch, seq, feats]"""
+        self.rnn.flatten_parameters()
+        output = inp
+        rnn_output, _ = self.rnn(output)
+        return rnn_output
 
 
 class ComplexSingleRNN(nn.Module):
@@ -681,7 +729,7 @@ class ComplexSingleRNN(nn.Module):
     def output_size(self):
         return self.rnns[-1].re_module.output_size
 
-    def forward(self, x: ComplexTensor) ->ComplexTensor:
+    def forward(self, x: 'ComplexTensor') ->ComplexTensor:
         """Input shape [batch, seq, feats]"""
         for rnn in self.rnns:
             x = rnn(x)
@@ -709,7 +757,7 @@ def torch_complex_from_magphase(mag, phase):
     return torch.view_as_complex(torch.stack((mag * torch.cos(phase), mag * torch.sin(phase)), dim=-1))
 
 
-def bound_complex_mask(mask: ComplexTensor, bound_type='tanh'):
+def bound_complex_mask(mask: 'ComplexTensor', bound_type='tanh'):
     """Bound a complex mask, as proposed in [1], section 3.2.
 
     Valid bound types, for a complex mask :math:`M = |M| ⋅ e^{i φ(M)}`:
@@ -746,11 +794,11 @@ class BoundComplexMask(nn.Module):
         super().__init__()
         self.bound_type = bound_type
 
-    def forward(self, mask: ComplexTensor):
+    def forward(self, mask: 'ComplexTensor'):
         return bound_complex_mask(mask, self.bound_type)
 
 
-def compute_scm(x: torch.Tensor, mask: torch.Tensor=None, normalize: bool=True):
+def compute_scm(x: 'torch.Tensor', mask: 'torch.Tensor'=None, normalize: 'bool'=True):
     """Compute the spatial covariance matrix from a STFT signal x.
 
     Args:
@@ -774,12 +822,12 @@ def compute_scm(x: torch.Tensor, mask: torch.Tensor=None, normalize: bool=True):
 
 class SCM(nn.Module):
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor=None, normalize: bool=True):
+    def forward(self, x: 'torch.Tensor', mask: 'torch.Tensor'=None, normalize: 'bool'=True):
         """See :func:`compute_scm`."""
         return compute_scm(x, mask=mask, normalize=normalize)
 
 
-def get_optimal_reference_mic(bf_mat: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor, eps: float=1e-06):
+def get_optimal_reference_mic(bf_mat: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor', eps: 'float'=1e-06):
     """Compute the optimal reference mic given the a posteriori SNR, see [1].
 
     Args:
@@ -805,7 +853,7 @@ class Beamformer(nn.Module):
     """Base class for beamforming modules."""
 
     @staticmethod
-    def apply_beamforming_vector(bf_vector: torch.Tensor, mix: torch.Tensor):
+    def apply_beamforming_vector(bf_vector: 'torch.Tensor', mix: 'torch.Tensor'):
         """Apply the beamforming vector to the mixture. Output (batch, freqs, frames).
 
         Args:
@@ -815,7 +863,7 @@ class Beamformer(nn.Module):
         return torch.einsum('...mf,...mft->...ft', bf_vector.conj(), mix)
 
     @staticmethod
-    def get_reference_mic_vects(ref_mic, bf_mat: torch.Tensor, target_scm: torch.Tensor=None, noise_scm: torch.Tensor=None):
+    def get_reference_mic_vects(ref_mic, bf_mat: 'torch.Tensor', target_scm: 'torch.Tensor'=None, noise_scm: 'torch.Tensor'=None):
         """Return the reference channel indices over the batch.
 
         Args:
@@ -907,7 +955,7 @@ def stable_solve(b, a):
 
 class RTFMVDRBeamformer(Beamformer):
 
-    def forward(self, mix: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor):
+    def forward(self, mix: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         """Compute and apply MVDR beamformer from the speech and noise SCM matrices.
 
         :math:`\\mathbf{w} =  \\displaystyle \\frac{\\Sigma_{nn}^{-1} \\mathbf{a}}{
@@ -922,11 +970,11 @@ class RTFMVDRBeamformer(Beamformer):
         Returns:
             Filtered mixture. torch.ComplexTensor (batch, freqs, frames)
         """
-        e_val, e_vec = torch.symeig(target_scm.permute(0, 3, 1, 2), eigenvectors=True)
+        e_val, e_vec = torch.linalg.eigh(target_scm.permute(0, 3, 1, 2))
         rtf_vect = e_vec[..., -1]
         return self.from_rtf_vect(mix=mix, rtf_vec=rtf_vect.transpose(-1, -2), noise_scm=noise_scm)
 
-    def from_rtf_vect(self, mix: torch.Tensor, rtf_vec: torch.Tensor, noise_scm: torch.Tensor):
+    def from_rtf_vect(self, mix: 'torch.Tensor', rtf_vec: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         """Compute and apply MVDR beamformer from the ATF vector and noise SCM matrix.
 
         Args:
@@ -948,7 +996,7 @@ class RTFMVDRBeamformer(Beamformer):
 
 class SoudenMVDRBeamformer(Beamformer):
 
-    def forward(self, mix: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor, ref_mic: Union[torch.Tensor, torch.LongTensor, int]=0, eps=1e-08):
+    def forward(self, mix: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor', ref_mic: 'Union[torch.Tensor, torch.LongTensor, int]'=0, eps=1e-08):
         """Compute and apply MVDR beamformer from the speech and noise SCM matrices.
         This class uses Souden's formulation [1].
 
@@ -988,7 +1036,7 @@ class SDWMWFBeamformer(Beamformer):
         super().__init__()
         self.mu = mu
 
-    def forward(self, mix: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor, ref_mic: Union[torch.Tensor, torch.LongTensor, int]=None):
+    def forward(self, mix: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor', ref_mic: 'Union[torch.Tensor, torch.LongTensor, int]'=None):
         """Compute and apply SDW-MWF beamformer.
 
         :math:`\\mathbf{w} =  \\displaystyle (\\Sigma_{ss} + \\mu \\Sigma_{nn})^{-1} \\Sigma_{ss}`.
@@ -1046,7 +1094,7 @@ def _generalized_eigenvalue_decomposition(a, b):
     cholesky = stable_cholesky(b)
     inv_cholesky = torch.inverse(cholesky)
     cmat = inv_cholesky @ a @ inv_cholesky.conj().transpose(-1, -2)
-    e_val, e_vec = torch.symeig(cmat, eigenvectors=True)
+    e_val, e_vec = torch.linalg.eigh(cmat)
     e_vec = torch.matmul(inv_cholesky.conj().transpose(-1, -2), e_vec)
     return e_val, e_vec
 
@@ -1065,7 +1113,7 @@ def generalized_eigenvalue_decomposition(a, b):
 
 class GEVBeamformer(Beamformer):
 
-    def forward(self, mix: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor):
+    def forward(self, mix: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         """Compute and apply the GEV beamformer.
 
         :math:`\\mathbf{w} =  \\displaystyle MaxEig\\{ \\Sigma_{nn}^{-1}\\Sigma_{ss} \\}`, where
@@ -1085,7 +1133,7 @@ class GEVBeamformer(Beamformer):
         return output
 
     @staticmethod
-    def compute_beamforming_vector(target_scm: torch.Tensor, noise_scm: torch.Tensor):
+    def compute_beamforming_vector(target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         noise_scm_t = noise_scm.permute(0, 3, 1, 2)
         noise_scm_t = condition_scm(noise_scm_t, 1e-06)
         e_val, e_vec = generalized_eigenvalue_decomposition(target_scm.permute(0, 3, 1, 2), noise_scm_t)
@@ -1114,11 +1162,12 @@ class GEVDBeamformer(Beamformer):
         in IEEE/ACM Transactions on Audio, Speech, and Language Processing, April 2014.
     """
 
-    def __init__(self, mu: float=1.0, rank: int=1):
+    def __init__(self, mu: 'float'=1.0, rank: 'int'=1):
+        super().__init__()
         self.mu = mu
         self.rank = rank
 
-    def compute_beamforming_vector(self, target_scm: torch.Tensor, noise_scm: torch.Tensor):
+    def compute_beamforming_vector(self, target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         """Compute beamforming vectors for GEVD beamFormer.
 
         Args:
@@ -1141,7 +1190,7 @@ class GEVDBeamformer(Beamformer):
         bf_vect = e_vectors @ e_values @ torch.linalg.inv(e_vectors @ ev_plus_mu)
         return bf_vect[..., 0].permute(0, 2, 1)
 
-    def forward(self, mix: torch.Tensor, target_scm: torch.Tensor, noise_scm: torch.Tensor):
+    def forward(self, mix: 'torch.Tensor', target_scm: 'torch.Tensor', noise_scm: 'torch.Tensor'):
         """Compute and apply the GEVD beamformer.
 
         Args:
@@ -1413,7 +1462,7 @@ class PITLossWrapper(nn.Module):
         return min_loss, batch_indices
 
     @staticmethod
-    def find_best_perm_hungarian(pair_wise_losses: torch.Tensor):
+    def find_best_perm_hungarian(pair_wise_losses: 'torch.Tensor'):
         """
         Find the best permutation given the pair-wise losses, using the Hungarian algorithm.
 
@@ -1440,7 +1489,7 @@ class PITReorder(PITLossWrapper):
         return reordered
 
 
-def _reorder_sources(current: torch.FloatTensor, previous: torch.FloatTensor, n_src: int, window_size: int, hop_size: int):
+def _reorder_sources(current: 'torch.FloatTensor', previous: 'torch.FloatTensor', n_src: 'int', window_size: 'int', hop_size: 'int'):
     """
      Reorder sources in current chunk to maximize correlation with previous chunk.
      Used for Continuous Source Separation. Standard dsp correlation is used
@@ -1520,7 +1569,7 @@ class LambdaOverlapAdd(torch.nn.Module):
         >>> file_separate(continuous_nnet, "example.wav")
     """
 
-    def __init__(self, nnet, n_src, window_size, hop_size=None, window='hanning', reorder_chunks=True, enable_grad=False):
+    def __init__(self, nnet, n_src, window_size, hop_size=None, window='hann', reorder_chunks=True, enable_grad=False):
         super().__init__()
         assert window_size % 2 == 0, 'Window size must be even'
         self.nnet = nnet
@@ -1556,11 +1605,12 @@ class LambdaOverlapAdd(torch.nn.Module):
             frame = frame.reshape(batch * n_src, -1)
             if frame_idx != 0 and self.reorder_chunks:
                 frame = _reorder_sources(frame, out[-1], n_src, self.window_size, self.hop_size)
-            if self.use_window:
-                frame = frame * self.window
-            else:
-                frame = frame / (self.window_size / self.hop_size)
             out.append(frame)
+        for frame in out:
+            if self.use_window:
+                frame *= self.window
+            else:
+                frame /= self.window_size / self.hop_size
         out = torch.stack(out).reshape(n_chunks, batch * n_src, self.window_size)
         out = out.permute(1, 2, 0)
         out = torch.nn.functional.fold(out, (n_frames, 1), kernel_size=(self.window_size, 1), padding=(self.window_size, 0), stride=(self.hop_size, 1))
@@ -2693,7 +2743,7 @@ def script_if_tracing(fn):
     return wrapper
 
 
-def z_norm(x, dims: List[int], eps: float=1e-08):
+def z_norm(x, dims: 'List[int]', eps: 'float'=1e-08):
     mean = x.mean(dim=dims, keepdim=True)
     var2 = torch.var(x, dim=dims, keepdim=True, unbiased=False)
     value = (x - mean) / torch.sqrt(var2 + eps)
@@ -2701,15 +2751,15 @@ def z_norm(x, dims: List[int], eps: float=1e-08):
 
 
 @script_if_tracing
-def _glob_norm(x, eps: float=1e-08):
-    dims: List[int] = torch.arange(1, len(x.shape)).tolist()
+def _glob_norm(x, eps: 'float'=1e-08):
+    dims: 'List[int]' = torch.arange(1, len(x.shape)).tolist()
     return z_norm(x, dims, eps)
 
 
 class GlobLN(_LayerNorm):
     """Global Layer Normalization (globLN)."""
 
-    def forward(self, x, EPS: float=1e-08):
+    def forward(self, x, EPS: 'float'=1e-08):
         """Applies forward pass.
 
         Works for any input size > 2D.
@@ -3054,7 +3104,7 @@ class BaseDCUMaskNet(BaseUNet):
     _architectures = NotImplemented
 
     @classmethod
-    def default_architecture(cls, architecture: str, n_src=1, **kwargs):
+    def default_architecture(cls, architecture: 'str', n_src=1, **kwargs):
         """Create a masknet instance from a predefined, named architecture.
 
         Args:
@@ -3393,7 +3443,7 @@ class DCUNetComplexEncoderBlock(nn.Module):
         activation_class = activations.get_complex(activation)
         self.activation = activation_class()
 
-    def forward(self, x: complex_nn.ComplexTensor):
+    def forward(self, x: 'complex_nn.ComplexTensor'):
         return self.activation(self.norm(self.conv(x)))
 
 
@@ -3429,7 +3479,7 @@ class DCUNetComplexDecoderBlock(nn.Module):
         activation_class = activations.get_complex(activation)
         self.activation = activation_class()
 
-    def forward(self, x: complex_nn.ComplexTensor):
+    def forward(self, x: 'complex_nn.ComplexTensor'):
         return self.activation(self.norm(self.deconv(x)))
 
 
@@ -3470,7 +3520,7 @@ DCUNET_ARCHITECTURES = {'DCUNet-10': make_unet_encoder_decoder_args(((1, 32, (7,
 
 
 @script_if_tracing
-def _fix_dcu_input_dims(fix_length_mode: Optional[str], x, encoders_stride_product):
+def _fix_dcu_input_dims(fix_length_mode: 'Optional[str]', x, encoders_stride_product):
     """Pad or trim `x` to a length compatible with DCUNet."""
     freq_prod = int(encoders_stride_product[0])
     time_prod = int(encoders_stride_product[1])
@@ -3492,7 +3542,7 @@ def _fix_dcu_input_dims(fix_length_mode: Optional[str], x, encoders_stride_produ
 
 
 @script_if_tracing
-def pad_x_to_y(x: torch.Tensor, y: torch.Tensor, axis: int=-1) ->torch.Tensor:
+def pad_x_to_y(x: 'torch.Tensor', y: 'torch.Tensor', axis: 'int'=-1) ->torch.Tensor:
     """Right-pad or right-trim first argument to have same size as second argument
 
     Args:
@@ -3511,7 +3561,7 @@ def pad_x_to_y(x: torch.Tensor, y: torch.Tensor, axis: int=-1) ->torch.Tensor:
 
 
 @script_if_tracing
-def _fix_dcu_output_dims(fix_length_mode: Optional[str], out, x):
+def _fix_dcu_output_dims(fix_length_mode: 'Optional[str]', out, x):
     """Fix shape of `out` to the original shape of `x`."""
     return pad_x_to_y(out, x)
 
@@ -3732,7 +3782,7 @@ class SuDORMRFImproved(nn.Module):
 class ChanLN(_LayerNorm):
     """Channel-wise Layer Normalization (chanLN)."""
 
-    def forward(self, x, EPS: float=1e-08):
+    def forward(self, x, EPS: 'float'=1e-08):
         """Applies forward pass.
 
         Works for any input size > 2D.
@@ -3751,7 +3801,7 @@ class ChanLN(_LayerNorm):
 class CumLN(_LayerNorm):
     """Cumulative Global layer normalization(cumLN)."""
 
-    def forward(self, x, EPS: float=1e-08):
+    def forward(self, x, EPS: 'float'=1e-08):
         """
 
         Args:
@@ -3769,8 +3819,8 @@ class CumLN(_LayerNorm):
 
 
 @script_if_tracing
-def _feat_glob_norm(x, eps: float=1e-08):
-    dims: List[int] = torch.arange(2, len(x.shape)).tolist()
+def _feat_glob_norm(x, eps: 'float'=1e-08):
+    dims: 'List[int]' = torch.arange(2, len(x.shape)).tolist()
     return z_norm(x, dims, eps)
 
 
@@ -3778,7 +3828,7 @@ class FeatsGlobLN(_LayerNorm):
     """Feature-wise global Layer Normalization (FeatsGlobLN).
     Applies normalization over frames for each channel."""
 
-    def forward(self, x, EPS: float=1e-08):
+    def forward(self, x, EPS: 'float'=1e-08):
         """Applies forward pass.
 
         Works for any input size > 2D.
@@ -3799,48 +3849,6 @@ class BatchNorm(_BatchNorm):
     def _check_input_dim(self, input):
         if input.dim() < 2 or input.dim() > 4:
             raise ValueError('expected 4D or 3D input (got {}D input)'.format(input.dim()))
-
-
-class SingleRNN(nn.Module):
-    """Module for a RNN block.
-
-    Inspired from https://github.com/yluo42/TAC/blob/master/utility/models.py
-    Licensed under CC BY-NC-SA 3.0 US.
-
-    Args:
-        rnn_type (str): Select from ``'RNN'``, ``'LSTM'``, ``'GRU'``. Can
-            also be passed in lowercase letters.
-        input_size (int): Dimension of the input feature. The input should have
-            shape [batch, seq_len, input_size].
-        hidden_size (int): Dimension of the hidden state.
-        n_layers (int, optional): Number of layers used in RNN. Default is 1.
-        dropout (float, optional): Dropout ratio. Default is 0.
-        bidirectional (bool, optional): Whether the RNN layers are
-            bidirectional. Default is ``False``.
-    """
-
-    def __init__(self, rnn_type, input_size, hidden_size, n_layers=1, dropout=0, bidirectional=False):
-        super(SingleRNN, self).__init__()
-        assert rnn_type.upper() in ['RNN', 'LSTM', 'GRU']
-        rnn_type = rnn_type.upper()
-        self.rnn_type = rnn_type
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.n_layers = n_layers
-        self.dropout = dropout
-        self.bidirectional = bidirectional
-        self.rnn = getattr(nn, rnn_type)(input_size, hidden_size, num_layers=n_layers, dropout=dropout, batch_first=True, bidirectional=bool(bidirectional))
-
-    @property
-    def output_size(self):
-        return self.hidden_size * (2 if self.bidirectional else 1)
-
-    def forward(self, inp):
-        """Input shape [batch, seq, feats]"""
-        self.rnn.flatten_parameters()
-        output = inp
-        rnn_output, _ = self.rnn(output)
-        return rnn_output
 
 
 class MulCatRNN(nn.Module):
@@ -4213,7 +4221,7 @@ class DCCRMaskNetRNN(nn.Module):
         self.linear = complex_nn.ComplexMultiplicationWrapper(nn.Linear, self.rnn.output_size, in_size)
         self.norm = norms.get_complex(norm_type)
 
-    def forward(self, x: complex_nn.ComplexTensor):
+    def forward(self, x: 'complex_nn.ComplexTensor'):
         """Input shape: [batch, ..., time]"""
         x = x.permute(0, x.ndim - 1, *range(1, x.ndim - 1))
         x = self.linear(self.rnn(x.reshape(*x.shape[:2], -1))).reshape(*x.shape)
@@ -4342,10 +4350,37 @@ class F1Tracker(nn.Module):
         return {'accuracy': float(accuracy), 'precision': float(precision), 'recall': float(recall), 'f1_score': float(f1)}
 
 
-MODELS_URLS_HASHTABLE = {'mpariente/ConvTasNet_WHAM!_sepclean': 'https://zenodo.org/record/3862942/files/model.pth?download=1', 'mpariente/DPRNNTasNet_WHAM!_sepclean': 'https://zenodo.org/record/3873670/files/model.pth?download=1', 'mpariente/DPRNNTasNet(ks=16)_WHAM!_sepclean': 'https://zenodo.org/record/3903795/files/model.pth?download=1', 'Cosentino/ConvTasNet_LibriMix_sep_clean': 'https://zenodo.org/record/3873572/files/model.pth?download=1', 'Cosentino/ConvTasNet_LibriMix_sep_noisy': 'https://zenodo.org/record/3874420/files/model.pth?download=1', 'brijmohan/ConvTasNet_Libri1Mix_enhsingle': 'https://zenodo.org/record/3970768/files/model.pth?download=1', 'groadabike/ConvTasNet_DAMP-VSEP_enhboth': 'https://zenodo.org/record/3994193/files/model.pth?download=1', 'popcornell/DeMask_Surgical_mask_speech_enhancement_v1': 'https://zenodo.org/record/3997047/files/model.pth?download=1', 'popcornell/DPRNNTasNet_WHAM_enhancesingle': 'https://zenodo.org/record/3998647/files/model.pth?download=1', 'tmirzaev-dotcom/ConvTasNet_Libri3Mix_sepnoisy': 'https://zenodo.org/record/4020529/files/model.pth?download=1', 'mhu-coder/ConvTasNet_Libri1Mix_enhsingle': 'https://zenodo.org/record/4301955/files/model.pth?download=1', 'r-sawata/XUMX_MUSDB18_music_separation': 'https://zenodo.org/record/4704231/files/pretrained_xumx.pth?download=1'}
+MODELS_URLS_HASHTABLE = {'mpariente/ConvTasNet_WHAM!_sepclean': 'https://zenodo.org/record/3862942/files/model.pth?download=1', 'mpariente/DPRNNTasNet_WHAM!_sepclean': 'https://zenodo.org/record/3873670/files/model.pth?download=1', 'mpariente/DPRNNTasNet(ks=16)_WHAM!_sepclean': 'https://zenodo.org/record/3903795/files/model.pth?download=1', 'Cosentino/ConvTasNet_LibriMix_sep_clean': 'https://zenodo.org/record/3873572/files/model.pth?download=1', 'Cosentino/ConvTasNet_LibriMix_sep_noisy': 'https://zenodo.org/record/3874420/files/model.pth?download=1', 'brijmohan/ConvTasNet_Libri1Mix_enhsingle': 'https://zenodo.org/record/3970768/files/model.pth?download=1', 'groadabike/ConvTasNet_DAMP-VSEP_enhboth': 'https://zenodo.org/record/3994193/files/model.pth?download=1', 'popcornell/DeMask_Surgical_mask_speech_enhancement_v1': 'https://zenodo.org/record/3997047/files/model.pth?download=1', 'popcornell/DPRNNTasNet_WHAM_enhancesingle': 'https://zenodo.org/record/3998647/files/model.pth?download=1', 'tmirzaev-dotcom/ConvTasNet_Libri3Mix_sepnoisy': 'https://zenodo.org/record/4020529/files/model.pth?download=1', 'mhu-coder/ConvTasNet_Libri1Mix_enhsingle': 'https://zenodo.org/record/4301955/files/model.pth?download=1', 'r-sawata/XUMX_MUSDB18_music_separation': 'https://zenodo.org/record/4704231/files/pretrained_xumx.pth?download=1', 'r-sawata/XUMXL_MUSDB18_music_separation': 'https://zenodo.org/record/7128659/files/pretrained_xumxl.pth?download=1'}
 
 
 SR_HASHTABLE = {k: (8000.0 if not 'DeMask' in k else 16000.0) for k in MODELS_URLS_HASHTABLE}
+
+
+def get_git_version(root):
+
+    def _git(*cmd):
+        return subprocess.check_output(['git', *cmd], cwd=root).strip().decode('ascii', 'ignore')
+    try:
+        commit = _git('rev-parse', 'HEAD')
+        branch = _git('rev-parse', '--symbolic-full-name', '--abbrev-ref', 'HEAD')
+        dirty = _git('status', '--porcelain')
+    except Exception as err:
+        None
+        return ''
+    s = commit[:12]
+    if branch:
+        s += f' ({branch})'
+    if dirty:
+        s += f', dirty tree'
+    return s
+
+
+def asteroid_version():
+    asteroid_root = pathlib.Path(__file__).parent.parent.parent
+    if asteroid_root.joinpath('.git').exists():
+        return f'{asteroid.__version__}, Git checkout {get_git_version(asteroid_root)}'
+    else:
+        return asteroid.__version__
 
 
 def get_cache_dir():
@@ -4401,6 +4436,24 @@ def cached_download(filename_or_url):
     return cached_path
 
 
+def get(identifier):
+    """Returns an model class from a string (case-insensitive).
+
+    Args:
+        identifier (str): the model name.
+
+    Returns:
+        :class:`torch.nn.Module`
+    """
+    if isinstance(identifier, str):
+        to_get = {k.lower(): v for k, v in globals().items()}
+        cls = to_get.get(identifier.lower())
+        if cls is None:
+            raise ValueError(f'Could not interpret model name : {str(identifier)}')
+        return cls
+    raise ValueError(f'Could not interpret model name : {str(identifier)}')
+
+
 class BaseModel(torch.nn.Module):
     """Base class for serializable models.
 
@@ -4418,7 +4471,7 @@ class BaseModel(torch.nn.Module):
             If None, no checks will be performed.
     """
 
-    def __init__(self, sample_rate: float, in_channels: Optional[int]=1):
+    def __init__(self, sample_rate: 'float', in_channels: 'Optional[int]'=1):
         super().__init__()
         self.__sample_rate = sample_rate
         self.in_channels = in_channels
@@ -4432,7 +4485,7 @@ class BaseModel(torch.nn.Module):
         return self.__sample_rate
 
     @sample_rate.setter
-    def sample_rate(self, new_sample_rate: float):
+    def sample_rate(self, new_sample_rate: 'float'):
         warnings.warn('Other sub-components of the model might have a `sample_rate` attribute, be sure to modify them for consistency.', UserWarning)
         self.__sample_rate = new_sample_rate
 
@@ -4610,7 +4663,7 @@ class BaseEncoderMaskerDecoder(BaseModel):
         reconstructed = pad_x_to_y(decoded, wav)
         return _shape_reconstructed(reconstructed, shape)
 
-    def forward_encoder(self, wav: torch.Tensor) ->torch.Tensor:
+    def forward_encoder(self, wav: 'torch.Tensor') ->torch.Tensor:
         """Computes time-frequency representation of `wav`.
 
         Args:
@@ -4622,7 +4675,7 @@ class BaseEncoderMaskerDecoder(BaseModel):
         tf_rep = self.encoder(wav)
         return self.enc_activation(tf_rep)
 
-    def forward_masker(self, tf_rep: torch.Tensor) ->torch.Tensor:
+    def forward_masker(self, tf_rep: 'torch.Tensor') ->torch.Tensor:
         """Estimates masks from time-frequency representation.
 
         Args:
@@ -4634,7 +4687,7 @@ class BaseEncoderMaskerDecoder(BaseModel):
         """
         return self.masker(tf_rep)
 
-    def apply_masks(self, tf_rep: torch.Tensor, est_masks: torch.Tensor) ->torch.Tensor:
+    def apply_masks(self, tf_rep: 'torch.Tensor', est_masks: 'torch.Tensor') ->torch.Tensor:
         """Applies masks to time-frequency representation.
 
         Args:
@@ -4647,7 +4700,7 @@ class BaseEncoderMaskerDecoder(BaseModel):
         """
         return est_masks * tf_rep.unsqueeze(1)
 
-    def forward_decoder(self, masked_tf_rep: torch.Tensor) ->torch.Tensor:
+    def forward_decoder(self, masked_tf_rep: 'torch.Tensor') ->torch.Tensor:
         """Reconstructs time-domain waveforms from masked representations.
 
         Args:
@@ -4723,7 +4776,7 @@ class ConvTasNet(BaseEncoderMaskerDecoder):
 
 class VADNet(ConvTasNet):
 
-    def forward_decoder(self, masked_tf_rep: torch.Tensor) ->torch.Tensor:
+    def forward_decoder(self, masked_tf_rep: 'torch.Tensor') ->torch.Tensor:
         return torch.nn.functional.sigmoid(self.decoder(masked_tf_rep))
 
 
@@ -5084,7 +5137,7 @@ class LSTMTasNet(BaseEncoderMaskerDecoder):
 
 
 @script_if_tracing
-def pad(x, lcm: int):
+def pad(x, lcm: 'int'):
     values_to_pad = int(x.shape[-1]) % lcm
     if values_to_pad:
         appropriate_shape = x.shape
@@ -5200,6 +5253,7 @@ class _ISTFT(nn.Module):
         x_i = spec * torch.sin(ang)
         x = torch.stack([x_r, x_i], dim=-1)
         x = x.view(sources * bsize * channels, fbins, frames, 2)
+        x = torch.view_as_complex(x)
         wav = torch.istft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=self.center)
         wav = wav.view(sources, bsize, channels, wav.shape[-1])
         return wav
@@ -5269,7 +5323,8 @@ class _STFT(nn.Module):
         """
         nb_samples, nb_channels, nb_timesteps = x.size()
         x = x.reshape(nb_samples * nb_channels, -1)
-        stft_f = torch.stft(x, n_fft=self.n_fft, hop_length=self.n_hop, window=self.window, center=self.center, normalized=False, onesided=True, pad_mode='reflect', return_complex=False)
+        stft_f = torch.stft(x, n_fft=self.n_fft, hop_length=self.n_hop, window=self.window, center=self.center, normalized=False, onesided=True, pad_mode='reflect', return_complex=True)
+        stft_f = torch.view_as_real(stft_f)
         stft_f = stft_f.contiguous().view(nb_samples, nb_channels, self.n_fft // 2 + 1, -1, 2)
         return stft_f
 
@@ -5688,7 +5743,7 @@ class Combine_Loss(torch.nn.Module):
 
 
 @script_if_tracing
-def ebased_vad(mag_spec, th_db: int=40):
+def ebased_vad(mag_spec, th_db: 'int'=40):
     """Compute energy-based VAD from a magnitude spectrogram (or equivalent).
 
     Args:
@@ -6599,7 +6654,7 @@ class MultiDecoderDPRNN(BaseModel):
         """
         Args:
             wav: 2D or 3D Tensor, Tensor of shape $(batch, T)$
-            ground_truth: oracle number of speakers, None or list of $(batch)$ ints 
+            ground_truth: oracle number of speakers, None or list of $(batch)$ ints
         Return:
             reconstructed: torch.Tensor, $(batch, num_stages, max_spks, T)$
                 where max_spks is the maximum possible number of speakers.
@@ -6649,7 +6704,6 @@ class MultiDecoderDPRNN(BaseModel):
         output_cat[:, :slice_size] = output_wavs[0]
         start = slice_stride
         for i in range(1, slice_nb):
-            end = start + slice_size
             overlap_prev = output_cat[:, start:start + slice_stride].unsqueeze(0)
             overlap_next = output_wavs[i:i + 1, :, :slice_stride]
             pw_losses = pairwise_neg_sisdr(overlap_next, overlap_prev)
@@ -6738,232 +6792,4 @@ class DummyModel(BaseEncoderMaskerDecoder):
         encoder, decoder = make_enc_dec(fb_name, kernel_size=kernel_size, n_filters=n_filters, stride=stride, **fb_kwargs)
         masker = torch.nn.Identity()
         super().__init__(encoder, masker, decoder, encoder_activation=encoder_activation)
-
-
-import torch
-from torch.nn import MSELoss, ReLU
-from _paritybench_helpers import _mock_config, _mock_layer, _paritybench_base, _fails_compile
-
-
-TESTCASES = [
-    # (nn.Module, init_args, forward_args, jit_compiles)
-    (AdaptiveEncoder1D,
-     lambda: ([], {'freq_res': 4, 'sample_res': 4}),
-     lambda: ([torch.rand([4, 1, 64])], {}),
-     True),
-    (Audio_Model,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 2, 64, 64])], {}),
-     True),
-    (BatchNorm,
-     lambda: ([], {'num_features': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Binarize,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     False),
-    (ChanLN,
-     lambda: ([], {'channel_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Chimera,
-     lambda: ([], {'in_chan': 4, 'n_src': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
-    (CumLN,
-     lambda: ([], {'channel_size': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
-    (DiscriminativeLoss,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (F1Tracker,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (F1_loss,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (FeatsGlobLN,
-     lambda: ([], {'channel_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (GlobLN,
-     lambda: ([], {'channel_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (MulCatRNN,
-     lambda: ([], {'rnn_type': 'gru', 'input_size': 4, 'hidden_size': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     False),
-    (MultiSrcNegSDR,
-     lambda: ([], {'sdr_type': 'snr'}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
-     True),
-    (PairwiseMSE,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (PairwiseNegSDR,
-     lambda: ([], {'sdr_type': 'snr'}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
-     True),
-    (PairwiseNegSDR_Loss,
-     lambda: ([], {'sdr_type': 'snr'}),
-     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
-     True),
-    (SCM,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (SimpleModel,
-     lambda: ([], {'input_size': 4, 'hidden_size': 4}),
-     lambda: ([torch.rand([4, 4])], {}),
-     False),
-    (SingleRNN,
-     lambda: ([], {'rnn_type': 'gru', 'input_size': 4, 'hidden_size': 4}),
-     lambda: ([torch.rand([4, 4])], {}),
-     False),
-    (SingleSrcMSE,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (SingleSrcNegSDR,
-     lambda: ([], {'sdr_type': 'snr'}),
-     lambda: ([torch.rand([4, 4]), torch.rand([4, 4])], {}),
-     True),
-    (StackedResidualBiRNN,
-     lambda: ([], {'rnn_type': 'gru', 'n_units': 4}),
-     lambda: ([torch.rand([4, 4])], {}),
-     False),
-    (StackedResidualRNN,
-     lambda: ([], {'rnn_type': 'gru', 'n_units': 4}),
-     lambda: ([torch.rand([4, 4])], {}),
-     False),
-    (Swish,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (Video_Model,
-     lambda: ([], {}),
-     lambda: ([torch.rand([4, 512, 512, 512])], {}),
-     True),
-    (_Chop1d,
-     lambda: ([], {'chop_size': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-    (_ConvNorm,
-     lambda: ([], {'nIn': 4, 'nOut': 4, 'kSize': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
-    (_ConvNormAct,
-     lambda: ([], {'nIn': 4, 'nOut': 4, 'kSize': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
-    (_DilatedConvNorm,
-     lambda: ([], {'nIn': 4, 'nOut': 4, 'kSize': 4}),
-     lambda: ([torch.rand([4, 4, 4])], {}),
-     True),
-    (_NormAct,
-     lambda: ([], {'nOut': 4}),
-     lambda: ([torch.rand([4, 4, 4, 4])], {}),
-     True),
-]
-
-class Test_asteroid_team_asteroid(_paritybench_base):
-    def test_000(self):
-        self._check(*TESTCASES[0])
-
-    def test_001(self):
-        self._check(*TESTCASES[1])
-
-    def test_002(self):
-        self._check(*TESTCASES[2])
-
-    def test_003(self):
-        self._check(*TESTCASES[3])
-
-    def test_004(self):
-        self._check(*TESTCASES[4])
-
-    def test_005(self):
-        self._check(*TESTCASES[5])
-
-    def test_006(self):
-        self._check(*TESTCASES[6])
-
-    def test_007(self):
-        self._check(*TESTCASES[7])
-
-    def test_008(self):
-        self._check(*TESTCASES[8])
-
-    def test_009(self):
-        self._check(*TESTCASES[9])
-
-    def test_010(self):
-        self._check(*TESTCASES[10])
-
-    def test_011(self):
-        self._check(*TESTCASES[11])
-
-    def test_012(self):
-        self._check(*TESTCASES[12])
-
-    def test_013(self):
-        self._check(*TESTCASES[13])
-
-    def test_014(self):
-        self._check(*TESTCASES[14])
-
-    def test_015(self):
-        self._check(*TESTCASES[15])
-
-    def test_016(self):
-        self._check(*TESTCASES[16])
-
-    def test_017(self):
-        self._check(*TESTCASES[17])
-
-    def test_018(self):
-        self._check(*TESTCASES[18])
-
-    def test_019(self):
-        self._check(*TESTCASES[19])
-
-    def test_020(self):
-        self._check(*TESTCASES[20])
-
-    def test_021(self):
-        self._check(*TESTCASES[21])
-
-    def test_022(self):
-        self._check(*TESTCASES[22])
-
-    def test_023(self):
-        self._check(*TESTCASES[23])
-
-    def test_024(self):
-        self._check(*TESTCASES[24])
-
-    def test_025(self):
-        self._check(*TESTCASES[25])
-
-    def test_026(self):
-        self._check(*TESTCASES[26])
-
-    def test_027(self):
-        self._check(*TESTCASES[27])
-
-    def test_028(self):
-        self._check(*TESTCASES[28])
-
-    def test_029(self):
-        self._check(*TESTCASES[29])
-
-    def test_030(self):
-        self._check(*TESTCASES[30])
 

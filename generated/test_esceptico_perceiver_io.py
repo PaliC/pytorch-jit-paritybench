@@ -14,7 +14,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -62,7 +64,7 @@ class BasePerceiverDecoder(nn.Module, metaclass=ABCMeta):
 class FeedForward(nn.Module):
     """Transformer Feed-Forward network."""
 
-    def __init__(self, dim: int, widening_factor: int=4, dropout: float=0.0):
+    def __init__(self, dim: 'int', widening_factor: 'int'=4, dropout: 'float'=0.0):
         """Constructor.
 
         Args:
@@ -73,14 +75,14 @@ class FeedForward(nn.Module):
         super().__init__()
         self.mlp = nn.Sequential(nn.Linear(dim, dim * widening_factor), nn.GELU(), nn.Linear(dim * widening_factor, dim), nn.Dropout(dropout))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         return self.mlp(x)
 
 
 class MultiHeadAttention(nn.Module):
     """Multi-head attention"""
 
-    def __init__(self, kv_dim: int, q_dim: int, *, qk_out_dim: Optional[int]=None, v_out_dim: Optional[int]=None, output_dim: Optional[int]=None, num_heads: int=1, dropout: float=0.0):
+    def __init__(self, kv_dim: 'int', q_dim: 'int', *, qk_out_dim: Optional[int]=None, v_out_dim: Optional[int]=None, output_dim: Optional[int]=None, num_heads: int=1, dropout: float=0.0):
         """Constructor.
 
         Args:
@@ -112,12 +114,12 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.scale = self.qk_head_dim ** -0.5
 
-    def transform_for_scores(self, x: torch.Tensor, head_dim: int):
+    def transform_for_scores(self, x: 'torch.Tensor', head_dim: 'int'):
         *dims, seq, hid = x.size()
         x = x.view(*dims, seq, self.num_heads, head_dim)
         return x.transpose(-3, -2)
 
-    def forward(self, inputs_kv: torch.Tensor, inputs_q: torch.Tensor, attention_mask: Optional[torch.Tensor]=None):
+    def forward(self, inputs_kv: 'torch.Tensor', inputs_q: 'torch.Tensor', attention_mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             inputs_kv: Key/Value embeddings of shape (B, ..., M, C).
@@ -177,7 +179,7 @@ class CrossAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.mlp = FeedForward(q_dim, widening_factor, dropout)
 
-    def forward(self, inputs_kv: torch.Tensor, inputs_q: torch.Tensor, attention_mask: Optional[torch.Tensor]=None):
+    def forward(self, inputs_kv: 'torch.Tensor', inputs_q: 'torch.Tensor', attention_mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             inputs_kv: Key/Value embeddings of shape (B, ..., M, C).
@@ -198,7 +200,7 @@ class CrossAttention(nn.Module):
 class PerceiverDecoder(BasePerceiverDecoder):
     """Basic cross-attention decoder."""
 
-    def __init__(self, latent_dim: int, query_dim: int, widening_factor: int=1, num_heads: int=1, qk_out_dim: Optional[int]=None, v_out_dim: Optional[int]=None, projection_dim: Optional[int]=None, use_query_residual: bool=False):
+    def __init__(self, latent_dim: 'int', query_dim: 'int', widening_factor: 'int'=1, num_heads: 'int'=1, qk_out_dim: 'Optional[int]'=None, v_out_dim: 'Optional[int]'=None, projection_dim: 'Optional[int]'=None, use_query_residual: 'bool'=False):
         super().__init__()
         self.cross_attention = CrossAttention(kv_dim=latent_dim, q_dim=query_dim, widening_factor=widening_factor, num_heads=num_heads, qk_out_dim=qk_out_dim, v_out_dim=v_out_dim, use_query_residual=use_query_residual)
         if projection_dim is not None:
@@ -238,7 +240,7 @@ class SelfAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.mlp = FeedForward(hidden_dim, widening_factor, dropout)
 
-    def forward(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor]=None):
+    def forward(self, x: 'torch.Tensor', attention_mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             x: Input tensor of shape (B, ..., M, C).
@@ -259,7 +261,7 @@ class PerceiverEncoder(nn.Module):
     tensor and a stacked Transformer blocks with shared weights.
     """
 
-    def __init__(self, num_latents: int, latent_dim: int, input_dim: int, num_self_attn_per_block: int=2, num_blocks: int=4, qk_out_dim: Optional[int]=None, v_out_dim: Optional[int]=None, num_cross_attn_heads: int=1, num_self_attn_heads: int=8, cross_attn_widening_factor: int=1, self_attn_widening_factor: int=1, use_query_residual: bool=True, dropout: float=0.0, cross_attention_dropout: float=0.0, self_attention_dropout: float=0.0):
+    def __init__(self, num_latents: 'int', latent_dim: 'int', input_dim: 'int', num_self_attn_per_block: 'int'=2, num_blocks: 'int'=4, qk_out_dim: 'Optional[int]'=None, v_out_dim: 'Optional[int]'=None, num_cross_attn_heads: 'int'=1, num_self_attn_heads: 'int'=8, cross_attn_widening_factor: 'int'=1, self_attn_widening_factor: 'int'=1, use_query_residual: 'bool'=True, dropout: 'float'=0.0, cross_attention_dropout: 'float'=0.0, self_attention_dropout: 'float'=0.0):
         """Constructor.
 
         Args:
@@ -295,7 +297,7 @@ class PerceiverEncoder(nn.Module):
         self.cross_attn = CrossAttention(kv_dim=input_dim, q_dim=latent_dim, widening_factor=cross_attn_widening_factor, num_heads=num_cross_attn_heads, qk_out_dim=qk_out_dim, v_out_dim=v_out_dim, use_query_residual=use_query_residual, dropout=dropout, attention_dropout=cross_attention_dropout)
         self.self_attention_block = nn.ModuleList([SelfAttention(hidden_dim=latent_dim, widening_factor=self_attn_widening_factor, num_heads=num_self_attn_heads, qk_out_dim=qk_out_dim, v_out_dim=v_out_dim, dropout=dropout, attention_dropout=self_attention_dropout) for _ in range(num_self_attn_per_block)])
 
-    def forward(self, x: torch.Tensor, kv_mask: Optional[torch.Tensor]=None):
+    def forward(self, x: 'torch.Tensor', kv_mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             x: Input tensor of shape (B, M, C).
@@ -318,7 +320,7 @@ class PerceiverEncoder(nn.Module):
 class PerceiverIO(nn.Module):
     """Perceiver IO encoder-decoder architecture."""
 
-    def __init__(self, encoder: PerceiverEncoder, decoder: BasePerceiverDecoder):
+    def __init__(self, encoder: 'PerceiverEncoder', decoder: 'BasePerceiverDecoder'):
         """Constructor.
 
         Args:
@@ -329,7 +331,7 @@ class PerceiverIO(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, inputs: torch.Tensor, query: Optional[torch.Tensor]=None, input_mask: Optional[torch.Tensor]=None, query_mask: Optional[torch.Tensor]=None):
+    def forward(self, inputs: 'torch.Tensor', query: 'Optional[torch.Tensor]'=None, input_mask: 'Optional[torch.Tensor]'=None, query_mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             inputs: Input tensor.
@@ -351,7 +353,7 @@ class PerceiverIO(nn.Module):
 class PerceiverLM(nn.Module):
     """Encoder-decoder based language model."""
 
-    def __init__(self, vocab_size: int, max_seq_len: int, embedding_dim: int, num_latents: int=256, latent_dim: int=512, num_self_attn_heads=8, self_attn_head_dim=None, cross_attn_head_dim=None, self_attn_widening_factor=1, cross_attn_widening_factor=1, num_blocks=1, num_self_attn_per_block=12, dropout: float=0.0):
+    def __init__(self, vocab_size: 'int', max_seq_len: 'int', embedding_dim: 'int', num_latents: 'int'=256, latent_dim: 'int'=512, num_self_attn_heads=8, self_attn_head_dim=None, cross_attn_head_dim=None, self_attn_widening_factor=1, cross_attn_widening_factor=1, num_blocks=1, num_self_attn_per_block=12, dropout: 'float'=0.0):
         """Constructor.
 
         Args:
@@ -382,7 +384,7 @@ class PerceiverLM(nn.Module):
         decoder = PerceiverDecoder(latent_dim=latent_dim, query_dim=embedding_dim, widening_factor=cross_attn_widening_factor, projection_dim=vocab_size)
         self.perceiver = PerceiverIO(encoder, decoder)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor]=None):
+    def forward(self, inputs: 'torch.Tensor', mask: 'Optional[torch.Tensor]'=None):
         """
         Args:
             inputs: Tensor of token ids.
@@ -403,7 +405,7 @@ class PerceiverLM(nn.Module):
 class ProjectionDecoder(BasePerceiverDecoder):
     """Projection decoder without using a cross-attention layer."""
 
-    def __init__(self, latent_dim: int, num_classes: int):
+    def __init__(self, latent_dim: 'int', num_classes: 'int'):
         super().__init__()
         self.projection = nn.Linear(latent_dim, num_classes)
 
@@ -416,7 +418,7 @@ class ProjectionDecoder(BasePerceiverDecoder):
 class ClassificationDecoder(BasePerceiverDecoder):
     """Classification decoder. Based on PerceiverDecoder."""
 
-    def __init__(self, num_classes: int, latent_dim: int, widening_factor: int=1, num_heads: int=1, head_dim: Optional[int]=None):
+    def __init__(self, num_classes: 'int', latent_dim: 'int', widening_factor: 'int'=1, num_heads: 'int'=1, head_dim: 'Optional[int]'=None):
         super().__init__()
         self.task_ids = nn.Parameter(torch.randn(1, num_classes))
         self.decoder = PerceiverDecoder(latent_dim=latent_dim, query_dim=num_classes, widening_factor=widening_factor, num_heads=num_heads, head_dim=head_dim, projection_dim=None, use_query_residual=False)

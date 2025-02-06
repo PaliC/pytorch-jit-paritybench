@@ -20,7 +20,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -39,10 +41,25 @@ wraps = functools.wraps
 import warnings
 
 
+from typing import List
+
+
+from typing import Optional
+
+
+from typing import Tuple
+
+
+from typing import Union
+
+
 import torch
 
 
 import torch.nn.functional as F
+
+
+from torch import Tensor
 
 
 from torch.utils import data
@@ -75,12 +92,11 @@ from torch.autograd import Variable
 from torch import optim
 
 
-def _fspecial_gauss_1d(size, sigma):
+def _fspecial_gauss_1d(size: 'int', sigma: 'float') ->Tensor:
     """Create 1-D gauss kernel
     Args:
         size (int): the size of gauss kernel
         sigma (float): sigma of normal distribution
-
     Returns:
         torch.Tensor: 1D kernel (1 x 1 x size)
     """
@@ -91,12 +107,11 @@ def _fspecial_gauss_1d(size, sigma):
     return g.unsqueeze(0).unsqueeze(0)
 
 
-def gaussian_filter(input, win):
+def gaussian_filter(input: 'Tensor', win: 'Tensor') ->Tensor:
     """ Blur input with 1-D kernel
     Args:
         input (torch.Tensor): a batch of tensors to be blurred
         window (torch.Tensor): 1-D gauss kernel
-
     Returns:
         torch.Tensor: blurred tensors
     """
@@ -117,18 +132,18 @@ def gaussian_filter(input, win):
     return out
 
 
-def _ssim(X, Y, data_range, win, size_average=True, K=(0.01, 0.03)):
+def _ssim(X: 'Tensor', Y: 'Tensor', data_range: 'float', win: 'Tensor', size_average: 'bool'=True, K: 'Union[Tuple[float, float], List[float]]'=(0.01, 0.03)) ->Tuple[Tensor, Tensor]:
     """ Calculate ssim index for X and Y
 
     Args:
         X (torch.Tensor): images
         Y (torch.Tensor): images
+        data_range (float or int): value range of input images. (usually 1.0 or 255)
         win (torch.Tensor): 1-D gauss kernel
-        data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
         size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
 
     Returns:
-        torch.Tensor: ssim results.
+        Tuple[torch.Tensor, torch.Tensor]: ssim results.
     """
     K1, K2 = K
     compensation = 1.0
@@ -150,7 +165,7 @@ def _ssim(X, Y, data_range, win, size_average=True, K=(0.01, 0.03)):
     return ssim_per_channel, cs
 
 
-def ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5, win=None, K=(0.01, 0.03), nonnegative_ssim=False):
+def ssim(X: 'Tensor', Y: 'Tensor', data_range: 'float'=255, size_average: 'bool'=True, win_size: 'int'=11, win_sigma: 'float'=1.5, win: 'Optional[Tensor]'=None, K: 'Union[Tuple[float, float], List[float]]'=(0.01, 0.03), nonnegative_ssim: 'bool'=False) ->Tensor:
     """ interface of ssim
     Args:
         X (torch.Tensor): a batch of images, (N,C,H,W)
@@ -173,8 +188,6 @@ def ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5, wi
         Y = Y.squeeze(dim=d)
     if len(X.shape) not in (4, 5):
         raise ValueError(f'Input images should be 4-d or 5-d tensors, but got {X.shape}')
-    if not X.type() == Y.type():
-        raise ValueError(f'Input images should have the same dtype, but got {X.type()} and {Y.type()}.')
     if win is not None:
         win_size = win.shape[-1]
     if not win_size % 2 == 1:
@@ -193,7 +206,7 @@ def ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5, wi
 
 class SSIM(torch.nn.Module):
 
-    def __init__(self, data_range=255, size_average=True, win_size=11, win_sigma=1.5, channel=3, spatial_dims=2, K=(0.01, 0.03), nonnegative_ssim=False):
+    def __init__(self, data_range: 'float'=255, size_average: 'bool'=True, win_size: 'int'=11, win_sigma: 'float'=1.5, channel: 'int'=3, spatial_dims: 'int'=2, K: 'Union[Tuple[float, float], List[float]]'=(0.01, 0.03), nonnegative_ssim: 'bool'=False) ->None:
         """ class for ssim
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
@@ -212,11 +225,11 @@ class SSIM(torch.nn.Module):
         self.K = K
         self.nonnegative_ssim = nonnegative_ssim
 
-    def forward(self, X, Y):
+    def forward(self, X: 'Tensor', Y: 'Tensor') ->Tensor:
         return ssim(X, Y, data_range=self.data_range, size_average=self.size_average, win=self.win, K=self.K, nonnegative_ssim=self.nonnegative_ssim)
 
 
-def ms_ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5, win=None, weights=None, K=(0.01, 0.03)):
+def ms_ssim(X: 'Tensor', Y: 'Tensor', data_range: 'float'=255, size_average: 'bool'=True, win_size: 'int'=11, win_sigma: 'float'=1.5, win: 'Optional[Tensor]'=None, weights: 'Optional[List[float]]'=None, K: 'Union[Tuple[float, float], List[float]]'=(0.01, 0.03)) ->Tensor:
     """ interface of ms-ssim
     Args:
         X (torch.Tensor): a batch of images, (N,C,[T,]H,W)
@@ -236,8 +249,6 @@ def ms_ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5,
     for d in range(len(X.shape) - 1, 1, -1):
         X = X.squeeze(dim=d)
         Y = Y.squeeze(dim=d)
-    if not X.type() == Y.type():
-        raise ValueError(f'Input images should have the same dtype, but got {X.type()} and {Y.type()}.')
     if len(X.shape) == 4:
         avg_pool = F.avg_pool2d
     elif len(X.shape) == 5:
@@ -252,11 +263,11 @@ def ms_ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5,
     assert smaller_side > (win_size - 1) * 2 ** 4, 'Image size should be larger than %d due to the 4 downsamplings in ms-ssim' % ((win_size - 1) * 2 ** 4)
     if weights is None:
         weights = [0.0448, 0.2856, 0.3001, 0.2363, 0.1333]
-    weights = X.new_tensor(weights)
+    weights_tensor = X.new_tensor(weights)
     if win is None:
         win = _fspecial_gauss_1d(win_size, win_sigma)
         win = win.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
-    levels = weights.shape[0]
+    levels = weights_tensor.shape[0]
     mcs = []
     for i in range(levels):
         ssim_per_channel, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, K=K)
@@ -267,7 +278,7 @@ def ms_ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5,
             Y = avg_pool(Y, kernel_size=2, padding=padding)
     ssim_per_channel = torch.relu(ssim_per_channel)
     mcs_and_ssim = torch.stack(mcs + [ssim_per_channel], dim=0)
-    ms_ssim_val = torch.prod(mcs_and_ssim ** weights.view(-1, 1, 1), dim=0)
+    ms_ssim_val = torch.prod(mcs_and_ssim ** weights_tensor.view(-1, 1, 1), dim=0)
     if size_average:
         return ms_ssim_val.mean()
     else:
@@ -276,7 +287,7 @@ def ms_ssim(X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5,
 
 class MS_SSIM(torch.nn.Module):
 
-    def __init__(self, data_range=255, size_average=True, win_size=11, win_sigma=1.5, channel=3, spatial_dims=2, weights=None, K=(0.01, 0.03)):
+    def __init__(self, data_range: 'float'=255, size_average: 'bool'=True, win_size: 'int'=11, win_sigma: 'float'=1.5, channel: 'int'=3, spatial_dims: 'int'=2, weights: 'Optional[List[float]]'=None, K: 'Union[Tuple[float, float], List[float]]'=(0.01, 0.03)) ->None:
         """ class for ms-ssim
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
@@ -295,7 +306,7 @@ class MS_SSIM(torch.nn.Module):
         self.weights = weights
         self.K = K
 
-    def forward(self, X, Y):
+    def forward(self, X: 'Tensor', Y: 'Tensor') ->Tensor:
         return ms_ssim(X, Y, data_range=self.data_range, size_average=self.size_average, win=self.win, weights=self.weights, K=self.K)
 
 

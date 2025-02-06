@@ -60,7 +60,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -190,9 +192,6 @@ from sklearn.covariance import MinCovDet
 from functools import partial
 
 
-from collections import Iterable
-
-
 from torch import nn
 
 
@@ -211,7 +210,7 @@ class _PointnetSAModuleBase(nn.Module):
         self.mlps = None
         self.pool_method = 'max_pool'
 
-    def forward(self, xyz: torch.Tensor, features: torch.Tensor=None, new_xyz=None) ->(torch.Tensor, torch.Tensor):
+    def forward(self, xyz: 'torch.Tensor', features: 'torch.Tensor'=None, new_xyz=None) ->(torch.Tensor, torch.Tensor):
         """
         :param xyz: (B, N, 3) tensor of the xyz coordinates of the features
         :param features: (B, N, C) tensor of the descriptors of the the features
@@ -769,7 +768,7 @@ class PointnetFPModule(nn.Module):
         super().__init__()
         self.mlp = pt_utils.SharedMLP(mlp, bn=bn)
 
-    def forward(self, unknown: torch.Tensor, known: torch.Tensor, unknow_feats: torch.Tensor, known_feats: torch.Tensor) ->torch.Tensor:
+    def forward(self, unknown: 'torch.Tensor', known: 'torch.Tensor', unknow_feats: 'torch.Tensor', known_feats: 'torch.Tensor') ->torch.Tensor:
         """
         :param unknown: (B, n, 3) tensor of the xyz positions of the unknown features
         :param known: (B, m, 3) tensor of the xyz positions of the known features
@@ -832,7 +831,7 @@ class Pointnet2MSG(nn.Module):
         features = pc[..., 3:].transpose(1, 2).contiguous() if pc.size(-1) > 3 else None
         return xyz, features
 
-    def forward(self, pointcloud: torch.FloatTensor):
+    def forward(self, pointcloud: 'torch.cuda.FloatTensor'):
         xyz, features = self._break_up_pc(pointcloud)
         l_xyz, l_features = [xyz], [features]
         for i in range(len(self.SA_modules)):
@@ -1912,7 +1911,7 @@ class SigmoidFocalClassificationLoss(nn.Module):
 class BallQuery(Function):
 
     @staticmethod
-    def forward(ctx, radius: float, nsample: int, xyz: torch.Tensor, new_xyz: torch.Tensor) ->torch.Tensor:
+    def forward(ctx, radius: 'float', nsample: 'int', xyz: 'torch.Tensor', new_xyz: 'torch.Tensor') ->torch.Tensor:
         """
         :param ctx:
         :param radius: float, radius of the balls
@@ -1941,7 +1940,7 @@ ball_query = BallQuery.apply
 class GroupingOperation(Function):
 
     @staticmethod
-    def forward(ctx, features: torch.Tensor, idx: torch.Tensor) ->torch.Tensor:
+    def forward(ctx, features: 'torch.Tensor', idx: 'torch.Tensor') ->torch.Tensor:
         """
         :param ctx:
         :param features: (B, C, N) tensor of features to group
@@ -1959,7 +1958,7 @@ class GroupingOperation(Function):
         return output
 
     @staticmethod
-    def backward(ctx, grad_out: torch.Tensor) ->Tuple[torch.Tensor, torch.Tensor]:
+    def backward(ctx, grad_out: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor]:
         """
         :param ctx:
         :param grad_out: (B, C, npoint, nsample) tensor of the gradients of the output from forward
@@ -1979,7 +1978,7 @@ grouping_operation = GroupingOperation.apply
 
 class QueryAndGroup(nn.Module):
 
-    def __init__(self, radius: float, nsample: int, use_xyz: bool=True):
+    def __init__(self, radius: 'float', nsample: 'int', use_xyz: 'bool'=True):
         """
         :param radius: float, radius of ball
         :param nsample: int, maximum number of features to gather in the ball
@@ -1988,7 +1987,7 @@ class QueryAndGroup(nn.Module):
         super().__init__()
         self.radius, self.nsample, self.use_xyz = radius, nsample, use_xyz
 
-    def forward(self, xyz: torch.Tensor, new_xyz: torch.Tensor, features: torch.Tensor=None) ->Tuple[torch.Tensor]:
+    def forward(self, xyz: 'torch.Tensor', new_xyz: 'torch.Tensor', features: 'torch.Tensor'=None) ->Tuple[torch.Tensor]:
         """
         :param xyz: (B, N, 3) xyz coordinates of the features
         :param new_xyz: (B, npoint, 3) centroids
@@ -2014,11 +2013,11 @@ class QueryAndGroup(nn.Module):
 
 class GroupAll(nn.Module):
 
-    def __init__(self, use_xyz: bool=True):
+    def __init__(self, use_xyz: 'bool'=True):
         super().__init__()
         self.use_xyz = use_xyz
 
-    def forward(self, xyz: torch.Tensor, new_xyz: torch.Tensor, features: torch.Tensor=None):
+    def forward(self, xyz: 'torch.Tensor', new_xyz: 'torch.Tensor', features: 'torch.Tensor'=None):
         """
         :param xyz: (B, N, 3) xyz coordinates of the features
         :param new_xyz: ignored
@@ -2049,7 +2048,7 @@ class _BNBase(nn.Sequential):
 
 class BatchNorm2d(_BNBase):
 
-    def __init__(self, in_size: int, name: str=''):
+    def __init__(self, in_size: 'int', name: 'str'=''):
         super().__init__(in_size, batch_norm=nn.BatchNorm2d, name=name)
 
 
@@ -2091,13 +2090,13 @@ class _ConvBase(nn.Sequential):
 
 class Conv2d(_ConvBase):
 
-    def __init__(self, in_size: int, out_size: int, *, kernel_size: Tuple[int, int]=(1, 1), stride: Tuple[int, int]=(1, 1), padding: Tuple[int, int]=(0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str='', instance_norm=False):
+    def __init__(self, in_size: 'int', out_size: 'int', *, kernel_size: Tuple[int, int]=(1, 1), stride: Tuple[int, int]=(1, 1), padding: Tuple[int, int]=(0, 0), activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str='', instance_norm=False):
         super().__init__(in_size, out_size, kernel_size, stride, padding, activation, bn, init, conv=nn.Conv2d, batch_norm=BatchNorm2d, bias=bias, preact=preact, name=name, instance_norm=instance_norm, instance_norm_func=nn.InstanceNorm2d)
 
 
 class SharedMLP(nn.Sequential):
 
-    def __init__(self, args: List[int], *, bn: bool=False, activation=nn.ReLU(inplace=True), preact: bool=False, first: bool=False, name: str='', instance_norm: bool=False):
+    def __init__(self, args: 'List[int]', *, bn: bool=False, activation=nn.ReLU(inplace=True), preact: bool=False, first: bool=False, name: str='', instance_norm: bool=False):
         super().__init__()
         for i in range(len(args) - 1):
             self.add_module(name + 'layer{}'.format(i), Conv2d(args[i], args[i + 1], bn=(not first or not preact or i != 0) and bn, activation=activation if not first or not preact or i != 0 else None, preact=preact, instance_norm=instance_norm))
@@ -2105,19 +2104,19 @@ class SharedMLP(nn.Sequential):
 
 class BatchNorm1d(_BNBase):
 
-    def __init__(self, in_size: int, *, name: str=''):
+    def __init__(self, in_size: 'int', *, name: str=''):
         super().__init__(in_size, batch_norm=nn.BatchNorm1d, name=name)
 
 
 class Conv1d(_ConvBase):
 
-    def __init__(self, in_size: int, out_size: int, *, kernel_size: int=1, stride: int=1, padding: int=0, activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str='', instance_norm=False):
+    def __init__(self, in_size: 'int', out_size: 'int', *, kernel_size: int=1, stride: int=1, padding: int=0, activation=nn.ReLU(inplace=True), bn: bool=False, init=nn.init.kaiming_normal_, bias: bool=True, preact: bool=False, name: str='', instance_norm=False):
         super().__init__(in_size, out_size, kernel_size, stride, padding, activation, bn, init, conv=nn.Conv1d, batch_norm=BatchNorm1d, bias=bias, preact=preact, name=name, instance_norm=instance_norm, instance_norm_func=nn.InstanceNorm1d)
 
 
 class FC(nn.Sequential):
 
-    def __init__(self, in_size: int, out_size: int, *, activation=nn.ReLU(inplace=True), bn: bool=False, init=None, preact: bool=False, name: str=''):
+    def __init__(self, in_size: 'int', out_size: 'int', *, activation=nn.ReLU(inplace=True), bn: bool=False, init=None, preact: bool=False, name: str=''):
         super().__init__()
         fc = nn.Linear(in_size, out_size, bias=not bn)
         if init is not None:

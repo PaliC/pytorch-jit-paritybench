@@ -11,6 +11,8 @@ ssl_dataset = _module
 eval = _module
 fixmatch = _module
 flexmatch = _module
+freematch = _module
+freematch_entropy = _module
 fullysupervised = _module
 meanteacher = _module
 mixmatch = _module
@@ -18,6 +20,10 @@ fixmatch = _module
 fixmatch_utils = _module
 flexmatch = _module
 flexmatch_utils = _module
+freematch = _module
+freematch_utils = _module
+freematch = _module
+freematch_utils = _module
 fullysupervised = _module
 fullysupervised_utils = _module
 meanteacher = _module
@@ -37,6 +43,9 @@ pseudolabel_utils = _module
 remixmatch = _module
 remixmatch = _module
 remixmatch_utils = _module
+softmatch = _module
+softmatch = _module
+softmatch_utils = _module
 uda = _module
 uda = _module
 uda_utils = _module
@@ -48,6 +57,7 @@ pseudolabel = _module
 remixmatch = _module
 average_log = _module
 config_generator = _module
+softmatch = _module
 train_utils = _module
 uda = _module
 utils = _module
@@ -57,7 +67,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -229,20 +241,20 @@ class BasicBlock(nn.Module):
         return torch.add(x if self.equalInOut else self.convShortcut(x), out)
 
 
-def conv1x1(in_planes: int, out_planes: int, stride: int=1) ->nn.Conv2d:
+def conv1x1(in_planes: 'int', out_planes: 'int', stride: 'int'=1) ->nn.Conv2d:
     """1x1 convolution"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
-def conv3x3(in_planes: int, out_planes: int, stride: int=1, groups: int=1, dilation: int=1) ->nn.Conv2d:
+def conv3x3(in_planes: 'int', out_planes: 'int', stride: 'int'=1, groups: 'int'=1, dilation: 'int'=1) ->nn.Conv2d:
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
 class Bottleneck(nn.Module):
-    expansion: int = 4
+    expansion: 'int' = 4
 
-    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample: Optional[nn.Module]=None, groups: int=1, base_width: int=64, dilation: int=1, norm_layer: Optional[Callable[..., nn.Module]]=None) ->None:
+    def __init__(self, inplanes: 'int', planes: 'int', stride: 'int'=1, downsample: 'Optional[nn.Module]'=None, groups: 'int'=1, base_width: 'int'=64, dilation: 'int'=1, norm_layer: 'Optional[Callable[..., nn.Module]]'=None) ->None:
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -257,7 +269,7 @@ class Bottleneck(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x: Tensor) ->Tensor:
+    def forward(self, x: 'Tensor') ->Tensor:
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -276,7 +288,7 @@ class Bottleneck(nn.Module):
 
 class ResNet50(nn.Module):
 
-    def __init__(self, block: Type[Union[BasicBlock, Bottleneck]]=Bottleneck, layers: List[int]=[3, 4, 6, 3], n_class: int=1000, zero_init_residual: bool=False, groups: int=1, width_per_group: int=64, replace_stride_with_dilation: Optional[List[bool]]=None, norm_layer: Optional[Callable[..., nn.Module]]=None, is_remix=False) ->None:
+    def __init__(self, block: 'Type[Union[BasicBlock, Bottleneck]]'=Bottleneck, layers: 'List[int]'=[3, 4, 6, 3], n_class: 'int'=1000, zero_init_residual: 'bool'=False, groups: 'int'=1, width_per_group: 'int'=64, replace_stride_with_dilation: 'Optional[List[bool]]'=None, norm_layer: 'Optional[Callable[..., nn.Module]]'=None, is_remix=False) ->None:
         super(ResNet50, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -315,7 +327,7 @@ class ResNet50(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int, stride: int=1, dilate: bool=False) ->nn.Sequential:
+    def _make_layer(self, block: 'Type[Union[BasicBlock, Bottleneck]]', planes: 'int', blocks: 'int', stride: 'int'=1, dilate: 'bool'=False) ->nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation

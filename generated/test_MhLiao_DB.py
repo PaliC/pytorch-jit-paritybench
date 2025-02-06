@@ -93,7 +93,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -894,7 +896,7 @@ class BalanceCrossEntropyLoss(nn.Module):
         self.negative_ratio = negative_ratio
         self.eps = eps
 
-    def forward(self, pred: torch.Tensor, gt: torch.Tensor, mask: torch.Tensor, return_origin=False):
+    def forward(self, pred: 'torch.Tensor', gt: 'torch.Tensor', mask: 'torch.Tensor', return_origin=False):
         """
         Args:
             pred: shape :math:`(N, 1, H, W)`, the prediction of network
@@ -1184,7 +1186,7 @@ class MaskL1Loss(nn.Module):
     def __init__(self):
         super(MaskL1Loss, self).__init__()
 
-    def forward(self, pred: torch.Tensor, gt, mask):
+    def forward(self, pred: 'torch.Tensor', gt, mask):
         mask_sum = mask.sum()
         if mask_sum.item() == 0:
             return mask_sum, dict(l1_loss=mask_sum)
@@ -1199,7 +1201,7 @@ class BalanceL1Loss(nn.Module):
         super(BalanceL1Loss, self).__init__()
         self.negative_ratio = negative_ratio
 
-    def forward(self, pred: torch.Tensor, gt, mask):
+    def forward(self, pred: 'torch.Tensor', gt, mask):
         """
         Args:
             pred: (N, 1, H, W).
@@ -1854,6 +1856,36 @@ class BasicModel(nn.Module):
         return self.decoder(self.backbone(data), *args, **kwargs)
 
 
+class SegDetectorLossBuilder:
+    """
+    Build loss functions for SegDetector.
+    Details about the built functions:
+        Input:
+            pred: A dict which contains predictions.
+                thresh: The threshold prediction
+                binary: The text segmentation prediction.
+                thresh_binary: Value produced by `step_function(binary - thresh)`.
+            batch:
+                gt: Text regions bitmap gt.
+                mask: Ignore mask,
+                    pexels where value is 1 indicates no contribution to loss.
+                thresh_mask: Mask indicates regions cared by thresh supervision.
+                thresh_map: Threshold gt.
+        Return:
+            (loss, metrics).
+            loss: A scalar loss value.
+            metrics: A dict contraining partial loss values.
+    """
+
+    def __init__(self, loss_class, *args, **kwargs):
+        self.loss_class = loss_class
+        self.loss_args = args
+        self.loss_kwargs = kwargs
+
+    def build(self):
+        return getattr(sys.modules[__name__], self.loss_class)(*self.loss_args, **self.loss_kwargs)
+
+
 def parallelize(model, distributed, local_rank):
     if distributed:
         return nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=[local_rank], find_unused_parameters=True)
@@ -1863,7 +1895,7 @@ def parallelize(model, distributed, local_rank):
 
 class SegDetectorModel(nn.Module):
 
-    def __init__(self, args, device, distributed: bool=False, local_rank: int=0):
+    def __init__(self, args, device, distributed: 'bool'=False, local_rank: 'int'=0):
         super(SegDetectorModel, self).__init__()
         self.model = BasicModel(args)
         self.model = parallelize(self.model, distributed, local_rank)

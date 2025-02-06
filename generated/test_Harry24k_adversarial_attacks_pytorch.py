@@ -1,7 +1,6 @@
 import sys
 _module = sys.modules[__name__]
 del sys
-collect_env = _module
 test_atks = _module
 test_import = _module
 utils = _module
@@ -31,6 +30,7 @@ imagenet = _module
 models = _module
 utils = _module
 zenodo_download = _module
+setup = _module
 torchattacks = _module
 attack = _module
 attacks = _module
@@ -42,12 +42,15 @@ bim = _module
 cw = _module
 deepfool = _module
 difgsm = _module
+eaden = _module
+eadl1 = _module
 eotpgd = _module
 fab = _module
 ffgsm = _module
 fgsm = _module
 gn = _module
 jitter = _module
+jsma = _module
 mifgsm = _module
 nifgsm = _module
 onepixel = _module
@@ -55,10 +58,13 @@ pgd = _module
 pgdl2 = _module
 pgdrs = _module
 pgdrsl2 = _module
+pifgsm = _module
+pifgsmpp = _module
 pixle = _module
 rfgsm = _module
 sinifgsm = _module
 sparsefool = _module
+spsa = _module
 square = _module
 tifgsm = _module
 tpgd = _module
@@ -74,7 +80,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -90,13 +98,10 @@ xrange = range
 wraps = functools.wraps
 
 
-import itertools
+import torch
 
 
 import time
-
-
-import torch
 
 
 import numpy as np
@@ -195,12 +200,6 @@ from torch import Tensor
 import warnings
 
 
-import logging
-
-
-from collections.abc import Iterable
-
-
 from torch.utils.data import DataLoader
 
 
@@ -222,7 +221,13 @@ from itertools import chain
 from torch.nn.functional import softmax
 
 
+from torch.nn.modules.loss import _Loss
+
+
 from scipy import stats as st
+
+
+import itertools
 
 
 from random import shuffle
@@ -313,7 +318,7 @@ class Swish(nn.Module):
 class _Block(nn.Module):
     """WideResNet Block."""
 
-    def __init__(self, in_planes, out_planes, stride, activation_fn: Type[nn.Module]=nn.ReLU):
+    def __init__(self, in_planes, out_planes, stride, activation_fn: 'Type[nn.Module]'=nn.ReLU):
         super().__init__()
         self.batchnorm_0 = nn.BatchNorm2d(in_planes)
         self.relu_0 = activation_fn()
@@ -350,7 +355,7 @@ class _Block(nn.Module):
 class _BlockGroup(nn.Module):
     """WideResNet block group."""
 
-    def __init__(self, num_blocks, in_planes, out_planes, stride, activation_fn: Type[nn.Module]=nn.ReLU):
+    def __init__(self, num_blocks, in_planes, out_planes, stride, activation_fn: 'Type[nn.Module]'=nn.ReLU):
         super().__init__()
         block = []
         for i in range(num_blocks):
@@ -370,7 +375,7 @@ CIFAR10_STD = 0.2471, 0.2435, 0.2616
 class DMWideResNet(nn.Module):
     """WideResNet."""
 
-    def __init__(self, num_classes: int=10, depth: int=28, width: int=10, activation_fn: Type[nn.Module]=nn.ReLU, mean: Union[Tuple[float, ...], float]=CIFAR10_MEAN, std: Union[Tuple[float, ...], float]=CIFAR10_STD, padding: int=0, num_input_channels: int=3):
+    def __init__(self, num_classes: 'int'=10, depth: 'int'=28, width: 'int'=10, activation_fn: 'Type[nn.Module]'=nn.ReLU, mean: 'Union[Tuple[float, ...], float]'=CIFAR10_MEAN, std: 'Union[Tuple[float, ...], float]'=CIFAR10_STD, padding: 'int'=0, num_input_channels: 'int'=3):
         super().__init__()
         self.register_buffer('mean', torch.tensor(mean).view(num_input_channels, 1, 1), persistent=False)
         self.register_buffer('std', torch.tensor(std).view(num_input_channels, 1, 1), persistent=False)
@@ -433,7 +438,7 @@ class _PreActBlock(nn.Module):
 class DMPreActResNet(nn.Module):
     """Pre-activation ResNet."""
 
-    def __init__(self, num_classes: int=10, depth: int=18, width: int=0, activation_fn: Type[nn.Module]=nn.ReLU, mean: Union[Tuple[float, ...], float]=CIFAR10_MEAN, std: Union[Tuple[float, ...], float]=CIFAR10_STD, padding: int=0, num_input_channels: int=3, use_cuda: bool=True):
+    def __init__(self, num_classes: 'int'=10, depth: 'int'=18, width: 'int'=0, activation_fn: 'Type[nn.Module]'=nn.ReLU, mean: 'Union[Tuple[float, ...], float]'=CIFAR10_MEAN, std: 'Union[Tuple[float, ...], float]'=CIFAR10_STD, padding: 'int'=0, num_input_channels: 'int'=3, use_cuda: 'bool'=True):
         super().__init__()
         if width != 0:
             raise ValueError('Unsupported `width`.')
@@ -1126,12 +1131,12 @@ class RobustWideResNet(nn.Module):
 
 class ImageNormalizer(nn.Module):
 
-    def __init__(self, mean: Tuple[float, float, float], std: Tuple[float, float, float]) ->None:
+    def __init__(self, mean: 'Tuple[float, float, float]', std: 'Tuple[float, float, float]') ->None:
         super(ImageNormalizer, self).__init__()
         self.register_buffer('mean', torch.as_tensor(mean).view(1, 3, 1, 1))
         self.register_buffer('std', torch.as_tensor(std).view(1, 3, 1, 1))
 
-    def forward(self, input: Tensor) ->Tensor:
+    def forward(self, input: 'Tensor') ->Tensor:
         return (input - self.mean) / self.std
 
     def __repr__(self):
@@ -1477,6 +1482,25 @@ class Wu2020AdversarialNet(WideResNet):
     def forward(self, x):
         x = (x - self.mu) / self.sigma
         return super().forward(x)
+
+
+class MarginalLoss(_Loss):
+
+    def forward(self, logits, targets):
+        assert logits.shape[-1] >= 2
+        top_logits, top_classes = torch.topk(logits, 2, dim=-1)
+        target_logits = logits[torch.arange(logits.shape[0]), targets]
+        max_nontarget_logits = torch.where(top_classes[..., 0] == targets, top_logits[..., 1], top_logits[..., 0])
+        loss = max_nontarget_logits - target_logits
+        if self.reduction == 'none':
+            pass
+        elif self.reduction == 'sum':
+            loss = loss.sum()
+        elif self.reduction == 'mean':
+            loss = loss.mean()
+        else:
+            raise ValueError("unknown reduction: '%s'" % (self.recution,))
+        return loss
 
 
 class LightEnsemble(nn.Module):

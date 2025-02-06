@@ -79,7 +79,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -152,6 +154,9 @@ from typing import Tuple
 from torch import Tensor
 
 
+from typing import Sequence
+
+
 from typing import Dict
 
 
@@ -169,7 +174,7 @@ class TGCN2(torch.nn.Module):
         add_self_loops (bool): Adding self-loops for smoothing. Default is True.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, batch_size: int, improved: bool=False, cached: bool=False, add_self_loops: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', batch_size: 'int', improved: 'bool'=False, cached: 'bool'=False, add_self_loops: 'bool'=True):
         super(TGCN2, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -223,7 +228,7 @@ class TGCN2(torch.nn.Module):
         H = Z * H + (1 - Z) * H_tilde
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
@@ -260,7 +265,7 @@ class A3TGCN2(torch.nn.Module):
         add_self_loops (bool): Adding self-loops for smoothing (default :obj:`True`).
     """
 
-    def __init__(self, in_channels: int, out_channels: int, periods: int, batch_size: int, improved: bool=False, cached: bool=False, add_self_loops: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', periods: 'int', batch_size: 'int', improved: 'bool'=False, cached: 'bool'=False, add_self_loops: 'bool'=True):
         super(A3TGCN2, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -277,7 +282,7 @@ class A3TGCN2(torch.nn.Module):
         self._attention = torch.nn.Parameter(torch.empty(self.periods, device=device))
         torch.nn.init.uniform_(self._attention)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
@@ -330,7 +335,7 @@ class TGCN(torch.nn.Module):
         add_self_loops (bool): Adding self-loops for smoothing. Default is True.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, improved: bool=False, cached: bool=False, add_self_loops: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', improved: 'bool'=False, cached: 'bool'=False, add_self_loops: 'bool'=True):
         super(TGCN, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -383,7 +388,7 @@ class TGCN(torch.nn.Module):
         H = Z * H + (1 - Z) * H_tilde
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
@@ -413,11 +418,11 @@ class RecurrentGCN(torch.nn.Module):
         self.recurrent = TGCN(node_features, 32)
         self.linear = torch.nn.Linear(32, 1)
 
-    def forward(self, x, edge_index, edge_weight):
-        h = self.recurrent(x, edge_index, edge_weight)
-        h = F.relu(h)
-        h = self.linear(h)
-        return h
+    def forward(self, x, edge_index, edge_weight, prev_hidden_state):
+        h = self.recurrent(x, edge_index, edge_weight, prev_hidden_state)
+        y = F.relu(h)
+        y = self.linear(y)
+        return y, h
 
 
 class Conv2D(nn.Module):
@@ -435,7 +440,7 @@ class Conv2D(nn.Module):
         bn_decay (float, optional): Batch normalization momentum, default is None.
     """
 
-    def __init__(self, input_dims: int, output_dims: int, kernel_size: Union[tuple, list], stride: Union[tuple, list]=(1, 1), use_bias: bool=True, activation: Optional[Callable[[torch.FloatTensor], torch.FloatTensor]]=F.relu, bn_decay: Optional[float]=None):
+    def __init__(self, input_dims: 'int', output_dims: 'int', kernel_size: 'Union[tuple, list]', stride: 'Union[tuple, list]'=(1, 1), use_bias: 'bool'=True, activation: 'Optional[Callable[[torch.FloatTensor], torch.FloatTensor]]'=F.relu, bn_decay: 'Optional[float]'=None):
         super(Conv2D, self).__init__()
         self._activation = activation
         self._conv2d = nn.Conv2d(input_dims, output_dims, kernel_size, stride=stride, padding=0, bias=use_bias)
@@ -444,7 +449,7 @@ class Conv2D(nn.Module):
         if use_bias:
             torch.nn.init.zeros_(self._conv2d.bias)
 
-    def forward(self, X: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the 2D-convolution block.
 
@@ -475,7 +480,7 @@ class FullyConnected(nn.Module):
         use_bias (bool, optional): Whether to use bias, default is True.
     """
 
-    def __init__(self, input_dims: Union[int, list], units: Union[int, list], activations: Union[Callable[[torch.FloatTensor], torch.FloatTensor], list], bn_decay: float, use_bias: bool=True):
+    def __init__(self, input_dims: 'Union[int, list]', units: 'Union[int, list]', activations: 'Union[Callable[[torch.FloatTensor], torch.FloatTensor], list]', bn_decay: 'float', use_bias: 'bool'=True):
         super(FullyConnected, self).__init__()
         if isinstance(units, int):
             units = [units]
@@ -484,7 +489,7 @@ class FullyConnected(nn.Module):
         assert type(units) == list
         self._conv2ds = nn.ModuleList([Conv2D(input_dims=input_dim, output_dims=num_unit, kernel_size=[1, 1], stride=[1, 1], use_bias=use_bias, activation=activation, bn_decay=bn_decay) for input_dim, num_unit, activation in zip(input_dims, units, activations)])
 
-    def forward(self, X: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the fully-connected layer.
 
@@ -510,7 +515,7 @@ class SpatialAttention(nn.Module):
         bn_decay (float): Batch normalization momentum.
     """
 
-    def __init__(self, K: int, d: int, bn_decay: float):
+    def __init__(self, K: 'int', d: 'int', bn_decay: 'float'):
         super(SpatialAttention, self).__init__()
         D = K * d
         self._d = d
@@ -520,7 +525,7 @@ class SpatialAttention(nn.Module):
         self._fully_connected_v = FullyConnected(input_dims=2 * D, units=D, activations=F.relu, bn_decay=bn_decay)
         self._fully_connected = FullyConnected(input_dims=D, units=D, activations=F.relu, bn_decay=bn_decay)
 
-    def forward(self, X: torch.FloatTensor, STE: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', STE: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the spatial attention mechanism.
 
@@ -561,7 +566,7 @@ class TemporalAttention(nn.Module):
         mask (bool): Whether to mask attention score.
     """
 
-    def __init__(self, K: int, d: int, bn_decay: float, mask: bool):
+    def __init__(self, K: 'int', d: 'int', bn_decay: 'float', mask: 'bool'):
         super(TemporalAttention, self).__init__()
         D = K * d
         self._d = d
@@ -572,7 +577,7 @@ class TemporalAttention(nn.Module):
         self._fully_connected_v = FullyConnected(input_dims=2 * D, units=D, activations=F.relu, bn_decay=bn_decay)
         self._fully_connected = FullyConnected(input_dims=D, units=D, activations=F.relu, bn_decay=bn_decay)
 
-    def forward(self, X: torch.FloatTensor, STE: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', STE: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the temporal attention mechanism.
 
@@ -649,7 +654,7 @@ class ASTGCNBlock(nn.Module):
             an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, K: int, nb_chev_filter: int, nb_time_filter: int, time_strides: int, num_of_vertices: int, num_of_timesteps: int, normalization: Optional[str]=None, bias: bool=True):
+    def __init__(self, in_channels: 'int', K: 'int', nb_chev_filter: 'int', nb_time_filter: 'int', time_strides: 'int', num_of_vertices: 'int', num_of_timesteps: 'int', normalization: 'Optional[str]'=None, bias: 'bool'=True):
         super(ASTGCNBlock, self).__init__()
         self._temporal_attention = TemporalAttention(in_channels, num_of_vertices, num_of_timesteps)
         self._spatial_attention = SpatialAttention(in_channels, num_of_vertices, num_of_timesteps)
@@ -667,7 +672,7 @@ class ASTGCNBlock(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, edge_index: Union[torch.LongTensor, List[torch.LongTensor]]) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'Union[torch.LongTensor, List[torch.LongTensor]]') ->torch.FloatTensor:
         """
         Making a forward pass with the ASTGCN block.
 
@@ -746,7 +751,7 @@ class ASTGCN(nn.Module):
             an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, nb_block: int, in_channels: int, K: int, nb_chev_filter: int, nb_time_filter: int, time_strides: int, num_for_predict: int, len_input: int, num_of_vertices: int, normalization: Optional[str]=None, bias: bool=True):
+    def __init__(self, nb_block: 'int', in_channels: 'int', K: 'int', nb_chev_filter: 'int', nb_time_filter: 'int', time_strides: 'int', num_for_predict: 'int', len_input: 'int', num_of_vertices: 'int', normalization: 'Optional[str]'=None, bias: 'bool'=True):
         super(ASTGCN, self).__init__()
         self._blocklist = nn.ModuleList([ASTGCNBlock(in_channels, K, nb_chev_filter, nb_time_filter, time_strides, num_of_vertices, len_input, normalization, bias)])
         self._blocklist.extend([ASTGCNBlock(nb_time_filter, K, nb_chev_filter, nb_time_filter, 1, num_of_vertices, len_input // time_strides, normalization, bias) for _ in range(nb_block - 1)])
@@ -763,7 +768,7 @@ class ASTGCN(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor') ->torch.FloatTensor:
         """
         Making a forward pass.
 
@@ -866,7 +871,7 @@ class AggregateTemporalNodeFeatures(nn.Module):
 
 class WeightedGCNBlock(nn.Module):
 
-    def __init__(self, in_features: int, hidden_sizes: List[int], out_features: int):
+    def __init__(self, in_features: 'int', hidden_sizes: 'List[int]', out_features: 'int'):
         super(WeightedGCNBlock, self).__init__()
         gcns, relus, bns = nn.ModuleList(), nn.ModuleList(), nn.ModuleList()
         input_size = in_features
@@ -880,7 +885,7 @@ class WeightedGCNBlock(nn.Module):
         bns.append(nn.BatchNorm1d(out_features))
         self.gcns, self.relus, self.bns = gcns, relus, bns
 
-    def forward(self, node_features: torch.FloatTensor, edge_index: torch.LongTensor, edges_weight: torch.LongTensor):
+    def forward(self, node_features: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edges_weight: 'torch.LongTensor'):
         h = node_features
         for gcn, relu, bn in zip(self.gcns, self.relus, self.bns):
             h = gcn(h, edge_index, edges_weight)
@@ -899,7 +904,7 @@ class DNNTSP(nn.Module):
         n_heads (int): Number of attention heads.
     """
 
-    def __init__(self, items_total: int, item_embedding_dim: int, n_heads: int):
+    def __init__(self, items_total: 'int', item_embedding_dim: 'int', n_heads: 'int'):
         super(DNNTSP, self).__init__()
         self.item_embedding = nn.Embedding(items_total, item_embedding_dim)
         self.item_embedding_dim = item_embedding_dim
@@ -909,7 +914,7 @@ class DNNTSP(nn.Module):
         self.aggregate_nodes_temporal_feature = AggregateTemporalNodeFeatures(item_embed_dim=item_embedding_dim)
         self.global_gated_updater = GlobalGatedUpdater(items_total=items_total, item_embedding=self.item_embedding)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None):
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None):
         """Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph.
 
@@ -941,12 +946,12 @@ class SpatioTemporalEmbedding(nn.Module):
         use_bias (bool, optional): Whether to use bias in Fully Connected layers, default is True.
     """
 
-    def __init__(self, D: int, bn_decay: float, steps_per_day: int, use_bias: bool=True):
+    def __init__(self, D: 'int', bn_decay: 'float', steps_per_day: 'int', use_bias: 'bool'=True):
         super(SpatioTemporalEmbedding, self).__init__()
         self._fully_connected_se = FullyConnected(input_dims=[D, D], units=[D, D], activations=[F.relu, None], bn_decay=bn_decay, use_bias=use_bias)
         self._fully_connected_te = FullyConnected(input_dims=[steps_per_day + 7, D], units=[D, D], activations=[F.relu, None], bn_decay=bn_decay, use_bias=use_bias)
 
-    def forward(self, SE: torch.FloatTensor, TE: torch.FloatTensor, T: int) ->torch.FloatTensor:
+    def forward(self, SE: 'torch.FloatTensor', TE: 'torch.FloatTensor', T: 'int') ->torch.FloatTensor:
         """
         Making a forward pass of the spatial-temporal embedding.
 
@@ -983,13 +988,13 @@ class GatedFusion(nn.Module):
         bn_decay (float): batch normalization momentum.
     """
 
-    def __init__(self, D: int, bn_decay: float):
+    def __init__(self, D: 'int', bn_decay: 'float'):
         super(GatedFusion, self).__init__()
         self._fully_connected_xs = FullyConnected(input_dims=D, units=D, activations=None, bn_decay=bn_decay, use_bias=False)
         self._fully_connected_xt = FullyConnected(input_dims=D, units=D, activations=None, bn_decay=bn_decay, use_bias=True)
         self._fully_connected_h = FullyConnected(input_dims=[D, D], units=[D, D], activations=[F.relu, None], bn_decay=bn_decay)
 
-    def forward(self, HS: torch.FloatTensor, HT: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, HS: 'torch.FloatTensor', HT: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the gated fusion mechanism.
 
@@ -1021,13 +1026,13 @@ class SpatioTemporalAttention(nn.Module):
         mask (bool): Whether to mask attention score in temporal attention.
     """
 
-    def __init__(self, K: int, d: int, bn_decay: float, mask: bool):
+    def __init__(self, K: 'int', d: 'int', bn_decay: 'float', mask: 'bool'):
         super(SpatioTemporalAttention, self).__init__()
         self._spatial_attention = SpatialAttention(K, d, bn_decay)
         self._temporal_attention = TemporalAttention(K, d, bn_decay, mask=mask)
         self._gated_fusion = GatedFusion(K * d, bn_decay)
 
-    def forward(self, X: torch.FloatTensor, STE: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', STE: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the spatial-temporal attention block.
 
@@ -1057,7 +1062,7 @@ class TransformAttention(nn.Module):
         bn_decay (float): Batch normalization momentum.
     """
 
-    def __init__(self, K: int, d: int, bn_decay: float):
+    def __init__(self, K: 'int', d: 'int', bn_decay: 'float'):
         super(TransformAttention, self).__init__()
         D = K * d
         self._K = K
@@ -1067,7 +1072,7 @@ class TransformAttention(nn.Module):
         self._fully_connected_v = FullyConnected(input_dims=D, units=D, activations=F.relu, bn_decay=bn_decay)
         self._fully_connected = FullyConnected(input_dims=D, units=D, activations=F.relu, bn_decay=bn_decay)
 
-    def forward(self, X: torch.FloatTensor, STE_his: torch.FloatTensor, STE_pred: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', STE_his: 'torch.FloatTensor', STE_pred: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the transform attention layer.
 
@@ -1118,7 +1123,7 @@ class GMAN(nn.Module):
         mask (bool): Whether to mask attention score in temporal attention.
     """
 
-    def __init__(self, L: int, K: int, d: int, num_his: int, bn_decay: float, steps_per_day: int, use_bias: bool, mask: bool):
+    def __init__(self, L: 'int', K: 'int', d: 'int', num_his: 'int', bn_decay: 'float', steps_per_day: 'int', use_bias: 'bool', mask: 'bool'):
         super(GMAN, self).__init__()
         D = K * d
         self._num_his = num_his
@@ -1130,7 +1135,7 @@ class GMAN(nn.Module):
         self._fully_connected_1 = FullyConnected(input_dims=[1, D], units=[D, D], activations=[F.relu, None], bn_decay=bn_decay)
         self._fully_connected_2 = FullyConnected(input_dims=[D, D], units=[D, 1], activations=[F.relu, None], bn_decay=bn_decay)
 
-    def forward(self, X: torch.FloatTensor, SE: torch.FloatTensor, TE: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', SE: 'torch.FloatTensor', TE: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of GMAN.
 
@@ -1170,7 +1175,7 @@ class MSTGCNBlock(nn.Module):
         time_strides (int): Time strides during temporal convolution.
     """
 
-    def __init__(self, in_channels: int, K: int, nb_chev_filter: int, nb_time_filter: int, time_strides: int):
+    def __init__(self, in_channels: 'int', K: 'int', nb_chev_filter: 'int', nb_time_filter: 'int', time_strides: 'int'):
         super(MSTGCNBlock, self).__init__()
         self._cheb_conv = ChebConv(in_channels, nb_chev_filter, K, normalization=None)
         self._time_conv = nn.Conv2d(nb_chev_filter, nb_time_filter, kernel_size=(1, 3), stride=(1, time_strides), padding=(0, 1))
@@ -1186,7 +1191,7 @@ class MSTGCNBlock(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor') ->torch.FloatTensor:
         """
         Making a forward pass with a single MSTGCN block.
 
@@ -1237,7 +1242,7 @@ class MSTGCN(nn.Module):
         len_input (int): Length of the input sequence.
     """
 
-    def __init__(self, nb_block: int, in_channels: int, K: int, nb_chev_filter: int, nb_time_filter: int, time_strides: int, num_for_predict: int, len_input: int):
+    def __init__(self, nb_block: 'int', in_channels: 'int', K: 'int', nb_chev_filter: 'int', nb_time_filter: 'int', time_strides: 'int', num_for_predict: 'int', len_input: 'int'):
         super(MSTGCN, self).__init__()
         self._blocklist = nn.ModuleList([MSTGCNBlock(in_channels, K, nb_chev_filter, nb_time_filter, time_strides)])
         self._blocklist.extend([MSTGCNBlock(nb_time_filter, K, nb_chev_filter, nb_time_filter, 1) for _ in range(nb_block - 1)])
@@ -1254,7 +1259,7 @@ class MSTGCN(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor') ->torch.FloatTensor:
         """Making a forward pass. This module takes a likst of MSTGCN blocks and use a final convolution to serve as a multi-component fusion.
         B is the batch size. N_nodes is the number of nodes in the graph. F_in is the dimension of input features.
         T_in is the length of input sequence in time. T_out is the length of output sequence in time.
@@ -1283,7 +1288,7 @@ class Linear(nn.Module):
         bias (bool, optional): Whether to have bias. Default: True.
     """
 
-    def __init__(self, c_in: int, c_out: int, bias: bool=True):
+    def __init__(self, c_in: 'int', c_out: 'int', bias: 'bool'=True):
         super(Linear, self).__init__()
         self._mlp = torch.nn.Conv2d(c_in, c_out, kernel_size=(1, 1), padding=(0, 0), stride=(1, 1), bias=bias)
         self._reset_parameters()
@@ -1295,7 +1300,7 @@ class Linear(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of the linear layer.
 
@@ -1321,7 +1326,7 @@ class MixProp(nn.Module):
         alpha (float): Ratio of retaining the root nodes's original states, a value between 0 and 1.
     """
 
-    def __init__(self, c_in: int, c_out: int, gdep: int, dropout: float, alpha: float):
+    def __init__(self, c_in: 'int', c_out: 'int', gdep: 'int', dropout: 'float', alpha: 'float'):
         super(MixProp, self).__init__()
         self._mlp = Linear((gdep + 1) * c_in, c_out)
         self._gdep = gdep
@@ -1336,7 +1341,7 @@ class MixProp(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, A: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', A: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of mix-hop propagation.
 
@@ -1371,7 +1376,7 @@ class DilatedInception(nn.Module):
         dilated_factor (int, optional): Dilation factor.
     """
 
-    def __init__(self, c_in: int, c_out: int, kernel_set: list, dilation_factor: int):
+    def __init__(self, c_in: 'int', c_out: 'int', kernel_set: 'list', dilation_factor: 'int'):
         super(DilatedInception, self).__init__()
         self._time_conv = nn.ModuleList()
         self._kernel_set = kernel_set
@@ -1387,7 +1392,7 @@ class DilatedInception(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X_in: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X_in: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass of dilated inception.
 
@@ -1420,7 +1425,7 @@ class GraphConstructor(nn.Module):
         xd (int, optional): Static feature dimension, default None.
     """
 
-    def __init__(self, nnodes: int, k: int, dim: int, alpha: float, xd: Optional[int]=None):
+    def __init__(self, nnodes: 'int', k: 'int', dim: 'int', alpha: 'float', xd: 'Optional[int]'=None):
         super(GraphConstructor, self).__init__()
         if xd is not None:
             self._static_feature_dim = xd
@@ -1442,7 +1447,7 @@ class GraphConstructor(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, idx: torch.LongTensor, FE: Optional[torch.FloatTensor]=None) ->torch.FloatTensor:
+    def forward(self, idx: 'torch.LongTensor', FE: 'Optional[torch.FloatTensor]'=None) ->torch.FloatTensor:
         """
         Making a forward pass to construct an adjacency matrix from node embeddings.
 
@@ -1483,7 +1488,7 @@ class LayerNormalization(nn.Module):
         elementwise_affine (bool, optional): Whether to conduct elementwise affine transformation or not. Default: True.
     """
 
-    def __init__(self, normalized_shape: int, eps: float=1e-05, elementwise_affine: bool=True):
+    def __init__(self, normalized_shape: 'int', eps: 'float'=1e-05, elementwise_affine: 'bool'=True):
         super(LayerNormalization, self).__init__()
         self._normalized_shape = tuple(normalized_shape)
         self._eps = eps
@@ -1501,7 +1506,7 @@ class LayerNormalization(nn.Module):
             init.ones_(self._weight)
             init.zeros_(self._bias)
 
-    def forward(self, X: torch.FloatTensor, idx: torch.LongTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', idx: 'torch.LongTensor') ->torch.FloatTensor:
         """
         Making a forward pass of layer normalization.
 
@@ -1546,7 +1551,7 @@ class MTGNNLayer(nn.Module):
 
     """
 
-    def __init__(self, dilation_exponential: int, rf_size_i: int, kernel_size: int, j: int, residual_channels: int, conv_channels: int, skip_channels: int, kernel_set: list, new_dilation: int, layer_norm_affline: bool, gcn_true: bool, seq_length: int, receptive_field: int, dropout: float, gcn_depth: int, num_nodes: int, propalpha: float):
+    def __init__(self, dilation_exponential: 'int', rf_size_i: 'int', kernel_size: 'int', j: 'int', residual_channels: 'int', conv_channels: 'int', skip_channels: 'int', kernel_set: 'list', new_dilation: 'int', layer_norm_affline: 'bool', gcn_true: 'bool', seq_length: 'int', receptive_field: 'int', dropout: 'float', gcn_depth: 'int', num_nodes: 'int', propalpha: 'float'):
         super(MTGNNLayer, self).__init__()
         self._dropout = dropout
         self._gcn_true = gcn_true
@@ -1577,7 +1582,7 @@ class MTGNNLayer(nn.Module):
             else:
                 nn.init.uniform_(p)
 
-    def forward(self, X: torch.FloatTensor, X_skip: torch.FloatTensor, A_tilde: Optional[torch.FloatTensor], idx: torch.LongTensor, training: bool) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', X_skip: 'torch.FloatTensor', A_tilde: 'Optional[torch.FloatTensor]', idx: 'torch.LongTensor', training: 'bool') ->torch.FloatTensor:
         """
         Making a forward pass of MTGNN layer.
 
@@ -1643,7 +1648,7 @@ class MTGNN(nn.Module):
         xd (int, optional): Static feature dimension, default None.
     """
 
-    def __init__(self, gcn_true: bool, build_adj: bool, gcn_depth: int, num_nodes: int, kernel_set: list, kernel_size: int, dropout: float, subgraph_size: int, node_dim: int, dilation_exponential: int, conv_channels: int, residual_channels: int, skip_channels: int, end_channels: int, seq_length: int, in_dim: int, out_dim: int, layers: int, propalpha: float, tanhalpha: float, layer_norm_affline: bool, xd: Optional[int]=None):
+    def __init__(self, gcn_true: 'bool', build_adj: 'bool', gcn_depth: 'int', num_nodes: 'int', kernel_set: 'list', kernel_size: 'int', dropout: 'float', subgraph_size: 'int', node_dim: 'int', dilation_exponential: 'int', conv_channels: 'int', residual_channels: 'int', skip_channels: 'int', end_channels: 'int', seq_length: 'int', in_dim: 'int', out_dim: 'int', layers: 'int', propalpha: 'float', tanhalpha: 'float', layer_norm_affline: 'bool', xd: 'Optional[int]'=None):
         super(MTGNN, self).__init__()
         self._gcn_true = gcn_true
         self._build_adj_true = build_adj
@@ -1686,7 +1691,7 @@ class MTGNN(nn.Module):
         else:
             self._receptive_field = layers * (kernel_size - 1) + 1
 
-    def forward(self, X_in: torch.FloatTensor, A_tilde: Optional[torch.FloatTensor]=None, idx: Optional[torch.LongTensor]=None, FE: Optional[torch.FloatTensor]=None) ->torch.FloatTensor:
+    def forward(self, X_in: 'torch.FloatTensor', A_tilde: 'Optional[torch.FloatTensor]'=None, idx: 'Optional[torch.LongTensor]'=None, FE: 'Optional[torch.FloatTensor]'=None) ->torch.FloatTensor:
         """
         Making a forward pass of MTGNN.
 
@@ -1737,13 +1742,13 @@ class TemporalConv(nn.Module):
         kernel_size (int): Convolutional kernel size.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int=3):
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: 'int'=3):
         super(TemporalConv, self).__init__()
         self.conv_1 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
         self.conv_2 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
         self.conv_3 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
 
-    def forward(self, X: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor') ->torch.FloatTensor:
         """Forward pass through temporal convolution block.
 
         Arg types:
@@ -1804,7 +1809,7 @@ class STConv(nn.Module):
 
     """
 
-    def __init__(self, num_nodes: int, in_channels: int, hidden_channels: int, out_channels: int, kernel_size: int, K: int, normalization: str='sym', bias: bool=True):
+    def __init__(self, num_nodes: 'int', in_channels: 'int', hidden_channels: 'int', out_channels: 'int', kernel_size: 'int', K: 'int', normalization: 'str'='sym', bias: 'bool'=True):
         super(STConv, self).__init__()
         self.num_nodes = num_nodes
         self.in_channels = in_channels
@@ -1819,7 +1824,7 @@ class STConv(nn.Module):
         self._temporal_conv2 = TemporalConv(in_channels=hidden_channels, out_channels=out_channels, kernel_size=kernel_size)
         self._batch_norm = nn.BatchNorm2d(num_nodes)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """Forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph.
 
@@ -1857,7 +1862,7 @@ class UnitTCN(nn.Module):
         stride (int): Temporal Convolutional kernel stride. (default: :obj:`1`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int=9, stride: int=1):
+    def __init__(self, in_channels: 'int', out_channels: 'int', kernel_size: 'int'=9, stride: 'int'=1):
         super(UnitTCN, self).__init__()
         pad = int((kernel_size - 1) / 2)
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_size, 1), padding=(pad, 0), stride=(stride, 1))
@@ -1897,7 +1902,7 @@ class UnitGCN(nn.Module):
         attention (bool, optional): Apply Attention. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, A: torch.FloatTensor, coff_embedding: int=4, num_subset: int=3, adaptive: bool=True, attention: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', A: 'torch.FloatTensor', coff_embedding: 'int'=4, num_subset: 'int'=3, adaptive: 'bool'=True, attention: 'bool'=True):
         super(UnitGCN, self).__init__()
         self.inter_c = out_channels // coff_embedding
         self.out_c = out_channels
@@ -2043,13 +2048,13 @@ class GraphAAGCN:
             * **A** (PyTorch Float Tensor) - Three layer normalized adjacency matrix
     """
 
-    def __init__(self, edge_index: list, num_nodes: int):
+    def __init__(self, edge_index: 'list', num_nodes: 'int'):
         self.num_nodes = num_nodes
         self.edge_index = edge_index
         self.A = self.get_spatial_graph(self.num_nodes)
 
     def get_spatial_graph(self, num_nodes):
-        self_mat = torch.eye(num_nodes)
+        self_mat = torch.eye(num_nodes, device=self.edge_index.device)
         inward_mat = torch.squeeze(to_dense_adj(self.edge_index))
         inward_mat_norm = F.normalize(inward_mat, dim=0, p=1)
         outward_mat = inward_mat.transpose(0, 1)
@@ -2078,7 +2083,7 @@ class AAGCN(nn.Module):
         (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, edge_index: torch.LongTensor, num_nodes: int, stride: int=1, residual: bool=True, adaptive: bool=True, attention: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', edge_index: 'torch.LongTensor', num_nodes: 'int', stride: 'int'=1, residual: 'bool'=True, adaptive: 'bool'=True, attention: 'bool'=True):
         super(AAGCN, self).__init__()
         self.edge_index = edge_index
         self.num_nodes = num_nodes
@@ -2124,7 +2129,7 @@ class HeteroGCLSTM(torch.nn.Module):
                 an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels_dict: dict, out_channels: int, metadata: tuple, bias: bool=True):
+    def __init__(self, in_channels_dict: 'dict', out_channels: 'int', metadata: 'tuple', bias: 'bool'=True):
         super(HeteroGCLSTM, self).__init__()
         self.in_channels_dict = in_channels_dict
         self.out_channels = out_channels
@@ -2267,7 +2272,7 @@ class AVWGCN(nn.Module):
         embedding_dimensions (int): Number of node embedding dimensions.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, K: int, embedding_dimensions: int):
+    def __init__(self, in_channels: 'int', out_channels: 'int', K: 'int', embedding_dimensions: 'int'):
         super(AVWGCN, self).__init__()
         self.K = K
         self.weights_pool = torch.nn.Parameter(torch.Tensor(embedding_dimensions, K, in_channels, out_channels))
@@ -2275,7 +2280,7 @@ class AVWGCN(nn.Module):
         glorot(self.weights_pool)
         zeros(self.bias_pool)
 
-    def forward(self, X: torch.FloatTensor, E: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', E: 'torch.FloatTensor') ->torch.FloatTensor:
         """Making a forward pass.
         Arg types:
             * **X** (PyTorch Float Tensor) - Node features.
@@ -2310,7 +2315,7 @@ class AGCRN(nn.Module):
         embedding_dimensions (int): Number of node embedding dimensions.
     """
 
-    def __init__(self, number_of_nodes: int, in_channels: int, out_channels: int, K: int, embedding_dimensions: int):
+    def __init__(self, number_of_nodes: 'int', in_channels: 'int', out_channels: 'int', K: 'int', embedding_dimensions: 'int'):
         super(AGCRN, self).__init__()
         self.number_of_nodes = number_of_nodes
         self.in_channels = in_channels
@@ -2328,7 +2333,7 @@ class AGCRN(nn.Module):
             H = torch.zeros(X.shape[0], X.shape[1], self.out_channels)
         return H
 
-    def forward(self, X: torch.FloatTensor, E: torch.FloatTensor, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', E: 'torch.FloatTensor', H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """Making a forward pass.
         Arg types:
             * **X** (PyTorch Float Tensor) - Node feature matrix.
@@ -2361,7 +2366,7 @@ class A3TGCN(torch.nn.Module):
         add_self_loops (bool): Adding self-loops for smoothing (default :obj:`True`).
     """
 
-    def __init__(self, in_channels: int, out_channels: int, periods: int, improved: bool=False, cached: bool=False, add_self_loops: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', periods: 'int', improved: 'bool'=False, cached: 'bool'=False, add_self_loops: 'bool'=True):
         super(A3TGCN, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -2377,7 +2382,7 @@ class A3TGCN(torch.nn.Module):
         self._attention = torch.nn.Parameter(torch.empty(self.periods, device=device))
         torch.nn.init.uniform_(self._attention)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
@@ -2413,7 +2418,7 @@ class DCRNN(torch.nn.Module):
 
     """
 
-    def __init__(self, in_channels: int, out_channels: int, K: int, bias: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', K: 'int', bias: 'bool'=True):
         super(DCRNN, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -2462,7 +2467,7 @@ class DCRNN(torch.nn.Module):
         H = Z * H + (1 - Z) * H_tilde
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
         when the forward pass is called it is initialized with zeros.
@@ -2498,7 +2503,7 @@ class DyGrEncoder(torch.nn.Module):
         lstm_num_layers (int): Number of neurons in LSTM.
     """
 
-    def __init__(self, conv_out_channels: int, conv_num_layers: int, conv_aggr: str, lstm_out_channels: int, lstm_num_layers: int):
+    def __init__(self, conv_out_channels: 'int', conv_num_layers: 'int', conv_aggr: 'str', lstm_out_channels: 'int', lstm_num_layers: 'int'):
         super(DyGrEncoder, self).__init__()
         assert conv_aggr in ['mean', 'add', 'max'], 'Wrong aggregator.'
         self.conv_out_channels = conv_out_channels
@@ -2512,7 +2517,7 @@ class DyGrEncoder(torch.nn.Module):
         self.conv_layer = GatedGraphConv(out_channels=self.conv_out_channels, num_layers=self.conv_num_layers, aggr=self.conv_aggr, bias=True)
         self.recurrent_layer = LSTM(input_size=self.conv_out_channels, hidden_size=self.lstm_out_channels, num_layers=self.lstm_num_layers)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None, C: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None, C: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If the hidden state and cell state matrices are
         not present when the forward pass is called these are initialized with zeros.
@@ -2568,7 +2573,7 @@ class EvolveGCNH(torch.nn.Module):
             self-loops to the input graph. (default: :obj:`True`)
     """
 
-    def __init__(self, num_of_nodes: int, in_channels: int, improved: bool=False, cached: bool=False, normalize: bool=True, add_self_loops: bool=True):
+    def __init__(self, num_of_nodes: 'int', in_channels: 'int', improved: 'bool'=False, cached: 'bool'=False, normalize: 'bool'=True, add_self_loops: 'bool'=True):
         super(EvolveGCNH, self).__init__()
         self.num_of_nodes = num_of_nodes
         self.in_channels = in_channels
@@ -2577,12 +2582,15 @@ class EvolveGCNH(torch.nn.Module):
         self.normalize = normalize
         self.add_self_loops = add_self_loops
         self.weight = None
-        self.initial_weight = torch.nn.Parameter(torch.Tensor(in_channels, in_channels))
+        self.initial_weight = torch.nn.Parameter(torch.Tensor(1, in_channels, in_channels))
         self._create_layers()
         self.reset_parameters()
 
     def reset_parameters(self):
         glorot(self.initial_weight)
+
+    def reinitialize_weight(self):
+        self.weight = None
 
     def _create_layers(self):
         self.ratio = self.in_channels / self.num_of_nodes
@@ -2590,7 +2598,7 @@ class EvolveGCNH(torch.nn.Module):
         self.recurrent_layer = GRU(input_size=self.in_channels, hidden_size=self.in_channels, num_layers=1)
         self.conv_layer = GCNConv_Fixed_W(in_channels=self.in_channels, out_channels=self.in_channels, improved=self.improved, cached=self.cached, normalize=self.normalize, add_self_loops=self.add_self_loops)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass.
 
@@ -2605,10 +2613,10 @@ class EvolveGCNH(torch.nn.Module):
         X_tilde = self.pooling_layer(X, edge_index)
         X_tilde = X_tilde[0][None, :, :]
         if self.weight is None:
-            self.weight = self.initial_weight.data
-        W = self.weight[None, :, :]
-        X_tilde, W = self.recurrent_layer(X_tilde, W)
-        X = self.conv_layer(W.squeeze(dim=0), X, edge_index, edge_weight)
+            _, self.weight = self.recurrent_layer(X_tilde, self.initial_weight)
+        else:
+            _, self.weight = self.recurrent_layer(X_tilde, self.weight)
+        X = self.conv_layer(self.weight.squeeze(dim=0), X, edge_index, edge_weight)
         return X
 
 
@@ -2633,20 +2641,23 @@ class EvolveGCNO(torch.nn.Module):
             self-loops to the input graph. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, improved: bool=False, cached: bool=False, normalize: bool=True, add_self_loops: bool=True):
+    def __init__(self, in_channels: 'int', improved: 'bool'=False, cached: 'bool'=False, normalize: 'bool'=True, add_self_loops: 'bool'=True):
         super(EvolveGCNO, self).__init__()
         self.in_channels = in_channels
         self.improved = improved
         self.cached = cached
         self.normalize = normalize
         self.add_self_loops = add_self_loops
+        self.initial_weight = torch.nn.Parameter(torch.Tensor(1, in_channels, in_channels))
         self.weight = None
-        self.initial_weight = torch.nn.Parameter(torch.Tensor(in_channels, in_channels))
         self._create_layers()
         self.reset_parameters()
 
     def reset_parameters(self):
         glorot(self.initial_weight)
+
+    def reinitialize_weight(self):
+        self.weight = None
 
     def _create_layers(self):
         self.recurrent_layer = GRU(input_size=self.in_channels, hidden_size=self.in_channels, num_layers=1)
@@ -2655,7 +2666,7 @@ class EvolveGCNO(torch.nn.Module):
             param.retain_grad()
         self.conv_layer = GCNConv_Fixed_W(in_channels=self.in_channels, out_channels=self.in_channels, improved=self.improved, cached=self.cached, normalize=self.normalize, add_self_loops=self.add_self_loops)
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass.
         Arg types:
@@ -2666,10 +2677,10 @@ class EvolveGCNO(torch.nn.Module):
             * **X** *(PyTorch Float Tensor)* - Output matrix for all nodes.
         """
         if self.weight is None:
-            self.weight = self.initial_weight.data
-        W = self.weight[None, :, :]
-        _, W = self.recurrent_layer(W, W)
-        X = self.conv_layer(W.squeeze(dim=0), X, edge_index, edge_weight)
+            _, self.weight = self.recurrent_layer(self.initial_weight, self.initial_weight)
+        else:
+            _, self.weight = self.recurrent_layer(self.weight, self.weight)
+        X = self.conv_layer(self.weight.squeeze(dim=0), X, edge_index, edge_weight)
         return X
 
 
@@ -2706,7 +2717,7 @@ class GCLSTM(torch.nn.Module):
             an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, K: int, normalization: str='sym', bias: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', K: 'int', normalization: 'str'='sym', bias: 'bool'=True):
         super(GCLSTM, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -2795,7 +2806,7 @@ class GCLSTM(torch.nn.Module):
         H = O * torch.tanh(C)
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None, C: torch.FloatTensor=None, lambda_max: torch.Tensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None, C: 'torch.FloatTensor'=None, lambda_max: 'torch.Tensor'=None) ->Tuple[torch.FloatTensor, torch.FloatTensor]:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state and cell state
@@ -2857,7 +2868,7 @@ class GConvGRU(torch.nn.Module):
             an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, K: int, normalization: str='sym', bias: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', K: 'int', normalization: 'str'='sym', bias: 'bool'=True):
         super(GConvGRU, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -2910,7 +2921,7 @@ class GConvGRU(torch.nn.Module):
         H = Z * H + (1 - Z) * H_tilde
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None, lambda_max: torch.Tensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None, lambda_max: 'torch.Tensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state matrix is not present
@@ -2968,7 +2979,7 @@ class GConvLSTM(torch.nn.Module):
             an additive bias. (default: :obj:`True`)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, K: int, normalization: str='sym', bias: bool=True):
+    def __init__(self, in_channels: 'int', out_channels: 'int', K: 'int', normalization: 'str'='sym', bias: 'bool'=True):
         super(GConvLSTM, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -3062,7 +3073,7 @@ class GConvLSTM(torch.nn.Module):
         H = O * torch.tanh(C)
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor=None, H: torch.FloatTensor=None, C: torch.FloatTensor=None, lambda_max: torch.Tensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor'=None, H: 'torch.FloatTensor'=None, C: 'torch.FloatTensor'=None, lambda_max: 'torch.Tensor'=None) ->Tuple[torch.FloatTensor, torch.FloatTensor]:
         """
         Making a forward pass. If edge weights are not present the forward pass
         defaults to an unweighted graph. If the hidden state and cell state
@@ -3103,7 +3114,7 @@ class LRGCN(torch.nn.Module):
         num_bases (int): Number of bases.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, num_relations: int, num_bases: int):
+    def __init__(self, in_channels: 'int', out_channels: 'int', num_relations: 'int', num_bases: 'int'):
         super(LRGCN, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -3172,7 +3183,7 @@ class LRGCN(torch.nn.Module):
         H = O * torch.tanh(C)
         return H
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_type: torch.LongTensor, H: torch.FloatTensor=None, C: torch.FloatTensor=None) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_type: 'torch.LongTensor', H: 'torch.FloatTensor'=None, C: 'torch.FloatTensor'=None) ->torch.FloatTensor:
         """
         Making a forward pass. If the hidden state and cell state matrices are
         not present when the forward pass is called these are initialized with zeros.
@@ -3210,7 +3221,7 @@ class MPNNLSTM(nn.Module):
         dropout (float): Dropout rate.
     """
 
-    def __init__(self, in_channels: int, hidden_size: int, num_nodes: int, window: int, dropout: float):
+    def __init__(self, in_channels: 'int', hidden_size: 'int', num_nodes: 'int', window: 'int', dropout: 'float'):
         super(MPNNLSTM, self).__init__()
         self.window = window
         self.num_nodes = num_nodes
@@ -3239,7 +3250,7 @@ class MPNNLSTM(nn.Module):
         X = F.dropout(X, p=self.dropout, training=self.training)
         return X
 
-    def forward(self, X: torch.FloatTensor, edge_index: torch.LongTensor, edge_weight: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, X: 'torch.FloatTensor', edge_index: 'torch.LongTensor', edge_weight: 'torch.FloatTensor') ->torch.FloatTensor:
         """
         Making a forward pass through the whole architecture.
 
@@ -3316,10 +3327,6 @@ TESTCASES = [
      lambda: ([], {'in_channels': 4, 'out_channels': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      True),
-    (TransformAttention,
-     lambda: ([], {'K': 4, 'd': 4, 'bn_decay': 4}),
-     lambda: ([torch.rand([4, 16, 16, 16]), torch.rand([4, 16, 16, 16]), torch.rand([4, 16, 16, 16])], {}),
-     False),
     (UnitGCN,
      lambda: ([], {'in_channels': 4, 'out_channels': 4, 'A': torch.rand([4, 4])}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -3363,7 +3370,4 @@ class Test_benedekrozemberczki_pytorch_geometric_temporal(_paritybench_base):
 
     def test_010(self):
         self._check(*TESTCASES[10])
-
-    def test_011(self):
-        self._check(*TESTCASES[11])
 

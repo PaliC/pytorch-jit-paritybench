@@ -14,7 +14,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -104,58 +106,9 @@ class PairWiseModel(BasicModel):
         raise NotImplementedError
 
 
-class BasicDataset(Dataset):
-
-    def __init__(self):
-        None
-
-    @property
-    def n_users(self):
-        raise NotImplementedError
-
-    @property
-    def m_items(self):
-        raise NotImplementedError
-
-    @property
-    def trainDataSize(self):
-        raise NotImplementedError
-
-    @property
-    def testDict(self):
-        raise NotImplementedError
-
-    @property
-    def allPos(self):
-        raise NotImplementedError
-
-    def getUserItemFeedback(self, users, items):
-        raise NotImplementedError
-
-    def getUserPosItems(self, users):
-        raise NotImplementedError
-
-    def getUserNegItems(self, users):
-        """
-        not necessary for large dataset
-        it's stupid to return all neg items in super large dataset
-        """
-        raise NotImplementedError
-
-    def getSparseGraph(self):
-        """
-        build a graph in torch.sparse.IntTensor.
-        Details in NGCF's matrix form
-        A = 
-            |I,   R|
-            |R^T, I|
-        """
-        raise NotImplementedError
-
-
 class PureMF(BasicModel):
 
-    def __init__(self, config: dict, dataset: BasicDataset):
+    def __init__(self, config: 'dict', dataset: 'BasicDataset'):
         super(PureMF, self).__init__()
         self.num_users = dataset.n_users
         self.num_items = dataset.m_items
@@ -196,10 +149,10 @@ class PureMF(BasicModel):
 
 class LightGCN(BasicModel):
 
-    def __init__(self, config: dict, dataset: BasicDataset):
+    def __init__(self, config: 'dict', dataset: 'BasicDataset'):
         super(LightGCN, self).__init__()
         self.config = config
-        self.dataset: dataloader.BasicDataset = dataset
+        self.dataset: 'dataloader.BasicDataset' = dataset
         self.__init_weight()
 
     def __init_weight(self):

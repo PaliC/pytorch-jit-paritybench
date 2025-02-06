@@ -2,6 +2,7 @@ import sys
 _module = sys.modules[__name__]
 del sys
 collect_env = _module
+verify_deps_sync = _module
 verify_labels = _module
 app = _module
 conf = _module
@@ -29,7 +30,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -48,7 +51,7 @@ wraps = functools.wraps
 import re
 
 
-from collections import namedtuple
+from typing import NamedTuple
 
 
 from typing import Any
@@ -129,8 +132,20 @@ from typing import Union
 import torch.nn.functional as F
 
 
+from abc import abstractmethod
+
+
+from types import TracebackType
+
+
+from typing import Type
+
+
 from typing import Callable
 
 
 from typing import Dict
+
+
+from typing import cast
 

@@ -63,6 +63,7 @@ mobile_v3 = _module
 head = _module
 ban_v1 = _module
 ban_v2 = _module
+ban_v3 = _module
 init_weight = _module
 iou_loss = _module
 loss = _module
@@ -491,7 +492,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -640,9 +643,6 @@ from copy import deepcopy
 
 
 import itertools
-
-
-from collections import Mapping
 
 
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -1018,10 +1018,12 @@ class PixelwiseXCorr(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super(PixelwiseXCorr, self).__init__()
-        self.CA_layer = CAModule(channels=64)
-        self.conv_kernel = nn.Sequential(nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1), nn.BatchNorm2d(in_channels))
-        self.conv_search = nn.Sequential(nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1), nn.BatchNorm2d(in_channels))
-        for modules in [self.conv_kernel, self.conv_search]:
+        channels = 64
+        self.CA_layer = CAModule(channels)
+        self.conv_kernel = nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1), nn.BatchNorm2d(out_channels))
+        self.conv_search = nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1), nn.BatchNorm2d(out_channels))
+        self.conv = nn.Sequential(nn.Conv2d(channels, channels, kernel_size=2, groups=channels, bias=False), nn.BatchNorm2d(channels), nn.ReLU6(inplace=True), nn.Conv2d(channels, channels, kernel_size=1, stride=1), nn.BatchNorm2d(channels))
+        for modules in [self.conv_kernel, self.conv_search, self.conv]:
             for m in modules.modules():
                 if isinstance(m, nn.Conv2d):
                     n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -1040,30 +1042,8 @@ class PixelwiseXCorr(nn.Module):
         search = self.conv_search(search)
         feature = xcorr_pixelwise(search, kernel)
         corr = self.CA_layer(feature)
+        corr = self.conv(corr)
         return corr
-
-
-class NestedTensor(object):
-
-    def __init__(self, tensors, mask: Optional[Tensor]):
-        self.tensors = tensors
-        self.mask = mask
-
-    def to(self, device):
-        cast_tensor = self.tensors
-        mask = self.mask
-        if mask is not None:
-            assert mask is not None
-            cast_mask = mask
-        else:
-            cast_mask = None
-        return NestedTensor(cast_tensor, cast_mask)
-
-    def decompose(self):
-        return self.tensors, self.mask
-
-    def __repr__(self):
-        return str(self.tensors)
 
 
 class PositionEmbeddingSine(nn.Module):
@@ -1084,7 +1064,7 @@ class PositionEmbeddingSine(nn.Module):
         self.scale = scale
         self.segment_embdded_factor = 0.0
 
-    def forward(self, tensor_list: NestedTensor, multi_frame=False):
+    def forward(self, tensor_list: 'NestedTensor', multi_frame=False):
         x = tensor_list
         b, c, h, w = tensor_list.shape
         not_mask = torch.ones([b, h, w], device=tensor_list.device)
@@ -1120,7 +1100,7 @@ class TransformerDecoder(nn.Module):
         self.norm = norm
         self.return_intermediate = return_intermediate
 
-    def forward(self, tgt, memory, tgt_mask: Optional[Tensor]=None, memory_mask: Optional[Tensor]=None, tgt_key_padding_mask: Optional[Tensor]=None, memory_key_padding_mask: Optional[Tensor]=None, encoder_pos: Optional[Tensor]=None, decoder_pos: Optional[Tensor]=None):
+    def forward(self, tgt, memory, tgt_mask: 'Optional[Tensor]'=None, memory_mask: 'Optional[Tensor]'=None, tgt_key_padding_mask: 'Optional[Tensor]'=None, memory_key_padding_mask: 'Optional[Tensor]'=None, encoder_pos: 'Optional[Tensor]'=None, decoder_pos: 'Optional[Tensor]'=None):
         output = tgt
         intermediate = []
         for layer in self.layers:
@@ -1166,10 +1146,10 @@ class TransformerDecoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
         self.normalize_before = normalize_before
 
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]):
+    def with_pos_embed(self, tensor, pos: 'Optional[Tensor]'):
         return tensor if pos is None else tensor + pos
 
-    def forward_post(self, tgt, memory, tgt_mask: Optional[Tensor]=None, memory_mask: Optional[Tensor]=None, tgt_key_padding_mask: Optional[Tensor]=None, memory_key_padding_mask: Optional[Tensor]=None, encoder_pos: Optional[Tensor]=None, decoder_pos: Optional[Tensor]=None):
+    def forward_post(self, tgt, memory, tgt_mask: 'Optional[Tensor]'=None, memory_mask: 'Optional[Tensor]'=None, tgt_key_padding_mask: 'Optional[Tensor]'=None, memory_key_padding_mask: 'Optional[Tensor]'=None, encoder_pos: 'Optional[Tensor]'=None, decoder_pos: 'Optional[Tensor]'=None):
         q = k = self.with_pos_embed(tgt, decoder_pos)
         tgt2, attn_weight_map = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)
         tgt = tgt + self.dropout1(tgt2)
@@ -1182,7 +1162,7 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.norm3(tgt)
         return tgt
 
-    def forward_pre(self, tgt, memory, tgt_mask: Optional[Tensor]=None, memory_mask: Optional[Tensor]=None, tgt_key_padding_mask: Optional[Tensor]=None, memory_key_padding_mask: Optional[Tensor]=None, encoder_pos: Optional[Tensor]=None, decoder_pos: Optional[Tensor]=None):
+    def forward_pre(self, tgt, memory, tgt_mask: 'Optional[Tensor]'=None, memory_mask: 'Optional[Tensor]'=None, tgt_key_padding_mask: 'Optional[Tensor]'=None, memory_key_padding_mask: 'Optional[Tensor]'=None, encoder_pos: 'Optional[Tensor]'=None, decoder_pos: 'Optional[Tensor]'=None):
         tgt2 = self.norm1(tgt)
         q = k = self.with_pos_embed(tgt2, decoder_pos)
         tgt2, attn_weight_map = self.self_attn(q, k, value=tgt2, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)
@@ -1195,7 +1175,7 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout3(tgt2)
         return tgt
 
-    def forward(self, tgt, memory, tgt_mask: Optional[Tensor]=None, memory_mask: Optional[Tensor]=None, tgt_key_padding_mask: Optional[Tensor]=None, memory_key_padding_mask: Optional[Tensor]=None, encoder_pos: Optional[Tensor]=None, decoder_pos: Optional[Tensor]=None):
+    def forward(self, tgt, memory, tgt_mask: 'Optional[Tensor]'=None, memory_mask: 'Optional[Tensor]'=None, tgt_key_padding_mask: 'Optional[Tensor]'=None, memory_key_padding_mask: 'Optional[Tensor]'=None, encoder_pos: 'Optional[Tensor]'=None, decoder_pos: 'Optional[Tensor]'=None):
         if self.normalize_before:
             return self.forward_pre(tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, encoder_pos, decoder_pos)
         return self.forward_post(tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, encoder_pos, decoder_pos)
@@ -1209,7 +1189,7 @@ class TransformerEncoder(nn.Module):
         self.num_layers = num_layers
         self.norm = norm
 
-    def forward(self, src, mask: Optional[Tensor]=None, src_key_padding_mask: Optional[Tensor]=None, pos: Optional[Tensor]=None):
+    def forward(self, src, mask: 'Optional[Tensor]'=None, src_key_padding_mask: 'Optional[Tensor]'=None, pos: 'Optional[Tensor]'=None):
         output = src
         for layer in self.layers:
             output = layer(output, src_mask=mask, src_key_padding_mask=src_key_padding_mask, pos=pos)
@@ -1233,10 +1213,10 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
         self.normalize_before = normalize_before
 
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]):
+    def with_pos_embed(self, tensor, pos: 'Optional[Tensor]'):
         return tensor if pos is None else tensor + pos
 
-    def forward_post(self, src, src_mask: Optional[Tensor]=None, src_key_padding_mask: Optional[Tensor]=None, pos: Optional[Tensor]=None):
+    def forward_post(self, src, src_mask: 'Optional[Tensor]'=None, src_key_padding_mask: 'Optional[Tensor]'=None, pos: 'Optional[Tensor]'=None):
         q = k = self.with_pos_embed(src, pos)
         src2, attn_weight_map = self.self_attn(q, k, value=src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
         src = src + self.dropout1(src2)
@@ -1246,7 +1226,7 @@ class TransformerEncoderLayer(nn.Module):
         src = self.norm2(src)
         return src
 
-    def forward_pre(self, src, src_mask: Optional[Tensor]=None, src_key_padding_mask: Optional[Tensor]=None, pos: Optional[Tensor]=None):
+    def forward_pre(self, src, src_mask: 'Optional[Tensor]'=None, src_key_padding_mask: 'Optional[Tensor]'=None, pos: 'Optional[Tensor]'=None):
         src2 = self.norm1(src)
         q = k = self.with_pos_embed(src2, pos)
         src2 = self.self_attn(q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
@@ -1256,7 +1236,7 @@ class TransformerEncoderLayer(nn.Module):
         src = src + self.dropout2(src2)
         return src
 
-    def forward(self, src, src_mask: Optional[Tensor]=None, src_key_padding_mask: Optional[Tensor]=None, pos: Optional[Tensor]=None):
+    def forward(self, src, src_mask: 'Optional[Tensor]'=None, src_key_padding_mask: 'Optional[Tensor]'=None, pos: 'Optional[Tensor]'=None):
         if self.normalize_before:
             return self.forward_pre(src, src_mask, src_key_padding_mask, pos)
         return self.forward_post(src, src_mask, src_key_padding_mask, pos)
@@ -1397,7 +1377,15 @@ def mobilenetv3_small(**kwargs):
     return MobileNetV3(cfgs, mode='small', **kwargs)
 
 
-BACKBONES = {'mobilenetv3_small': mobilenetv3_small}
+def mobilenetv3_small_v3(**kwargs):
+    """
+    Constructs a MobileNetV3-Small model 
+    """
+    cfgs = [[3, 1, 16, 1, 0, 2], [3, 4.5, 24, 0, 0, 2], [3, 3.67, 24, 0, 0, 1], [5, 4, 40, 1, 1, 2], [5, 6, 40, 1, 1, 1], [5, 6, 40, 1, 1, 1], [5, 3, 48, 1, 1, 1], [5, 3, 48, 1, 1, 1], [5, 6, 96, 1, 1, 1]]
+    return MobileNetV3(cfgs, mode='small', **kwargs)
+
+
+BACKBONES = {'mobilenetv3_small': mobilenetv3_small, 'mobilenetv3_small_v3': mobilenetv3_small_v3}
 
 
 def get_backbone(name, **kwargs):
@@ -1697,7 +1685,7 @@ class BasicBlock(nn.Module):
 
 class Bottleneck(nn.Module):
 
-    def __init__(self, in_channels: int=96, mid_channels: int=96, dilation: int=1):
+    def __init__(self, in_channels: 'int'=96, mid_channels: 'int'=96, dilation: 'int'=1):
         super(Bottleneck, self).__init__()
         self.in_channels = in_channels
         self.mid_channels = mid_channels
@@ -2960,7 +2948,7 @@ class projector(nn.Module):
         return x
 
 
-def named_modules_with_dup(model: nn.Module, prefix: str='') ->Iterable[Tuple[str, nn.Module]]:
+def named_modules_with_dup(model: 'nn.Module', prefix: 'str'='') ->Iterable[Tuple[str, nn.Module]]:
     """
     The same as `model.named_modules()`, except that it includes
     duplicated modules that have more than one name.
@@ -2973,7 +2961,7 @@ def named_modules_with_dup(model: nn.Module, prefix: str='') ->Iterable[Tuple[st
         yield from named_modules_with_dup(module, submodule_prefix)
 
 
-def filter_reused_missing_keys(model: nn.Module, keys: List[str]) ->List[str]:
+def filter_reused_missing_keys(model: 'nn.Module', keys: 'List[str]') ->List[str]:
     """
     Filter "missing keys" to not include keys that have been loaded with another name.
     """
@@ -2989,7 +2977,7 @@ def filter_reused_missing_keys(model: nn.Module, keys: List[str]) ->List[str]:
     return list(keyset)
 
 
-def group_checkpoint_keys(keys: List[str]) ->Dict[str, List[str]]:
+def group_checkpoint_keys(keys: 'List[str]') ->Dict[str, List[str]]:
     """
     Group keys based on common prefixes. A prefix is the string up to the final
     "." in each key.
@@ -3010,7 +2998,7 @@ def group_checkpoint_keys(keys: List[str]) ->Dict[str, List[str]]:
     return groups
 
 
-def get_missing_parameters_message(keys: List[str]) ->str:
+def get_missing_parameters_message(keys: 'List[str]') ->str:
     """
     Get a logging-friendly message to report parameter names (keys) that are in
     the model but not found in a checkpoint.
@@ -3026,7 +3014,7 @@ def get_missing_parameters_message(keys: List[str]) ->str:
     return msg
 
 
-def get_unexpected_parameters_message(keys: List[str]) ->str:
+def get_unexpected_parameters_message(keys: 'List[str]') ->str:
     """
     Get a logging-friendly message to report parameter names (keys) that are in
     the checkpoint but not found in the model.
@@ -3084,7 +3072,7 @@ class ModuleBase(nn.Module):
         """
         return self._hyper_params
 
-    def set_hps(self, hps: dict()) ->None:
+    def set_hps(self, hps: 'dict()') ->None:
         """
         Set hyper-parameters
 
@@ -3123,42 +3111,6 @@ class ModuleBase(nn.Module):
                 logger.warning(get_missing_parameters_message(missing_keys))
         if incompatible.unexpected_keys:
             logger.warning(get_unexpected_parameters_message(incompatible.unexpected_keys))
-
-
-class Registry(dict):
-    """
-    A helper class for managing registering modules, it extends a dictionary
-    and provides a register functions.
-
-    usually declared in XXX_base.py, e.g. videoanalyst/model/backbone/backbone_base.py
-
-    used as decorator when declaring the module:
-
-    @some_registry.register
-    def foo():
-        ...
-
-    Access of module is just like using a dictionary, eg:
-        f = some_registry["foo_module"]
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.name = 'Registry'
-        if len(args) > 0 and isinstance(args[0], str):
-            name, *args = args
-            self.name = name
-        super(Registry, self).__init__(*args, **kwargs)
-
-    def register(self, module):
-        name = module.__name__
-        _register_generic(self, name, module)
-        return module
-
-
-TRACK_HEADS = Registry('TRACK_HEADS')
-
-
-VOS_HEADS = Registry('VOS_HEADS')
 
 
 def get_box(xy_ctr, offsets):
@@ -3337,9 +3289,6 @@ class DecoderHead(ModuleBase):
             return prediction
 
 
-VOS_TASKMODELS = Registry('VOS_TASKMODELS')
-
-
 class SatVOS(ModuleBase):
     """
     State-Aware Tracker model for VOS
@@ -3410,9 +3359,6 @@ class SatVOS(ModuleBase):
         if self.loss is not None:
             for loss_name in self.loss:
                 self.loss[loss_name]
-
-
-TRACK_TASKMODELS = Registry('TRACK_TASKMODELS')
 
 
 class SiamTrack(ModuleBase):
@@ -3790,7 +3736,7 @@ class PositionEmbeddingLearned(nn.Module):
         nn.init.uniform_(self.row_embed.weight)
         nn.init.uniform_(self.col_embed.weight)
 
-    def forward(self, tensor_list: NestedTensor):
+    def forward(self, tensor_list: 'NestedTensor'):
         x = tensor_list.tensors
         h, w = x.shape[-2:]
         i = torch.arange(w, device=x.device)

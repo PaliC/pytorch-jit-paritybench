@@ -90,7 +90,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -255,7 +257,7 @@ class UpdateScores(pt.nn.Module):
     All other options are set to infinity.
     """
 
-    def __init__(self, prevent_unk: bool=False):
+    def __init__(self, prevent_unk: 'bool'=False):
         super().__init__()
         self.prevent_unk = prevent_unk
         assert C.PAD_ID == 0, 'This block only works with PAD_ID == 0'
@@ -284,7 +286,7 @@ class LengthPenalty(pt.nn.Module):
     :param beta: The beta factor for the length penalty (see above).
     """
 
-    def __init__(self, alpha: float=1.0, beta: float=0.0) ->None:
+    def __init__(self, alpha: 'float'=1.0, beta: 'float'=0.0) ->None:
         super().__init__()
         self.alpha = alpha
         self.beta = beta
@@ -310,7 +312,7 @@ class BrevityPenalty(pt.nn.Module):
     :param weight: Linear weight.
     """
 
-    def __init__(self, weight: float=0.0) ->None:
+    def __init__(self, weight: 'float'=0.0) ->None:
         super().__init__()
         self.weight = weight
 
@@ -330,7 +332,7 @@ class BrevityPenalty(pt.nn.Module):
 
 class CandidateScorer(pt.nn.Module):
 
-    def __init__(self, length_penalty_alpha: float=1.0, length_penalty_beta: float=0.0, brevity_penalty_weight: float=0.0) ->None:
+    def __init__(self, length_penalty_alpha: 'float'=1.0, length_penalty_beta: 'float'=0.0, brevity_penalty_weight: 'float'=0.0) ->None:
         super().__init__()
         self._lp = LengthPenalty(alpha=length_penalty_alpha, beta=length_penalty_beta)
         self._bp = None
@@ -365,7 +367,7 @@ class SortNormalizeAndUpdateFinished(pt.nn.Module):
     A Module for normalizing newly finished hypotheses scores with LengthPenalty.
     """
 
-    def __init__(self, pad_id: int, eos_id: int, scorer: CandidateScorer, expect_factors: bool) ->None:
+    def __init__(self, pad_id: 'int', eos_id: 'int', scorer: 'CandidateScorer', expect_factors: 'bool') ->None:
         super().__init__()
         self.pad_id = pad_id
         self.eos_id = eos_id
@@ -401,7 +403,7 @@ class TopK(pt.nn.Module):
     NOTE: This module wouldn't support dynamic batch sizes when traced!
     """
 
-    def __init__(self, k: int) ->None:
+    def __init__(self, k: 'int') ->None:
         """
         :param k: The number of smallest scores to return.
         """
@@ -429,7 +431,7 @@ class SampleK(pt.nn.Module):
     A Module for selecting a random word from each hypothesis according to its distribution.
     """
 
-    def __init__(self, n: int) ->None:
+    def __init__(self, n: 'int') ->None:
         super().__init__()
         self.n = n
 
@@ -444,19 +446,19 @@ class SampleK(pt.nn.Module):
         """
         target_dists = pt.exp(-target_dists)
         if self.n != 0:
-            _, indices = pt.topk(target_dists, k=self.n, dim=1, largest=True, sorted=True)
-            target_dists = pt.scatter(pt.zeros_like(target_dists), 1, indices, target_dists)
+            values, indices = pt.topk(target_dists, k=self.n, dim=1, largest=True, sorted=True)
+            target_dists = pt.scatter(pt.zeros_like(target_dists), 1, indices, values)
             target_dists = target_dists / target_dists.sum(1, keepdim=True)
         best_word_indices = pt.multinomial(target_dists, 1).squeeze(1)
         best_word_indices = best_word_indices.masked_fill(finished, 0)
         values = scores.gather(dim=1, index=best_word_indices.long().unsqueeze(1))
-        best_hyp_indices = pt.arange(0, best_word_indices.size()[0])
+        best_hyp_indices = pt.arange(0, best_word_indices.size()[0], device=best_word_indices.device)
         return best_hyp_indices, best_word_indices, values
 
 
 class RepeatStates(pt.nn.Module):
 
-    def __init__(self, beam_size: int, state_structure: List):
+    def __init__(self, beam_size: 'int', state_structure: 'List'):
         super().__init__()
         self.beam_size = beam_size
         self.flat_structure = functools.reduce(operator.add, state_structure)
@@ -503,7 +505,7 @@ logger = logging.getLogger(__name__)
 
 class Search(pt.nn.Module):
 
-    def __init__(self, dtype: pt.dtype, bos_id: int, eos_id: int, device: pt.device, num_source_factors: int, num_target_factors: int, skip_nvs: bool=False, nvs_thresh: float=0.5):
+    def __init__(self, dtype: 'pt.dtype', bos_id: 'int', eos_id: 'int', device: 'pt.device', num_source_factors: 'int', num_target_factors: 'int', skip_nvs: 'bool'=False, nvs_thresh: 'float'=0.5):
         super().__init__()
         self.dtype = dtype
         self.bos_id = bos_id
@@ -515,7 +517,7 @@ class Search(pt.nn.Module):
         self.nvs_thresh = nvs_thresh
         self.output_vocab_sizes = utils.OnlineMeanAndVariance()
 
-    def update_output_vocab_size(self, size: Union[float, int]):
+    def update_output_vocab_size(self, size: 'Union[float, int]'):
         self.output_vocab_sizes.update(size)
 
     def log_search_stats(self):
@@ -527,7 +529,7 @@ class GreedyTop1(pt.nn.Module):
     Implements picking the highest scoring next word with support for vocabulary selection and target factors.
     """
 
-    def forward(self, scores: pt.Tensor, vocab_slice_ids: Optional[pt.Tensor]=None, target_factors: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, scores: 'pt.Tensor', vocab_slice_ids: 'Optional[pt.Tensor]'=None, target_factors: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         best_word_index = pt.argmin(scores, dim=-1, keepdim=True)
         if vocab_slice_ids is not None:
             best_word_index = vocab_slice_ids.index_select(0, best_word_index.squeeze(1)).unsqueeze(1)
@@ -537,43 +539,352 @@ class GreedyTop1(pt.nn.Module):
         return best_word_index
 
 
-class SafeLoaderWithTuple(yaml.SafeLoader):
-
-    def construct_python_tuple(self, node):
-        return tuple(self.construct_sequence(node))
-
-
-class TaggedYamlObjectMetaclass(yaml.YAMLObjectMetaclass):
-
-    def __init__(cls, name, bases, kwds):
-        cls.yaml_tag = '!' + name
-        new_kwds = {}
-        new_kwds.update(kwds)
-        new_kwds['yaml_tag'] = '!' + name
-        super().__init__(name, bases, new_kwds)
+@dataclass
+class SearchResult:
+    """
+    Holds return values from Search algorithms
+    """
+    best_hyp_indices: 'pt.Tensor'
+    best_word_indices: 'pt.Tensor'
+    accumulated_scores: 'pt.Tensor'
+    lengths: 'pt.Tensor'
+    estimated_reference_lengths: 'pt.Tensor'
 
 
-class _Inference(ABC):
+def _get_nvs_vocab_slice_ids(nvs_thresh: 'float', nvs_prediction: 'pt.Tensor', restrict_lexicon: 'Optional[lexicon.RestrictLexicon]'=None, target_prefix: 'Optional[pt.Tensor]'=None):
+    """
+    Return the vocab slice ids based on the Neural Vocabulary Selection model's predictions.
+    :param nvs_thresh: The threshold for selecting a word (between 0.0 and 1.0).
+    :param nvs_prediction: Shape: (batch size, vocab_size).
+    :param restrict_lexicon: An optional blocking lexicon to forcefully turn specific words off.
+    :param target_prefix: Shape: (batch size, vocab_size).
+    """
+    nvs_prediction_above_thresh = nvs_prediction > nvs_thresh
+    if nvs_prediction_above_thresh.shape[0] > 1:
+        nvs_prediction_above_thresh = pt.any(nvs_prediction_above_thresh, dim=0, keepdim=True)
+    if restrict_lexicon is not None:
+        utils.check_condition(restrict_lexicon.is_blocking() and not restrict_lexicon.requires_src_ids(), 'Only a blocking, static lexicon is supported when Neural Vocabulary Selection (NVS) is used.')
+        blocked_tokens = pt.from_numpy(restrict_lexicon.get_blocked_trg_ids()).long()
+        nvs_prediction_above_thresh[0, blocked_tokens] = False
+    pt_symbols = pt.tensor([C.PAD_ID, C.UNK_ID, C.BOS_ID, C.EOS_ID], device=nvs_prediction_above_thresh.device)
+    nvs_prediction_above_thresh[0, pt_symbols] = True
+    if target_prefix is not None:
+        nvs_prediction_above_thresh[0, target_prefix.flatten().long()] = True
+    bow = nvs_prediction_above_thresh.nonzero(as_tuple=True)[1].unique()
+    if len(bow) % 8 != 0:
+        bow = pt.nn.functional.pad(bow, (0, 7 - (len(bow) - 1) % 8), mode='constant', value=C.EOS_ID)
+    output_vocab_size = bow.shape[0]
+    logger.debug(f'decoder softmax size: {output_vocab_size}')
+    return bow, output_vocab_size
+
+
+def _get_vocab_slice_ids(restrict_lexicon: 'lexicon.RestrictLexicon', source_words: 'pt.Tensor', eos_id: 'int', beam_size: 'int', target_prefix: 'Optional[pt.Tensor]'=None, output_vocab_size: 'Optional[int]'=None) ->Tuple[pt.Tensor, int]:
+    device = source_words.device
+    if not restrict_lexicon.is_blocking():
+        vocab_slice_ids_np = restrict_lexicon.get_allowed_trg_ids(source_words.cpu().int().numpy())
+    else:
+        utils.check_condition(output_vocab_size is not None, 'output_vocab_size required for blocking restrict lexicon.')
+        full_vocab = np.arange(0, output_vocab_size, dtype='int32')
+        source_ids = source_words.cpu().int().numpy() if restrict_lexicon.requires_src_ids() else None
+        vocab_slice_ids_np = np.setdiff1d(full_vocab, restrict_lexicon.get_blocked_trg_ids(source_ids), assume_unique=True)
+    vocab_slice_ids = pt.tensor(vocab_slice_ids_np, device=device, dtype=pt.int64)
+    if target_prefix is not None:
+        vocab_slice_ids = pt.concat([vocab_slice_ids, target_prefix.flatten().type(pt.int64)], -1).unique()
+    vocab_slice_ids = pt.nn.functional.pad(vocab_slice_ids, pad=(0, 7 - (vocab_slice_ids.size(-1) - 1) % 8), mode='constant', value=eos_id)
+    vocab_slice_ids_size = vocab_slice_ids.size()[0]
+    if vocab_slice_ids_size < beam_size + 1:
+        logger.warning('Padding vocab_slice_ids (%d) with EOS to have at least %d+1 elements to expand', vocab_slice_ids_size, beam_size)
+        n = beam_size - vocab_slice_ids_size + 1
+        vocab_slice_ids = pt.cat((vocab_slice_ids, pt.full((n,), fill_value=eos_id, device=device, dtype=pt.int32)), dim=0)
+    logger.debug(f'decoder softmax size: {vocab_slice_ids_size}')
+    return vocab_slice_ids, vocab_slice_ids_size
+
+
+class GreedySearch(Search):
+    """
+    Implements greedy search, not supporting various features from the BeamSearch class
+    (scoring, sampling, ensembling, batch decoding).
+    """
+
+    def __init__(self, dtype: 'pt.dtype', bos_id: 'int', eos_id: 'int', device: 'pt.device', num_source_factors: 'int', num_target_factors: 'int', inference: '_SingleModelInference', skip_nvs: 'bool'=False, nvs_thresh: 'float'=0.5):
+        super().__init__(dtype, bos_id, eos_id, device, num_source_factors, num_target_factors, skip_nvs, nvs_thresh)
+        self.output_vocab_size = inference.model_output_vocab_size
+        self.output_factor_vocab_size = inference.model_output_factor_vocab_size
+        self._inference = inference
+        assert inference._skip_softmax, 'skipping softmax must be enabled for GreedySearch'
+        self.work_block = GreedyTop1()
+
+    def forward(self, source: 'pt.Tensor', source_length: 'pt.Tensor', restrict_lexicon: 'Optional[lexicon.RestrictLexicon]'=None, max_output_lengths: 'pt.Tensor'=None, target_prefix: 'Optional[pt.Tensor]'=None, target_prefix_factors: 'Optional[pt.Tensor]'=None) ->SearchResult:
+        """
+        Translates a single sentence (batch_size=1) using greedy search.
+
+        :param source: Source ids. Shape: (batch_size=1, bucket_key, num_factors).
+        :param source_length: Valid source lengths. Shape: (batch_size=1,).
+        :param restrict_lexicon: Lexicon to use for vocabulary restriction.
+        :param max_output_lengths: ndarray of maximum output lengths per input in source.
+                Shape: (batch_size=1,). Dtype: int32.
+        :param target_prefix: Target prefix ids. Shape: (batch_size=1, max target prefix length).
+        :param target_prefix_factors: Target prefix factor ids.
+                Shape: (batch_size=1, max target prefix factors length, num_target_factors).
+        :return SearchResult.
+        """
+        batch_size = source.size()[0]
+        assert batch_size == 1, 'Greedy Search does not support batch_size != 1'
+        max_iterations = int(max_output_lengths.max().item())
+        logger.debug('max greedy search iterations: %d', max_iterations)
+        best_word_index = pt.full((batch_size, self.num_target_factors), fill_value=self.bos_id, device=self.device, dtype=pt.int32)
+        outputs = []
+        model_states, _, nvs_prediction = self._inference.encode_and_initialize(source, source_length)
+        vocab_slice_ids = None
+        output_vocab_size = self.output_vocab_size
+        if nvs_prediction is not None and not self.skip_nvs:
+            vocab_slice_ids, output_vocab_size = _get_nvs_vocab_slice_ids(self.nvs_thresh, nvs_prediction, restrict_lexicon=restrict_lexicon, target_prefix=target_prefix)
+        elif restrict_lexicon:
+            source_words = source[:, :, 0]
+            vocab_slice_ids, output_vocab_size = _get_vocab_slice_ids(restrict_lexicon, source_words, self.eos_id, beam_size=1, target_prefix=target_prefix, output_vocab_size=self.output_vocab_size)
+        self.update_output_vocab_size(output_vocab_size)
+        prefix_masks, prefix_masks_length = None, 0
+        if target_prefix is not None:
+            prefix_masks, prefix_masks_length = utils.gen_prefix_masking(target_prefix, self.output_vocab_size, self.dtype)
+            if vocab_slice_ids is not None:
+                prefix_masks = pt.index_select(prefix_masks, -1, vocab_slice_ids)
+        target_prefix_factor_masks, target_prefix_factor_length = None, 0
+        if target_prefix_factors is not None:
+            target_prefix_factor_masks, target_prefix_factor_length = utils.gen_prefix_masking(target_prefix_factors, self.output_factor_vocab_size, self.dtype)
+        t = 1
+        for t in range(1, max_iterations + 1):
+            target_prefix_factor_mask = target_prefix_factor_masks[:, t - 1] if target_prefix_factor_masks is not None and t <= target_prefix_factor_length else None
+            scores, model_states, target_factors = self._inference.decode_step(best_word_index, model_states, vocab_slice_ids, target_prefix_factor_mask, self.output_factor_vocab_size)
+            if prefix_masks is not None and t <= prefix_masks_length:
+                scores += prefix_masks[:, t - 1]
+            best_word_index = self.work_block(scores, vocab_slice_ids, target_factors)
+            outputs.append(best_word_index)
+            _best_word_index = best_word_index[:, 0]
+            if _best_word_index == self.eos_id or _best_word_index == C.PAD_ID:
+                break
+        logger.debug('Finished after %d out of %d steps.', t, max_iterations)
+        stacked_outputs = pt.stack(outputs, dim=2)
+        length = pt.tensor([t], dtype=pt.int32)
+        hyp_indices = pt.zeros(1, t + 1, dtype=pt.int32)
+        scores = pt.zeros(1, self.num_target_factors) - 1
+        return SearchResult(best_hyp_indices=hyp_indices, best_word_indices=stacked_outputs, accumulated_scores=scores, lengths=length, estimated_reference_lengths=None)
+
+
+class Decoder(pt.nn.Module):
+    """
+    Generic decoder interface.
+    A decoder needs to implement code to decode a target sequence known in advance (decode_sequence),
+    and code to decode a single word given its decoder state (decode_step).
+    The latter is typically used for inference graphs in beam search.
+    For the inference module to be able to keep track of decoder's states
+    a decoder provides methods to return initial states (init_states), state variables and their shapes.
+    """
+    __registry = {}
+
+    @classmethod
+    def register(cls, config_type: 'Type[DecoderConfig]'):
+        """
+        Registers decoder type for configuration. Suffix is appended to decoder prefix.
+
+        :param config_type: Configuration type for decoder.
+
+        :return: Class decorator.
+        """
+
+        def wrapper(target_cls):
+            cls.__registry[config_type] = target_cls
+            return target_cls
+        return wrapper
+
+    @classmethod
+    def get_decoder(cls, config: 'DecoderConfig', inference_only: 'bool', dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->'Decoder':
+        """
+        Creates decoder based on config type.
+
+        :param config: Decoder config.
+        :param inference_only: Create a decoder that is only used for inference.
+        :param dtype: Torch data type for parameters.
+        :param clamp_to_dtype: Avoid -inf/inf by clamping outputs to min/max
+                               finite values for their dtype.
+
+        :return: Decoder instance.
+        """
+        config_type = type(config)
+        if config_type not in cls.__registry:
+            raise ValueError('Unsupported decoder configuration %s' % config_type.__name__)
+        decoder_cls = cls.__registry[config_type]
+        return decoder_cls(config=config, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
 
     @abstractmethod
-    def state_structure(self):
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def set_inference_only(self, inference_only: 'bool'):
         raise NotImplementedError()
 
     @abstractmethod
-    def encode_and_initialize(self, inputs: pt.Tensor, valid_length: pt.Tensor):
+    def state_structure(self) ->str:
         raise NotImplementedError()
 
     @abstractmethod
-    def decode_step(self, step_input: pt.Tensor, states: List, vocab_slice_ids: Optional[pt.Tensor]=None, target_prefix_factor_mask: Optional[pt.Tensor]=None, factor_vocab_size: Optional[int]=None):
+    def init_state_from_encoder(self, encoder_outputs: 'pt.Tensor', encoder_valid_length: 'Optional[pt.Tensor]'=None, target_embed: 'Optional[pt.Tensor]'=None) ->List[pt.Tensor]:
         raise NotImplementedError()
 
-    @property
-    def model_output_vocab_size(self):
+    @abstractmethod
+    def decode_seq(self, inputs: 'pt.Tensor', states: 'List[pt.Tensor]') ->pt.Tensor:
+        """
+        Decodes a sequence of embedded target words and returns sequence of last decoder
+        representations for each time step.
+
+        :param inputs: Encoded source: (batch_size, source_encoded_max_length, encoder_depth).
+        :param states: List of initial states, as given by init_state_from_encoder().
+        :return: Decoder output. Shape: (batch_size, target_embed_max_length, decoder_depth).
+        """
         raise NotImplementedError()
 
-    @property
-    def model_output_factor_vocab_size(self):
+    @abstractmethod
+    def get_num_hidden(self):
         raise NotImplementedError()
+
+
+class TransformerDecoder(Decoder):
+    """
+    Transformer decoder as in Vaswani et al, 2017: Attention is all you need.
+    In training, computation scores for each position of the known target sequence are computed in parallel,
+    yielding most of the speedup.
+    At inference time, the decoder block is evaluated again and again over a maximum length input sequence that is
+    initially filled with zeros and grows during beam search with predicted tokens. Appropriate masking at every
+    time-step ensures correct self-attention scores and is updated with every step.
+
+    :param config: Transformer configuration.
+    :param inference_only: Only use the model for inference enabling some optimizations,
+                           such as disabling the auto-regressive mask.
+    :param dtype: Torch data type for parameters.
+    :param clamp_to_dtype: Avoid -inf/inf by clamping outputs to min/max finite
+                           values for their dtype.
+    """
+
+    def __init__(self, config: 'TransformerConfig', inference_only: 'bool'=False, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
+        Decoder.__init__(self)
+        pt.nn.Module.__init__(self)
+        self.config = config
+        self.pos_embedding = layers.PositionalEmbeddings(weight_type=self.config.positional_embedding_type, num_embed=self.config.model_size, max_seq_len=self.config.max_seq_len_target, scale_up_input=True, scale_down_positions=False, dtype=dtype)
+        self.autoregressive_mask = transformer.AutoRegressiveMask()
+        self.layers = pt.nn.ModuleList(transformer.TransformerDecoderBlock(config, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype) for _ in range(config.num_layers))
+        self.final_process = transformer.TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=self.config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.dropout = pt.nn.Dropout(p=self.config.dropout_prepost)
+        self.set_inference_only(inference_only)
+
+    def set_inference_only(self, inference_only: 'bool'):
+        """
+        Set inference_only.
+        """
+        self.inference_only = inference_only
+        for layer in self.layers:
+            layer.set_inference_only(inference_only)
+
+    def state_structure(self) ->str:
+        """
+        Returns the structure of states used for manipulation of the states.
+        Each state is either labeled 's' for step, 'b' for source_mask, 'd' for decoder, or 'e' for encoder.
+        """
+        structure = ''
+        if self.inference_only:
+            structure += C.STEP_STATE + C.MASK_STATE + C.ENCODER_STATE * self.config.num_layers
+        else:
+            structure += C.STEP_STATE + C.ENCODER_STATE + C.MASK_STATE
+        total_num_states = sum(layer.num_state_tensors for layer in self.layers)
+        structure += C.DECODER_STATE * total_num_states
+        return structure
+
+    def init_state_from_encoder(self, encoder_outputs: 'pt.Tensor', encoder_valid_length: 'Optional[pt.Tensor]'=None, target_embed: 'Optional[pt.Tensor]'=None) ->List[pt.Tensor]:
+        """
+        Returns the initial states given encoder output. States for teacher-forced training are encoder outputs
+        and a valid length mask for encoder outputs.
+        At inference, this method returns the following state tuple:
+        valid length bias, step state,
+        [projected encoder attention keys, projected encoder attention values] * num_layers,
+        [autoregressive state dummies] * num_layers.
+
+        :param encoder_outputs: Encoder outputs. Shape: (batch, source_length, encoder_dim).
+        :param encoder_valid_length: Valid lengths of encoder outputs. Shape: (batch, 2).
+        :param target_embed: Target-side embedding layer output. Shape: (batch, target_length, target_embedding_dim).
+        :return: Initial states.
+        """
+        source_max_len = encoder_outputs.size()[1]
+        source_mask = layers.prepare_source_length_mask(encoder_valid_length, self.config.attention_heads, source_max_len, mask_prepended_tokens=self.config.block_prepended_cross_attention)
+        if target_embed is None:
+            steps = pt.zeros_like(encoder_valid_length[:, :1])
+            source_mask = source_mask.view(-1, self.config.attention_heads, 1, source_max_len)
+        else:
+            target_length = target_embed.size()[1]
+            steps = pt.arange(0, target_length, device=target_embed.device).unsqueeze(0)
+            source_mask = source_mask.expand(-1, target_length, -1)
+            source_mask = source_mask.view(-1, self.config.attention_heads, target_length, source_max_len)
+        if self.inference_only:
+            states = [steps, source_mask]
+            encoder_outputs_t = encoder_outputs.transpose(1, 0)
+            for layer in self.layers:
+                enc_att_kv = layer.enc_attention.ff_kv(encoder_outputs_t)
+                states.append(enc_att_kv)
+        else:
+            states = [steps, encoder_outputs.transpose(1, 0), source_mask]
+        _batch_size = encoder_outputs.size()[0]
+        _device = encoder_outputs.device
+        _dtype = encoder_outputs.dtype
+        dummy_autoregr_states = [pt.zeros(layer.get_states_shape(_batch_size), device=_device, dtype=_dtype) for layer in self.layers for _ in range(layer.num_state_tensors)]
+        states += dummy_autoregr_states
+        return states
+
+    def decode_seq(self, inputs: 'pt.Tensor', states: 'List[pt.Tensor]') ->pt.Tensor:
+        """
+        Decodes a sequence of embedded target words and returns sequence of last decoder
+        representations for each time step.
+
+        :param inputs: Encoded source: (batch_size, source_encoded_max_length, encoder_depth).
+        :param states: List of initial states, as given by init_state_from_encoder().
+        :return: Decoder output. Shape: (batch_size, target_embed_max_length, decoder_depth).
+        """
+        outputs, _ = self.forward(inputs, states)
+        return outputs
+
+    def forward(self, step_input: 'pt.Tensor', states: 'List[pt.Tensor]') ->Tuple[pt.Tensor, List[pt.Tensor]]:
+        target_mask = None
+        if self.inference_only:
+            steps, source_mask, *other = states
+            source_encoded = None
+            enc_att_kv = other[:self.config.num_layers]
+            autoregr_states = other[self.config.num_layers:]
+        else:
+            if any(layer.needs_mask for layer in self.layers):
+                target_mask = self.autoregressive_mask(step_input)
+            steps, source_encoded, source_mask, *autoregr_states = states
+            enc_att_kv = [None for _ in range(self.config.num_layers)]
+        if any(layer.num_state_tensors > 1 for layer in self.layers):
+            states_iter = iter(autoregr_states)
+            autoregr_states = [list(islice(states_iter, 0, layer.num_state_tensors)) for layer in self.layers]
+        batch, heads, target_max_len, source_max_len = source_mask.size()
+        source_mask_view = source_mask.view(batch * heads, target_max_len, source_max_len)
+        target = self.pos_embedding(step_input, steps)
+        target = target.transpose(1, 0)
+        target = self.dropout(target)
+        new_autoregr_states = []
+        for layer, layer_autoregr_state, layer_enc_att_kv in zip(self.layers, autoregr_states, enc_att_kv):
+            target, new_layer_autoregr_state = layer(target=target, target_mask=target_mask, source=source_encoded, source_mask=source_mask_view, autoregr_states=layer_autoregr_state, enc_att_kv=layer_enc_att_kv)
+            new_autoregr_states += [*new_layer_autoregr_state]
+        target = self.final_process(target)
+        target = target.transpose(1, 0)
+        steps = steps + 1
+        if self.inference_only:
+            encoder_attention_keys_values = states[2:2 + self.config.num_layers]
+            new_states = [steps, states[1]] + encoder_attention_keys_values + new_autoregr_states
+        else:
+            new_states = [steps, states[1], states[2]] + new_autoregr_states
+        return target, new_states
+
+    def get_num_hidden(self):
+        return self.config.model_size
 
 
 class Encoder(pt.nn.Module):
@@ -588,7 +899,7 @@ class Encoder(pt.nn.Module):
         """
         raise NotImplementedError()
 
-    def get_encoded_seq_len(self, seq_len: int) ->int:
+    def get_encoded_seq_len(self, seq_len: 'int') ->int:
         """
         :return: The size of the encoded sequence.
         """
@@ -601,6 +912,111 @@ class Encoder(pt.nn.Module):
         return None
 
 
+class Embedding(Encoder):
+    """
+    Thin wrapper around PyTorch's Embedding op.
+
+    :param config: Embedding config.
+    :param embedding: pre-existing embedding Module.
+    :param dtype: Torch data type for parameters.
+    """
+
+    def __init__(self, config: 'EmbeddingConfig', embedding: 'Optional[pt.nn.Embedding]'=None, dtype: 'Optional[pt.dtype]'=None) ->None:
+        super().__init__()
+        self.config = config
+        if embedding is not None:
+            self.embedding = embedding
+        else:
+            self.embedding = pt.nn.Embedding(self.config.vocab_size, self.config.num_embed, sparse=self.config.allow_sparse_grad, dtype=dtype)
+        self.num_factors = self.config.num_factors
+        self.factor_embeds = pt.nn.ModuleList()
+        self.factor_combinations = []
+        if self.config.factor_configs is not None:
+            for i, fc in enumerate(self.config.factor_configs, 1):
+                if fc.share_embedding:
+                    factor_embed = self.embedding
+                else:
+                    factor_embed = pt.nn.Embedding(fc.vocab_size, fc.num_embed, sparse=self.config.allow_sparse_grad, dtype=dtype)
+                self.factor_embeds.append(factor_embed)
+                self.factor_combinations.append(fc.combine)
+        self.dropout = pt.nn.Dropout(p=self.config.dropout)
+
+    def forward(self, data: 'pt.Tensor') ->pt.Tensor:
+        primary_data = data[:, :, 0]
+        embedded = self.embedding(primary_data)
+        if self.num_factors > 1:
+            average_factors_embeds = []
+            concat_factors_embeds = []
+            sum_factors_embeds = []
+            for i, (factor_embedding, factor_combination) in enumerate(zip(self.factor_embeds, self.factor_combinations), 1):
+                factor_data = data[:, :, i]
+                factor_embedded = factor_embedding(factor_data)
+                if factor_combination == C.FACTORS_COMBINE_CONCAT:
+                    concat_factors_embeds.append(factor_embedded)
+                elif factor_combination == C.FACTORS_COMBINE_SUM:
+                    sum_factors_embeds.append(factor_embedded)
+                elif factor_combination == C.FACTORS_COMBINE_AVERAGE:
+                    average_factors_embeds.append(factor_embedded)
+                else:
+                    raise ValueError(f'Unknown combine value for factors: {factor_combination}')
+            if average_factors_embeds:
+                embedded = pt.mean(pt.stack([embedded] + average_factors_embeds, dim=0), dim=0)
+            if sum_factors_embeds:
+                for sum_factor_embed in sum_factors_embeds:
+                    embedded = embedded + sum_factor_embed
+            if concat_factors_embeds:
+                embedded = pt.cat([embedded] + concat_factors_embeds, dim=2)
+        if self.dropout is not None:
+            embedded = self.dropout(embedded)
+        return embedded
+
+    def get_num_hidden(self) ->int:
+        """
+        Return the representation size of this encoder.
+        """
+        return self.config.num_embed
+
+
+class TransformerEncoder(Encoder):
+    """
+    Non-recurrent encoder based on the transformer architecture in:
+
+    Attention Is All You Need, Figure 1 (left)
+    Vaswani et al. (https://arxiv.org/pdf/1706.03762.pdf).
+
+    :param config: Configuration for transformer encoder.
+    """
+
+    def __init__(self, config: 'transformer.TransformerConfig', inference_only: 'bool'=False, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
+        pt.nn.Module.__init__(self)
+        self.config = config
+        self.dropout = pt.nn.Dropout(p=config.dropout_prepost)
+        self.pos_embedding = layers.PositionalEmbeddings(weight_type=self.config.positional_embedding_type, num_embed=self.config.model_size, max_seq_len=self.config.max_seq_len_source, scale_up_input=True, scale_down_positions=False, dtype=dtype)
+        self.layers = pt.nn.ModuleList(transformer.TransformerEncoderBlock(config, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype) for _ in range(config.num_layers))
+        self.final_process = transformer.TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=self.config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+
+    def forward(self, data: 'pt.Tensor', valid_length: 'pt.Tensor') ->Tuple[pt.Tensor, pt.Tensor, pt.Tensor]:
+        data = self.pos_embedding(data)
+        if self.dropout is not None:
+            data = self.dropout(data)
+        _, max_len, __ = data.size()
+        single_head_att_mask = layers.prepare_source_length_mask(valid_length, self.config.attention_heads, max_length=max_len, expand=False)
+        att_mask = single_head_att_mask.unsqueeze(1).expand(-1, self.config.attention_heads, -1).reshape((-1, max_len)).unsqueeze(1)
+        att_mask = att_mask.expand(-1, max_len, -1)
+        data = data.transpose(1, 0)
+        for layer in self.layers:
+            data = layer(data, att_mask=att_mask)
+        data = self.final_process(data)
+        data = data.transpose(1, 0)
+        return data, valid_length, single_head_att_mask
+
+    def get_num_hidden(self) ->int:
+        """
+        Return the representation size of this encoder.
+        """
+        return self.config.model_size
+
+
 class LHUC(pt.nn.Module):
     """
     Learning Hidden Unit Contribution
@@ -611,11 +1027,11 @@ class LHUC(pt.nn.Module):
     :param num_hidden: Number of hidden units of the layer to be modified.
     """
 
-    def __init__(self, num_hidden: int, dtype: Optional[pt.dtype]=None) ->None:
+    def __init__(self, num_hidden: 'int', dtype: 'Optional[pt.dtype]'=None) ->None:
         super().__init__()
         self.weight = pt.nn.Parameter(pt.empty(num_hidden, dtype=dtype))
 
-    def forward(self, data: pt.Tensor) ->pt.Tensor:
+    def forward(self, data: 'pt.Tensor') ->pt.Tensor:
         weight = 2 * pt.sigmoid(self.weight)
         return weight * data
 
@@ -631,7 +1047,7 @@ class OutputLayer(pt.nn.Module):
     :param dtype: Torch data type for parameters.
     """
 
-    def __init__(self, hidden_size: int, vocab_size: int, weight: Optional[pt.nn.Parameter]=None, dtype: Optional[pt.dtype]=None) ->None:
+    def __init__(self, hidden_size: 'int', vocab_size: 'int', weight: 'Optional[pt.nn.Parameter]'=None, dtype: 'Optional[pt.dtype]'=None) ->None:
         super().__init__()
         self.vocab_size = vocab_size
         self.in_features = hidden_size
@@ -648,17 +1064,17 @@ class OutputLayer(pt.nn.Module):
     def extra_repr(self) ->str:
         return 'in_features={}, out_features={}, bias={} dtype={}'.format(self.in_features, self.out_features, self.bias is not None, self.weight.dtype)
 
-    def _is_new_slice(self, x: pt.Tensor) ->bool:
+    def _is_new_slice(self, x: 'pt.Tensor') ->bool:
         if x.size() != self.previous_slice_ids.size() or pt.any(x != self.previous_slice_ids):
             return True
         return False
 
-    def _take_slice(self, vocab_slice_ids: pt.Tensor) ->Tuple[pt.Tensor, pt.Tensor]:
+    def _take_slice(self, vocab_slice_ids: 'pt.Tensor') ->Tuple[pt.Tensor, pt.Tensor]:
         weight = self.weight[vocab_slice_ids]
         bias = self.bias[vocab_slice_ids]
         return weight, bias
 
-    def forward(self, data: pt.Tensor, vocab_slice_ids: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, data: 'pt.Tensor', vocab_slice_ids: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         if vocab_slice_ids is not None:
             if self._is_new_slice(vocab_slice_ids):
                 self.previous_slice_ids = vocab_slice_ids
@@ -685,7 +1101,7 @@ class KNN(pt.nn.Module):
                         between the query and the index.
     """
 
-    def __init__(self, keys_index: 'faiss.Index', vals: np.memmap, vocab_size: int, k=64, temperature=10, state_store: Optional[np.memmap]=None) ->None:
+    def __init__(self, keys_index: "'faiss.Index'", vals: 'np.memmap', vocab_size: 'int', k=64, temperature=10, state_store: 'Optional[np.memmap]'=None) ->None:
         super().__init__()
         self.keys_index = keys_index
         self.vals = vals
@@ -694,7 +1110,7 @@ class KNN(pt.nn.Module):
         self.temperature = temperature
         self.state_store = state_store
 
-    def forward(self, data: pt.Tensor):
+    def forward(self, data: 'pt.Tensor'):
         distances, indices = self.keys_index.search(data.cpu().numpy().astype(np.float32), self.k)
         y = self.vals[(indices + 1) % len(self.vals)]
         y[y == C.BOS_ID] = C.EOS_ID
@@ -723,7 +1139,7 @@ class LengthRatio(pt.nn.Module):
     :param dtype: Torch data type for parameters.
     """
 
-    def __init__(self, hidden_size: int, num_layers: int, dtype: Optional[pt.dtype]=None) ->None:
+    def __init__(self, hidden_size: 'int', num_layers: 'int', dtype: 'Optional[pt.dtype]'=None) ->None:
         utils.check_condition(num_layers >= 1, "LengthRatio's num_layers has to be >=1.")
         super().__init__()
         self.num_layers = num_layers
@@ -736,7 +1152,7 @@ class LengthRatio(pt.nn.Module):
         modules.append(pt.nn.Softplus())
         self.layers = pt.nn.Sequential(*modules)
 
-    def forward(self, source_encoded: pt.Tensor, source_encoded_length: pt.Tensor) ->pt.Tensor:
+    def forward(self, source_encoded: 'pt.Tensor', source_encoded_length: 'pt.Tensor') ->pt.Tensor:
         """
         Transformation to the length ratio. Returns a vector.
 
@@ -752,7 +1168,7 @@ class LengthRatio(pt.nn.Module):
 
 
 @pt.jit.script
-def interleaved_matmul_encdec_qk(q: pt.Tensor, kv: pt.Tensor, heads: int) ->pt.Tensor:
+def interleaved_matmul_encdec_qk(q: 'pt.Tensor', kv: 'pt.Tensor', heads: 'int') ->pt.Tensor:
     """
     Simple port of npx.interleaved_matmul_encdec_qk with PyTorch.
 
@@ -773,7 +1189,7 @@ def interleaved_matmul_encdec_qk(q: pt.Tensor, kv: pt.Tensor, heads: int) ->pt.T
 
 
 @pt.jit.script
-def interleaved_matmul_encdec_valatt(kv: pt.Tensor, att: pt.Tensor, heads: int) ->pt.Tensor:
+def interleaved_matmul_encdec_valatt(kv: 'pt.Tensor', att: 'pt.Tensor', heads: 'int') ->pt.Tensor:
     """
     Simple port of npx.interleaved_matmul_encdec_valatt with PyTorch.
     There is probably something to be gained by using views more
@@ -798,12 +1214,12 @@ def interleaved_matmul_encdec_valatt(kv: pt.Tensor, att: pt.Tensor, heads: int) 
 
 class DotAttentionCell(pt.nn.Module):
 
-    def __init__(self, dropout: float=0.0, heads: int=1) ->None:
+    def __init__(self, dropout: 'float'=0.0, heads: 'int'=1) ->None:
         super().__init__()
-        self.dropout = pt.nn.Dropout(p=dropout) if dropout > 0.0 else None
+        self.dropout = pt.nn.Dropout(p=dropout)
         self.heads = heads
 
-    def forward(self, queries: pt.Tensor, key_values: pt.Tensor, mask: Optional[pt.Tensor]=None):
+    def forward(self, queries: 'pt.Tensor', key_values: 'pt.Tensor', mask: 'Optional[pt.Tensor]'=None):
         """
         :param queries: Query tensor of shape (query_length, batch_size, hidden)
         :param key_values: Interleaved Key & value tensor of shape (key/value_length, batch_size, hidden * 2)
@@ -822,7 +1238,7 @@ class DotAttentionCell(pt.nn.Module):
         return interleaved_matmul_encdec_valatt(key_values, probs, heads=self.heads)
 
 
-def clamp_to_dtype_min_max(data: pt.Tensor) ->pt.Tensor:
+def clamp_to_dtype_min_max(data: 'pt.Tensor') ->pt.Tensor:
     """
     Clamp a tensor's values to the min and max for its dtype. This effectively
     pushes overflowed (infinite) values back into the finite range.
@@ -845,7 +1261,7 @@ class MultiHeadAttentionBase(pt.nn.Module):
                            values for their dtype.
     """
 
-    def __init__(self, depth_att: int=512, heads: int=8, depth_out: int=512, dropout: float=0.0, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, depth_att: 'int'=512, heads: 'int'=8, depth_out: 'int'=512, dropout: 'float'=0.0, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__()
         utils.check_condition(depth_att % heads == 0, 'Number of heads (%d) must divide attention depth (%d)' % (heads, depth_att))
         self.depth = depth_att
@@ -856,7 +1272,7 @@ class MultiHeadAttentionBase(pt.nn.Module):
         self.dot_att = DotAttentionCell(dropout=dropout, heads=heads)
         self.ff_out = pt.nn.Linear(in_features=depth_att, out_features=depth_out, bias=False, dtype=dtype)
 
-    def _attend(self, queries: pt.Tensor, key_values: pt.Tensor, mask: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def _attend(self, queries: 'pt.Tensor', key_values: 'pt.Tensor', mask: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         """
         Returns context vectors of multi-head dot attention.
 
@@ -895,7 +1311,14 @@ class AutoregressiveLayer(pt.nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def forward(self, inputs: pt.Tensor, previous_states: pt.Tensor, *args) ->Tuple:
+    def set_inference_only(self, inference_only: 'bool'):
+        """
+        Set inference_only.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def forward(self, inputs: 'pt.Tensor', previous_states: 'pt.Tensor', *args) ->Tuple:
         """
         :param inputs: layer input
         :param previous_states: Previous states array or list of arrays
@@ -919,12 +1342,18 @@ class MultiHeadSelfAttention(MultiHeadAttentionBase, AutoregressiveLayer):
                            values for their dtype.
     """
 
-    def __init__(self, depth_att: int=512, heads: int=8, depth_out: int=512, dropout: float=0.0, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, depth_att: 'int'=512, heads: 'int'=8, depth_out: 'int'=512, dropout: 'float'=0.0, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__(depth_att, heads, depth_out, dropout, dtype, clamp_to_dtype)
         self.depth_att = depth_att
         self.ff_in = pt.nn.Linear(in_features=depth_att, out_features=depth_att * 3, bias=False, dtype=dtype)
         self._drop_p = dropout
         self.kv_interleaved = False
+
+    def set_inference_only(self, inference_only: 'bool'):
+        """
+        Set inference_only. Not needed for MultiHeadSelfAttention.
+        """
+        raise NotImplementedError
 
     def separate_kv(self):
         """ write kv input projection parameters in non-interleaved format (compatible with F.multi_head_attention) """
@@ -947,7 +1376,7 @@ class MultiHeadSelfAttention(MultiHeadAttentionBase, AutoregressiveLayer):
         self.ff_in.weight.data[self.depth:, :] = pt.cat((k, v), dim=1).reshape(self.depth * 2, self.depth)
         self.kv_interleaved = True
 
-    def train(self, mode: bool=True):
+    def train(self, mode: 'bool'=True):
         """
         Overrides super().train() to ensure key-value parameters are stored in non-interleaved format during training
         and interleaved format during inference (mod.eval()).
@@ -968,14 +1397,14 @@ class MultiHeadSelfAttention(MultiHeadAttentionBase, AutoregressiveLayer):
         """ Whether the layer makes use of a mask tensor or not """
         return True
 
-    def get_state_shape(self, batch_size: int) ->Tuple:
+    def get_state_shape(self, batch_size: 'int') ->Tuple:
         """
         :param batch_size: current batch size
         :return: dimensions of each output state (assuming all of them have the same shape)
         """
         return 0, batch_size, self.depth_out * 2
 
-    def forward(self, inputs: pt.Tensor, previous_states: Optional[pt.Tensor]=None, mask: Optional[pt.Tensor]=None, **args) ->Tuple[pt.Tensor, pt.Tensor]:
+    def forward(self, inputs: 'pt.Tensor', previous_states: 'Optional[pt.Tensor]'=None, mask: 'Optional[pt.Tensor]'=None, **args) ->Tuple[pt.Tensor, pt.Tensor]:
         """
         Computes multi-head attention on a set of inputs, serving as queries, keys, and values.
         If sequence lengths are provided, they will be used to mask the attention scores.
@@ -1015,7 +1444,7 @@ class MultiHeadAttention(MultiHeadAttentionBase):
                            values for their dtype.
     """
 
-    def __init__(self, depth_att: int=512, heads: int=8, depth_out: int=512, dropout: float=0.0, depth_key_value: int=512, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, depth_att: 'int'=512, heads: 'int'=8, depth_out: 'int'=512, dropout: 'float'=0.0, depth_key_value: 'int'=512, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__(depth_att, heads, depth_out, dropout, dtype, clamp_to_dtype)
         self.ff_q = pt.nn.Linear(in_features=depth_out, out_features=depth_att, bias=False, dtype=dtype)
         self.ff_kv = pt.nn.Linear(in_features=depth_key_value, out_features=depth_att * 2, bias=False, dtype=dtype)
@@ -1043,7 +1472,7 @@ class MultiHeadAttention(MultiHeadAttentionBase):
         self.ff_kv.weight.data[:] = pt.cat((k, v), dim=1).reshape(self.depth * 2, self._depth_key_value)
         self.kv_interleaved = True
 
-    def train(self, mode: bool=True):
+    def train(self, mode: 'bool'=True):
         """
         Overrides super().train() to ensure key-value parameters are stored in non-interleaved format during training
         and interleaved format during inference (mod.eval()).
@@ -1054,7 +1483,7 @@ class MultiHeadAttention(MultiHeadAttentionBase):
             self.interleave_kv()
         return super().train(mode)
 
-    def forward(self, queries: pt.Tensor, key_values: pt.Tensor, mask: Optional[pt.Tensor]=None, projected_memory_kv: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, queries: 'pt.Tensor', key_values: 'pt.Tensor', mask: 'Optional[pt.Tensor]'=None, projected_memory_kv: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         """
         Computes multi-head attention for queries given a memory tensor.
         If sequence lengths are provided, they will be used to mask the attention scores.
@@ -1090,7 +1519,7 @@ class PositionalEmbeddings(pt.nn.Module):
     :param dtype: Torch data type for parameters.
     """
 
-    def __init__(self, weight_type: str, num_embed: int, max_seq_len: int, scale_up_input: bool, scale_down_positions: bool, dtype: Optional[pt.dtype]=None) ->None:
+    def __init__(self, weight_type: 'str', num_embed: 'int', max_seq_len: 'int', scale_up_input: 'bool', scale_down_positions: 'bool', dtype: 'Optional[pt.dtype]'=None) ->None:
         utils.check_condition(num_embed % 2 == 0, 'Positional embeddings require an even embedding size it is however %d.' % num_embed)
         super().__init__()
         self.weight_type = weight_type
@@ -1110,7 +1539,7 @@ class PositionalEmbeddings(pt.nn.Module):
         else:
             raise ValueError("weight_type '%s' is not supported!" % self.weight_type)
 
-    def forward(self, data: pt.Tensor, steps: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, data: 'pt.Tensor', steps: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         """
         Applies positional embeddings to input data.
 
@@ -1158,16 +1587,22 @@ class SSRU(AutoregressiveLayer):
                            values for their dtype.
     """
 
-    def __init__(self, model_size: int, inference_only: bool, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, model_size: 'int', inference_only: 'bool', dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__()
         self.model_size = model_size
-        self.inference_only = inference_only
         self.clamp_to_dtype = clamp_to_dtype
-        self.cell_state_transform = self._inference_cell_state_transform if inference_only else self._training_cell_state_transform
+        self.set_inference_only(inference_only)
         self.forget_gate = pt.nn.Linear(in_features=model_size, out_features=model_size, bias=True, dtype=dtype)
         self.forget_gate_act = pt.nn.Sigmoid()
         self.linear = pt.nn.Linear(in_features=model_size, out_features=model_size, bias=False, dtype=dtype)
         self.relu = pt.nn.ReLU(inplace=False)
+
+    def set_inference_only(self, inference_only: 'bool'):
+        """
+        Set inference_only.
+        """
+        self.inference_only = inference_only
+        self.cell_state_transform = self._inference_cell_state_transform if inference_only else self._training_cell_state_transform
 
     @property
     def num_state_tensors(self) ->int:
@@ -1179,7 +1614,7 @@ class SSRU(AutoregressiveLayer):
         """ Whether the layer makes use of a mask tensor or not """
         return False
 
-    def get_state_shape(self, batch_size: int) ->Tuple:
+    def get_state_shape(self, batch_size: 'int') ->Tuple:
         """
         :param batch_size: current batch size
         :return: dimensions of each output state (assuming all of them have the same shape)
@@ -1205,7 +1640,7 @@ class SSRU(AutoregressiveLayer):
         new_step_state = forget_rates * previous_cell_state + weighted_inputs
         return new_step_state, new_step_state
 
-    def forward(self, inputs: pt.Tensor, previous_states: pt.Tensor, **args) ->Tuple[pt.Tensor, pt.Tensor]:
+    def forward(self, inputs: 'pt.Tensor', previous_states: 'pt.Tensor', **args) ->Tuple[pt.Tensor, pt.Tensor]:
         """
         :param inputs: input data. Shape: (max_length, batch, input_depth).
         :param previous_states: previous cell states. Shape: (max_length, batch, input_depth)
@@ -1227,7 +1662,7 @@ class Loss(pt.nn.Module):
     as well as a weight (default 1.0) and a method to create the corresponding metric.
     """
 
-    def __init__(self, name: str, output_name: str, label_name: str, weight: float=1.0, metric_prefix: str='') ->None:
+    def __init__(self, name: 'str', output_name: 'str', label_name: 'str', weight: 'float'=1.0, metric_prefix: 'str'='') ->None:
         super().__init__()
         self._name = name
         self._output_name = output_name
@@ -1237,7 +1672,7 @@ class Loss(pt.nn.Module):
         self._metric_prefix = metric_prefix
         logger.info("Loss: %s | weight=%.2f | metric: %s (%s) | output_name: '%s' | label_name: '%s'", self._name, self.weight, self.metric.name, self.metric.short_name, self.output_name, self.label_name)
 
-    def __call__(self, outputs: Dict[str, Any], labels: Dict[str, Any]):
+    def __call__(self, outputs: 'Dict[str, Any]', labels: 'Dict[str, Any]'):
         """
         Loss retrieves the required output and label.
         """
@@ -1279,7 +1714,7 @@ class Loss(pt.nn.Module):
 
 class LossMetric(ABC):
 
-    def __init__(self, name: str, short_name: Optional[str]=None, prefix: str='') ->None:
+    def __init__(self, name: 'str', short_name: 'Optional[str]'=None, prefix: 'str'='') ->None:
         self._name = prefix + name
         self._short_name = prefix + short_name if short_name else self._name
         self._sum = 0.0
@@ -1314,24 +1749,71 @@ class LossMetric(ABC):
 class DynamicBCEWithLogitsLoss(pt.nn.BCEWithLogitsLoss):
     """ A version of BCEWithLogitsLoss where the pos_weight can be supplied dynamically in the `forward` call. """
 
-    def __init__(self, weight: Optional[pt.Tensor]=None, size_average=None, reduce=None, reduction: str='mean', pos_weight: Optional[pt.Tensor]=None) ->None:
+    def __init__(self, weight: 'Optional[pt.Tensor]'=None, size_average=None, reduce=None, reduction: 'str'='mean', pos_weight: 'Optional[pt.Tensor]'=None) ->None:
         super().__init__(reduction=reduction)
         self.register_buffer('weight', weight)
         self.register_buffer('pos_weight', pos_weight)
-        self.weight: Optional[pt.Tensor]
-        self.pos_weight: Optional[pt.Tensor]
+        self.weight: 'Optional[pt.Tensor]'
+        self.pos_weight: 'Optional[pt.Tensor]'
 
-    def forward(self, input: pt.Tensor, target: pt.Tensor, pos_weight: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, input: 'pt.Tensor', target: 'pt.Tensor', pos_weight: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         if pos_weight is None:
             pos_weight = self.pos_weight
         return pt.nn.functional.binary_cross_entropy_with_logits(input, target, self.weight, pos_weight=pos_weight, reduction=self.reduction)
 
 
 @pt.jit.script
-def _label_to_bow(label: pt.Tensor, num_labels: int):
+def _label_to_bow(label: 'pt.Tensor', num_labels: 'int'):
     bow = pt.zeros(label.shape[0], num_labels, device=label.device)
     bow[pt.arange(0, label.shape[0], dtype=pt.int64)[:, np.newaxis], label.long()] = 1.0
     return bow
+
+
+class SafeLoaderWithTuple(yaml.SafeLoader):
+
+    def construct_python_tuple(self, node):
+        return tuple(self.construct_sequence(node))
+
+
+class TaggedYamlObjectMetaclass(yaml.YAMLObjectMetaclass):
+
+    def __init__(cls, name, bases, kwds):
+        cls.yaml_tag = '!' + name
+        new_kwds = {}
+        new_kwds.update(kwds)
+        new_kwds['yaml_tag'] = '!' + name
+        super().__init__(name, bases, new_kwds)
+
+
+class _DecodeStep(pt.nn.Module):
+    """
+    Auxiliary module that wraps computation for a single decode step for a SockeyeModel.
+    End-to-end traceable. Return values are put into a flat list to avoid return type constraints
+    for traced modules.
+    """
+
+    def __init__(self, embedding_target: 'encoder.Embedding', decoder: 'decoder.Decoder', output_layer: 'layers.OutputLayer', factor_output_layers: 'pt.nn.ModuleList', knn: 'Optional[layers.KNN]'=None):
+        super().__init__()
+        self.embedding_target = embedding_target
+        self.decoder = decoder
+        self.output_layer = pt.jit.script(output_layer)
+        self.factor_output_layers = factor_output_layers
+        self.has_target_factors = bool(factor_output_layers)
+        self.knn = knn
+
+    def forward(self, step_input, states: 'List[pt.Tensor]', vocab_slice_ids: 'Optional[pt.Tensor]'=None) ->List[pt.Tensor]:
+        target_embed = self.embedding_target(step_input.unsqueeze(1))
+        decoder_out, new_states = self.decoder(target_embed, states)
+        decoder_out = decoder_out.squeeze(1)
+        step_output = self.output_layer(decoder_out, vocab_slice_ids)
+        outputs = [step_output, decoder_out]
+        if self.has_target_factors:
+            outputs += [fol(decoder_out) for fol in self.factor_output_layers]
+        outputs += new_states
+        return outputs
+
+
+_EOP_TAG = '<EOP>'
 
 
 class ModelWithLoss(torch.nn.Module):
@@ -1346,12 +1828,12 @@ class ModelWithLoss(torch.nn.Module):
              samples.
     """
 
-    def __init__(self, model: torch.nn.Module, losses: List[loss.Loss]) ->None:
+    def __init__(self, model: 'torch.nn.Module', losses: 'List[loss.Loss]') ->None:
         super().__init__()
         self.model = model
         self.losses = losses
 
-    def forward(self, source: torch.Tensor, source_length: torch.Tensor, target: torch.Tensor, target_length: torch.Tensor, labels: Dict[str, torch.Tensor]) ->Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
+    def forward(self, source: 'torch.Tensor', source_length: 'torch.Tensor', target: 'torch.Tensor', target_length: 'torch.Tensor', labels: 'Dict[str, torch.Tensor]') ->Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
         model_outputs = self.model(source, source_length, target, target_length)
         if utils.using_deepspeed():
             model_outputs = {output_name: output for output_name, output in model_outputs.items()}
@@ -1363,17 +1845,15 @@ class ModelWithLoss(torch.nn.Module):
 
 class TransformerFeedForward(pt.nn.Module):
 
-    def __init__(self, num_hidden: int, num_model: int, act_type: str, dropout: float, use_glu: bool=False, inference_only: bool=False, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, num_hidden: 'int', num_model: 'int', act_type: 'str', dropout: 'float', use_glu: 'bool'=False, inference_only: 'bool'=False, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__()
-        self.dropout = dropout
         self.use_glu = use_glu
         self.clamp_to_dtype = clamp_to_dtype
         self.ff1 = pt.nn.Linear(in_features=num_model, out_features=num_hidden, dtype=dtype)
-        self.act = sockeye.layers.get_activation(act_type, inplace=inference_only)
+        self.act = sockeye.layers.get_activation(act_type)
         if self.use_glu:
             self.linear = pt.nn.Linear(in_features=num_model, out_features=num_hidden, dtype=dtype)
-        if self.dropout > 0.0:
-            self.drop = pt.nn.Dropout(p=self.dropout, inplace=inference_only)
+        self.drop = pt.nn.Dropout(p=dropout)
         self.ff2 = pt.nn.Linear(in_features=num_hidden, out_features=num_model, dtype=dtype)
 
     def forward(self, x):
@@ -1381,8 +1861,7 @@ class TransformerFeedForward(pt.nn.Module):
         h = self.act(h)
         if self.use_glu:
             h = h * self.linear(x)
-        if self.dropout > 0.0:
-            h = self.drop(h)
+        h = self.drop(h)
         y = self.ff2(h)
         if self.clamp_to_dtype:
             y = sockeye.layers.clamp_to_dtype_min_max(y)
@@ -1398,7 +1877,7 @@ class TransformerProcessBlock(pt.nn.Module):
     d: dropout
     """
 
-    def __init__(self, sequence: str, dropout: float, num_hidden: int=0, dtype: Optional[pt.dtype]=None, clamp_to_dtype: bool=False) ->None:
+    def __init__(self, sequence: 'str', dropout: 'float', num_hidden: 'int'=0, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
         super().__init__()
         self.sequence = sequence
         self.clamp_to_dtype = clamp_to_dtype
@@ -1406,10 +1885,9 @@ class TransformerProcessBlock(pt.nn.Module):
         if 'n' in sequence:
             self.layer_norm = pt.nn.LayerNorm(num_hidden, eps=1e-06, dtype=dtype)
         self.dropout = dropout
-        if dropout > 0.0:
-            self.drop = pt.nn.Dropout(p=dropout)
+        self.drop = pt.nn.Dropout(p=dropout)
 
-    def forward(self, data: pt.Tensor, prev: Optional[pt.Tensor]=None) ->pt.Tensor:
+    def forward(self, data: 'pt.Tensor', prev: 'Optional[pt.Tensor]'=None) ->pt.Tensor:
         """
         Apply processing sequence to data with optional previous input.
 
@@ -1427,8 +1905,7 @@ class TransformerProcessBlock(pt.nn.Module):
             elif step == 'n':
                 data = self.layer_norm(data)
             elif step == 'd':
-                if self.dropout > 0.0:
-                    data = self.drop(data)
+                data = self.drop(data)
             else:
                 raise ValueError('Unknown step in sequence: %s' % step)
         if self.clamp_to_dtype:
@@ -1436,9 +1913,108 @@ class TransformerProcessBlock(pt.nn.Module):
         return data
 
 
+class TransformerEncoderBlock(pt.nn.Module):
+    """
+    A transformer encoder block consists self-attention and a feed-forward layer with pre/post process blocks
+    in between.
+    """
+
+    def __init__(self, config: 'TransformerConfig', inference_only: 'bool'=False, dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
+        super().__init__()
+        self.pre_self_attention = TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.self_attention = sockeye.layers.MultiHeadSelfAttention(depth_att=config.model_size, heads=config.attention_heads, depth_out=config.model_size, dropout=config.dropout_attention, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.post_self_attention = TransformerProcessBlock(sequence=config.postprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.pre_ff = TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.ff = TransformerFeedForward(num_hidden=config.feed_forward_num_hidden, num_model=config.model_size, act_type=config.act_type, dropout=config.dropout_act, use_glu=config.use_glu, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.post_ff = TransformerProcessBlock(sequence=config.postprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.lhuc = None
+        if config.use_lhuc:
+            self.lhuc = sockeye.layers.LHUC(config.model_size, dtype=dtype)
+
+    def forward(self, data: 'pt.Tensor', att_mask: 'pt.Tensor'=None) ->pt.Tensor:
+        """
+        :param data: Input tensor of shape (length, batch_size, hidden)
+        :param att_mask: Optional data length mask of shape (batch_size * self.heads, 1, length)
+                         to mask self-attention scores. True for padding positions.
+        """
+        data_self_att, _ = self.self_attention(inputs=self.pre_self_attention(data), previous_states=None, mask=att_mask, bias=None)
+        data = self.post_self_attention(data_self_att, data)
+        data_ff = self.ff(self.pre_ff(data))
+        data = self.post_ff(data_ff, data)
+        if self.lhuc is not None:
+            data = self.lhuc(data)
+        return data
+
+
+class TransformerDecoderBlock(pt.nn.Module):
+    """
+    A transformer decoder block consists of an autoregressive attention block, encoder attention,
+    and a feed-forward layer with pre/post process blocks in between.
+    """
+
+    def __init__(self, config: 'TransformerConfig', inference_only: 'bool', dtype: 'Optional[pt.dtype]'=None, clamp_to_dtype: 'bool'=False) ->None:
+        super().__init__()
+        self.decoder_type = config.decoder_type
+        self.inference_only = inference_only
+        self.autoregr_layer = None
+        if self.decoder_type == C.TRANSFORMER_TYPE:
+            self.autoregr_layer = sockeye.layers.MultiHeadSelfAttention(depth_att=config.model_size, heads=config.attention_heads, depth_out=config.model_size, dropout=config.dropout_attention, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        elif self.decoder_type == C.SSRU_TRANSFORMER:
+            self.autoregr_layer = sockeye.layers.SSRU(model_size=config.model_size, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        else:
+            raise ValueError('Invalid decoder type.')
+        self.pre_autoregr_layer = TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.post_autoregr_layer = TransformerProcessBlock(sequence=config.postprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.pre_enc_attention = TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.enc_attention = sockeye.layers.MultiHeadAttention(depth_att=config.model_size, heads=config.attention_heads, depth_out=config.model_size, dropout=config.dropout_attention, depth_key_value=config.depth_key_value, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.post_enc_attention = TransformerProcessBlock(sequence=config.postprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.pre_ff = TransformerProcessBlock(sequence=config.preprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.ff = TransformerFeedForward(num_hidden=config.feed_forward_num_hidden, num_model=config.model_size, act_type=config.act_type, dropout=config.dropout_act, use_glu=config.use_glu, inference_only=inference_only, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.post_ff = TransformerProcessBlock(sequence=config.postprocess_sequence, dropout=config.dropout_prepost, num_hidden=config.model_size, dtype=dtype, clamp_to_dtype=clamp_to_dtype)
+        self.lhuc = None
+        if config.use_lhuc:
+            self.lhuc = sockeye.layers.LHUC(config.model_size, dtype=dtype)
+
+    def set_inference_only(self, inference_only: 'bool'):
+        """
+        Set inference_only.
+        """
+        self.inference_only = inference_only
+        if self.decoder_type == C.SSRU_TRANSFORMER:
+            self.autoregr_layer.set_inference_only(inference_only)
+
+    @property
+    def num_state_tensors(self) ->int:
+        """ Number of state tensors returned by the layer """
+        return self.autoregr_layer.num_state_tensors
+
+    @property
+    def needs_mask(self):
+        """ Whether the block makes use of a mask tensor or not """
+        return self.autoregr_layer.needs_mask
+
+    def get_states_shape(self, batch_size: 'int') ->Tuple:
+        """
+        :param batch_size: current batch size
+        :return: dimensions of an output state (assuming all of them have the same shape)
+        """
+        return self.autoregr_layer.get_state_shape(batch_size)
+
+    def forward(self, target: 'pt.Tensor', target_mask: 'Optional[pt.Tensor]', source: 'pt.Tensor', source_mask: 'Optional[pt.Tensor]', autoregr_states: 'Optional[pt.Tensor]', enc_att_kv: 'Optional[pt.Tensor]'=None) ->Tuple[pt.Tensor, pt.Tensor]:
+        target_autoregr, *new_autoregr_states = self.autoregr_layer(inputs=self.pre_autoregr_layer(target), previous_states=autoregr_states, mask=target_mask)
+        target = self.post_autoregr_layer(target_autoregr, target)
+        target_enc_att = self.enc_attention(queries=self.pre_enc_attention(target), key_values=source, mask=source_mask, projected_memory_kv=enc_att_kv)
+        target = self.post_enc_attention(target_enc_att, target)
+        target_ff = self.ff(self.pre_ff(target))
+        target = self.post_ff(target_ff, target)
+        if self.lhuc:
+            target = self.lhuc(target)
+        return target, new_autoregr_states
+
+
 class AutoRegressiveMask(pt.nn.Module):
 
-    def forward(self, x: pt.Tensor) ->pt.Tensor:
+    def forward(self, x: 'pt.Tensor') ->pt.Tensor:
         """ Input tensor with length on dimension 1 """
         mask = pt.full((x.shape[1], x.shape[1]), fill_value=1, device=x.device, dtype=pt.bool)
         mask = pt.triu(mask, diagonal=1)

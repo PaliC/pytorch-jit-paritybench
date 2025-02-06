@@ -440,7 +440,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -803,17 +805,17 @@ class FairseqIncrementalState(object):
     def init_incremental_state(self):
         self._incremental_state_id = str(uuid.uuid4())
 
-    def _get_full_incremental_state_key(self, key: str) ->str:
+    def _get_full_incremental_state_key(self, key: 'str') ->str:
         return '{}.{}'.format(self._incremental_state_id, key)
 
-    def get_incremental_state(self, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]], key: str) ->Optional[Dict[str, Optional[Tensor]]]:
+    def get_incremental_state(self, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]', key: 'str') ->Optional[Dict[str, Optional[Tensor]]]:
         """Helper for getting incremental state for an nn.Module."""
         full_key = self._get_full_incremental_state_key(key)
         if incremental_state is None or full_key not in incremental_state:
             return None
         return incremental_state[full_key]
 
-    def set_incremental_state(self, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]], key: str, value: Dict[str, Optional[Tensor]]) ->Optional[Dict[str, Dict[str, Optional[Tensor]]]]:
+    def set_incremental_state(self, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]', key: 'str', value: 'Dict[str, Optional[Tensor]]') ->Optional[Dict[str, Dict[str, Optional[Tensor]]]]:
         """Helper for setting incremental state for an nn.Module."""
         if incremental_state is not None:
             full_key = self._get_full_incremental_state_key(key)
@@ -910,7 +912,7 @@ class MultiheadLinearAttention(nn.Module):
         if self.bias_v is not None:
             nn.init.xavier_normal_(self.bias_v)
 
-    def forward(self, query, key: Optional[Tensor], value: Optional[Tensor], key_padding_mask: Optional[Tensor]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, need_weights: bool=True, static_kv: bool=False, attn_mask: Optional[Tensor]=None, before_softmax: bool=False, need_head_weights: bool=False) ->Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, query, key: 'Optional[Tensor]', value: 'Optional[Tensor]', key_padding_mask: 'Optional[Tensor]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, need_weights: 'bool'=True, static_kv: 'bool'=False, attn_mask: 'Optional[Tensor]'=None, before_softmax: 'bool'=False, need_head_weights: 'bool'=False) ->Tuple[Tensor, Optional[Tensor]]:
         """Input shape: Time x Batch x Channel
 
         Args:
@@ -998,7 +1000,7 @@ class MultiheadLinearAttention(nn.Module):
                 else:
                     assert v is not None
                     v = torch.cat([prev_value, v], dim=1)
-            prev_key_padding_mask: Optional[Tensor] = None
+            prev_key_padding_mask: 'Optional[Tensor]' = None
             if 'prev_key_padding_mask' in saved_state:
                 prev_key_padding_mask = saved_state['prev_key_padding_mask']
             assert k is not None and v is not None
@@ -1038,7 +1040,7 @@ class MultiheadLinearAttention(nn.Module):
         else:
             attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)
         attn = self.out_proj(attn)
-        attn_weights: Optional[Tensor] = None
+        attn_weights: 'Optional[Tensor]' = None
         if need_weights:
             attn_weights = attn_weights_float.view(bsz, self.num_heads, tgt_len, src_len).transpose(1, 0)
             if not need_head_weights:
@@ -1046,7 +1048,7 @@ class MultiheadLinearAttention(nn.Module):
         return attn, attn_weights
 
     @staticmethod
-    def _append_prev_key_padding_mask(key_padding_mask: Optional[Tensor], prev_key_padding_mask: Optional[Tensor], batch_size: int, src_len: int, static_kv: bool) ->Optional[Tensor]:
+    def _append_prev_key_padding_mask(key_padding_mask: 'Optional[Tensor]', prev_key_padding_mask: 'Optional[Tensor]', batch_size: 'int', src_len: 'int', static_kv: 'bool') ->Optional[Tensor]:
         if prev_key_padding_mask is not None and static_kv:
             new_key_padding_mask = prev_key_padding_mask
         elif prev_key_padding_mask is not None and key_padding_mask is not None:
@@ -1062,7 +1064,7 @@ class MultiheadLinearAttention(nn.Module):
         return new_key_padding_mask
 
     @torch.jit.export
-    def reorder_incremental_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order: Tensor):
+    def reorder_incremental_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order: 'Tensor'):
         """Reorder buffered internal state (for incremental generation)."""
         input_buffer = self._get_input_buffer(incremental_state)
         if input_buffer is not None:
@@ -1075,18 +1077,18 @@ class MultiheadLinearAttention(nn.Module):
             incremental_state = self._set_input_buffer(incremental_state, input_buffer)
         return incremental_state
 
-    def _get_input_buffer(self, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]) ->Dict[str, Optional[Tensor]]:
+    def _get_input_buffer(self, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]') ->Dict[str, Optional[Tensor]]:
         result = self.get_incremental_state(incremental_state, 'attn_state')
         if result is not None:
             return result
         else:
-            empty_result: Dict[str, Optional[Tensor]] = {}
+            empty_result: 'Dict[str, Optional[Tensor]]' = {}
             return empty_result
 
-    def _set_input_buffer(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], buffer: Dict[str, Optional[Tensor]]):
+    def _set_input_buffer(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', buffer: 'Dict[str, Optional[Tensor]]'):
         return self.set_incremental_state(incremental_state, 'attn_state', buffer)
 
-    def apply_sparse_mask(attn_weights, tgt_len: int, src_len: int, bsz: int):
+    def apply_sparse_mask(attn_weights, tgt_len: 'int', src_len: 'int', bsz: 'int'):
         return attn_weights
 
     def upgrade_state_dict_named(self, state_dict, name):
@@ -1120,7 +1122,7 @@ def Embedding(num_embeddings, embedding_dim, padding_idx):
     return m
 
 
-def safe_cumprod(tensor, dim: int, eps: float=1e-10):
+def safe_cumprod(tensor, dim: 'int', eps: 'float'=1e-10):
     """
     An implementation of cumprod to prevent precision issue.
     cumprod(x)
@@ -1136,7 +1138,7 @@ def safe_cumprod(tensor, dim: int, eps: float=1e-10):
     return exp_cumsum_log_tensor
 
 
-def exclusive_cumprod(tensor, dim: int, eps: float=1e-10):
+def exclusive_cumprod(tensor, dim: 'int', eps: 'float'=1e-10):
     """
     Implementing exclusive cumprod.
     There is cumprod in pytorch, however there is no exclusive mode.
@@ -1346,13 +1348,13 @@ class FairseqDropout(nn.Module):
         self.module_name = module_name
         self.apply_during_inference = False
 
-    def forward(self, x, inplace: bool=False):
+    def forward(self, x, inplace: 'bool'=False):
         if self.training or self.apply_during_inference:
             return F.dropout(x, p=self.p, training=True, inplace=inplace)
         else:
             return x
 
-    def make_generation_fast_(self, name: str, retain_dropout: bool=False, retain_dropout_modules: Optional[List[str]]=None, **kwargs):
+    def make_generation_fast_(self, name: 'str', retain_dropout: 'bool'=False, retain_dropout_modules: 'Optional[List[str]]'=None, **kwargs):
         if retain_dropout:
             if retain_dropout_modules is not None and self.module_name is None:
                 logger.warning('Cannot enable dropout during inference for module {} because module_name was not set'.format(name))
@@ -1363,7 +1365,7 @@ class FairseqDropout(nn.Module):
                 logger.info('Disabling dropout for module: {}'.format(name))
 
 
-def multi_head_attention_forward_temp(query: Tensor, key: Tensor, value: Tensor, embed_dim_to_check: int, num_heads: int, in_proj_weight: Tensor, in_proj_bias: Tensor, bias_k: Optional[Tensor], bias_v: Optional[Tensor], add_zero_attn: bool, dropout_p: float, out_proj_weight: Tensor, out_proj_bias: Tensor, training: bool=True, key_padding_mask: Optional[Tensor]=None, need_weights: bool=True, attn_mask: Optional[Tensor]=None, use_separate_proj_weight: bool=False, q_proj_weight: Optional[Tensor]=None, k_proj_weight: Optional[Tensor]=None, v_proj_weight: Optional[Tensor]=None, static_k: Optional[Tensor]=None, static_v: Optional[Tensor]=None, q_proj_bias=None, k_proj_bias=None, v_proj_bias=None):
+def multi_head_attention_forward_temp(query: 'Tensor', key: 'Tensor', value: 'Tensor', embed_dim_to_check: 'int', num_heads: 'int', in_proj_weight: 'Tensor', in_proj_bias: 'Tensor', bias_k: 'Optional[Tensor]', bias_v: 'Optional[Tensor]', add_zero_attn: 'bool', dropout_p: 'float', out_proj_weight: 'Tensor', out_proj_bias: 'Tensor', training: 'bool'=True, key_padding_mask: 'Optional[Tensor]'=None, need_weights: 'bool'=True, attn_mask: 'Optional[Tensor]'=None, use_separate_proj_weight: 'bool'=False, q_proj_weight: 'Optional[Tensor]'=None, k_proj_weight: 'Optional[Tensor]'=None, v_proj_weight: 'Optional[Tensor]'=None, static_k: 'Optional[Tensor]'=None, static_v: 'Optional[Tensor]'=None, q_proj_bias=None, k_proj_bias=None, v_proj_bias=None):
     if not torch.jit.is_scripting():
         tens_ops = query, key, value, in_proj_weight, in_proj_bias, bias_k, bias_v, out_proj_weight, out_proj_bias
         if any([(type(t) is not Tensor) for t in tens_ops]) and has_torch_function(tens_ops):
@@ -1492,7 +1494,7 @@ class MultiheadAttention(nn.Module):
         if self.bias_v is not None:
             nn.init.xavier_normal_(self.bias_v)
 
-    def forward(self, query, key: Optional[Tensor], value: Optional[Tensor], key_padding_mask: Optional[Tensor]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, need_weights: bool=True, static_kv: bool=False, attn_mask: Optional[Tensor]=None, before_softmax: bool=False, need_head_weights: bool=False) ->Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, query, key: 'Optional[Tensor]', value: 'Optional[Tensor]', key_padding_mask: 'Optional[Tensor]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, need_weights: 'bool'=True, static_kv: 'bool'=False, attn_mask: 'Optional[Tensor]'=None, before_softmax: 'bool'=False, need_head_weights: 'bool'=False) ->Tuple[Tensor, Optional[Tensor]]:
         """Input shape: Time x Batch x Channel
 
         Args:
@@ -1617,7 +1619,7 @@ class MultiheadAttention(nn.Module):
                 else:
                     assert v is not None
                     v = torch.cat([prev_value, v], dim=1)
-            prev_key_padding_mask: Optional[Tensor] = None
+            prev_key_padding_mask: 'Optional[Tensor]' = None
             if 'prev_key_padding_mask' in saved_state:
                 prev_key_padding_mask = saved_state['prev_key_padding_mask']
             assert k is not None and v is not None
@@ -1673,7 +1675,7 @@ class MultiheadAttention(nn.Module):
         else:
             attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)
         attn = self.out_proj(attn)
-        attn_weights: Optional[Tensor] = None
+        attn_weights: 'Optional[Tensor]' = None
         if need_weights:
             attn_weights = attn_weights_float.view(bsz, self.num_heads, tgt_len, src_len).transpose(1, 0)
             if not need_head_weights:
@@ -1681,7 +1683,7 @@ class MultiheadAttention(nn.Module):
         return attn, attn_weights
 
     @staticmethod
-    def _append_prev_key_padding_mask(key_padding_mask: Optional[Tensor], prev_key_padding_mask: Optional[Tensor], batch_size: int, src_len: int, static_kv: bool) ->Optional[Tensor]:
+    def _append_prev_key_padding_mask(key_padding_mask: 'Optional[Tensor]', prev_key_padding_mask: 'Optional[Tensor]', batch_size: 'int', src_len: 'int', static_kv: 'bool') ->Optional[Tensor]:
         if prev_key_padding_mask is not None and static_kv:
             new_key_padding_mask = prev_key_padding_mask
         elif prev_key_padding_mask is not None and key_padding_mask is not None:
@@ -1697,7 +1699,7 @@ class MultiheadAttention(nn.Module):
         return new_key_padding_mask
 
     @torch.jit.export
-    def reorder_incremental_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order: Tensor):
+    def reorder_incremental_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order: 'Tensor'):
         """Reorder buffered internal state (for incremental generation)."""
         input_buffer = self._get_input_buffer(incremental_state)
         if input_buffer is not None:
@@ -1710,18 +1712,18 @@ class MultiheadAttention(nn.Module):
             incremental_state = self._set_input_buffer(incremental_state, input_buffer)
         return incremental_state
 
-    def _get_input_buffer(self, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]) ->Dict[str, Optional[Tensor]]:
+    def _get_input_buffer(self, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]') ->Dict[str, Optional[Tensor]]:
         result = self.get_incremental_state(incremental_state, 'attn_state')
         if result is not None:
             return result
         else:
-            empty_result: Dict[str, Optional[Tensor]] = {}
+            empty_result: 'Dict[str, Optional[Tensor]]' = {}
             return empty_result
 
-    def _set_input_buffer(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], buffer: Dict[str, Optional[Tensor]]):
+    def _set_input_buffer(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', buffer: 'Dict[str, Optional[Tensor]]'):
         return self.set_incremental_state(incremental_state, 'attn_state', buffer)
 
-    def apply_sparse_mask(attn_weights, tgt_len: int, src_len: int, bsz: int):
+    def apply_sparse_mask(attn_weights, tgt_len: 'int', src_len: 'int', bsz: 'int'):
         return attn_weights
 
     def upgrade_state_dict_named(self, state_dict, name):
@@ -1823,7 +1825,7 @@ class MonotonicMultiheadAttentionHard(MonotonicAttention, MultiheadAttention):
         return v_proj
 
 
-def lengths_to_mask(lengths, max_len: int, dim: int=0, negative_mask: bool=False):
+def lengths_to_mask(lengths, max_len: 'int', dim: 'int'=0, negative_mask: 'bool'=False):
     """
     Convert a tensor of lengths to mask
     For example, lengths = [[2, 3, 4]], max_len = 5
@@ -1904,7 +1906,7 @@ class MonotonicMultiheadAttentionInfiniteLookback(MonotonicMultiheadAttentionHar
         return beta
 
 
-def convert_padding_direction(src_tokens, padding_idx, right_to_left: bool=False, left_to_right: bool=False):
+def convert_padding_direction(src_tokens, padding_idx, right_to_left: 'bool'=False, left_to_right: 'bool'=False):
     assert right_to_left ^ left_to_right
     pad_mask = src_tokens.eq(padding_idx)
     if not pad_mask.any():
@@ -2006,6 +2008,85 @@ def eval_str_list(x, type=float):
         return [type(x)]
 
 
+def gen_parser_from_dataclass(parser: 'ArgumentParser', dataclass_instance: 'FairseqDataclass', delete_default: 'bool'=False) ->None:
+    """convert a dataclass instance to tailing parser arguments"""
+    import re
+
+    def argparse_name(name: 'str'):
+        if name == 'data':
+            return name
+        if name == '_name':
+            return None
+        return '--' + name.replace('_', '-')
+
+    def interpret_dc_type(field_type):
+        if isinstance(field_type, str):
+            raise RuntimeError()
+        typestring = str(field_type)
+        if re.match('(typing.|^)Union\\[(.*), NoneType\\]$', typestring):
+            return field_type.__args__[0]
+        return field_type
+
+    def get_kwargs_from_dc(dataclass_instance: 'FairseqDataclass', k: 'str') ->Dict[str, Any]:
+        """k: dataclass attributes"""
+        field_type = dataclass_instance._get_type(k)
+        inter_type = interpret_dc_type(field_type)
+        if isinstance(inter_type, type) and issubclass(inter_type, List):
+            field_default = dataclass_instance._get_default_factory(k)
+        else:
+            field_default = dataclass_instance._get_default(k)
+        if isinstance(inter_type, type) and issubclass(inter_type, Enum):
+            field_choices = [t.value for t in list(inter_type)]
+        else:
+            field_choices = None
+        field_help = dataclass_instance._get_help(k)
+        kwargs = {}
+        if isinstance(field_default, str) and field_default.startswith('${'):
+            kwargs['default'] = field_default
+        else:
+            if field_default is MISSING:
+                kwargs['required'] = True
+            if field_choices is not None:
+                kwargs['choices'] = field_choices
+            if isinstance(inter_type, type) and issubclass(inter_type, List) or 'List' in str(inter_type):
+                if 'int' in str(inter_type):
+                    kwargs['type'] = lambda x: eval_str_list(x, int)
+                elif 'float' in str(inter_type):
+                    kwargs['type'] = lambda x: eval_str_list(x, float)
+                elif 'str' in str(inter_type):
+                    kwargs['type'] = lambda x: eval_str_list(x, str)
+                else:
+                    raise NotImplementedError()
+                if field_default is not MISSING:
+                    kwargs['default'] = ','.join(map(str, field_default))
+            elif isinstance(inter_type, type) and issubclass(inter_type, Enum) or 'Enum' in str(inter_type):
+                kwargs['type'] = str
+                if field_default is not MISSING:
+                    if isinstance(field_default, Enum):
+                        kwargs['default'] = field_default.value
+                    else:
+                        kwargs['default'] = field_default
+            elif inter_type is bool:
+                kwargs['action'] = 'store_false' if field_default is True else 'store_true'
+                kwargs['default'] = field_default
+            else:
+                kwargs['type'] = inter_type
+                if field_default is not MISSING:
+                    kwargs['default'] = field_default
+        kwargs['help'] = field_help
+        return kwargs
+    for k in dataclass_instance._get_all_attributes():
+        field_name = argparse_name(dataclass_instance._get_name(k))
+        if field_name is None:
+            continue
+        kwargs = get_kwargs_from_dc(dataclass_instance, k)
+        if isinstance(kwargs['default'], str) and kwargs['default'].startswith('${'):
+            continue
+        if delete_default:
+            del kwargs['default']
+        parser.add_argument(field_name, **kwargs)
+
+
 def prune_state_dict(state_dict, args):
     """Prune the given state_dict if desired for LayerDrop
     (https://arxiv.org/abs/1909.11556).
@@ -2080,11 +2161,11 @@ class BaseFairseqModel(nn.Module):
         """Get targets from either the sample or the net's output."""
         return sample['target']
 
-    def get_normalized_probs(self, net_output: Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]], log_probs: bool, sample: Optional[Dict[str, Tensor]]=None):
+    def get_normalized_probs(self, net_output: 'Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]]', log_probs: 'bool', sample: 'Optional[Dict[str, Tensor]]'=None):
         """Get normalized probabilities (or log probs) from a net's output."""
         return self.get_normalized_probs_scriptable(net_output, log_probs, sample)
 
-    def get_normalized_probs_scriptable(self, net_output: Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]], log_probs: bool, sample: Optional[Dict[str, Tensor]]=None):
+    def get_normalized_probs_scriptable(self, net_output: 'Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]]', log_probs: 'bool', sample: 'Optional[Dict[str, Tensor]]'=None):
         """Scriptable helper function for get_normalized_probs in ~BaseFairseqModel"""
         if hasattr(self, 'decoder'):
             return self.decoder.get_normalized_probs(net_output, log_probs, sample)
@@ -2330,7 +2411,7 @@ class ConvAggegator(nn.Module):
 
 class ConvFeatureExtractionModel(nn.Module):
 
-    def __init__(self, conv_layers: List[Tuple[int, int, int]], dropout: float=0.0, mode: str='default', conv_bias: bool=False):
+    def __init__(self, conv_layers: 'List[Tuple[int, int, int]]', dropout: 'float'=0.0, mode: 'str'='default', conv_bias: 'bool'=False):
         super().__init__()
         assert mode in {'default', 'layer_norm'}
 
@@ -2712,43 +2793,6 @@ def register_model_architecture(model_name, arch_name):
     return register_model_arch_fn
 
 
-MODEL_DATACLASS_REGISTRY = {}
-
-
-def register_model(name, dataclass=None):
-    """
-    New model types can be added to fairseq with the :func:`register_model`
-    function decorator.
-
-    For example::
-
-        @register_model('lstm')
-        class LSTM(FairseqEncoderDecoderModel):
-            (...)
-
-    .. note:: All models must implement the :class:`BaseFairseqModel` interface.
-        Typically you will extend :class:`FairseqEncoderDecoderModel` for
-        sequence-to-sequence tasks or :class:`FairseqLanguageModel` for
-        language modeling tasks.
-
-    Args:
-        name (str): the name of the model
-    """
-
-    def register_model_cls(cls):
-        if name in MODEL_REGISTRY:
-            raise ValueError('Cannot register duplicate model ({})'.format(name))
-        if not issubclass(cls, BaseFairseqModel):
-            raise ValueError('Model ({}: {}) must extend BaseFairseqModel'.format(name, cls.__name__))
-        MODEL_REGISTRY[name] = cls
-        if dataclass is not None and not issubclass(dataclass, FairseqDataclass):
-            raise ValueError('Dataclass {} must extend FairseqDataclass'.format(dataclass))
-        cls.__dataclass = dataclass
-        MODEL_DATACLASS_REGISTRY[name] = dataclass
-        return cls
-    return register_model_cls
-
-
 class Wav2VecModel(BaseFairseqModel):
 
     @staticmethod
@@ -2970,13 +3014,13 @@ class FairseqCriterion(_Loss):
         raise NotImplementedError
 
     @staticmethod
-    def aggregate_logging_outputs(logging_outputs: List[Dict[str, Any]]) ->Dict[str, Any]:
+    def aggregate_logging_outputs(logging_outputs: 'List[Dict[str, Any]]') ->Dict[str, Any]:
         """Aggregate logging outputs from data parallel training."""
         utils.deprecation_warning('The aggregate_logging_outputs API is deprecated. Please use the reduce_metrics API instead.')
         raise NotImplementedError
 
     @classmethod
-    def reduce_metrics(cls, logging_outputs: List[Dict[str, Any]]) ->None:
+    def reduce_metrics(cls, logging_outputs: 'List[Dict[str, Any]]') ->None:
         """Aggregate logging outputs from data parallel training."""
         utils.deprecation_warning('Criterions should implement the reduce_metrics API. Falling back to deprecated aggregate_logging_outputs API.')
         agg_logging_outputs = cls.aggregate_logging_outputs(logging_outputs)
@@ -3170,7 +3214,7 @@ class LabelSmoothedDualImitationCriterion(FairseqCriterion):
                 depends on the likelihood score as rewards.
         """
 
-        def mean_ds(x: Tensor, dim=None) ->Tensor:
+        def mean_ds(x: 'Tensor', dim=None) ->Tensor:
             return x.float().mean().type_as(x) if dim is None else x.float().mean(dim).type_as(x)
         if masks is not None:
             outputs, targets = outputs[masks], targets[masks]
@@ -3534,23 +3578,23 @@ class GeneratorHubInterface(nn.Module):
     def device(self):
         return self._float_tensor.device
 
-    def translate(self, sentences: List[str], beam: int=5, verbose: bool=False, **kwargs) ->List[str]:
+    def translate(self, sentences: 'List[str]', beam: 'int'=5, verbose: 'bool'=False, **kwargs) ->List[str]:
         return self.sample(sentences, beam, verbose, **kwargs)
 
-    def sample(self, sentences: List[str], beam: int=1, verbose: bool=False, **kwargs) ->List[str]:
+    def sample(self, sentences: 'List[str]', beam: 'int'=1, verbose: 'bool'=False, **kwargs) ->List[str]:
         if isinstance(sentences, str):
             return self.sample([sentences], beam=beam, verbose=verbose, **kwargs)[0]
         tokenized_sentences = [self.encode(sentence) for sentence in sentences]
         batched_hypos = self.generate(tokenized_sentences, beam, verbose, **kwargs)
         return [self.decode(hypos[0]['tokens']) for hypos in batched_hypos]
 
-    def score(self, sentences: List[str], **kwargs):
+    def score(self, sentences: 'List[str]', **kwargs):
         if isinstance(sentences, str):
             return self.score([sentences], **kwargs)[0]
         tokenized_sentences = [self.encode(sentence) for sentence in sentences]
         return [hypos[0] for hypos in self.generate(tokenized_sentences, score_reference=True, **kwargs)]
 
-    def generate(self, tokenized_sentences: List[torch.LongTensor], beam: int=5, verbose: bool=False, skip_invalid_size_inputs=False, inference_step_args=None, **kwargs) ->List[List[Dict[str, torch.Tensor]]]:
+    def generate(self, tokenized_sentences: 'List[torch.LongTensor]', beam: 'int'=5, verbose: 'bool'=False, skip_invalid_size_inputs=False, inference_step_args=None, **kwargs) ->List[List[Dict[str, torch.Tensor]]]:
         if torch.is_tensor(tokenized_sentences) and tokenized_sentences.dim() == 1:
             return self.generate(tokenized_sentences.unsqueeze(0), beam=beam, verbose=verbose, **kwargs)[0]
         gen_args = copy.copy(self.args)
@@ -3581,43 +3625,43 @@ class GeneratorHubInterface(nn.Module):
                         logger.info('A\t{}'.format(' '.join(['{}-{}'.format(src_idx, tgt_idx) for src_idx, tgt_idx in hypo['alignment']])))
         return outputs
 
-    def encode(self, sentence: str) ->torch.LongTensor:
+    def encode(self, sentence: 'str') ->torch.LongTensor:
         sentence = self.tokenize(sentence)
         sentence = self.apply_bpe(sentence)
         return self.binarize(sentence)
 
-    def decode(self, tokens: torch.LongTensor) ->str:
+    def decode(self, tokens: 'torch.LongTensor') ->str:
         sentence = self.string(tokens)
         sentence = self.remove_bpe(sentence)
         return self.detokenize(sentence)
 
-    def tokenize(self, sentence: str) ->str:
+    def tokenize(self, sentence: 'str') ->str:
         if self.tokenizer is not None:
             sentence = self.tokenizer.encode(sentence)
         return sentence
 
-    def detokenize(self, sentence: str) ->str:
+    def detokenize(self, sentence: 'str') ->str:
         if self.tokenizer is not None:
             sentence = self.tokenizer.decode(sentence)
         return sentence
 
-    def apply_bpe(self, sentence: str) ->str:
+    def apply_bpe(self, sentence: 'str') ->str:
         if self.bpe is not None:
             sentence = self.bpe.encode(sentence)
         return sentence
 
-    def remove_bpe(self, sentence: str) ->str:
+    def remove_bpe(self, sentence: 'str') ->str:
         if self.bpe is not None:
             sentence = self.bpe.decode(sentence)
         return sentence
 
-    def binarize(self, sentence: str) ->torch.LongTensor:
+    def binarize(self, sentence: 'str') ->torch.LongTensor:
         return self.src_dict.encode_line(sentence, add_if_not_exist=False).long()
 
-    def string(self, tokens: torch.LongTensor) ->str:
+    def string(self, tokens: 'torch.LongTensor') ->str:
         return self.tgt_dict.string(tokens)
 
-    def _build_batches(self, tokens: List[List[int]], skip_invalid_size_inputs: bool) ->Iterator[Dict[str, Any]]:
+    def _build_batches(self, tokens: 'List[List[int]]', skip_invalid_size_inputs: 'bool') ->Iterator[Dict[str, Any]]:
         lengths = torch.LongTensor([t.numel() for t in tokens])
         batch_iterator = self.task.get_batch_iterator(dataset=self.task.build_dataset_for_inference(tokens, lengths), max_tokens=self.args.max_tokens, max_sentences=self.args.max_sentences, max_positions=self.max_positions, ignore_invalid_inputs=skip_invalid_size_inputs, disable_iterator_cache=True).next_epoch_itr(shuffle=False)
         return batch_iterator
@@ -3639,7 +3683,7 @@ class LearnedPositionalEmbedding(nn.Embedding):
     position ids are passed to the forward function.
     """
 
-    def __init__(self, num_embeddings: int, embedding_dim: int, padding_idx: int):
+    def __init__(self, num_embeddings: 'int', embedding_dim: 'int', padding_idx: 'int'):
         super().__init__(num_embeddings, embedding_dim, padding_idx)
         self.onnx_trace = False
         if self.padding_idx is not None:
@@ -3647,7 +3691,7 @@ class LearnedPositionalEmbedding(nn.Embedding):
         else:
             self.max_positions = self.num_embeddings
 
-    def forward(self, input: Tensor, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, positions: Optional[Tensor]=None):
+    def forward(self, input: 'Tensor', incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, positions: 'Optional[Tensor]'=None):
         """Input is expected to be of size [bsz x seqlen]."""
         assert positions is None or self.padding_idx is None, 'If positions is pre-computed then padding_idx should not be set.'
         if positions is None:
@@ -3677,7 +3721,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
         self.onnx_trace = True
 
     @staticmethod
-    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int]=None):
+    def get_embedding(num_embeddings: 'int', embedding_dim: 'int', padding_idx: 'Optional[int]'=None):
         """Build sinusoidal embeddings.
 
         This matches the implementation in tensor2tensor, but differs slightly
@@ -3694,7 +3738,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
             emb[padding_idx, :] = 0
         return emb
 
-    def forward(self, input, incremental_state: Optional[Any]=None, timestep: Optional[Tensor]=None, positions: Optional[Any]=None):
+    def forward(self, input, incremental_state: 'Optional[Any]'=None, timestep: 'Optional[Tensor]'=None, positions: 'Optional[Any]'=None):
         """Input is expected to be of size [bsz x seqlen]."""
         bspair = torch.onnx.operators.shape_as_tensor(input)
         bsz, seq_len = bspair[0], bspair[1]
@@ -3716,7 +3760,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
         return self.weights.index_select(0, positions.view(-1)).view(bsz, seq_len, -1).detach()
 
 
-def PositionalEmbedding(num_embeddings: int, embedding_dim: int, padding_idx: int, learned: bool=False):
+def PositionalEmbedding(num_embeddings: 'int', embedding_dim: 'int', padding_idx: 'int', learned: 'bool'=False):
     if learned:
         if padding_idx is not None:
             num_embeddings = num_embeddings + padding_idx + 1
@@ -4135,7 +4179,7 @@ class TransformerEncoderLayer(nn.Module):
                     state_dict['{}.{}.{}'.format(name, new, m)] = state_dict[k]
                     del state_dict[k]
 
-    def forward(self, x, encoder_padding_mask, attn_mask: Optional[Tensor]=None):
+    def forward(self, x, encoder_padding_mask, attn_mask: 'Optional[Tensor]'=None):
         """
         Args:
             x (Tensor): input to the layer of shape `(seq_len, batch, embed_dim)`
@@ -4234,7 +4278,7 @@ class TransformerDecoderLayer(nn.Module):
     def prepare_for_onnx_export_(self):
         self.onnx_trace = True
 
-    def forward(self, x, encoder_out: Optional[torch.Tensor]=None, encoder_padding_mask: Optional[torch.Tensor]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, prev_self_attn_state: Optional[List[torch.Tensor]]=None, prev_attn_state: Optional[List[torch.Tensor]]=None, self_attn_mask: Optional[torch.Tensor]=None, self_attn_padding_mask: Optional[torch.Tensor]=None, need_attn: bool=False, need_head_weights: bool=False):
+    def forward(self, x, encoder_out: 'Optional[torch.Tensor]'=None, encoder_padding_mask: 'Optional[torch.Tensor]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, prev_self_attn_state: 'Optional[List[torch.Tensor]]'=None, prev_attn_state: 'Optional[List[torch.Tensor]]'=None, self_attn_mask: 'Optional[torch.Tensor]'=None, self_attn_padding_mask: 'Optional[torch.Tensor]'=None, need_attn: 'bool'=False, need_head_weights: 'bool'=False):
         """
         Args:
             x (Tensor): input to the layer of shape `(seq_len, batch, embed_dim)`
@@ -4255,7 +4299,7 @@ class TransformerDecoderLayer(nn.Module):
             x = self.self_attn_layer_norm(x)
         if prev_self_attn_state is not None:
             prev_key, prev_value = prev_self_attn_state[:2]
-            saved_state: Dict[str, Optional[Tensor]] = {'prev_key': prev_key, 'prev_value': prev_value}
+            saved_state: 'Dict[str, Optional[Tensor]]' = {'prev_key': prev_key, 'prev_value': prev_value}
             if len(prev_self_attn_state) >= 3:
                 saved_state['prev_key_padding_mask'] = prev_self_attn_state[2]
             assert incremental_state is not None
@@ -4285,7 +4329,7 @@ class TransformerDecoderLayer(nn.Module):
                 x = self.encoder_attn_layer_norm(x)
             if prev_attn_state is not None:
                 prev_key, prev_value = prev_attn_state[:2]
-                saved_state: Dict[str, Optional[Tensor]] = {'prev_key': prev_key, 'prev_value': prev_value}
+                saved_state: 'Dict[str, Optional[Tensor]]' = {'prev_key': prev_key, 'prev_value': prev_value}
                 if len(prev_attn_state) >= 3:
                     saved_state['prev_key_padding_mask'] = prev_attn_state[2]
                 assert incremental_state is not None
@@ -4315,7 +4359,7 @@ class TransformerDecoderLayer(nn.Module):
             return x, attn, self_attn_state
         return x, attn, None
 
-    def make_generation_fast_(self, need_attn: bool=False, **kwargs):
+    def make_generation_fast_(self, need_attn: 'bool'=False, **kwargs):
         self.need_attn = need_attn
 
 
@@ -4400,7 +4444,7 @@ class ModelParallelMultiheadAttention(nn.Module):
     def prepare_for_tpu_(self, **kwargs):
         self.tpu = True
 
-    def forward(self, query, key: Optional[Tensor], value: Optional[Tensor], key_padding_mask: Optional[Tensor]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, static_kv: bool=False, attn_mask: Optional[Tensor]=None, **unused_kwargs) ->Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, query, key: 'Optional[Tensor]', value: 'Optional[Tensor]', key_padding_mask: 'Optional[Tensor]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, static_kv: 'bool'=False, attn_mask: 'Optional[Tensor]'=None, **unused_kwargs) ->Tuple[Tensor, Optional[Tensor]]:
         """Input shape: Time x Batch x Channel
 
         Args:
@@ -4464,7 +4508,7 @@ class ModelParallelMultiheadAttention(nn.Module):
                 else:
                     assert v is not None
                     v = torch.cat([prev_value, v], dim=1)
-            prev_key_padding_mask: Optional[Tensor] = None
+            prev_key_padding_mask: 'Optional[Tensor]' = None
             if 'prev_key_padding_mask' in saved_state:
                 prev_key_padding_mask = saved_state['prev_key_padding_mask']
             assert k is not None and v is not None
@@ -4505,11 +4549,11 @@ class ModelParallelMultiheadAttention(nn.Module):
         embed_dim_partition = embed_dim // self.model_parallel_size
         attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim_partition)
         attn = self.out_proj(attn)
-        attn_weights: Optional[Tensor] = None
+        attn_weights: 'Optional[Tensor]' = None
         return attn, attn_weights
 
     @staticmethod
-    def _append_prev_key_padding_mask(key_padding_mask: Optional[Tensor], prev_key_padding_mask: Optional[Tensor], batch_size: int, src_len: int, static_kv: bool) ->Optional[Tensor]:
+    def _append_prev_key_padding_mask(key_padding_mask: 'Optional[Tensor]', prev_key_padding_mask: 'Optional[Tensor]', batch_size: 'int', src_len: 'int', static_kv: 'bool') ->Optional[Tensor]:
         if prev_key_padding_mask is not None and static_kv:
             new_key_padding_mask = prev_key_padding_mask
         elif prev_key_padding_mask is not None and key_padding_mask is not None:
@@ -4528,7 +4572,7 @@ class ModelParallelMultiheadAttention(nn.Module):
             new_key_padding_mask = prev_key_padding_mask
         return new_key_padding_mask
 
-    def reorder_incremental_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order):
+    def reorder_incremental_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order):
         """Reorder buffered internal state (for incremental generation)."""
         input_buffer = self._get_input_buffer(incremental_state)
         if input_buffer is not None:
@@ -4538,15 +4582,15 @@ class ModelParallelMultiheadAttention(nn.Module):
             incremental_state = self._set_input_buffer(incremental_state, input_buffer)
         return incremental_state
 
-    def _get_input_buffer(self, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]) ->Dict[str, Optional[Tensor]]:
+    def _get_input_buffer(self, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]') ->Dict[str, Optional[Tensor]]:
         result = self.get_incremental_state(incremental_state, 'attn_state')
         if result is not None:
             return result
         else:
-            empty_result: Dict[str, Optional[Tensor]] = {}
+            empty_result: 'Dict[str, Optional[Tensor]]' = {}
             return empty_result
 
-    def _set_input_buffer(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], buffer: Dict[str, Optional[Tensor]]):
+    def _set_input_buffer(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', buffer: 'Dict[str, Optional[Tensor]]'):
         return self.set_incremental_state(incremental_state, 'attn_state', buffer)
 
 
@@ -4569,7 +4613,7 @@ class BARTHubInterface(nn.Module):
     def device(self):
         return self._float_tensor.device
 
-    def encode(self, sentence: str, *addl_sentences, no_separator=True) ->torch.LongTensor:
+    def encode(self, sentence: 'str', *addl_sentences, no_separator=True) ->torch.LongTensor:
         """
         BPE-encode a sentence (or multiple sentences).
 
@@ -4599,7 +4643,7 @@ class BARTHubInterface(nn.Module):
         tokens = self.task.source_dictionary.encode_line(bpe_sentence, append_eos=False)
         return tokens.long()
 
-    def decode(self, tokens: torch.LongTensor):
+    def decode(self, tokens: 'torch.LongTensor'):
         assert tokens.dim() == 1
         tokens = tokens.cpu().numpy()
         if tokens[0] == self.task.source_dictionary.bos():
@@ -4612,18 +4656,18 @@ class BARTHubInterface(nn.Module):
             return sentences[0]
         return sentences
 
-    def _build_sample(self, src_tokens: List[torch.LongTensor]):
+    def _build_sample(self, src_tokens: 'List[torch.LongTensor]'):
         dataset = self.task.build_dataset_for_inference(src_tokens, [x.numel() for x in src_tokens])
         sample = dataset.collater(dataset)
         sample = utils.apply_to_sample(lambda tensor: tensor, sample)
         return sample
 
-    def sample(self, sentences: List[str], beam: int=1, verbose: bool=False, **kwargs) ->str:
+    def sample(self, sentences: 'List[str]', beam: 'int'=1, verbose: 'bool'=False, **kwargs) ->str:
         input = [self.encode(sentence) for sentence in sentences]
         hypos = self.generate(input, beam, verbose, **kwargs)
         return [self.decode(x['tokens']) for x in hypos]
 
-    def generate(self, tokens: List[torch.LongTensor], beam: int=5, verbose: bool=False, **kwargs) ->torch.LongTensor:
+    def generate(self, tokens: 'List[torch.LongTensor]', beam: 'int'=5, verbose: 'bool'=False, **kwargs) ->torch.LongTensor:
         sample = self._build_sample(tokens)
         gen_args = copy.copy(self.args)
         gen_args.beam = beam
@@ -4641,7 +4685,7 @@ class BARTHubInterface(nn.Module):
         hypos = [v for _, v in sorted(zip(sample['id'].tolist(), hypos))]
         return hypos
 
-    def extract_features(self, tokens: torch.LongTensor, return_all_hiddens: bool=False) ->torch.Tensor:
+    def extract_features(self, tokens: 'torch.LongTensor', return_all_hiddens: 'bool'=False) ->torch.Tensor:
         if tokens.dim() == 1:
             tokens = tokens.unsqueeze(0)
         if tokens.size(-1) > min(self.model.max_positions()):
@@ -4657,10 +4701,10 @@ class BARTHubInterface(nn.Module):
         else:
             return features
 
-    def register_classification_head(self, name: str, num_classes: int=None, embedding_size: int=None, **kwargs):
+    def register_classification_head(self, name: 'str', num_classes: 'int'=None, embedding_size: 'int'=None, **kwargs):
         self.model.register_classification_head(name, num_classes=num_classes, embedding_size=embedding_size, **kwargs)
 
-    def predict(self, head: str, tokens: torch.LongTensor, return_logits: bool=False):
+    def predict(self, head: 'str', tokens: 'torch.LongTensor', return_logits: 'bool'=False):
         if tokens.dim() == 1:
             tokens = tokens.unsqueeze(0)
         features = self.extract_features(tokens)
@@ -4734,7 +4778,7 @@ class FairseqDecoder(nn.Module):
         """
         raise NotImplementedError
 
-    def get_normalized_probs(self, net_output: Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]], log_probs: bool, sample: Optional[Dict[str, Tensor]]=None):
+    def get_normalized_probs(self, net_output: 'Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]]', log_probs: 'bool', sample: 'Optional[Dict[str, Tensor]]'=None):
         """Get normalized probabilities (or log probs) from a net's output."""
         if hasattr(self, 'adaptive_softmax') and self.adaptive_softmax is not None:
             if sample is not None:
@@ -4779,7 +4823,7 @@ class FairseqEncoder(nn.Module):
         """
         raise NotImplementedError
 
-    def forward_torchscript(self, net_input: Dict[str, Tensor]):
+    def forward_torchscript(self, net_input: 'Dict[str, Tensor]'):
         """A TorchScript-compatible version of forward.
 
         Encoders which use additional arguments may want to override
@@ -4791,7 +4835,7 @@ class FairseqEncoder(nn.Module):
             return self.forward_non_torchscript(net_input)
 
     @torch.jit.unused
-    def forward_non_torchscript(self, net_input: Dict[str, Tensor]):
+    def forward_non_torchscript(self, net_input: 'Dict[str, Tensor]'):
         encoder_input = {k: v for k, v in net_input.items() if k != 'prev_output_tokens'}
         return self.forward(**encoder_input)
 
@@ -4877,7 +4921,7 @@ class FairseqIncrementalDecoder(FairseqDecoder):
         """
         raise NotImplementedError
 
-    def reorder_incremental_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order: Tensor):
+    def reorder_incremental_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order: 'Tensor'):
         """Reorder incremental state.
 
         This will be called when the order of the input has changed from the
@@ -4886,7 +4930,7 @@ class FairseqIncrementalDecoder(FairseqDecoder):
         """
         pass
 
-    def reorder_incremental_state_scripting(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order: Tensor):
+    def reorder_incremental_state_scripting(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order: 'Tensor'):
         """Main entry point for reordering the incremental state.
 
         Due to limitations in TorchScript, we call this function in
@@ -4990,375 +5034,6 @@ class FairseqModel(FairseqEncoderDecoderModel):
         utils.deprecation_warning('FairseqModel is deprecated, please use FairseqEncoderDecoderModel or BaseFairseqModel instead', stacklevel=4)
 
 
-class PathManager:
-    """
-    Wrapper for insulating OSS I/O (using Python builtin operations) from
-    fvcore's PathManager abstraction (for transparently handling various
-    internal backends).
-    """
-
-    @staticmethod
-    def open(path: str, mode: str='r', buffering: int=-1, encoding: Optional[str]=None, errors: Optional[str]=None, newline: Optional[str]=None):
-        if FVCorePathManager:
-            return FVCorePathManager.open(path=path, mode=mode, buffering=buffering, encoding=encoding, errors=errors, newline=newline)
-        return open(path, mode=mode, buffering=buffering, encoding=encoding, errors=errors, newline=newline)
-
-    @staticmethod
-    def copy(src_path: str, dst_path: str, overwrite: bool=False) ->bool:
-        if FVCorePathManager:
-            return FVCorePathManager.copy(src_path=src_path, dst_path=dst_path, overwrite=overwrite)
-        return shutil.copyfile(src_path, dst_path)
-
-    @staticmethod
-    def get_local_path(path: str, **kwargs) ->str:
-        if FVCorePathManager:
-            return FVCorePathManager.get_local_path(path, **kwargs)
-        return path
-
-    @staticmethod
-    def exists(path: str) ->bool:
-        if FVCorePathManager:
-            return FVCorePathManager.exists(path)
-        return os.path.exists(path)
-
-    @staticmethod
-    def isfile(path: str) ->bool:
-        if FVCorePathManager:
-            return FVCorePathManager.isfile(path)
-        return os.path.isfile(path)
-
-    @staticmethod
-    def ls(path: str) ->List[str]:
-        if FVCorePathManager:
-            return FVCorePathManager.ls(path)
-        return os.listdir(path)
-
-    @staticmethod
-    def mkdirs(path: str) ->None:
-        if FVCorePathManager:
-            return FVCorePathManager.mkdirs(path)
-        os.makedirs(path, exist_ok=True)
-
-    @staticmethod
-    def rm(path: str) ->None:
-        if FVCorePathManager:
-            return FVCorePathManager.rm(path)
-        os.remove(path)
-
-    @staticmethod
-    def chmod(path: str, mode: int) ->None:
-        if 'manifold' not in path:
-            os.chmod(path, mode)
-
-    @staticmethod
-    def register_handler(handler) ->None:
-        if FVCorePathManager:
-            return FVCorePathManager.register_handler(handler=handler)
-
-    @staticmethod
-    def copy_from_local(local_path: str, dst_path: str, overwrite: bool=False, **kwargs) ->None:
-        if FVCorePathManager:
-            return FVCorePathManager.copy_from_local(local_path=local_path, dst_path=dst_path, overwrite=overwrite, **kwargs)
-        return shutil.copyfile(local_path, dst_path)
-
-
-def safe_readline(f):
-    pos = f.tell()
-    while True:
-        try:
-            return f.readline()
-        except UnicodeDecodeError:
-            pos -= 1
-            f.seek(pos)
-
-
-SPACE_NORMALIZER = re.compile('\\s+')
-
-
-def tokenize_line(line):
-    line = SPACE_NORMALIZER.sub(' ', line)
-    line = line.strip()
-    return line.split()
-
-
-class Dictionary(object):
-    """A mapping from symbols to consecutive integers"""
-
-    def __init__(self, *, bos='<s>', pad='<pad>', eos='</s>', unk='<unk>', extra_special_symbols=None):
-        self.bos_word, self.unk_word, self.pad_word, self.eos_word = bos, unk, pad, eos
-        self.symbols = []
-        self.count = []
-        self.indices = {}
-        self.bos_index = self.add_symbol(bos)
-        self.pad_index = self.add_symbol(pad)
-        self.eos_index = self.add_symbol(eos)
-        self.unk_index = self.add_symbol(unk)
-        if extra_special_symbols:
-            for s in extra_special_symbols:
-                self.add_symbol(s)
-        self.nspecial = len(self.symbols)
-
-    def __eq__(self, other):
-        return self.indices == other.indices
-
-    def __getitem__(self, idx):
-        if idx < len(self.symbols):
-            return self.symbols[idx]
-        return self.unk_word
-
-    def __len__(self):
-        """Returns the number of symbols in the dictionary"""
-        return len(self.symbols)
-
-    def __contains__(self, sym):
-        return sym in self.indices
-
-    def index(self, sym):
-        """Returns the index of the specified symbol"""
-        assert isinstance(sym, str)
-        if sym in self.indices:
-            return self.indices[sym]
-        return self.unk_index
-
-    def string(self, tensor, bpe_symbol=None, escape_unk=False, extra_symbols_to_ignore=None, unk_string=None):
-        """Helper for converting a tensor of token indices to a string.
-
-        Can optionally remove BPE symbols or escape <unk> words.
-        """
-        if torch.is_tensor(tensor) and tensor.dim() == 2:
-            return '\n'.join(self.string(t, bpe_symbol, escape_unk, extra_symbols_to_ignore) for t in tensor)
-        extra_symbols_to_ignore = set(extra_symbols_to_ignore or [])
-        extra_symbols_to_ignore.add(self.eos())
-
-        def token_string(i):
-            if i == self.unk():
-                if unk_string is not None:
-                    return unk_string
-                else:
-                    return self.unk_string(escape_unk)
-            else:
-                return self[i]
-        if hasattr(self, 'bos_index'):
-            extra_symbols_to_ignore.add(self.bos())
-        sent = ' '.join(token_string(i) for i in tensor if utils.item(i) not in extra_symbols_to_ignore)
-        return data_utils.post_process(sent, bpe_symbol)
-
-    def unk_string(self, escape=False):
-        """Return unknown string, optionally escaped as: <<unk>>"""
-        if escape:
-            return '<{}>'.format(self.unk_word)
-        else:
-            return self.unk_word
-
-    def add_symbol(self, word, n=1, overwrite=False):
-        """Adds a word to the dictionary"""
-        if word in self.indices and not overwrite:
-            idx = self.indices[word]
-            self.count[idx] = self.count[idx] + n
-            return idx
-        else:
-            idx = len(self.symbols)
-            self.indices[word] = idx
-            self.symbols.append(word)
-            self.count.append(n)
-            return idx
-
-    def update(self, new_dict):
-        """Updates counts from new dictionary."""
-        for word in new_dict.symbols:
-            idx2 = new_dict.indices[word]
-            if word in self.indices:
-                idx = self.indices[word]
-                self.count[idx] = self.count[idx] + new_dict.count[idx2]
-            else:
-                idx = len(self.symbols)
-                self.indices[word] = idx
-                self.symbols.append(word)
-                self.count.append(new_dict.count[idx2])
-
-    def finalize(self, threshold=-1, nwords=-1, padding_factor=8):
-        """Sort symbols by frequency in descending order, ignoring special ones.
-
-        Args:
-            - threshold defines the minimum word count
-            - nwords defines the total number of words in the final dictionary,
-                including special symbols
-            - padding_factor can be used to pad the dictionary size to be a
-                multiple of 8, which is important on some hardware (e.g., Nvidia
-                Tensor Cores).
-        """
-        if nwords <= 0:
-            nwords = len(self)
-        new_indices = dict(zip(self.symbols[:self.nspecial], range(self.nspecial)))
-        new_symbols = self.symbols[:self.nspecial]
-        new_count = self.count[:self.nspecial]
-        c = Counter(dict(sorted(zip(self.symbols[self.nspecial:], self.count[self.nspecial:]))))
-        for symbol, count in c.most_common(nwords - self.nspecial):
-            if count >= threshold:
-                new_indices[symbol] = len(new_symbols)
-                new_symbols.append(symbol)
-                new_count.append(count)
-            else:
-                break
-        assert len(new_symbols) == len(new_indices)
-        self.count = list(new_count)
-        self.symbols = list(new_symbols)
-        self.indices = new_indices
-        self.pad_to_multiple_(padding_factor)
-
-    def pad_to_multiple_(self, padding_factor):
-        """Pad Dictionary size to be a multiple of *padding_factor*."""
-        if padding_factor > 1:
-            i = 0
-            while len(self) % padding_factor != 0:
-                symbol = 'madeupword{:04d}'.format(i)
-                self.add_symbol(symbol, n=0)
-                i += 1
-
-    def bos(self):
-        """Helper to get index of beginning-of-sentence symbol"""
-        return self.bos_index
-
-    def pad(self):
-        """Helper to get index of pad symbol"""
-        return self.pad_index
-
-    def eos(self):
-        """Helper to get index of end-of-sentence symbol"""
-        return self.eos_index
-
-    def unk(self):
-        """Helper to get index of unk symbol"""
-        return self.unk_index
-
-    @classmethod
-    def load(cls, f):
-        """Loads the dictionary from a text file with the format:
-
-        ```
-        <symbol0> <count0>
-        <symbol1> <count1>
-        ...
-        ```
-        """
-        d = cls()
-        d.add_from_file(f)
-        return d
-
-    def add_from_file(self, f):
-        """
-        Loads a pre-existing dictionary from a text file and adds its symbols
-        to this instance.
-        """
-        if isinstance(f, str):
-            try:
-                with PathManager.open(f, 'r', encoding='utf-8') as fd:
-                    self.add_from_file(fd)
-            except FileNotFoundError as fnfe:
-                raise fnfe
-            except UnicodeError:
-                raise Exception('Incorrect encoding detected in {}, please rebuild the dataset'.format(f))
-            return
-        lines = f.readlines()
-        indices_start_line = self._load_meta(lines)
-        for line in lines[indices_start_line:]:
-            try:
-                line, field = line.rstrip().rsplit(' ', 1)
-                if field == '#fairseq:overwrite':
-                    overwrite = True
-                    line, field = line.rsplit(' ', 1)
-                else:
-                    overwrite = False
-                count = int(field)
-                word = line
-                if word in self and not overwrite:
-                    raise RuntimeError("Duplicate word found when loading Dictionary: '{}'. Duplicate words can overwrite earlier ones by adding the #fairseq:overwrite flag at the end of the corresponding row in the dictionary file. If using the Camembert model, please download an updated copy of the model file.".format(word))
-                self.add_symbol(word, n=count, overwrite=overwrite)
-            except ValueError:
-                raise ValueError("Incorrect dictionary format, expected '<token> <cnt> [flags]'")
-
-    def _save(self, f, kv_iterator):
-        if isinstance(f, str):
-            PathManager.mkdirs(os.path.dirname(f))
-            with PathManager.open(f, 'w', encoding='utf-8') as fd:
-                return self.save(fd)
-        for k, v in kv_iterator:
-            None
-
-    def _get_meta(self):
-        return [], []
-
-    def _load_meta(self, lines):
-        return 0
-
-    def save(self, f):
-        """Stores dictionary into a text file"""
-        ex_keys, ex_vals = self._get_meta()
-        self._save(f, zip(ex_keys + self.symbols[self.nspecial:], ex_vals + self.count[self.nspecial:]))
-
-    def dummy_sentence(self, length):
-        t = torch.Tensor(length).uniform_(self.nspecial + 1, len(self)).long()
-        t[-1] = self.eos()
-        return t
-
-    def encode_line(self, line, line_tokenizer=tokenize_line, add_if_not_exist=True, consumer=None, append_eos=True, reverse_order=False):
-        words = line_tokenizer(line)
-        if reverse_order:
-            words = list(reversed(words))
-        nwords = len(words)
-        ids = torch.IntTensor(nwords + 1 if append_eos else nwords)
-        for i, word in enumerate(words):
-            if add_if_not_exist:
-                idx = self.add_symbol(word)
-            else:
-                idx = self.index(word)
-            if consumer is not None:
-                consumer(word, idx)
-            ids[i] = idx
-        if append_eos:
-            ids[nwords] = self.eos_index
-        return ids
-
-    @staticmethod
-    def _add_file_to_dictionary_single_worker(filename, tokenize, eos_word, worker_id=0, num_workers=1):
-        counter = Counter()
-        with open(PathManager.get_local_path(filename), 'r', encoding='utf-8') as f:
-            size = os.fstat(f.fileno()).st_size
-            chunk_size = size // num_workers
-            offset = worker_id * chunk_size
-            end = offset + chunk_size
-            f.seek(offset)
-            if offset > 0:
-                safe_readline(f)
-            line = f.readline()
-            while line:
-                for word in tokenize(line):
-                    counter.update([word])
-                counter.update([eos_word])
-                if f.tell() > end:
-                    break
-                line = f.readline()
-        return counter
-
-    @staticmethod
-    def add_file_to_dictionary(filename, dict, tokenize, num_workers):
-
-        def merge_result(counter):
-            for w, c in sorted(counter.items()):
-                dict.add_symbol(w, c)
-        if num_workers > 1:
-            pool = Pool(processes=num_workers)
-            results = []
-            for worker_id in range(num_workers):
-                results.append(pool.apply_async(Dictionary._add_file_to_dictionary_single_worker, (filename, tokenize, dict.eos_word, worker_id, num_workers)))
-            pool.close()
-            pool.join()
-            for r in results:
-                merge_result(r.get())
-        else:
-            merge_result(Dictionary._add_file_to_dictionary_single_worker(filename, tokenize, dict.eos_word))
-
-
 class FairseqMultiModel(BaseFairseqModel):
     """Base class for combining multiple encoder-decoder models."""
 
@@ -5372,7 +5047,7 @@ class FairseqMultiModel(BaseFairseqModel):
         self.models = nn.ModuleDict({key: FairseqEncoderDecoderModel(encoders[key], decoders[key]) for key in self.keys})
 
     @staticmethod
-    def build_shared_embeddings(dicts: Dict[str, Dictionary], langs: List[str], embed_dim: int, build_embedding: callable, pretrained_embed_path: Optional[str]=None):
+    def build_shared_embeddings(dicts: 'Dict[str, Dictionary]', langs: 'List[str]', embed_dim: 'int', build_embedding: 'callable', pretrained_embed_path: 'Optional[str]'=None):
         """
         Helper function to build shared embeddings for a set of languages after
         checking that all dicts corresponding to those languages are equivalent.
@@ -6272,12 +5947,12 @@ class HuggingFaceGPT2Decoder(FairseqIncrementalDecoder):
         self.model.transformer.wte.weight.data[self.pad_idx].zero_()
         self.model.transformer.wpe.weight.data[0].zero_()
 
-    def forward(self, prev_output_tokens, src_lengths=None, incremental_state: Optional[Dict[str, List[torch.Tensor]]]=None, encoder_out=None):
+    def forward(self, prev_output_tokens, src_lengths=None, incremental_state: 'Optional[Dict[str, List[torch.Tensor]]]'=None, encoder_out=None):
         features = self.extract_features(prev_output_tokens, incremental_state)
         lm_logits = self.model.lm_head(features)
         return lm_logits,
 
-    def extract_features(self, prev_output_tokens, incremental_state: Optional[Dict[str, List[torch.Tensor]]]=None):
+    def extract_features(self, prev_output_tokens, incremental_state: 'Optional[Dict[str, List[torch.Tensor]]]'=None):
         if incremental_state:
             past = self.get_incremental_state('past')
         else:
@@ -6510,6 +6185,165 @@ class DynamicConv1dTBC(nn.Module):
         return s
 
 
+class dynamicconvFunction(Function):
+
+    @staticmethod
+    def forward(ctx, x, weights, padding_l):
+        ctx.padding_l = padding_l
+        outputs = dynamicconv_cuda.forward(x, weights, padding_l)
+        variables = [x, weights]
+        ctx.save_for_backward(*variables)
+        return outputs[0]
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        outputs = dynamicconv_cuda.backward(grad_output.contiguous(), ctx.padding_l, *ctx.saved_tensors)
+        grad_input, grad_weights = outputs
+        return grad_input, grad_weights, None
+
+
+@with_incremental_state
+class DynamicconvLayer(nn.Module):
+
+    def __init__(self, input_size, kernel_size=1, padding_l=None, weight_softmax=False, num_heads=1, weight_dropout=0.0, bias=False, renorm_padding=False, conv_bias=False, query_size=None):
+        super(DynamicconvLayer, self).__init__()
+        self.input_size = input_size
+        self.query_size = input_size if query_size is None else query_size
+        self.kernel_size = kernel_size
+        self.padding_l = padding_l
+        self.num_heads = num_heads
+        self.weight_softmax = weight_softmax
+        self.weight_dropout_module = FairseqDropout(weight_dropout, module_name=self.__class__.__name__)
+        self.renorm_padding = renorm_padding
+        self.bias = bias
+        self.weight_linear = nn.Linear(input_size, num_heads * kernel_size, bias)
+        if conv_bias:
+            self.conv_bias = nn.Parameter(torch.Tensor(input_size))
+        else:
+            self.conv_bias = None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.xavier_uniform_(self.weight_linear.weight)
+        if self.conv_bias is not None:
+            nn.init.constant_(self.conv_bias, 0.0)
+            nn.init.constant_(self.weight_linaer.bias, 0.0)
+
+    def forward(self, x, incremental_state=None, query=None, unfold=None):
+        T, B, C = x.size()
+        K, H = self.kernel_size, self.num_heads
+        if incremental_state is not None:
+            unfold = x.size(0) > 512 if unfold is None else unfold
+            unfold = unfold or incremental_state is not None
+            assert query is None
+            if query is None:
+                query = x
+            if unfold:
+                output = self._forward_unfolded(x, incremental_state, query)
+            else:
+                output = self._forward_expanded(x, incremental_state, query)
+            if self.conv_bias is not None:
+                output = output + self.conv_bias.view(1, 1, -1)
+            return output
+        else:
+            weight = self.weight_linear(x).view(T, B, H, K)
+            if self.weight_softmax:
+                weight = F.softmax(weight, dim=-1)
+            if self.weight_dropout_module.p:
+                weight = self.weight_dropout_module(weight)
+            weight = weight.permute(1, 2, 3, 0).contiguous()
+            self.filters = weight
+            x = x.permute(1, 2, 0).contiguous()
+            output = dynamicconvFunction.apply(x, weight, self.padding_l).permute(2, 0, 1)
+            if self.conv_bias is not None:
+                output = output + self.conv_bias.view(1, 1, -1)
+            return output
+
+    def reorder_incremental_state(self, incremental_state, new_order):
+        input_buffer = self._get_input_buffer(incremental_state)
+        if input_buffer is not None:
+            input_buffer = input_buffer.index_select(1, new_order)
+            self._set_input_buffer(incremental_state, input_buffer)
+
+    def _get_input_buffer(self, incremental_state):
+        return utils.get_incremental_state(self, incremental_state, 'input_buffer')
+
+    def _set_input_buffer(self, incremental_state, new_buffer):
+        return utils.set_incremental_state(self, incremental_state, 'input_buffer', new_buffer)
+
+    def _forward_unfolded(self, x, incremental_state, query):
+        """The conventional implementation of convolutions.
+        Unfolding the input by having a window shifting to the right."""
+        T, B, C = x.size()
+        K, H = self.kernel_size, self.num_heads
+        R = C // H
+        assert R * H == C == self.input_size
+        weight = self.weight_linear(query).view(T * B * H, -1)
+        assert not self.renorm_padding or incremental_state is not None
+        if incremental_state is not None:
+            input_buffer = self._get_input_buffer(incremental_state)
+            if input_buffer is None:
+                input_buffer = x.new()
+            x_unfold = torch.cat([input_buffer, x.unsqueeze(3)], dim=3)
+            if self.kernel_size > 1:
+                self._set_input_buffer(incremental_state, x_unfold[:, :, :, -self.kernel_size + 1:])
+            x_unfold = x_unfold.view(T * B * H, R, -1)
+        else:
+            padding_l = self.padding_l
+            if K > T and padding_l == K - 1:
+                weight = weight.narrow(1, K - T, T)
+                K, padding_l = T, T - 1
+            x_unfold = unfold1d(x, K, padding_l, 0)
+            x_unfold = x_unfold.view(T * B * H, R, K)
+        if self.weight_softmax and not self.renorm_padding:
+            weight = F.softmax(weight, dim=1)
+        weight = weight.narrow(1, 0, K)
+        if incremental_state is not None:
+            weight = weight[:, -x_unfold.size(2):]
+            K = weight.size(1)
+        if self.weight_softmax and self.renorm_padding:
+            weight = F.softmax(weight, dim=1)
+        weight = self.weight_dropout_module(weight, inplace=False)
+        output = torch.bmm(x_unfold, weight.unsqueeze(2))
+        output = output.view(T, B, C)
+        return output
+
+    def _forward_expanded(self, x, incremental_stat, query):
+        """Turn the convolution filters into band matrices and do matrix multiplication.
+        This is faster when the sequence is short, but less memory efficient.
+        This is not used in the decoder during inference.
+        """
+        T, B, C = x.size()
+        K, H = self.kernel_size, self.num_heads
+        R = C // H
+        assert R * H == C == self.input_size
+        weight = self.weight_linear(query).view(T * B * H, -1)
+        if not self.renorm_padding:
+            if self.weight_softmax:
+                weight = F.softmax(weight, dim=1)
+            weight = self.weight_dropout_module(weight, inplace=False)
+        weight = weight.narrow(1, 0, K).contiguous()
+        weight = weight.view(T, B * H, K).transpose(0, 1)
+        x = x.view(T, B * H, R).transpose(0, 1)
+        if self.weight_softmax and self.renorm_padding:
+            weight_expanded = weight.new(B * H, T, T + K - 1).fill_(float('-inf'))
+            weight_expanded.as_strided((B * H, T, K), (T * (T + K - 1), T + K, 1)).copy_(weight)
+            weight_expanded = weight_expanded.narrow(2, self.padding_l, T)
+            weight_expanded = F.softmax(weight_expanded, dim=2)
+            weight_expanded = self.weight_dropout_module(weight_expanded, inplace=False)
+        else:
+            P = self.padding_l
+            if K > T and P == K - 1:
+                weight = weight.narrow(2, K - T, T)
+                K, P = T, T - 1
+            weight_expanded = weight.new_zeros(B * H, T, T + K - 1, requires_grad=False)
+            weight_expanded.as_strided((B * H, T, K), (T * (T + K - 1), T + K, 1)).copy_(weight)
+            weight_expanded = weight_expanded.narrow(2, P, T)
+        output = torch.bmm(weight_expanded, x)
+        output = output.transpose(0, 1).contiguous().view(T, B, C)
+        return output
+
+
 def DynamicConv(input_size, kernel_size=1, padding_l=None, num_heads=1, weight_dropout=0.0, weight_softmax=False, renorm_padding=False, bias=False, conv_bias=False, query_size=None, in_proj=False):
     if torch.cuda.is_available():
         try:
@@ -6517,6 +6351,100 @@ def DynamicConv(input_size, kernel_size=1, padding_l=None, num_heads=1, weight_d
         except ImportError as e:
             None
     return DynamicConv1dTBC(input_size, kernel_size=kernel_size, padding_l=padding_l, num_heads=num_heads, weight_dropout=weight_dropout, weight_softmax=weight_softmax, bias=bias)
+
+
+class lightconvFunction(Function):
+
+    @staticmethod
+    def forward(ctx, x, weights, padding_l):
+        ctx.padding_l = padding_l
+        outputs = lightconv_cuda.forward(x, weights, padding_l)
+        variables = [x, weights]
+        ctx.save_for_backward(*variables)
+        return outputs[0]
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        outputs = lightconv_cuda.backward(grad_output.contiguous(), ctx.padding_l, *ctx.saved_tensors)
+        grad_input, grad_weights = outputs
+        return grad_input, grad_weights, None
+
+
+@with_incremental_state
+class LightconvLayer(nn.Module):
+
+    def __init__(self, input_size, kernel_size=1, padding_l=None, weight_softmax=False, num_heads=1, weight_dropout=0.0, bias=False):
+        super(LightconvLayer, self).__init__()
+        self.input_size = input_size
+        self.kernel_size = kernel_size
+        self.padding_l = padding_l
+        self.num_heads = num_heads
+        self.weight_softmax = weight_softmax
+        self.weight_dropout_module = FairseqDropout(weight_dropout, module_name=self.__class__.__name__)
+        self.weight = nn.Parameter(torch.Tensor(num_heads, kernel_size))
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(input_size))
+        else:
+            self.bias = None
+        self.reset_parameters()
+
+    def upgrade_state_dict_named(self, state_dict, name):
+        prefix = name + '.' if name != '' else ''
+        for k, v in state_dict.items():
+            if k.endswith(prefix + 'weight'):
+                if v.dim() == 3 and v.size(1) == 1:
+                    state_dict[k] = v.squeeze(1)
+
+    def reset_parameters(self):
+        nn.init.xavier_uniform_(self.weight)
+        if self.bias is not None:
+            nn.init.constant_(self.bias, 0.0)
+
+    def forward(self, x, incremental_state=None):
+        if incremental_state is not None:
+            T, B, C = x.size()
+            K, H = self.kernel_size, self.num_heads
+            R = C // H
+            input_buffer = self._get_input_buffer(incremental_state)
+            if input_buffer is None:
+                input_buffer = x.new()
+            x_unfold = torch.cat([input_buffer, x.unsqueeze(3)], dim=3)
+            if self.kernel_size > 1:
+                self._set_input_buffer(incremental_state, x_unfold[:, :, :, -self.kernel_size + 1:])
+            x_unfold = x_unfold.view(T * B * H, R, -1)
+            weight = self.weight
+            if self.weight_softmax:
+                weight = F.softmax(weight.float(), dim=1).type_as(weight)
+            weight = weight[:, -x_unfold.size(2):]
+            K = weight.size(1)
+            weight = weight.view(1, H, K).expand(T * B, H, K).contiguous().view(T * B * H, K, 1)
+            weight = self.weight_dropout_module(weight)
+            output = torch.bmm(x_unfold, weight)
+            output = output.view(T, B, C)
+            return output
+        else:
+            x = x.permute(1, 2, 0).contiguous()
+            weight = self.weight
+            if self.weight_softmax:
+                weight = F.softmax(self.weight, -1)
+            if self.weight_dropout_module.p:
+                weight = self.weight_dropout_module(weight)
+            return lightconvFunction.apply(x, weight, self.padding_l).permute(2, 0, 1)
+
+    def reorder_incremental_state(self, incremental_state, new_order):
+        input_buffer = self._get_input_buffer(incremental_state)
+        if input_buffer is not None:
+            input_buffer = input_buffer.index_select(1, new_order)
+            self._set_input_buffer(incremental_state, input_buffer)
+
+    def _get_input_buffer(self, incremental_state):
+        return utils.get_incremental_state(self, incremental_state, 'input_buffer')
+
+    def _set_input_buffer(self, incremental_state, new_buffer):
+        return utils.set_incremental_state(self, incremental_state, 'input_buffer', new_buffer)
+
+    def half(self):
+        return self._apply(lambda t: t.half() if t.is_floating_point() else t)
 
 
 @with_incremental_state
@@ -7181,11 +7109,11 @@ class LSTMDecoder(FairseqIncrementalDecoder):
         elif not self.share_input_output_embed:
             self.fc_out = Linear(out_embed_dim, num_embeddings, dropout=dropout_out)
 
-    def forward(self, prev_output_tokens, encoder_out: Optional[Tuple[Tensor, Tensor, Tensor, Tensor]]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None, src_lengths: Optional[Tensor]=None):
+    def forward(self, prev_output_tokens, encoder_out: 'Optional[Tuple[Tensor, Tensor, Tensor, Tensor]]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None, src_lengths: 'Optional[Tensor]'=None):
         x, attn_scores = self.extract_features(prev_output_tokens, encoder_out, incremental_state)
         return self.output_layer(x), attn_scores
 
-    def extract_features(self, prev_output_tokens, encoder_out: Optional[Tuple[Tensor, Tensor, Tensor, Tensor]]=None, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None):
+    def extract_features(self, prev_output_tokens, encoder_out: 'Optional[Tuple[Tensor, Tensor, Tensor, Tensor]]'=None, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None):
         """
         Similar to *forward* but only return features.
         """
@@ -7269,7 +7197,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
                 x = self.fc_out(x)
         return x
 
-    def get_cached_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]]) ->Tuple[List[Tensor], List[Tensor], Optional[Tensor]]:
+    def get_cached_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]') ->Tuple[List[Tensor], List[Tensor], Optional[Tensor]]:
         cached_state = self.get_incremental_state(incremental_state, 'cached_state')
         assert cached_state is not None
         prev_hiddens_ = cached_state['prev_hiddens']
@@ -7281,7 +7209,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
         input_feed = cached_state['input_feed']
         return prev_hiddens, prev_cells, input_feed
 
-    def reorder_incremental_state(self, incremental_state: Dict[str, Dict[str, Optional[Tensor]]], new_order: Tensor):
+    def reorder_incremental_state(self, incremental_state: 'Dict[str, Dict[str, Optional[Tensor]]]', new_order: 'Tensor'):
         if incremental_state is None or len(incremental_state) == 0:
             return
         prev_hiddens, prev_cells, input_feed = self.get_cached_state(incremental_state)
@@ -7332,7 +7260,7 @@ class LSTMEncoder(FairseqEncoder):
         if bidirectional:
             self.output_units *= 2
 
-    def forward(self, src_tokens: Tensor, src_lengths: Tensor, enforce_sorted: bool=True):
+    def forward(self, src_tokens: 'Tensor', src_lengths: 'Tensor', enforce_sorted: 'bool'=True):
         """
         Args:
             src_tokens (LongTensor): tokens in the source language of
@@ -7367,7 +7295,7 @@ class LSTMEncoder(FairseqEncoder):
         encoder_padding_mask = src_tokens.eq(self.padding_idx).t()
         return tuple((x, final_hiddens, final_cells, encoder_padding_mask))
 
-    def combine_bidir(self, outs, bsz: int):
+    def combine_bidir(self, outs, bsz: 'int'):
         out = outs.view(self.num_layers, 2, bsz, -1).transpose(1, 2).contiguous()
         return out.view(self.num_layers, bsz, -1)
 
@@ -7453,7 +7381,7 @@ class LSTMModel(FairseqEncoderDecoderModel):
         decoder = LSTMDecoder(dictionary=task.target_dictionary, embed_dim=args.decoder_embed_dim, hidden_size=args.decoder_hidden_size, out_embed_dim=args.decoder_out_embed_dim, num_layers=args.decoder_layers, dropout_in=args.decoder_dropout_in, dropout_out=args.decoder_dropout_out, attention=utils.eval_bool(args.decoder_attention), encoder_output_units=encoder.output_units, pretrained_embed=pretrained_decoder_embed, share_input_output_embed=args.share_decoder_input_output_embed, adaptive_softmax_cutoff=utils.eval_str_list(args.adaptive_softmax_cutoff, type=int) if args.criterion == 'adaptive_loss' else None, max_target_positions=max_target_positions, residuals=False)
         return cls(encoder, decoder)
 
-    def forward(self, src_tokens, src_lengths, prev_output_tokens, incremental_state: Optional[Dict[str, Dict[str, Optional[Tensor]]]]=None):
+    def forward(self, src_tokens, src_lengths, prev_output_tokens, incremental_state: 'Optional[Dict[str, Dict[str, Optional[Tensor]]]]'=None):
         encoder_out = self.encoder(src_tokens, src_lengths=src_lengths)
         decoder_out = self.decoder(prev_output_tokens, encoder_out=encoder_out, incremental_state=incremental_state)
         return decoder_out
@@ -7499,7 +7427,7 @@ class TransformerSentenceEncoderLayer(nn.Module):
     models.
     """
 
-    def __init__(self, embedding_dim: int=768, ffn_embedding_dim: int=3072, num_attention_heads: int=8, dropout: float=0.1, attention_dropout: float=0.1, activation_dropout: float=0.1, activation_fn: str='relu', export: bool=False, q_noise: float=0.0, qn_block_size: int=8, init_fn: Callable=None) ->None:
+    def __init__(self, embedding_dim: 'int'=768, ffn_embedding_dim: 'int'=3072, num_attention_heads: 'int'=8, dropout: 'float'=0.1, attention_dropout: 'float'=0.1, activation_dropout: 'float'=0.1, activation_fn: 'str'='relu', export: 'bool'=False, q_noise: 'float'=0.0, qn_block_size: 'int'=8, init_fn: 'Callable'=None) ->None:
         super().__init__()
         if init_fn is not None:
             init_fn()
@@ -7522,7 +7450,7 @@ class TransformerSentenceEncoderLayer(nn.Module):
     def build_self_attention(self, embed_dim, num_attention_heads, dropout, self_attention, q_noise, qn_block_size):
         return MultiheadAttention(embed_dim, num_attention_heads, dropout=dropout, self_attention=True, q_noise=q_noise, qn_block_size=qn_block_size)
 
-    def forward(self, x: torch.Tensor, self_attn_mask: Optional[torch.Tensor]=None, self_attn_padding_mask: Optional[torch.Tensor]=None):
+    def forward(self, x: 'torch.Tensor', self_attn_mask: 'Optional[torch.Tensor]'=None, self_attn_padding_mask: 'Optional[torch.Tensor]'=None):
         """
         LayerNorm is applied either before or after the self-attention/ffn
         modules similar to the original Transformer implementation.
@@ -7593,7 +7521,7 @@ class TransformerSentenceEncoder(nn.Module):
               in format B x C.
     """
 
-    def __init__(self, padding_idx: int, vocab_size: int, num_encoder_layers: int=6, embedding_dim: int=768, ffn_embedding_dim: int=3072, num_attention_heads: int=8, dropout: float=0.1, attention_dropout: float=0.1, activation_dropout: float=0.1, layerdrop: float=0.0, max_seq_len: int=256, num_segments: int=2, use_position_embeddings: bool=True, offset_positions_by_padding: bool=True, encoder_normalize_before: bool=False, apply_bert_init: bool=False, activation_fn: str='relu', learned_pos_embedding: bool=True, embed_scale: float=None, freeze_embeddings: bool=False, n_trans_layers_to_freeze: int=0, export: bool=False, traceable: bool=False, q_noise: float=0.0, qn_block_size: int=8) ->None:
+    def __init__(self, padding_idx: 'int', vocab_size: 'int', num_encoder_layers: 'int'=6, embedding_dim: 'int'=768, ffn_embedding_dim: 'int'=3072, num_attention_heads: 'int'=8, dropout: 'float'=0.1, attention_dropout: 'float'=0.1, activation_dropout: 'float'=0.1, layerdrop: 'float'=0.0, max_seq_len: 'int'=256, num_segments: 'int'=2, use_position_embeddings: 'bool'=True, offset_positions_by_padding: 'bool'=True, encoder_normalize_before: 'bool'=False, apply_bert_init: 'bool'=False, activation_fn: 'str'='relu', learned_pos_embedding: 'bool'=True, embed_scale: 'float'=None, freeze_embeddings: 'bool'=False, n_trans_layers_to_freeze: 'int'=0, export: 'bool'=False, traceable: 'bool'=False, q_noise: 'float'=0.0, qn_block_size: 'int'=8) ->None:
         super().__init__()
         self.padding_idx = padding_idx
         self.vocab_size = vocab_size
@@ -7648,7 +7576,7 @@ class TransformerSentenceEncoder(nn.Module):
     def prepare_for_tpu_(self, **kwargs):
         self.tpu = True
 
-    def forward(self, tokens: torch.Tensor, segment_labels: torch.Tensor=None, last_state_only: bool=False, positions: Optional[torch.Tensor]=None) ->Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, tokens: 'torch.Tensor', segment_labels: 'torch.Tensor'=None, last_state_only: 'bool'=False, positions: 'Optional[torch.Tensor]'=None) ->Tuple[torch.Tensor, torch.Tensor]:
         padding_mask = tokens.eq(self.padding_idx)
         if not self.traceable and not self.tpu and not padding_mask.any():
             padding_mask = None
@@ -8089,7 +8017,7 @@ class RobertaHubInterface(nn.Module):
     def device(self):
         return self._float_tensor.device
 
-    def encode(self, sentence: str, *addl_sentences, no_separator=False) ->torch.LongTensor:
+    def encode(self, sentence: 'str', *addl_sentences, no_separator=False) ->torch.LongTensor:
         """
         BPE-encode a sentence (or multiple sentences).
 
@@ -8117,7 +8045,7 @@ class RobertaHubInterface(nn.Module):
         tokens = self.task.source_dictionary.encode_line(bpe_sentence, append_eos=False, add_if_not_exist=False)
         return tokens.long()
 
-    def decode(self, tokens: torch.LongTensor):
+    def decode(self, tokens: 'torch.LongTensor'):
         assert tokens.dim() == 1
         tokens = tokens.numpy()
         if tokens[0] == self.task.source_dictionary.bos():
@@ -8130,7 +8058,7 @@ class RobertaHubInterface(nn.Module):
             return sentences[0]
         return sentences
 
-    def extract_features(self, tokens: torch.LongTensor, return_all_hiddens: bool=False) ->torch.Tensor:
+    def extract_features(self, tokens: 'torch.LongTensor', return_all_hiddens: 'bool'=False) ->torch.Tensor:
         if tokens.dim() == 1:
             tokens = tokens.unsqueeze(0)
         if tokens.size(-1) > self.model.max_positions():
@@ -8142,17 +8070,17 @@ class RobertaHubInterface(nn.Module):
         else:
             return features
 
-    def register_classification_head(self, name: str, num_classes: int=None, embedding_size: int=None, **kwargs):
+    def register_classification_head(self, name: 'str', num_classes: 'int'=None, embedding_size: 'int'=None, **kwargs):
         self.model.register_classification_head(name, num_classes=num_classes, embedding_size=embedding_size, **kwargs)
 
-    def predict(self, head: str, tokens: torch.LongTensor, return_logits: bool=False):
+    def predict(self, head: 'str', tokens: 'torch.LongTensor', return_logits: 'bool'=False):
         features = self.extract_features(tokens)
         logits = self.model.classification_heads[head](features)
         if return_logits:
             return logits
         return F.log_softmax(logits, dim=-1)
 
-    def extract_features_aligned_to_words(self, sentence: str, return_all_hiddens: bool=False) ->torch.Tensor:
+    def extract_features_aligned_to_words(self, sentence: 'str', return_all_hiddens: 'bool'=False) ->torch.Tensor:
         """Extract RoBERTa features, aligned to spaCy's word-level tokenizer."""
         nlp = alignment_utils.spacy_nlp()
         tokenizer = alignment_utils.spacy_tokenizer()
@@ -8168,7 +8096,7 @@ class RobertaHubInterface(nn.Module):
         doc.user_token_hooks['vector'] = lambda token: aligned_feats[token.i]
         return doc
 
-    def fill_mask(self, masked_input: str, topk: int=5):
+    def fill_mask(self, masked_input: 'str', topk: 'int'=5):
         masked_token = '<mask>'
         assert masked_token in masked_input and masked_input.count(masked_token) == 1, "Please add one {0} token for the input, eg: 'He is a {0} guy'".format(masked_token)
         text_spans = masked_input.split(masked_token)
@@ -8194,7 +8122,7 @@ class RobertaHubInterface(nn.Module):
                 topk_filled_outputs.append((masked_input.replace(masked_token, predicted_token), values[index].item(), predicted_token))
         return topk_filled_outputs
 
-    def disambiguate_pronoun(self, sentence: str) ->bool:
+    def disambiguate_pronoun(self, sentence: 'str') ->bool:
         """
         Usage::
 
@@ -9166,7 +9094,7 @@ class DistilWav2Vec2Model(BaseFairseqModel):
         return student_model
 
 
-def compute_mask_indices(shape: Tuple[int, int], padding_mask: Optional[torch.Tensor], mask_prob: float, mask_length: int, mask_type: str='static', mask_other: float=0.0, min_masks: int=0, no_overlap: bool=False, min_space: int=0) ->np.ndarray:
+def compute_mask_indices(shape: 'Tuple[int, int]', padding_mask: 'Optional[torch.Tensor]', mask_prob: 'float', mask_length: 'int', mask_type: 'str'='static', mask_other: 'float'=0.0, min_masks: 'int'=0, no_overlap: 'bool'=False, min_space: 'int'=0) ->np.ndarray:
     """
     Computes random mask spans for a given shape
 
@@ -10692,7 +10620,7 @@ class Wav2VecCtc(BaseFairseqModel):
 
 class AdaptiveInput(nn.Module):
 
-    def __init__(self, vocab_size: int, padding_idx: int, initial_dim: int, factor: float, output_dim: int, cutoff: List[int], q_noise: float=0, qn_block_size: int=8):
+    def __init__(self, vocab_size: 'int', padding_idx: 'int', initial_dim: 'int', factor: 'float', output_dim: 'int', cutoff: 'List[int]', q_noise: 'float'=0, qn_block_size: 'int'=8):
         super().__init__()
         if vocab_size > cutoff[-1]:
             cutoff = cutoff + [vocab_size]
@@ -10720,10 +10648,10 @@ class AdaptiveInput(nn.Module):
         self.apply(init_weights)
         self.register_buffer('_float_tensor', torch.FloatTensor(1))
 
-    def weights_for_band(self, band: int):
+    def weights_for_band(self, band: 'int'):
         return self.embeddings[band][0].weight, self.embeddings[band][1].weight
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: 'torch.Tensor'):
         result = self._float_tensor.new(input.shape + (self.embedding_dim,))
         for i in range(len(self.cutoff)):
             mask = input.lt(self.cutoff[i])
@@ -10773,13 +10701,382 @@ CHAR_EOS_IDX = 257
 CHAR_PAD_IDX = 0
 
 
+class PathManager:
+    """
+    Wrapper for insulating OSS I/O (using Python builtin operations) from
+    fvcore's PathManager abstraction (for transparently handling various
+    internal backends).
+    """
+
+    @staticmethod
+    def open(path: 'str', mode: 'str'='r', buffering: 'int'=-1, encoding: 'Optional[str]'=None, errors: 'Optional[str]'=None, newline: 'Optional[str]'=None):
+        if FVCorePathManager:
+            return FVCorePathManager.open(path=path, mode=mode, buffering=buffering, encoding=encoding, errors=errors, newline=newline)
+        return open(path, mode=mode, buffering=buffering, encoding=encoding, errors=errors, newline=newline)
+
+    @staticmethod
+    def copy(src_path: 'str', dst_path: 'str', overwrite: 'bool'=False) ->bool:
+        if FVCorePathManager:
+            return FVCorePathManager.copy(src_path=src_path, dst_path=dst_path, overwrite=overwrite)
+        return shutil.copyfile(src_path, dst_path)
+
+    @staticmethod
+    def get_local_path(path: 'str', **kwargs) ->str:
+        if FVCorePathManager:
+            return FVCorePathManager.get_local_path(path, **kwargs)
+        return path
+
+    @staticmethod
+    def exists(path: 'str') ->bool:
+        if FVCorePathManager:
+            return FVCorePathManager.exists(path)
+        return os.path.exists(path)
+
+    @staticmethod
+    def isfile(path: 'str') ->bool:
+        if FVCorePathManager:
+            return FVCorePathManager.isfile(path)
+        return os.path.isfile(path)
+
+    @staticmethod
+    def ls(path: 'str') ->List[str]:
+        if FVCorePathManager:
+            return FVCorePathManager.ls(path)
+        return os.listdir(path)
+
+    @staticmethod
+    def mkdirs(path: 'str') ->None:
+        if FVCorePathManager:
+            return FVCorePathManager.mkdirs(path)
+        os.makedirs(path, exist_ok=True)
+
+    @staticmethod
+    def rm(path: 'str') ->None:
+        if FVCorePathManager:
+            return FVCorePathManager.rm(path)
+        os.remove(path)
+
+    @staticmethod
+    def chmod(path: 'str', mode: 'int') ->None:
+        if 'manifold' not in path:
+            os.chmod(path, mode)
+
+    @staticmethod
+    def register_handler(handler) ->None:
+        if FVCorePathManager:
+            return FVCorePathManager.register_handler(handler=handler)
+
+    @staticmethod
+    def copy_from_local(local_path: 'str', dst_path: 'str', overwrite: 'bool'=False, **kwargs) ->None:
+        if FVCorePathManager:
+            return FVCorePathManager.copy_from_local(local_path=local_path, dst_path=dst_path, overwrite=overwrite, **kwargs)
+        return shutil.copyfile(local_path, dst_path)
+
+
+def safe_readline(f):
+    pos = f.tell()
+    while True:
+        try:
+            return f.readline()
+        except UnicodeDecodeError:
+            pos -= 1
+            f.seek(pos)
+
+
+SPACE_NORMALIZER = re.compile('\\s+')
+
+
+def tokenize_line(line):
+    line = SPACE_NORMALIZER.sub(' ', line)
+    line = line.strip()
+    return line.split()
+
+
+class Dictionary(object):
+    """A mapping from symbols to consecutive integers"""
+
+    def __init__(self, *, bos='<s>', pad='<pad>', eos='</s>', unk='<unk>', extra_special_symbols=None):
+        self.bos_word, self.unk_word, self.pad_word, self.eos_word = bos, unk, pad, eos
+        self.symbols = []
+        self.count = []
+        self.indices = {}
+        self.bos_index = self.add_symbol(bos)
+        self.pad_index = self.add_symbol(pad)
+        self.eos_index = self.add_symbol(eos)
+        self.unk_index = self.add_symbol(unk)
+        if extra_special_symbols:
+            for s in extra_special_symbols:
+                self.add_symbol(s)
+        self.nspecial = len(self.symbols)
+
+    def __eq__(self, other):
+        return self.indices == other.indices
+
+    def __getitem__(self, idx):
+        if idx < len(self.symbols):
+            return self.symbols[idx]
+        return self.unk_word
+
+    def __len__(self):
+        """Returns the number of symbols in the dictionary"""
+        return len(self.symbols)
+
+    def __contains__(self, sym):
+        return sym in self.indices
+
+    def index(self, sym):
+        """Returns the index of the specified symbol"""
+        assert isinstance(sym, str)
+        if sym in self.indices:
+            return self.indices[sym]
+        return self.unk_index
+
+    def string(self, tensor, bpe_symbol=None, escape_unk=False, extra_symbols_to_ignore=None, unk_string=None):
+        """Helper for converting a tensor of token indices to a string.
+
+        Can optionally remove BPE symbols or escape <unk> words.
+        """
+        if torch.is_tensor(tensor) and tensor.dim() == 2:
+            return '\n'.join(self.string(t, bpe_symbol, escape_unk, extra_symbols_to_ignore) for t in tensor)
+        extra_symbols_to_ignore = set(extra_symbols_to_ignore or [])
+        extra_symbols_to_ignore.add(self.eos())
+
+        def token_string(i):
+            if i == self.unk():
+                if unk_string is not None:
+                    return unk_string
+                else:
+                    return self.unk_string(escape_unk)
+            else:
+                return self[i]
+        if hasattr(self, 'bos_index'):
+            extra_symbols_to_ignore.add(self.bos())
+        sent = ' '.join(token_string(i) for i in tensor if utils.item(i) not in extra_symbols_to_ignore)
+        return data_utils.post_process(sent, bpe_symbol)
+
+    def unk_string(self, escape=False):
+        """Return unknown string, optionally escaped as: <<unk>>"""
+        if escape:
+            return '<{}>'.format(self.unk_word)
+        else:
+            return self.unk_word
+
+    def add_symbol(self, word, n=1, overwrite=False):
+        """Adds a word to the dictionary"""
+        if word in self.indices and not overwrite:
+            idx = self.indices[word]
+            self.count[idx] = self.count[idx] + n
+            return idx
+        else:
+            idx = len(self.symbols)
+            self.indices[word] = idx
+            self.symbols.append(word)
+            self.count.append(n)
+            return idx
+
+    def update(self, new_dict):
+        """Updates counts from new dictionary."""
+        for word in new_dict.symbols:
+            idx2 = new_dict.indices[word]
+            if word in self.indices:
+                idx = self.indices[word]
+                self.count[idx] = self.count[idx] + new_dict.count[idx2]
+            else:
+                idx = len(self.symbols)
+                self.indices[word] = idx
+                self.symbols.append(word)
+                self.count.append(new_dict.count[idx2])
+
+    def finalize(self, threshold=-1, nwords=-1, padding_factor=8):
+        """Sort symbols by frequency in descending order, ignoring special ones.
+
+        Args:
+            - threshold defines the minimum word count
+            - nwords defines the total number of words in the final dictionary,
+                including special symbols
+            - padding_factor can be used to pad the dictionary size to be a
+                multiple of 8, which is important on some hardware (e.g., Nvidia
+                Tensor Cores).
+        """
+        if nwords <= 0:
+            nwords = len(self)
+        new_indices = dict(zip(self.symbols[:self.nspecial], range(self.nspecial)))
+        new_symbols = self.symbols[:self.nspecial]
+        new_count = self.count[:self.nspecial]
+        c = Counter(dict(sorted(zip(self.symbols[self.nspecial:], self.count[self.nspecial:]))))
+        for symbol, count in c.most_common(nwords - self.nspecial):
+            if count >= threshold:
+                new_indices[symbol] = len(new_symbols)
+                new_symbols.append(symbol)
+                new_count.append(count)
+            else:
+                break
+        assert len(new_symbols) == len(new_indices)
+        self.count = list(new_count)
+        self.symbols = list(new_symbols)
+        self.indices = new_indices
+        self.pad_to_multiple_(padding_factor)
+
+    def pad_to_multiple_(self, padding_factor):
+        """Pad Dictionary size to be a multiple of *padding_factor*."""
+        if padding_factor > 1:
+            i = 0
+            while len(self) % padding_factor != 0:
+                symbol = 'madeupword{:04d}'.format(i)
+                self.add_symbol(symbol, n=0)
+                i += 1
+
+    def bos(self):
+        """Helper to get index of beginning-of-sentence symbol"""
+        return self.bos_index
+
+    def pad(self):
+        """Helper to get index of pad symbol"""
+        return self.pad_index
+
+    def eos(self):
+        """Helper to get index of end-of-sentence symbol"""
+        return self.eos_index
+
+    def unk(self):
+        """Helper to get index of unk symbol"""
+        return self.unk_index
+
+    @classmethod
+    def load(cls, f):
+        """Loads the dictionary from a text file with the format:
+
+        ```
+        <symbol0> <count0>
+        <symbol1> <count1>
+        ...
+        ```
+        """
+        d = cls()
+        d.add_from_file(f)
+        return d
+
+    def add_from_file(self, f):
+        """
+        Loads a pre-existing dictionary from a text file and adds its symbols
+        to this instance.
+        """
+        if isinstance(f, str):
+            try:
+                with PathManager.open(f, 'r', encoding='utf-8') as fd:
+                    self.add_from_file(fd)
+            except FileNotFoundError as fnfe:
+                raise fnfe
+            except UnicodeError:
+                raise Exception('Incorrect encoding detected in {}, please rebuild the dataset'.format(f))
+            return
+        lines = f.readlines()
+        indices_start_line = self._load_meta(lines)
+        for line in lines[indices_start_line:]:
+            try:
+                line, field = line.rstrip().rsplit(' ', 1)
+                if field == '#fairseq:overwrite':
+                    overwrite = True
+                    line, field = line.rsplit(' ', 1)
+                else:
+                    overwrite = False
+                count = int(field)
+                word = line
+                if word in self and not overwrite:
+                    raise RuntimeError("Duplicate word found when loading Dictionary: '{}'. Duplicate words can overwrite earlier ones by adding the #fairseq:overwrite flag at the end of the corresponding row in the dictionary file. If using the Camembert model, please download an updated copy of the model file.".format(word))
+                self.add_symbol(word, n=count, overwrite=overwrite)
+            except ValueError:
+                raise ValueError("Incorrect dictionary format, expected '<token> <cnt> [flags]'")
+
+    def _save(self, f, kv_iterator):
+        if isinstance(f, str):
+            PathManager.mkdirs(os.path.dirname(f))
+            with PathManager.open(f, 'w', encoding='utf-8') as fd:
+                return self.save(fd)
+        for k, v in kv_iterator:
+            None
+
+    def _get_meta(self):
+        return [], []
+
+    def _load_meta(self, lines):
+        return 0
+
+    def save(self, f):
+        """Stores dictionary into a text file"""
+        ex_keys, ex_vals = self._get_meta()
+        self._save(f, zip(ex_keys + self.symbols[self.nspecial:], ex_vals + self.count[self.nspecial:]))
+
+    def dummy_sentence(self, length):
+        t = torch.Tensor(length).uniform_(self.nspecial + 1, len(self)).long()
+        t[-1] = self.eos()
+        return t
+
+    def encode_line(self, line, line_tokenizer=tokenize_line, add_if_not_exist=True, consumer=None, append_eos=True, reverse_order=False):
+        words = line_tokenizer(line)
+        if reverse_order:
+            words = list(reversed(words))
+        nwords = len(words)
+        ids = torch.IntTensor(nwords + 1 if append_eos else nwords)
+        for i, word in enumerate(words):
+            if add_if_not_exist:
+                idx = self.add_symbol(word)
+            else:
+                idx = self.index(word)
+            if consumer is not None:
+                consumer(word, idx)
+            ids[i] = idx
+        if append_eos:
+            ids[nwords] = self.eos_index
+        return ids
+
+    @staticmethod
+    def _add_file_to_dictionary_single_worker(filename, tokenize, eos_word, worker_id=0, num_workers=1):
+        counter = Counter()
+        with open(PathManager.get_local_path(filename), 'r', encoding='utf-8') as f:
+            size = os.fstat(f.fileno()).st_size
+            chunk_size = size // num_workers
+            offset = worker_id * chunk_size
+            end = offset + chunk_size
+            f.seek(offset)
+            if offset > 0:
+                safe_readline(f)
+            line = f.readline()
+            while line:
+                for word in tokenize(line):
+                    counter.update([word])
+                counter.update([eos_word])
+                if f.tell() > end:
+                    break
+                line = f.readline()
+        return counter
+
+    @staticmethod
+    def add_file_to_dictionary(filename, dict, tokenize, num_workers):
+
+        def merge_result(counter):
+            for w, c in sorted(counter.items()):
+                dict.add_symbol(w, c)
+        if num_workers > 1:
+            pool = Pool(processes=num_workers)
+            results = []
+            for worker_id in range(num_workers):
+                results.append(pool.apply_async(Dictionary._add_file_to_dictionary_single_worker, (filename, tokenize, dict.eos_word, worker_id, num_workers)))
+            pool.close()
+            pool.join()
+            for r in results:
+                merge_result(r.get())
+        else:
+            merge_result(Dictionary._add_file_to_dictionary_single_worker(filename, tokenize, dict.eos_word))
+
+
 class Highway(torch.nn.Module):
     """
     A `Highway layer <https://arxiv.org/abs/1505.00387>`_.
     Adopted from the AllenNLP implementation.
     """
 
-    def __init__(self, input_dim: int, num_layers: int=1):
+    def __init__(self, input_dim: 'int', num_layers: 'int'=1):
         super(Highway, self).__init__()
         self.input_dim = input_dim
         self.layers = nn.ModuleList([nn.Linear(input_dim, input_dim * 2) for _ in range(num_layers)])
@@ -10792,7 +11089,7 @@ class Highway(torch.nn.Module):
             nn.init.constant_(layer.bias[:self.input_dim], 0)
             nn.init.xavier_normal_(layer.weight)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         for layer in self.layers:
             projection = layer(x)
             proj_x, gate = projection.chunk(2, dim=-1)
@@ -10804,7 +11101,7 @@ class Highway(torch.nn.Module):
 
 class CharacterTokenEmbedder(torch.nn.Module):
 
-    def __init__(self, vocab: Dictionary, filters: List[Tuple[int, int]], char_embed_dim: int, word_embed_dim: int, highway_layers: int, max_char_len: int=50, char_inputs: bool=False):
+    def __init__(self, vocab: 'Dictionary', filters: 'List[Tuple[int, int]]', char_embed_dim: 'int', word_embed_dim: 'int', highway_layers: 'int', max_char_len: 'int'=50, char_inputs: 'bool'=False):
         super(CharacterTokenEmbedder, self).__init__()
         self.onnx_trace = False
         self.embedding_dim = word_embed_dim
@@ -10857,7 +11154,7 @@ class CharacterTokenEmbedder(torch.nn.Module):
         nn.init.constant_(self.char_embeddings.weight[self.char_embeddings.padding_idx], 0.0)
         nn.init.constant_(self.projection.bias, 0.0)
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: 'torch.Tensor'):
         if self.char_inputs:
             chars = input.view(-1, self.max_char_len)
             pads = chars[:, 0].eq(CHAR_PAD_IDX)
@@ -10891,7 +11188,7 @@ class CharacterTokenEmbedder(torch.nn.Module):
                 word_embs[unk] = self.symbol_embeddings[self.unk_idx]
         return word_embs.view(input.size()[:2] + (-1,))
 
-    def _convolve(self, char_idxs: torch.Tensor):
+    def _convolve(self, char_idxs: 'torch.Tensor'):
         char_embs = self.char_embeddings(char_idxs)
         char_embs = char_embs.transpose(1, 2)
         conv_result = []
@@ -11038,259 +11335,6 @@ class DynamicCRF(nn.Module):
         finalized_scores = torch.cat(finalized_scores, 1)
         finalized_scores[:, 1:] = finalized_scores[:, 1:] - finalized_scores[:, :-1]
         return finalized_scores, finalized_tokens
-
-
-class dynamicconvFunction(Function):
-
-    @staticmethod
-    def forward(ctx, x, weights, padding_l):
-        ctx.padding_l = padding_l
-        outputs = dynamicconv_cuda.forward(x, weights, padding_l)
-        variables = [x, weights]
-        ctx.save_for_backward(*variables)
-        return outputs[0]
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        outputs = dynamicconv_cuda.backward(grad_output.contiguous(), ctx.padding_l, *ctx.saved_tensors)
-        grad_input, grad_weights = outputs
-        return grad_input, grad_weights, None
-
-
-@with_incremental_state
-class DynamicconvLayer(nn.Module):
-
-    def __init__(self, input_size, kernel_size=1, padding_l=None, weight_softmax=False, num_heads=1, weight_dropout=0.0, bias=False, renorm_padding=False, conv_bias=False, query_size=None):
-        super(DynamicconvLayer, self).__init__()
-        self.input_size = input_size
-        self.query_size = input_size if query_size is None else query_size
-        self.kernel_size = kernel_size
-        self.padding_l = padding_l
-        self.num_heads = num_heads
-        self.weight_softmax = weight_softmax
-        self.weight_dropout_module = FairseqDropout(weight_dropout, module_name=self.__class__.__name__)
-        self.renorm_padding = renorm_padding
-        self.bias = bias
-        self.weight_linear = nn.Linear(input_size, num_heads * kernel_size, bias)
-        if conv_bias:
-            self.conv_bias = nn.Parameter(torch.Tensor(input_size))
-        else:
-            self.conv_bias = None
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.weight_linear.weight)
-        if self.conv_bias is not None:
-            nn.init.constant_(self.conv_bias, 0.0)
-            nn.init.constant_(self.weight_linaer.bias, 0.0)
-
-    def forward(self, x, incremental_state=None, query=None, unfold=None):
-        T, B, C = x.size()
-        K, H = self.kernel_size, self.num_heads
-        if incremental_state is not None:
-            unfold = x.size(0) > 512 if unfold is None else unfold
-            unfold = unfold or incremental_state is not None
-            assert query is None
-            if query is None:
-                query = x
-            if unfold:
-                output = self._forward_unfolded(x, incremental_state, query)
-            else:
-                output = self._forward_expanded(x, incremental_state, query)
-            if self.conv_bias is not None:
-                output = output + self.conv_bias.view(1, 1, -1)
-            return output
-        else:
-            weight = self.weight_linear(x).view(T, B, H, K)
-            if self.weight_softmax:
-                weight = F.softmax(weight, dim=-1)
-            if self.weight_dropout_module.p:
-                weight = self.weight_dropout_module(weight)
-            weight = weight.permute(1, 2, 3, 0).contiguous()
-            self.filters = weight
-            x = x.permute(1, 2, 0).contiguous()
-            output = dynamicconvFunction.apply(x, weight, self.padding_l).permute(2, 0, 1)
-            if self.conv_bias is not None:
-                output = output + self.conv_bias.view(1, 1, -1)
-            return output
-
-    def reorder_incremental_state(self, incremental_state, new_order):
-        input_buffer = self._get_input_buffer(incremental_state)
-        if input_buffer is not None:
-            input_buffer = input_buffer.index_select(1, new_order)
-            self._set_input_buffer(incremental_state, input_buffer)
-
-    def _get_input_buffer(self, incremental_state):
-        return utils.get_incremental_state(self, incremental_state, 'input_buffer')
-
-    def _set_input_buffer(self, incremental_state, new_buffer):
-        return utils.set_incremental_state(self, incremental_state, 'input_buffer', new_buffer)
-
-    def _forward_unfolded(self, x, incremental_state, query):
-        """The conventional implementation of convolutions.
-        Unfolding the input by having a window shifting to the right."""
-        T, B, C = x.size()
-        K, H = self.kernel_size, self.num_heads
-        R = C // H
-        assert R * H == C == self.input_size
-        weight = self.weight_linear(query).view(T * B * H, -1)
-        assert not self.renorm_padding or incremental_state is not None
-        if incremental_state is not None:
-            input_buffer = self._get_input_buffer(incremental_state)
-            if input_buffer is None:
-                input_buffer = x.new()
-            x_unfold = torch.cat([input_buffer, x.unsqueeze(3)], dim=3)
-            if self.kernel_size > 1:
-                self._set_input_buffer(incremental_state, x_unfold[:, :, :, -self.kernel_size + 1:])
-            x_unfold = x_unfold.view(T * B * H, R, -1)
-        else:
-            padding_l = self.padding_l
-            if K > T and padding_l == K - 1:
-                weight = weight.narrow(1, K - T, T)
-                K, padding_l = T, T - 1
-            x_unfold = unfold1d(x, K, padding_l, 0)
-            x_unfold = x_unfold.view(T * B * H, R, K)
-        if self.weight_softmax and not self.renorm_padding:
-            weight = F.softmax(weight, dim=1)
-        weight = weight.narrow(1, 0, K)
-        if incremental_state is not None:
-            weight = weight[:, -x_unfold.size(2):]
-            K = weight.size(1)
-        if self.weight_softmax and self.renorm_padding:
-            weight = F.softmax(weight, dim=1)
-        weight = self.weight_dropout_module(weight, inplace=False)
-        output = torch.bmm(x_unfold, weight.unsqueeze(2))
-        output = output.view(T, B, C)
-        return output
-
-    def _forward_expanded(self, x, incremental_stat, query):
-        """Turn the convolution filters into band matrices and do matrix multiplication.
-        This is faster when the sequence is short, but less memory efficient.
-        This is not used in the decoder during inference.
-        """
-        T, B, C = x.size()
-        K, H = self.kernel_size, self.num_heads
-        R = C // H
-        assert R * H == C == self.input_size
-        weight = self.weight_linear(query).view(T * B * H, -1)
-        if not self.renorm_padding:
-            if self.weight_softmax:
-                weight = F.softmax(weight, dim=1)
-            weight = self.weight_dropout_module(weight, inplace=False)
-        weight = weight.narrow(1, 0, K).contiguous()
-        weight = weight.view(T, B * H, K).transpose(0, 1)
-        x = x.view(T, B * H, R).transpose(0, 1)
-        if self.weight_softmax and self.renorm_padding:
-            weight_expanded = weight.new(B * H, T, T + K - 1).fill_(float('-inf'))
-            weight_expanded.as_strided((B * H, T, K), (T * (T + K - 1), T + K, 1)).copy_(weight)
-            weight_expanded = weight_expanded.narrow(2, self.padding_l, T)
-            weight_expanded = F.softmax(weight_expanded, dim=2)
-            weight_expanded = self.weight_dropout_module(weight_expanded, inplace=False)
-        else:
-            P = self.padding_l
-            if K > T and P == K - 1:
-                weight = weight.narrow(2, K - T, T)
-                K, P = T, T - 1
-            weight_expanded = weight.new_zeros(B * H, T, T + K - 1, requires_grad=False)
-            weight_expanded.as_strided((B * H, T, K), (T * (T + K - 1), T + K, 1)).copy_(weight)
-            weight_expanded = weight_expanded.narrow(2, P, T)
-        output = torch.bmm(weight_expanded, x)
-        output = output.transpose(0, 1).contiguous().view(T, B, C)
-        return output
-
-
-class lightconvFunction(Function):
-
-    @staticmethod
-    def forward(ctx, x, weights, padding_l):
-        ctx.padding_l = padding_l
-        outputs = lightconv_cuda.forward(x, weights, padding_l)
-        variables = [x, weights]
-        ctx.save_for_backward(*variables)
-        return outputs[0]
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        outputs = lightconv_cuda.backward(grad_output.contiguous(), ctx.padding_l, *ctx.saved_tensors)
-        grad_input, grad_weights = outputs
-        return grad_input, grad_weights, None
-
-
-@with_incremental_state
-class LightconvLayer(nn.Module):
-
-    def __init__(self, input_size, kernel_size=1, padding_l=None, weight_softmax=False, num_heads=1, weight_dropout=0.0, bias=False):
-        super(LightconvLayer, self).__init__()
-        self.input_size = input_size
-        self.kernel_size = kernel_size
-        self.padding_l = padding_l
-        self.num_heads = num_heads
-        self.weight_softmax = weight_softmax
-        self.weight_dropout_module = FairseqDropout(weight_dropout, module_name=self.__class__.__name__)
-        self.weight = nn.Parameter(torch.Tensor(num_heads, kernel_size))
-        if bias:
-            self.bias = nn.Parameter(torch.Tensor(input_size))
-        else:
-            self.bias = None
-        self.reset_parameters()
-
-    def upgrade_state_dict_named(self, state_dict, name):
-        prefix = name + '.' if name != '' else ''
-        for k, v in state_dict.items():
-            if k.endswith(prefix + 'weight'):
-                if v.dim() == 3 and v.size(1) == 1:
-                    state_dict[k] = v.squeeze(1)
-
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.weight)
-        if self.bias is not None:
-            nn.init.constant_(self.bias, 0.0)
-
-    def forward(self, x, incremental_state=None):
-        if incremental_state is not None:
-            T, B, C = x.size()
-            K, H = self.kernel_size, self.num_heads
-            R = C // H
-            input_buffer = self._get_input_buffer(incremental_state)
-            if input_buffer is None:
-                input_buffer = x.new()
-            x_unfold = torch.cat([input_buffer, x.unsqueeze(3)], dim=3)
-            if self.kernel_size > 1:
-                self._set_input_buffer(incremental_state, x_unfold[:, :, :, -self.kernel_size + 1:])
-            x_unfold = x_unfold.view(T * B * H, R, -1)
-            weight = self.weight
-            if self.weight_softmax:
-                weight = F.softmax(weight.float(), dim=1).type_as(weight)
-            weight = weight[:, -x_unfold.size(2):]
-            K = weight.size(1)
-            weight = weight.view(1, H, K).expand(T * B, H, K).contiguous().view(T * B * H, K, 1)
-            weight = self.weight_dropout_module(weight)
-            output = torch.bmm(x_unfold, weight)
-            output = output.view(T, B, C)
-            return output
-        else:
-            x = x.permute(1, 2, 0).contiguous()
-            weight = self.weight
-            if self.weight_softmax:
-                weight = F.softmax(self.weight, -1)
-            if self.weight_dropout_module.p:
-                weight = self.weight_dropout_module(weight)
-            return lightconvFunction.apply(x, weight, self.padding_l).permute(2, 0, 1)
-
-    def reorder_incremental_state(self, incremental_state, new_order):
-        input_buffer = self._get_input_buffer(incremental_state)
-        if input_buffer is not None:
-            input_buffer = input_buffer.index_select(1, new_order)
-            self._set_input_buffer(incremental_state, input_buffer)
-
-    def _get_input_buffer(self, incremental_state):
-        return utils.get_incremental_state(self, incremental_state, 'input_buffer')
-
-    def _set_input_buffer(self, incremental_state, new_buffer):
-        return utils.set_incremental_state(self, incremental_state, 'input_buffer', new_buffer)
-
-    def half(self):
-        return self._apply(lambda t: t.half() if t.is_floating_point() else t)
 
 
 class LightweightConv1d(nn.Module):
@@ -11926,7 +11970,7 @@ class Search(nn.Module):
         self.src_lengths = src_lengths
 
     @torch.jit.export
-    def init_constraints(self, batch_constraints: Optional[Tensor], beam_size: int):
+    def init_constraints(self, batch_constraints: 'Optional[Tensor]', beam_size: 'int'):
         """Initialize constraint states for constrained decoding (if supported).
 
         Args:
@@ -11939,7 +11983,7 @@ class Search(nn.Module):
         """
         pass
 
-    def prune_sentences(self, batch_idxs: Tensor):
+    def prune_sentences(self, batch_idxs: 'Tensor'):
         """
         Removes constraint states for completed sentences (if supported).
         This is called from sequence_generator._generate() when sentences are
@@ -11950,7 +11994,7 @@ class Search(nn.Module):
         """
         pass
 
-    def update_constraints(self, active_hypos: Tensor):
+    def update_constraints(self, active_hypos: 'Tensor'):
         """
         Updates the constraint states by selecting the beam items that are retained.
         This is called at each time step of sequence_generator._generate() when
@@ -11971,7 +12015,7 @@ class BeamSearch(Search):
         self.constraint_states = None
 
     @torch.jit.export
-    def step(self, step: int, lprobs, scores: Optional[Tensor]):
+    def step(self, step: 'int', lprobs, scores: 'Optional[Tensor]'):
         bsz, beam_size, vocab_size = lprobs.size()
         if step == 0:
             lprobs = lprobs[:, ::beam_size, :].contiguous()
@@ -11986,15 +12030,9 @@ class BeamSearch(Search):
         return scores_buf, indices_buf, beams_buf
 
 
-class ConstraintState:
-
-    def __init__(self):
-        pass
-
-
 class ConstraintSequence:
 
-    def __init__(self, sequences: List[List[int]]):
+    def __init__(self, sequences: 'List[List[int]]'):
         """Represents a set of possibly multitoken constraints by
         concatenating them and internally recording the end points.
         """
@@ -12009,7 +12047,7 @@ class ConstraintSequence:
             self.endpoints += [(False) for x in range(len(sequence) - 1)] + [True]
             self.sequences += sequence
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: 'int'):
         return self.sequences[key]
 
     def __len__(self):
@@ -12019,7 +12057,13 @@ class ConstraintSequence:
         return str(self.sequences)
 
 
-def unpack_constraints(constraint_tensor: torch.Tensor) ->List[torch.Tensor]:
+class ConstraintState:
+
+    def __init__(self):
+        pass
+
+
+def unpack_constraints(constraint_tensor: 'torch.Tensor') ->List[torch.Tensor]:
     """
     Transforms *one row* of a packed constraint tensor (e.g., for one
     sentence in the batch) into a list of constraint tensors.
@@ -12040,12 +12084,12 @@ class OrderedConstraintState(ConstraintState):
     Records progress through the set of linear nonbranching constraints with gaps.
     """
 
-    def __init__(self, sequence: ConstraintSequence, state: int=-1):
+    def __init__(self, sequence: 'ConstraintSequence', state: 'int'=-1):
         self.sequence = sequence
         self.state = state
 
     @staticmethod
-    def create(constraint_tensor: torch.Tensor):
+    def create(constraint_tensor: 'torch.Tensor'):
         constraint_list = unpack_constraints(constraint_tensor)
         return OrderedConstraintState(ConstraintSequence(constraint_list), -1)
 
@@ -12108,7 +12152,7 @@ class OrderedConstraintState(ConstraintState):
             tokens.add(self.sequence[self.state + 1])
         return tokens
 
-    def advance(self, token: int):
+    def advance(self, token: 'int'):
         """Reads in a token and advances the state. Here's how it works.
 
         We can advance to the next state if:
@@ -12148,7 +12192,7 @@ class ConstraintNode:
     Represents a node in a trie managing unordered constraints.
     """
 
-    def __init__(self, token: int=None, parent=None):
+    def __init__(self, token: 'int'=None, parent=None):
         self.token = int(token) if token is not None else None
         self.parent = parent
         self.terminal = 0
@@ -12163,7 +12207,7 @@ class ConstraintNode:
         term = self.terminal != 0
         return f'[{self.token}].{term}#{self.num_constraints}'
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: 'int'):
         return self.children.get(key, None)
 
     def next_tokens(self) ->Set[int]:
@@ -12171,14 +12215,14 @@ class ConstraintNode:
         return set(self.children.keys())
 
     @staticmethod
-    def create(constraints: List[List[int]]):
+    def create(constraints: 'List[List[int]]'):
         root = ConstraintNode()
         for sequence in constraints:
             root.add_sequence(sequence)
         return root
 
     @staticmethod
-    def print_graph(node: 'ConstraintNode'):
+    def print_graph(node: "'ConstraintNode'"):
         if len(node.children) == 0:
             return str(node)
         else:
@@ -12204,7 +12248,7 @@ class ConstraintNode:
         """Returns the set of tokens in constraints."""
         return set(self.token_counts().keys())
 
-    def add_sequence(self, sequence: List[int]):
+    def add_sequence(self, sequence: 'List[int]'):
         """Adds a constraint, represented as a list of integers, to
         the trie."""
         assert len(sequence) > 0
@@ -12229,7 +12273,7 @@ class UnorderedConstraintState(ConstraintState):
     using a trie.
     """
 
-    def __init__(self, node: ConstraintNode, copy_from: 'ConstraintState'=None):
+    def __init__(self, node: 'ConstraintNode', copy_from: "'ConstraintState'"=None):
         self.node = node
         if copy_from is None:
             self.root = node
@@ -12244,7 +12288,7 @@ class UnorderedConstraintState(ConstraintState):
             self.generated[node] += 1
 
     @staticmethod
-    def create(constraint_tensor: torch.Tensor):
+    def create(constraint_tensor: 'torch.Tensor'):
         constraint_list = unpack_constraints(constraint_tensor)
         constraint_trie_root = ConstraintNode.create(constraint_list)
         return UnorderedConstraintState(constraint_trie_root)
@@ -12311,7 +12355,7 @@ class UnorderedConstraintState(ConstraintState):
         else:
             return self.root.next_tokens()
 
-    def advance(self, token: int):
+    def advance(self, token: 'int'):
         """Reads in a token and advances the state. Here's how it works.
 
         We can advance to the next state if:
@@ -12391,7 +12435,7 @@ class LexicallyConstrainedBeamSearch(Search):
         self.supports_constraints = True
 
     @torch.jit.export
-    def init_constraints(self, batch_constraints: Optional[Tensor], beam_size: int):
+    def init_constraints(self, batch_constraints: 'Optional[Tensor]', beam_size: 'int'):
         self.constraint_states = []
         for constraint_tensor in batch_constraints:
             if self.representation == 'ordered':
@@ -12401,18 +12445,18 @@ class LexicallyConstrainedBeamSearch(Search):
             self.constraint_states.append([constraint_state for i in range(beam_size)])
 
     @torch.jit.export
-    def prune_sentences(self, batch_idxs: Tensor):
+    def prune_sentences(self, batch_idxs: 'Tensor'):
         self.constraint_states = [self.constraint_states[i] for i in batch_idxs.tolist()]
 
     @torch.jit.export
-    def update_constraints(self, active_hypos: Tensor):
+    def update_constraints(self, active_hypos: 'Tensor'):
         if self.constraint_states:
             batch_size = active_hypos.size(0)
             for sentid in range(batch_size):
                 self.constraint_states[sentid] = [self.constraint_states[sentid][i] for i in active_hypos[sentid]]
 
     @torch.jit.export
-    def step(self, step: int, lprobs: Tensor, scores: Optional[Tensor]):
+    def step(self, step: 'int', lprobs: 'Tensor', scores: 'Optional[Tensor]'):
         """
         A constrained step builds a large candidates list from the following:
         - the top 2 * {beam_size} items over the whole beam
@@ -12484,7 +12528,7 @@ class LexicallyConstrainedBeamSearch(Search):
         return new_scores_buf, new_indices_buf, new_beams_buf
 
     @torch.jit.export
-    def step_sentence(self, step: int, sentno: int, lprobs: Tensor, constraint_states: List[List[ConstraintState]], beams_buf: Tensor, indices_buf: Tensor, scores_buf: Tensor):
+    def step_sentence(self, step: 'int', sentno: 'int', lprobs: 'Tensor', constraint_states: 'List[List[ConstraintState]]', beams_buf: 'Tensor', indices_buf: 'Tensor', scores_buf: 'Tensor'):
         """Does per-sentence processing. Adds all constraints for each
         hypothesis to the list of candidates; then removes duplicates,
         sorts, and dynamically stripes across the banks. All tensor inputs
@@ -12564,7 +12608,7 @@ class LengthConstrainedBeamSearch(Search):
         self.beam = BeamSearch(tgt_dict)
         self.needs_src_lengths = True
 
-    def step(self, step: int, lprobs, scores):
+    def step(self, step: 'int', lprobs, scores):
         min_lens = self.min_len_a * self.src_lengths + self.min_len_b
         max_lens = self.max_len_a * self.src_lengths + self.max_len_b
         lprobs[step < min_lens, :, self.eos] = -math.inf
@@ -12589,7 +12633,7 @@ class DiverseBeamSearch(Search):
         self.beam = BeamSearch(tgt_dict)
 
     @torch.jit.export
-    def step(self, step: int, lprobs, scores):
+    def step(self, step: 'int', lprobs, scores):
         bsz, beam_size, vocab_size = lprobs.size()
         if beam_size % self.num_groups != 0:
             raise ValueError('DiverseBeamSearch requires --beam to be divisible by the number of groups')
@@ -12615,8 +12659,8 @@ class DiverseBeamSearch(Search):
 
 
 class Sampling(Search):
-    sampling_topk: int
-    sampling_topp: float
+    sampling_topk: 'int'
+    sampling_topp: 'float'
 
     def __init__(self, tgt_dict, sampling_topk=-1, sampling_topp=-1.0):
         super().__init__(tgt_dict)
@@ -12657,7 +12701,7 @@ class Sampling(Search):
         return trimed_probs, truncated_indices
 
     @torch.jit.export
-    def step(self, step: int, lprobs, scores):
+    def step(self, step: 'int', lprobs, scores):
         bsz, beam_size, vocab_size = lprobs.size()
         if step == 0:
             lprobs = lprobs[:, ::beam_size, :].contiguous()
@@ -12707,11 +12751,11 @@ class DiverseSiblingsSearch(Search):
         self.diversity_rate = diversity_rate
         self.beam = BeamSearch(tgt_dict)
 
-    def step(self, step: int, lprobs, scores):
+    def step(self, step: 'int', lprobs, scores):
         bsz, beam_size, vocab_size = lprobs.size()
         k = min(beam_size * 2, lprobs.view(bsz, -1).size(1) - 1)
-        s_list: List[Tensor]
-        i_list: List[Tensor]
+        s_list: 'List[Tensor]'
+        i_list: 'List[Tensor]'
         s_list = [torch.empty(0) for i in range(beam_size)]
         i_list = [torch.LongTensor() for i in range(beam_size)]
         sibling_score = torch.arange(1, k + 1) * self.diversity_rate
@@ -12733,9 +12777,6 @@ class DiverseSiblingsSearch(Search):
         return final_scores, final_indices, final_beams
 
 
-EncoderOut = NamedTuple('EncoderOut', [('encoder_out', Tensor), ('encoder_padding_mask', Optional[Tensor]), ('encoder_embedding', Optional[Tensor]), ('encoder_states', Optional[List[Tensor]]), ('src_tokens', Optional[Tensor]), ('src_lengths', Optional[Tensor])])
-
-
 class EnsembleModel(nn.Module):
     """A wrapper around an ensemble of models."""
 
@@ -12744,7 +12785,7 @@ class EnsembleModel(nn.Module):
         self.models_size = len(models)
         self.single_model = models[0]
         self.models = nn.ModuleList(models)
-        self.has_incremental: bool = False
+        self.has_incremental: 'bool' = False
         if all(hasattr(m, 'decoder') and isinstance(m.decoder, FairseqIncrementalDecoder) for m in models):
             self.has_incremental = True
 
@@ -12761,16 +12802,16 @@ class EnsembleModel(nn.Module):
         return min([m.max_decoder_positions() for m in self.models])
 
     @torch.jit.export
-    def forward_encoder(self, net_input: Dict[str, Tensor]):
+    def forward_encoder(self, net_input: 'Dict[str, Tensor]'):
         if not self.has_encoder():
             return None
         return [model.encoder.forward_torchscript(net_input) for model in self.models]
 
     @torch.jit.export
-    def forward_decoder(self, tokens, encoder_outs: List[EncoderOut], incremental_states: List[Dict[str, Dict[str, Optional[Tensor]]]], temperature: float=1.0):
+    def forward_decoder(self, tokens, encoder_outs: 'List[EncoderOut]', incremental_states: 'List[Dict[str, Dict[str, Optional[Tensor]]]]', temperature: 'float'=1.0):
         log_probs = []
-        avg_attn: Optional[Tensor] = None
-        encoder_out: Optional[EncoderOut] = None
+        avg_attn: 'Optional[Tensor]' = None
+        encoder_out: 'Optional[EncoderOut]' = None
         for i, model in enumerate(self.models):
             if self.has_encoder():
                 encoder_out = encoder_outs[i]
@@ -12778,7 +12819,7 @@ class EnsembleModel(nn.Module):
                 decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out, incremental_state=incremental_states[i])
             else:
                 decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out)
-            attn: Optional[Tensor] = None
+            attn: 'Optional[Tensor]' = None
             decoder_len = len(decoder_out)
             if decoder_len > 1 and decoder_out[1] is not None:
                 if isinstance(decoder_out[1], Tensor):
@@ -12808,7 +12849,7 @@ class EnsembleModel(nn.Module):
         return avg_probs, avg_attn
 
     @torch.jit.export
-    def reorder_encoder_out(self, encoder_outs: Optional[List[EncoderOut]], new_order):
+    def reorder_encoder_out(self, encoder_outs: 'Optional[List[EncoderOut]]', new_order):
         """
         Reorder encoder output according to *new_order*.
 
@@ -12819,7 +12860,7 @@ class EnsembleModel(nn.Module):
         Returns:
             *encoder_out* rearranged according to *new_order*
         """
-        new_outs: List[EncoderOut] = []
+        new_outs: 'List[EncoderOut]' = []
         if not self.has_encoder():
             return new_outs
         for i, model in enumerate(self.models):
@@ -12828,7 +12869,7 @@ class EnsembleModel(nn.Module):
         return new_outs
 
     @torch.jit.export
-    def reorder_incremental_state(self, incremental_states: List[Dict[str, Dict[str, Optional[Tensor]]]], new_order):
+    def reorder_incremental_state(self, incremental_states: 'List[Dict[str, Dict[str, Optional[Tensor]]]]', new_order):
         if not self.has_incremental_states():
             return
         for i, model in enumerate(self.models):
@@ -12892,7 +12933,7 @@ class SequenceGenerator(nn.Module):
         return self
 
     @torch.no_grad()
-    def forward(self, sample: Dict[str, Dict[str, Tensor]], prefix_tokens: Optional[Tensor]=None, bos_token: Optional[int]=None):
+    def forward(self, sample: 'Dict[str, Dict[str, Tensor]]', prefix_tokens: 'Optional[Tensor]'=None, bos_token: 'Optional[int]'=None):
         """Generate a batch of translations.
 
         Args:
@@ -12928,7 +12969,7 @@ class SequenceGenerator(nn.Module):
                 yield id, src, ref, hypos[i]
 
     @torch.no_grad()
-    def generate(self, models, sample: Dict[str, Dict[str, Tensor]], **kwargs):
+    def generate(self, models, sample: 'Dict[str, Dict[str, Tensor]]', **kwargs):
         """Generate translations. Match the api of other fairseq generators.
 
         Args:
@@ -12943,7 +12984,7 @@ class SequenceGenerator(nn.Module):
         """
         return self._generate(sample, **kwargs)
 
-    def _generate(self, sample: Dict[str, Dict[str, Tensor]], prefix_tokens: Optional[Tensor]=None, constraints: Optional[Tensor]=None, bos_token: Optional[int]=None):
+    def _generate(self, sample: 'Dict[str, Dict[str, Tensor]]', prefix_tokens: 'Optional[Tensor]'=None, constraints: 'Optional[Tensor]'=None, bos_token: 'Optional[int]'=None):
         incremental_states = torch.jit.annotate(List[Dict[str, Dict[str, Optional[Tensor]]]], [torch.jit.annotate(Dict[str, Dict[str, Optional[Tensor]]], {}) for i in range(self.model.models_size)])
         net_input = sample['net_input']
         if 'src_tokens' in net_input:
@@ -12959,7 +13000,7 @@ class SequenceGenerator(nn.Module):
         if constraints is not None and not self.search.supports_constraints:
             raise NotImplementedError("Target-side constraints were provided, but search method doesn't support them")
         self.search.init_constraints(constraints, beam_size)
-        max_len: int = -1
+        max_len: 'int' = -1
         if self.match_source_len:
             max_len = src_lengths.max().item()
         else:
@@ -12973,7 +13014,7 @@ class SequenceGenerator(nn.Module):
         scores = torch.zeros(bsz * beam_size, max_len + 1).float()
         tokens = torch.zeros(bsz * beam_size, max_len + 2).long().fill_(self.pad)
         tokens[:, 0] = self.eos if bos_token is None else bos_token
-        attn: Optional[Tensor] = None
+        attn: 'Optional[Tensor]' = None
         cands_to_ignore = torch.zeros(bsz, beam_size).eq(-1)
         finalized = torch.jit.annotate(List[List[Dict[str, Tensor]]], [torch.jit.annotate(List[Dict[str, Tensor]], []) for i in range(bsz)])
         finished = [(False) for i in range(bsz)]
@@ -12981,8 +13022,8 @@ class SequenceGenerator(nn.Module):
         cand_size = 2 * beam_size
         bbsz_offsets = (torch.arange(0, bsz) * beam_size).unsqueeze(1).type_as(tokens)
         cand_offsets = torch.arange(0, cand_size).type_as(tokens)
-        reorder_state: Optional[Tensor] = None
-        batch_idxs: Optional[Tensor] = None
+        reorder_state: 'Optional[Tensor]' = None
+        batch_idxs: 'Optional[Tensor]' = None
         for step in range(max_len + 1):
             if reorder_state is not None:
                 if batch_idxs is not None:
@@ -13017,7 +13058,7 @@ class SequenceGenerator(nn.Module):
             eos_mask = cand_indices.eq(self.eos) & cand_scores.ne(-math.inf)
             eos_mask[:, :beam_size][cands_to_ignore] = torch.tensor(0)
             eos_bbsz_idx = torch.masked_select(cand_bbsz_idx[:, :beam_size], mask=eos_mask[:, :beam_size])
-            finalized_sents: List[int] = []
+            finalized_sents: 'List[int]' = []
             if eos_bbsz_idx.numel() > 0:
                 eos_scores = torch.masked_select(cand_scores[:, :beam_size], mask=eos_mask[:, :beam_size])
                 finalized_sents = self.finalize_hypos(step, eos_bbsz_idx, eos_scores, tokens, scores, finalized, finished, beam_size, attn, src_lengths, max_len)
@@ -13074,7 +13115,7 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(List[Dict[str, Tensor]], finalized[sent])
         return finalized
 
-    def _prefix_tokens(self, step: int, lprobs, scores, tokens, prefix_tokens, beam_size: int):
+    def _prefix_tokens(self, step: 'int', lprobs, scores, tokens, prefix_tokens, beam_size: 'int'):
         """Handle prefix tokens"""
         prefix_toks = prefix_tokens[:, step].unsqueeze(-1).repeat(1, beam_size).view(-1)
         prefix_lprobs = lprobs.gather(-1, prefix_toks.unsqueeze(-1))
@@ -13092,12 +13133,12 @@ class SequenceGenerator(nn.Module):
             lprobs = self.replicate_first_beam(lprobs, eos_mask_batch_dim, beam_size)
         return lprobs, tokens, scores
 
-    def replicate_first_beam(self, tensor, mask, beam_size: int):
+    def replicate_first_beam(self, tensor, mask, beam_size: 'int'):
         tensor = tensor.view(-1, beam_size, tensor.size(-1))
         tensor[mask] = tensor[mask][:, :1, :]
         return tensor.view(-1, tensor.size(-1))
 
-    def finalize_hypos(self, step: int, bbsz_idx, eos_scores, tokens, scores, finalized: List[List[Dict[str, Tensor]]], finished: List[bool], beam_size: int, attn: Optional[Tensor], src_lengths, max_len: int):
+    def finalize_hypos(self, step: 'int', bbsz_idx, eos_scores, tokens, scores, finalized: 'List[List[Dict[str, Tensor]]]', finished: 'List[bool]', beam_size: 'int', attn: 'Optional[Tensor]', src_lengths, max_len: 'int'):
         """Finalize hypothesis, store finalized information in `finalized`, and change `finished` accordingly.
         A sentence is finalized when {beam_size} finished items have been collected for it.
 
@@ -13115,14 +13156,14 @@ class SequenceGenerator(nn.Module):
         pos_scores[:, 1:] = pos_scores[:, 1:] - pos_scores[:, :-1]
         if self.normalize_scores:
             eos_scores /= (step + 1) ** self.len_penalty
-        cum_unfin: List[int] = []
+        cum_unfin: 'List[int]' = []
         prev = 0
         for f in finished:
             if f:
                 prev += 1
             else:
                 cum_unfin.append(prev)
-        sents_seen: Dict[str, Optional[Tensor]] = {}
+        sents_seen: 'Dict[str, Optional[Tensor]]' = {}
         for i in range(bbsz_idx.size()[0]):
             idx = bbsz_idx[i]
             score = eos_scores[i]
@@ -13139,16 +13180,16 @@ class SequenceGenerator(nn.Module):
                 else:
                     hypo_attn = torch.empty(0)
                 finalized[sent].append({'tokens': tokens_clone[i], 'score': score, 'attention': hypo_attn, 'alignment': torch.empty(0), 'positional_scores': pos_scores[i]})
-        newly_finished: List[int] = []
+        newly_finished: 'List[int]' = []
         for seen in sents_seen.keys():
-            sent: int = int(float(seen.split('_')[0]))
-            unfin_idx: int = int(float(seen.split('_')[1]))
+            sent: 'int' = int(float(seen.split('_')[0]))
+            unfin_idx: 'int' = int(float(seen.split('_')[1]))
             if not finished[sent] and self.is_finished(step, unfin_idx, max_len, len(finalized[sent]), beam_size):
                 finished[sent] = True
                 newly_finished.append(unfin_idx)
         return newly_finished
 
-    def is_finished(self, step: int, unfin_idx: int, max_len: int, finalized_sent_len: int, beam_size: int):
+    def is_finished(self, step: 'int', unfin_idx: 'int', max_len: 'int', finalized_sent_len: 'int', beam_size: 'int'):
         """
         Check whether decoding for a sentence is finished, which
         occurs when the list of finalized sentences has reached the
@@ -13159,21 +13200,21 @@ class SequenceGenerator(nn.Module):
             return True
         return False
 
-    def calculate_banned_tokens(self, tokens, step: int, gen_ngrams: List[Dict[str, List[int]]], no_repeat_ngram_size: int, bbsz_idx: int):
-        tokens_list: List[int] = tokens[bbsz_idx, step + 2 - no_repeat_ngram_size:step + 1].tolist()
+    def calculate_banned_tokens(self, tokens, step: 'int', gen_ngrams: 'List[Dict[str, List[int]]]', no_repeat_ngram_size: 'int', bbsz_idx: 'int'):
+        tokens_list: 'List[int]' = tokens[bbsz_idx, step + 2 - no_repeat_ngram_size:step + 1].tolist()
         ngram_index = ','.join([str(x) for x in tokens_list])
         return gen_ngrams[bbsz_idx].get(ngram_index, torch.jit.annotate(List[int], []))
 
-    def transpose_list(self, l: List[List[int]]):
+    def transpose_list(self, l: 'List[List[int]]'):
         min_len = min([len(x) for x in l])
         l2 = [[row[i] for row in l] for i in range(min_len)]
         return l2
 
-    def _no_repeat_ngram(self, tokens, lprobs, bsz: int, beam_size: int, step: int):
-        gen_ngrams: List[Dict[str, List[int]]] = [torch.jit.annotate(Dict[str, List[int]], {}) for bbsz_idx in range(bsz * beam_size)]
+    def _no_repeat_ngram(self, tokens, lprobs, bsz: 'int', beam_size: 'int', step: 'int'):
+        gen_ngrams: 'List[Dict[str, List[int]]]' = [torch.jit.annotate(Dict[str, List[int]], {}) for bbsz_idx in range(bsz * beam_size)]
         cpu_tokens = tokens.cpu()
         for bbsz_idx in range(bsz * beam_size):
-            gen_tokens: List[int] = cpu_tokens[bbsz_idx].tolist()
+            gen_tokens: 'List[int]' = cpu_tokens[bbsz_idx].tolist()
             for ngram in self.transpose_list([gen_tokens[i:] for i in range(self.no_repeat_ngram_size)]):
                 key = ','.join([str(x) for x in ngram[:-1]])
                 gen_ngrams[bbsz_idx][key] = gen_ngrams[bbsz_idx].get(key, torch.jit.annotate(List[int], [])) + [ngram[-1]]
@@ -13329,6 +13370,9 @@ class Model(nn.Module):
     def forward(self, input):
         output = self.fc(input)
         return output
+
+
+EncoderOut = NamedTuple('EncoderOut', [('encoder_out', Tensor), ('encoder_padding_mask', Optional[Tensor]), ('encoder_embedding', Optional[Tensor]), ('encoder_states', Optional[List[Tensor]]), ('src_tokens', Optional[Tensor]), ('src_lengths', Optional[Tensor])])
 
 
 class TestEncoder(FairseqEncoder):

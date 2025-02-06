@@ -63,7 +63,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -709,7 +711,7 @@ class BalanceCrossEntropyLoss(nn.Module):
         self.negative_ratio = negative_ratio
         self.eps = eps
 
-    def forward(self, pred: torch.Tensor, gt: torch.Tensor, mask: torch.Tensor, return_origin=False):
+    def forward(self, pred: 'torch.Tensor', gt: 'torch.Tensor', mask: 'torch.Tensor', return_origin=False):
         """
         Args:
             pred: shape :math:`(N, 1, H, W)`, the prediction of network
@@ -741,7 +743,7 @@ class DiceLoss(nn.Module):
         super(DiceLoss, self).__init__()
         self.eps = eps
 
-    def forward(self, pred: torch.Tensor, gt, mask, weights=None):
+    def forward(self, pred: 'torch.Tensor', gt, mask, weights=None):
         """
         pred: one or two heatmaps of shape (N, 1, H, W),
             the losses of tow heatmaps are added together.
@@ -772,7 +774,7 @@ class MaskL1Loss(nn.Module):
         super(MaskL1Loss, self).__init__()
         self.eps = eps
 
-    def forward(self, pred: torch.Tensor, gt, mask):
+    def forward(self, pred: 'torch.Tensor', gt, mask):
         loss = (torch.abs(pred - gt) * mask).sum() / (mask.sum() + self.eps)
         return loss
 
@@ -843,7 +845,7 @@ def build_neck(neck_name, **kwargs):
 
 class Model(nn.Module):
 
-    def __init__(self, model_config: dict):
+    def __init__(self, model_config: 'dict'):
         """
         PANnet
         :param model_config: 模型配置

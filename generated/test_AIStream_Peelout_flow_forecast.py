@@ -3,6 +3,7 @@ _module = sys.modules[__name__]
 del sys
 conf = _module
 base_line_methods = _module
+d_n_linear = _module
 gru_vanilla = _module
 linear_regression = _module
 lstm_vanilla = _module
@@ -26,6 +27,7 @@ basic_ae = _module
 merging_model = _module
 meta_train = _module
 model_dict_function = _module
+crossvivit = _module
 plot_functions = _module
 pre_dict = _module
 buil_dataset = _module
@@ -44,11 +46,15 @@ temporal_decoding = _module
 time_model = _module
 trainer = _module
 training_utils = _module
+anomaly_transformer = _module
 attn = _module
+basis_former = _module
+cross_former = _module
 data_embedding = _module
 dsanet = _module
 dummy_torch = _module
 informer = _module
+itransformer = _module
 lower_upper_config = _module
 masks = _module
 multi_head_base = _module
@@ -61,6 +67,7 @@ tests = _module
 data_format_tests = _module
 data_loader_tests = _module
 meta_data_tests = _module
+test_cross_vivit = _module
 pytorc_train_tests = _module
 test_attn = _module
 test_classification2_loader = _module
@@ -81,6 +88,7 @@ test_preprocessing = _module
 test_preprocessing_ae = _module
 test_series_id = _module
 test_squashed = _module
+test_variable_length = _module
 time_model_test = _module
 usgs_tests = _module
 validation_loop_test = _module
@@ -89,7 +97,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -108,10 +118,10 @@ wraps = functools.wraps
 import torch
 
 
-from typing import Type
-
-
 import torch.nn as nn
+
+
+from typing import Type
 
 
 from torch.autograd import Function
@@ -225,7 +235,16 @@ from torch.nn import BCELoss
 from torch.nn import BCEWithLogitsLoss
 
 
+from typing import Any
+
+
+from torch import einsum
+
+
 from torch.utils.data import Dataset
+
+
+from copy import deepcopy
 
 
 import torch.optim as optim
@@ -238,6 +257,12 @@ from abc import abstractmethod
 
 
 from math import sqrt
+
+
+from math import ceil
+
+
+from math import pi
 
 
 from torch.nn.modules.activation import MultiheadAttention
@@ -267,8 +292,9 @@ from sklearn.preprocessing import StandardScaler
 import numpy
 
 
-def the_last1(tensor: torch.Tensor, out_len: int) ->torch.Tensor:
-    """Creates a tensor based on the last element
+def the_last1(tensor: 'torch.Tensor', out_len: 'int') ->torch.Tensor:
+    """Creates a tensor based on the last element.
+
     :param tensor: A tensor of dimension (batch_size, seq_len, n_time_series)
     :param out_len: The length or the forecast_length
     :type out_len: int
@@ -280,13 +306,12 @@ def the_last1(tensor: torch.Tensor, out_len: int) ->torch.Tensor:
 
 
 class NaiveBase(torch.nn.Module):
-    """
-    A very simple baseline model that returns
-    the fixed value based on the input sequence.
-    No learning used at all a
+    """A very simple baseline model that returns the fixed value based on the input sequence.
+
+    No learning used at all.
     """
 
-    def __init__(self, seq_length: int, n_time_series: int, output_seq_len=1, metric: str='last'):
+    def __init__(self, seq_length: 'int', n_time_series: 'int', output_seq_len=1, metric: 'str'='last'):
         super().__init__()
         self.forecast_history = seq_length
         self.n_time_series = n_time_series
@@ -296,18 +321,148 @@ class NaiveBase(torch.nn.Module):
         self.output_seq_len = output_seq_len
         self.metric_function = self.metric_dict[metric]
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """_summary_
+
+        Args:
+            x (torch.Tensor): _description_
+
+        Returns:
+            torch.Tensor: _description_
+        """
         return self.metric_function(x, self.output_seq_len)
+
+
+class NLinear(nn.Module):
+    """Normalization-Linear."""
+
+    def __init__(self, forecast_history: 'int', forecast_length: 'int', enc_in=128, individual=False, n_targs=1):
+        super(NLinear, self).__init__()
+        self.seq_len = forecast_history
+        self.pred_len2 = forecast_length
+        self.channels = enc_in
+        self.individual = individual
+        self.n_targs = n_targs
+        if self.individual:
+            self.Linear = nn.ModuleList()
+            for i in range(self.channels):
+                self.Linear.append(nn.Linear(self.seq_len, self.pred_len2))
+        else:
+            self.Linear = nn.Linear(self.seq_len, self.pred_len2)
+
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        seq_last = x[:, -1:, :].detach()
+        x = x - seq_last
+        if self.individual:
+            output = torch.zeros([x.size(0), self.pred_len2, x.size(2)], dtype=x.dtype)
+            for i in range(self.channels):
+                output[:, :, i] = self.Linear[i](x[:, :, i])
+            x = output
+        else:
+            x = self.Linear(x.permute(0, 2, 1)).permute(0, 2, 1)
+        x = x + seq_last
+        if self.n_targs == 1:
+            return x[:, :, -1]
+        return x
+
+
+class MovingAvg(nn.Module):
+    """Moving average block to highlight the trend of time series."""
+
+    def __init__(self, kernel_size, stride):
+        super(MovingAvg, self).__init__()
+        self.kernel_size = kernel_size
+        self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=0)
+
+    def forward(self, x: 'torch.Tensor'):
+        front = x[:, 0:1, :].repeat(1, (self.kernel_size - 1) // 2, 1)
+        end = x[:, -1:, :].repeat(1, (self.kernel_size - 1) // 2, 1)
+        x = torch.cat([front, x, end], dim=1)
+        x = self.avg(x.permute(0, 2, 1))
+        x = x.permute(0, 2, 1)
+        return x
+
+
+class SeriesDecomp(nn.Module):
+    """Series decomposition block."""
+
+    def __init__(self, kernel_size):
+        super(SeriesDecomp, self).__init__()
+        self.moving_avg = MovingAvg(kernel_size, stride=1)
+
+    def forward(self, x):
+        moving_mean = self.moving_avg(x)
+        res = x - moving_mean
+        return res, moving_mean
+
+
+class DLinear(nn.Module):
+    """Decomposition-Linear."""
+
+    def __init__(self, forecast_history: 'int', forecast_length: 'int', individual, enc_in: 'int', n_targs=1):
+        """Code from.
+
+        :param forecast_history: _description_
+        :type forecast_history: int
+        :param forecast_length: _description_
+        :type forecast_length: int
+        :param individual: _description_
+        :type individual: _type_
+        :param enc_in: _description_
+        :type enc_in: int
+        """
+        super(DLinear, self).__init__()
+        self.seq_len = forecast_history
+        self.pred_len2 = forecast_length
+        self.n_targs = n_targs
+        kernel_size = 25
+        self.decompsition = SeriesDecomp(kernel_size)
+        self.individual = individual
+        self.channels = enc_in
+        if self.individual:
+            self.Linear_Seasonal = nn.ModuleList()
+            self.Linear_Trend = nn.ModuleList()
+            for i in range(self.channels):
+                self.Linear_Seasonal.append(nn.Linear(self.seq_len, self.pred_len2))
+                self.Linear_Trend.append(nn.Linear(self.seq_len, self.pred_len2))
+        else:
+            self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len2)
+            self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len2)
+
+    def forward(self, x: 'torch.Tensor'):
+        """The.
+
+        :param x: PyTorch tensor of size [Batch, Input length, Channel]
+        :type x: _type_
+        :return: _description_
+        :rtype: _type_
+        """
+        seasonal_init, trend_init = self.decompsition(x)
+        seasonal_init, trend_init = seasonal_init.permute(0, 2, 1), trend_init.permute(0, 2, 1)
+        if self.individual:
+            seasonal_output = torch.zeros([seasonal_init.size(0), seasonal_init.size(1), self.pred_len2], dtype=seasonal_init.dtype)
+            trend_output = torch.zeros([trend_init.size(0), trend_init.size(1), self.pred_len2], dtype=trend_init.dtype)
+            for i in range(self.channels):
+                seasonal_output[:, i, :] = self.Linear_Seasonal[i](seasonal_init[:, i, :])
+                trend_output[:, i, :] = self.Linear_Trend[i](trend_init[:, i, :])
+        else:
+            seasonal_output = self.Linear_Seasonal(seasonal_init)
+            trend_output = self.Linear_Trend(trend_init)
+        x = seasonal_output + trend_output
+        x = x.permute(0, 2, 1)
+        if self.n_targs == 1:
+            return x[:, :, -1]
+        else:
+            return x
 
 
 class VanillaGRU(torch.nn.Module):
 
-    def __init__(self, n_time_series: int, hidden_dim: int, num_layers: int, n_target: int, dropout: float, forecast_length=1, use_hidden=False, probabilistic=False):
-        """
-        Simple GRU to preform deep time series forecasting.
+    def __init__(self, n_time_series: 'int', hidden_dim: 'int', num_layers: 'int', n_target: 'int', dropout: 'float', forecast_length=1, use_hidden=False, probabilistic=False):
+        """Simple GRU to preform deep time series forecasting.
 
         :param n_time_series: The number of time series present in the data
-        :type n_time_series:
+        :type n_time_series int:
         :param hidden_dim:
         :type hidden_dim:
 
@@ -323,8 +478,8 @@ class VanillaGRU(torch.nn.Module):
         self.gru = torch.nn.GRU(n_time_series, hidden_dim, num_layers, batch_first=True, dropout=dropout)
         self.fc = torch.nn.Linear(hidden_dim, n_target)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        """Forward function for GRU
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """Forward function for GRU.
 
         :param x: torch of shape
         :type model: torch.Tensor
@@ -349,13 +504,13 @@ class VanillaGRU(torch.nn.Module):
 
 
 class SimpleLinearModel(torch.nn.Module):
-    """
-    A very simple baseline model to resolve some of the
-    difficulties with bugs in the various train/validation loops
-    in code. Has only two layers.
+    """A very simple baseline linear model to resolve some of the difficulties with bugs in the various train/validation
+    loops in code.
+
+    Has only two layers.
     """
 
-    def __init__(self, seq_length: int, n_time_series: int, output_seq_len=1, probabilistic: bool=False):
+    def __init__(self, seq_length: 'int', n_time_series: 'int', output_seq_len=1, probabilistic: 'bool'=False):
         super().__init__()
         self.forecast_history = seq_length
         self.n_time_series = n_time_series
@@ -367,7 +522,7 @@ class SimpleLinearModel(torch.nn.Module):
             self.output_len = output_seq_len
         self.output_layer = torch.nn.Linear(seq_length, self.output_len)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         """
         x: A tensor of dimension (B, L, M) where
         B is the batch size, L is the length of the sequence
@@ -384,13 +539,13 @@ class SimpleLinearModel(torch.nn.Module):
 
 
 class LSTMForecast(torch.nn.Module):
-    """
-    A very simple baseline LSTM model that returns
-    an output sequence given a multi-dimensional input seq. Inspired by the StackOverflow link below.
+    """A very simple baseline LSTM model that returns an output sequence given a multi-dimensional input seq.
+
+    Inspired by the StackOverflow link below.
     https://stackoverflow.com/questions/56858924/multivariate-input-lstm-in-pytorch
     """
 
-    def __init__(self, seq_length: int, n_time_series: int, output_seq_len=1, hidden_states: int=20, num_layers=2, bias=True, batch_size=100, probabilistic=False):
+    def __init__(self, seq_length: 'int', n_time_series: 'int', output_seq_len=1, hidden_states: 'int'=20, num_layers=2, bias=True, batch_size=100, probabilistic=False):
         super().__init__()
         self.forecast_history = seq_length
         self.n_time_series = n_time_series
@@ -404,7 +559,7 @@ class LSTMForecast(torch.nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.init_hidden(batch_size)
 
-    def init_hidden(self, batch_size: int) ->None:
+    def init_hidden(self, batch_size: 'int') ->None:
         """[summary]
 
         :param batch_size: [description]
@@ -412,7 +567,7 @@ class LSTMForecast(torch.nn.Module):
         """
         self.hidden = torch.zeros(self.num_layers, batch_size, self.hidden_dim), torch.zeros(self.num_layers, batch_size, self.hidden_dim)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
         batch_size = x.size()[0]
         self.init_hidden(batch_size)
         out_x, self.hidden = self.lstm(x, self.hidden)
@@ -602,7 +757,7 @@ def _entmax_threshold_and_support(X, dim=-1, k=None):
 class Entmax15Function(Function):
 
     @classmethod
-    def forward(cls, ctx, X: torch.Tensor, dim=0, k=None):
+    def forward(cls, ctx, X: 'torch.Tensor', dim=0, k=None):
         ctx.dim = dim
         max_val, _ = X.max(dim=dim, keepdim=True)
         X = X - max_val
@@ -670,21 +825,19 @@ class Entmax15(nn.Module):
         self.k = k
         super(Entmax15, self).__init__()
 
-    def forward(self, X: torch.Tensor):
+    def forward(self, X: 'torch.Tensor'):
         return entmax15(X, dim=self.dim, k=self.k)
 
 
 class MASELoss(torch.nn.Module):
 
     def __init__(self, baseline_method):
-        """
-        This implements the MASE loss function (e.g. MAE_MODEL/MAE_NAIEVE)
-        """
+        """This implements the MASE loss function (e.g. MAE_MODEL/MAE_NAIEVE)"""
         super(MASELoss, self).__init__()
         self.method_dict = {'mean': lambda x, y: torch.mean(x, 1).unsqueeze(1).repeat(1, y[1], 1)}
         self.baseline_method = self.method_dict[baseline_method]
 
-    def forward(self, target: torch.Tensor, output: torch.Tensor, train_data: torch.Tensor, m=1) ->torch.Tensor:
+    def forward(self, target: 'torch.Tensor', output: 'torch.Tensor', train_data: 'torch.Tensor', m=1) ->torch.Tensor:
         if len(train_data.shape) < 3:
             train_data = train_data.unsqueeze(0)
         if m == 1 and len(target.shape) == 1:
@@ -705,8 +858,8 @@ class MASELoss(torch.nn.Module):
 
 
 class RMSELoss(torch.nn.Module):
-    """
-    Returns RMSE using:
+    """Returns RMSE using:
+
     target -> True y
     output -> Prediction by model
     source: https://discuss.pytorch.org/t/rmse-loss-function/16540/3
@@ -717,7 +870,7 @@ class RMSELoss(torch.nn.Module):
         self.mse = torch.nn.MSELoss()
         self.variance_penalty = variance_penalty
 
-    def forward(self, output: torch.Tensor, target: torch.Tensor):
+    def forward(self, output: 'torch.Tensor', target: 'torch.Tensor'):
         if len(output) > 1:
             diff = torch.sub(target, output)
             std_dev = torch.std(diff)
@@ -731,17 +884,16 @@ class RMSELoss(torch.nn.Module):
 
 
 class MAPELoss(torch.nn.Module):
-    """
-    Returns MAPE using:
-    target -> True y
-    output -> Predtion by model
+    """Returns MAPE using:
+
+    target -> True y output -> Predtion by model
     """
 
     def __init__(self, variance_penalty=0.0):
         super().__init__()
         self.variance_penalty = variance_penalty
 
-    def forward(self, output: torch.Tensor, target: torch.Tensor):
+    def forward(self, output: 'torch.Tensor', target: 'torch.Tensor'):
         if len(output) > 1:
             return torch.mean(torch.abs(torch.sub(target, output) / target)) + self.variance_penalty * torch.std(torch.sub(target, output))
         else:
@@ -749,8 +901,8 @@ class MAPELoss(torch.nn.Module):
 
 
 class PenalizedMSELoss(torch.nn.Module):
-    """
-    Returns MSE using:
+    """Returns MSE using:
+
     target -> True y
     output -> Predtion by model
     source: https://discuss.pytorch.org/t/rmse-loss-function/16540/3
@@ -761,27 +913,25 @@ class PenalizedMSELoss(torch.nn.Module):
         self.mse = torch.nn.MSELoss()
         self.variance_penalty = variance_penalty
 
-    def forward(self, output: torch.Tensor, target: torch.Tensor):
+    def forward(self, output: 'torch.Tensor', target: 'torch.Tensor'):
         return self.mse(target, output) + self.variance_penalty * torch.std(torch.sub(target, output))
 
 
 class GaussianLoss(torch.nn.Module):
 
     def __init__(self, mu=0, sigma=0):
-        """Compute the negative log likelihood of Gaussian Distribution
-        From https://arxiv.org/abs/1907.00235
-        """
+        """Compute the negative log likelihood of Gaussian Distribution From https://arxiv.org/abs/1907.00235."""
         super(GaussianLoss, self).__init__()
         self.mu = mu
         self.sigma = sigma
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: 'torch.Tensor'):
         loss = -tdist.Normal(self.mu, self.sigma).log_prob(x)
         return torch.sum(loss) / (loss.size(0) * loss.size(1))
 
 
 class QuantileLoss(torch.nn.Module):
-    """From https://medium.com/the-artificial-impostor/quantile-regression-part-2-6fdbc26b2629"""
+    """From https://medium.com/the-artificial-impostor/quantile-regression-part-2-6fdbc26b2629."""
 
     def __init__(self, quantiles):
         super().__init__()
@@ -799,18 +949,13 @@ class QuantileLoss(torch.nn.Module):
 
 
 class NegativeLogLikelihood(torch.nn.Module):
-    """
-    target -> True y
-    output -> predicted distribution
-    """
+    """target -> True y output -> predicted distribution."""
 
     def __init__(self):
         super().__init__()
 
-    def forward(self, output: torch.distributions, target: torch.Tensor):
-        """
-        calculates NegativeLogLikelihood
-        """
+    def forward(self, output: 'torch.distributions', target: 'torch.Tensor'):
+        """calculates NegativeLogLikelihood."""
         return -output.log_prob(target).sum()
 
 
@@ -905,16 +1050,13 @@ def pairwise_distances(x, y=None):
 class DilateLoss(torch.nn.Module):
 
     def __init__(self, gamma=0.001, alpha=0.5):
-        """
-        Dilate loss function originally from
-        https://github.com/manjot4/NIPS-Reproducibility-Challenge
-        """
+        """Dilate loss function originally from https://github.com/manjot4/NIPS-Reproducibility-Challenge."""
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    def forward(self, targets: torch.Tensor, outputs: torch.Tensor):
+    def forward(self, targets: 'torch.Tensor', outputs: 'torch.Tensor'):
         """
         :targets: tensor of dimension (batch_size, out_seq_len, 1)
         :outputs: tensor of dimension (batch_size, out_seq_len, 1)
@@ -945,7 +1087,7 @@ class DilateLoss(torch.nn.Module):
         return loss
 
 
-def one_hot(labels: torch.Tensor, num_classes: int, device: Optional[torch.device]=None, dtype: Optional[torch.dtype]=None, eps: float=1e-06) ->torch.Tensor:
+def one_hot(labels: 'torch.Tensor', num_classes: 'int', device: 'Optional[torch.device]'=None, dtype: 'Optional[torch.dtype]'=None, eps: 'float'=1e-06) ->torch.Tensor:
     """Convert an integer label x-D tensor to a one-hot (x+1)-D tensor.
     Args:
         labels: tensor with labels of shape :math:`(N, *)`, where N is batch size.
@@ -978,9 +1120,9 @@ def one_hot(labels: torch.Tensor, num_classes: int, device: Optional[torch.devic
     return one_hot.scatter_(1, labels.unsqueeze(1), 1.0) + eps
 
 
-def focal_loss(input: torch.Tensor, target: torch.Tensor, alpha: float, gamma: float=2.0, reduction: str='none', eps: Optional[float]=None) ->torch.Tensor:
-    """Criterion that computes Focal loss.
-    According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+def focal_loss(input: 'torch.Tensor', target: 'torch.Tensor', alpha: 'float', gamma: 'float'=2.0, reduction: 'str'='none', eps: 'Optional[float]'=None) ->torch.Tensor:
+    """Criterion that computes Focal loss. According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+
     .. math::
         \\text{FL}(p_t) = -\\alpha_t (1 - p_t)^{\\gamma} \\, \\text{log}(p_t)
     Where:
@@ -1019,9 +1161,9 @@ def focal_loss(input: torch.Tensor, target: torch.Tensor, alpha: float, gamma: f
         raise ValueError(f'Expected target size {out_size}, got {target.size()}')
     if not input.device == target.device:
         raise ValueError(f'input and target must be in the same device. Got: {input.device} and {target.device}')
-    input_soft: torch.Tensor = F.softmax(input, dim=1)
-    log_input_soft: torch.Tensor = F.log_softmax(input, dim=1)
-    target_one_hot: torch.Tensor = one_hot(target, num_classes=input.shape[1], device=input.device, dtype=input.dtype)
+    input_soft: 'torch.Tensor' = F.softmax(input, dim=1)
+    log_input_soft: 'torch.Tensor' = F.log_softmax(input, dim=1)
+    target_one_hot: 'torch.Tensor' = one_hot(target, num_classes=input.shape[1], device=input.device, dtype=input.dtype)
     weight = torch.pow(-input_soft + 1.0, gamma)
     focal = -alpha * weight * log_input_soft
     loss_tmp = torch.einsum('bc...,bc...->b...', (target_one_hot, focal))
@@ -1037,8 +1179,8 @@ def focal_loss(input: torch.Tensor, target: torch.Tensor, alpha: float, gamma: f
 
 
 class FocalLoss(nn.Module):
-    """Criterion that computes Focal loss.
-    According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+    """Criterion that computes Focal loss. According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+
     .. math::
         \\text{FL}(p_t) = -\\alpha_t (1 - p_t)^{\\gamma} \\, \\text{log}(p_t)
     Where:
@@ -1067,14 +1209,14 @@ class FocalLoss(nn.Module):
         >>> output.backward()
     """
 
-    def __init__(self, alpha: float, gamma: float=2.0, reduction: str='none', eps: Optional[float]=None) ->None:
+    def __init__(self, alpha: 'float', gamma: 'float'=2.0, reduction: 'str'='none', eps: 'Optional[float]'=None) ->None:
         super().__init__()
-        self.alpha: float = alpha
-        self.gamma: float = gamma
-        self.reduction: str = reduction
-        self.eps: Optional[float] = eps
+        self.alpha: 'float' = alpha
+        self.gamma: 'float' = gamma
+        self.reduction: 'str' = reduction
+        self.eps: 'Optional[float]' = eps
 
-    def forward(self, input: torch.Tensor, target: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.Tensor') ->torch.Tensor:
         if len(target.shape) == 3:
             target = target[:, 0, :]
         if len(target.shape) == 2:
@@ -1085,8 +1227,9 @@ class FocalLoss(nn.Module):
         return focal_loss(input, target, self.alpha, self.gamma, self.reduction, self.eps)
 
 
-def binary_focal_loss_with_logits(input: torch.Tensor, target: torch.Tensor, alpha: float=0.25, gamma: float=2.0, reduction: str='none', eps: Optional[float]=None) ->torch.Tensor:
+def binary_focal_loss_with_logits(input: 'torch.Tensor', target: 'torch.Tensor', alpha: 'float'=0.25, gamma: 'float'=2.0, reduction: 'str'='none', eps: 'Optional[float]'=None) ->torch.Tensor:
     """Function that computes Binary Focal loss.
+
     .. math::
         \\text{FL}(p_t) = -\\alpha_t (1 - p_t)^{\\gamma} \\, \\text{log}(p_t)
     where:
@@ -1134,8 +1277,8 @@ def binary_focal_loss_with_logits(input: torch.Tensor, target: torch.Tensor, alp
 
 
 class BinaryFocalLossWithLogits(nn.Module):
-    """Criterion that computes Focal loss.
-    According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+    """Criterion that computes Focal loss. According to :cite:`lin2018focal`, the Focal loss is computed as follows:
+
     .. math::
         \\text{FL}(p_t) = -\\alpha_t (1 - p_t)^{\\gamma} \\, \\text{log}(p_t)
     where:
@@ -1160,20 +1303,20 @@ class BinaryFocalLossWithLogits(nn.Module):
         >>> output.backward()
     """
 
-    def __init__(self, alpha: float, gamma: float=2.0, reduction: str='none') ->None:
+    def __init__(self, alpha: 'float', gamma: 'float'=2.0, reduction: 'str'='none') ->None:
         super().__init__()
-        self.alpha: float = alpha
-        self.gamma: float = gamma
-        self.reduction: str = reduction
+        self.alpha: 'float' = alpha
+        self.gamma: 'float' = gamma
+        self.reduction: 'str' = reduction
 
-    def forward(self, input: torch.Tensor, target: torch.Tensor) ->torch.Tensor:
+    def forward(self, input: 'torch.Tensor', target: 'torch.Tensor') ->torch.Tensor:
         return binary_focal_loss_with_logits(input, target, self.alpha, self.gamma, self.reduction)
 
 
 class Concatenation(torch.nn.Module):
 
-    def __init__(self, cat_dim: int, repeat: bool=True, use_layer: bool=False, combined_d: int=1, out_shape: int=1):
-        """A function to combine two tensors together via concantenation
+    def __init__(self, cat_dim: 'int', repeat: 'bool'=True, use_layer: 'bool'=False, combined_d: 'int'=1, out_shape: 'int'=1):
+        """A function to combine two tensors together via concantenation.
 
         :param cat_dim: The dimension that you want to concatenate along (e.g. 0, 1, 2)
         :type cat_dim: int
@@ -1195,7 +1338,7 @@ class Concatenation(torch.nn.Module):
         if self.use_layer:
             self.linear = torch.nn.Linear(combined_d, out_shape)
 
-    def forward(self, temporal_data: torch.Tensor, meta_data: torch.Tensor) ->torch.Tensor:
+    def forward(self, temporal_data: 'torch.Tensor', meta_data: 'torch.Tensor') ->torch.Tensor:
         """
         Args:
             temporal_data: (batch_size, seq_len, d_model)
@@ -1213,7 +1356,7 @@ class Concatenation(torch.nn.Module):
 
 class MultiModalSelfAttention(torch.nn.Module):
 
-    def __init__(self, d_model: int, n_heads: int, dropout: float):
+    def __init__(self, d_model: 'int', n_heads: 'int', dropout: 'float'):
         """Uses self-attention to combine the meta-data and the temporal data.
 
         :param d_model: The dimension of the meta-data
@@ -1226,7 +1369,7 @@ class MultiModalSelfAttention(torch.nn.Module):
         super().__init__()
         self.main_layer = MultiheadAttention(d_model, n_heads, dropout)
 
-    def forward(self, temporal_data: torch.Tensor, meta_data: torch.Tensor) ->torch.Tensor:
+    def forward(self, temporal_data: 'torch.Tensor', meta_data: 'torch.Tensor') ->torch.Tensor:
         meta_data = meta_data.permute(2, 0, 1)
         temporal_data = temporal_data.permute(1, 0, 2)
         x = self.main_layer(temporal_data, meta_data, meta_data)
@@ -1235,8 +1378,8 @@ class MultiModalSelfAttention(torch.nn.Module):
 
 class MergingModel(torch.nn.Module):
 
-    def __init__(self, method: str, other_params: Dict):
-        """A model meant to help merge meta-data with the temporal data
+    def __init__(self, method: 'str', other_params: 'Dict'):
+        """A model meant to help merge meta-data with the temporal data.
 
         :param method: The method you want to use (Bilinear, Bilinear2, MultiAttn, Concat)
         :type method: str
@@ -1254,9 +1397,8 @@ class MergingModel(torch.nn.Module):
         self.method_layer = self.method_dict[method](**other_params)
         self.method = method
 
-    def forward(self, temporal_data: torch.Tensor, meta_data: torch.Tensor):
-        """
-        Performs the forward pass on both meta and temporal data. Returns merged tensor.
+    def forward(self, temporal_data: 'torch.Tensor', meta_data: 'torch.Tensor'):
+        """Performs the forward pass on both meta and temporal data. Returns merged tensor.
 
         :param temporal_data: The temporal data should be in shape (batch_size, n_time_series, n_feats)
         :type temporal_data: torch.Tensor
@@ -1303,6 +1445,13 @@ class MetaMerger(nn.Module):
 class Decoder(nn.Module):
 
     def __init__(self, layers, norm_layer=None):
+        """_summary_
+
+        :param layers: _description_
+        :type layers: _type_
+        :param norm_layer: _description_, defaults to None
+        :type norm_layer: _type_, optional
+        """
         super(Decoder, self).__init__()
         self.layers = nn.ModuleList(layers)
         self.norm = norm_layer
@@ -1323,18 +1472,23 @@ class Encoder(nn.Module):
         self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
         self.norm = norm_layer
 
-    def forward(self, x, attn_mask=None):
+    def forward(self, x, attn_mask=None, tau=None, delta=None):
+        attns = []
         if self.conv_layers is not None:
-            for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):
-                x = attn_layer(x, attn_mask=attn_mask)
+            for i, (attn_layer, conv_layer) in enumerate(zip(self.attn_layers, self.conv_layers)):
+                delta = delta if i == 0 else None
+                x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
                 x = conv_layer(x)
-            x = self.attn_layers[-1](x)
+                attns.append(attn)
+            x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
+            attns.append(attn)
         else:
             for attn_layer in self.attn_layers:
-                x = attn_layer(x, attn_mask=attn_mask)
+                x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
+                attns.append(attn)
         if self.norm is not None:
             x = self.norm(x)
-        return x
+        return x, attns
 
 
 def swish(x):
@@ -1346,8 +1500,8 @@ activation_dict = {'ReLU': torch.nn.ReLU(), 'Softplus': torch.nn.Softplus(), 'Sw
 
 class DARNN(nn.Module):
 
-    def __init__(self, n_time_series: int, hidden_size_encoder: int, forecast_history: int, decoder_hidden_size: int, out_feats=1, dropout=0.01, meta_data=False, gru_lstm=True, probabilistic=False, final_act=None):
-        """For model benchmark information see link on side https://rb.gy/koozff
+    def __init__(self, n_time_series: 'int', hidden_size_encoder: 'int', forecast_history: 'int', decoder_hidden_size: 'int', out_feats=1, dropout=0.01, meta_data=False, gru_lstm=True, probabilistic=False, final_act=None):
+        """For model benchmark information see link on side https://rb.gy/koozff.
 
         :param n_time_series: Number of time series present in input
         :type n_time_series: int
@@ -1377,7 +1531,7 @@ class DARNN(nn.Module):
         if final_act:
             self.final_act = activation_dict[final_act]
 
-    def forward(self, x: torch.Tensor, meta_data: torch.Tensor=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', meta_data: 'torch.Tensor'=None) ->torch.Tensor:
         """Performs standard forward pass of the DARNN. Special handling of probablistic.
 
         :param x: The core temporal data represented as a tensor (batch_size, forecast_history, n_time_series)
@@ -1401,8 +1555,8 @@ class DARNN(nn.Module):
 
 class AE(nn.Module):
 
-    def __init__(self, input_shape: int, out_features: int):
-        """A basic and simple to use AutoEncoder
+    def __init__(self, input_shape: 'int', out_features: 'int'):
+        """A basic and simple to use AutoEncoder.
 
         :param input_shape: The number of features for input.
         :type input_shape: int
@@ -1415,9 +1569,8 @@ class AE(nn.Module):
         self.decoder_hidden_layer = nn.Linear(in_features=out_features, out_features=out_features)
         self.decoder_output_layer = nn.Linear(in_features=out_features, out_features=input_shape)
 
-    def forward(self, features: torch.Tensor):
-        """Runs the full forward pass on the model. In practice
-        this will only be done during training.
+    def forward(self, features: 'torch.Tensor'):
+        """Runs the full forward pass on the model. In practice this will only be done during training.
 
         :param features: [description]
         :type features: [type]
@@ -1448,57 +1601,501 @@ class AE(nn.Module):
         return code
 
 
-class TriangularCausalMask(object):
+class Conv1D(nn.Module):
 
-    def __init__(self, bath_size: int, seq_len: int, device='cpu'):
-        """This is a mask for the attention mechanism
+    def __init__(self, out_dim, rf, in_dim):
+        super(Conv1D, self).__init__()
+        self.rf = rf
+        self.out_dim = out_dim
+        if rf == 1:
+            w = torch.empty(in_dim, out_dim)
+            nn.init.normal_(w, std=0.02)
+            self.w = Parameter(w)
+            self.b = Parameter(torch.zeros(out_dim))
+        else:
+            raise NotImplementedError
 
-        :param bath_size: The batch_size should be passed on init
-        :type bath_size: int
-        :param seq_len: Number of historical time steps.
-        :type seq_len: int
-        :param device: The device typically will be cpu, cuda, or tpu, defaults to "cpu"
-        :type device: str, optional
+    def forward(self, x):
+        if self.rf == 1:
+            size_out = x.size()[:-1] + (self.out_dim,)
+            x = torch.addmm(self.b, x.view(-1, x.size(-1)), self.w)
+            x = x.view(*size_out)
+        else:
+            raise NotImplementedError
+        return x
+
+
+class Attention(nn.Module):
+
+    def __init__(self, n_head, n_embd, win_len, scale, q_len, sub_len, sparse=None, attn_pdrop=0.1, resid_pdrop=0.1):
+        super(Attention, self).__init__()
+        if sparse:
+            None
+            mask = self.log_mask(win_len, sub_len)
+        else:
+            mask = torch.tril(torch.ones(win_len, win_len)).view(1, 1, win_len, win_len)
+        self.register_buffer('mask_tri', mask)
+        self.n_head = n_head
+        self.split_size = n_embd * self.n_head
+        self.scale = scale
+        self.q_len = q_len
+        self.query_key = nn.Conv1d(n_embd, n_embd * n_head * 2, self.q_len)
+        self.value = Conv1D(n_embd * n_head, 1, n_embd)
+        self.c_proj = Conv1D(n_embd, 1, n_embd * self.n_head)
+        self.attn_dropout = nn.Dropout(attn_pdrop)
+        self.resid_dropout = nn.Dropout(resid_pdrop)
+
+    def log_mask(self, win_len, sub_len):
+        mask = torch.zeros((win_len, win_len), dtype=torch.float)
+        for i in range(win_len):
+            mask[i] = self.row_mask(i, sub_len, win_len)
+        return mask.view(1, 1, mask.size(0), mask.size(1))
+
+    def row_mask(self, index, sub_len, win_len):
         """
-        mask_shape = [bath_size, 1, seq_len, seq_len]
-        with torch.no_grad():
-            self._mask = torch.triu(torch.ones(mask_shape, dtype=torch.bool), diagonal=1)
+        Remark:
+        1 . Currently, dense matrices with sparse multiplication are not supported by Pytorch. Efficient implementation
+            should deal with CUDA kernel, which we haven't implemented yet.
 
-    @property
-    def mask(self):
-        return self._mask
+        2 . Our default setting here use Local attention and Restart attention.
+
+        3 . For index-th row, if its past is smaller than the number of cells the last
+            cell can attend, we can allow current cell to attend all past cells to fully
+            utilize parallel computing in dense matrices with sparse multiplication."""
+        log_l = math.ceil(np.log2(sub_len))
+        mask = torch.zeros(win_len, dtype=torch.float)
+        if win_len // sub_len * 2 * log_l > index:
+            mask[:index + 1] = 1
+        else:
+            while index >= 0:
+                if index - log_l + 1 < 0:
+                    mask[:index] = 1
+                    break
+                mask[index - log_l + 1:index + 1] = 1
+                for i in range(0, log_l):
+                    new_index = index - log_l + 1 - 2 ** i
+                    if index - new_index <= sub_len and new_index >= 0:
+                        mask[new_index] = 1
+                index -= sub_len
+        return mask
+
+    def attn(self, query: 'torch.Tensor', key, value: 'torch.Tensor', activation='Softmax'):
+        activation = activation_dict[activation](dim=-1)
+        pre_att = torch.matmul(query, key)
+        if self.scale:
+            pre_att = pre_att / math.sqrt(value.size(-1))
+        mask = self.mask_tri[:, :, :pre_att.size(-2), :pre_att.size(-1)]
+        pre_att = pre_att * mask + -1000000000.0 * (1 - mask)
+        pre_att = activation(pre_att)
+        pre_att = self.attn_dropout(pre_att)
+        attn = torch.matmul(pre_att, value)
+        return attn
+
+    def merge_heads(self, x):
+        x = x.permute(0, 2, 1, 3).contiguous()
+        new_x_shape = x.size()[:-2] + (x.size(-2) * x.size(-1),)
+        return x.view(*new_x_shape)
+
+    def split_heads(self, x, k=False):
+        new_x_shape = x.size()[:-1] + (self.n_head, x.size(-1) // self.n_head)
+        x = x.view(*new_x_shape)
+        if k:
+            return x.permute(0, 2, 3, 1)
+        else:
+            return x.permute(0, 2, 1, 3)
+
+    def forward(self, x):
+        value = self.value(x)
+        qk_x = nn.functional.pad(x.permute(0, 2, 1), pad=(self.q_len - 1, 0))
+        query_key = self.query_key(qk_x).permute(0, 2, 1)
+        query, key = query_key.split(self.split_size, dim=2)
+        query = self.split_heads(query)
+        key = self.split_heads(key, k=True)
+        value = self.split_heads(value)
+        attn = self.attn(query, key, value)
+        attn = self.merge_heads(attn)
+        attn = self.c_proj(attn)
+        attn = self.resid_dropout(attn)
+        return attn
+
+
+class GEGLU(nn.Module):
+
+    def forward(self, x):
+        x, gates = x.chunk(2, dim=-1)
+        return F.gelu(gates) * x
+
+
+class FeedForward(nn.Module):
+
+    def __init__(self, dim, hidden_dim, dropout=0.0, use_glu=True):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(dim, hidden_dim * 2 if use_glu else hidden_dim), GEGLU() if use_glu else nn.GELU(), nn.Dropout(dropout), nn.Linear(hidden_dim, dim), nn.Dropout(dropout))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class PreNorm(nn.Module):
+
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.norm = nn.LayerNorm(dim)
+        self.fn = fn
+
+    def forward(self, x, **kwargs):
+        return self.fn(self.norm(x), **kwargs)
+
+
+class Transformer(nn.Module):
+
+    def __init__(self, dim, num_frames, depth, heads, dim_head, mlp_dim, dropout=0.0):
+        """
+
+        """
+        super().__init__()
+        self.layers = nn.ModuleList([])
+        self.norm = nn.LayerNorm(dim)
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_frames, dim))
+        for _ in range(depth):
+            self.layers.append(nn.ModuleList([PreNorm(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)), PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))]))
+
+    def forward(self, x: 'torch.Tensor'):
+        """
+        Args:
+            x: Input tensor of shape [B, T, C]
+        """
+        x += self.pos_embedding
+        for attn, ff in self.layers:
+            x = attn(x) + x
+            x = ff(x) + x
+        return self.norm(x)
+
+
+def rotate_every_two(x):
+    x = rearrange(x, '... (d j) -> ... d j', j=2)
+    x1, x2 = x.unbind(dim=-1)
+    x = torch.stack((-x2, x1), dim=-1)
+    return rearrange(x, '... d j -> ... (d j)')
+
+
+class SelfAttention(nn.Module):
+
+    def __init__(self, dim: 'int', heads: 'int'=8, dim_head: 'int'=64, dropout: 'float'=0.0, use_rotary: 'bool'=True):
+        """The self-attention mechanism used in the CrossVIVIT model. It is currently not used in other models and could
+        likely be consolidated with those self-attention mechanisms.
+
+        :param dim: The input dimension of the sequence.
+        :type dim: [type]
+        :param heads: [description]
+        :type heads: [type]
+        """
+        super().__init__()
+        inner_dim = dim_head * heads
+        self.use_rotary = use_rotary
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        self.attend = nn.Softmax(dim=-1)
+        self.dropout = nn.Dropout(dropout)
+        self.to_q = nn.Linear(dim, inner_dim, bias=False)
+        self.to_kv = nn.Linear(dim, inner_dim * 2, bias=False)
+        self.to_out = nn.Sequential(nn.Linear(inner_dim, dim), nn.Dropout(dropout))
+
+    def forward(self, x: 'torch.Tensor', pos_emb: 'torch.Tensor') ->Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Args:
+            x: Sequence of shape [B, N, D]
+            pos_emb: Positional embedding of sequence's tokens of shape [B, N, D]
+        """
+        q = self.to_q(x)
+        qkv = q, *self.to_kv(x).chunk(2, dim=-1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=self.heads), qkv)
+        if self.use_rotary:
+            sin, cos = map(lambda t: repeat(t, 'b n d -> (b h) n d', h=self.heads), pos_emb)
+            dim_rotary = sin.shape[-1]
+            (q, q_pass), (k, k_pass) = map(lambda t: (t[..., :dim_rotary], t[..., dim_rotary:]), (q, k))
+            q, k = map(lambda t: t * cos + rotate_every_two(t) * sin, (q, k))
+            q, k = map(lambda t: torch.cat(t, dim=-1), ((q, q_pass), (k, k_pass)))
+        dots = einsum('b i d, b j d -> b i j', q, k) * self.scale
+        attn = self.attend(dots)
+        attn = self.dropout(attn)
+        out = einsum('b i j, b j d -> b i d', attn, v)
+        out = rearrange(out, '(b h) n d -> b n (h d)', h=self.heads)
+        return self.to_out(out), attn
+
+
+class CrossAttention(nn.Module):
+
+    def __init__(self, dim: 'int', heads: 'int'=8, dim_head: 'int'=64, dropout: 'float'=0.0, use_rotary: 'bool'=True):
+        """
+        This is the CrossAttention module primarily used in the CrossVIVIT paper. It is currently not used in other
+        models but may in the future be incorporated into other multi-modal models.
+        :param dim: The input dimension of the sequence.
+        :type dim: int
+        :param heads: The number of heads for the attention mechanism.
+        :type heads: int
+        :param dim_head: The dimension of the heads.
+        :type dim_head: int
+        """
+        super().__init__()
+        inner_dim = dim_head * heads
+        self.use_rotary = use_rotary
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        self.attend = nn.Softmax(dim=-1)
+        self.dropout = nn.Dropout(dropout)
+        self.to_q = nn.Linear(dim, inner_dim, bias=False)
+        self.to_kv = nn.Linear(dim, inner_dim * 2, bias=False)
+        self.to_out = nn.Sequential(nn.Linear(inner_dim, dim), nn.Dropout(dropout))
+
+    def forward(self, src: "Float[torch.Tensor, '']", src_pos_emb, tgt, tgt_pos_emb):
+        """
+        Performs the forward pass of the CrossAttention module.
+
+        """
+        q = self.to_q(tgt)
+        qkv = q, *self.to_kv(src).chunk(2, dim=-1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=self.heads), qkv)
+        if self.use_rotary:
+            sin_src, cos_src = map(lambda t: repeat(t, 'b n d -> (b h) n d', h=self.heads), src_pos_emb)
+            sin_tgt, cos_tgt = map(lambda t: repeat(t, 'b n d -> (b h) n d', h=self.heads), tgt_pos_emb)
+            dim_rotary = sin_src.shape[-1]
+            (q, q_pass), (k, k_pass) = map(lambda t: (t[..., :dim_rotary], t[..., dim_rotary:]), (q, k))
+            q = q * cos_tgt + rotate_every_two(q) * sin_tgt
+            k = k * cos_src + rotate_every_two(k) * sin_src
+            q, k = map(lambda t: torch.cat(t, dim=-1), ((q, q_pass), (k, k_pass)))
+        dots = einsum('b i d, b j d -> b i j', q, k) * self.scale
+        attn = self.attend(dots)
+        attn = self.dropout(attn)
+        out = einsum('b i j, b j d -> b i d', attn, v)
+        out = rearrange(out, '(b h) n d -> b n (h d)', h=self.heads)
+        return self.to_out(out), attn
+
+
+class CrossPreNorm(nn.Module):
+
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.norm_src = nn.LayerNorm(dim)
+        self.norm_tgt = nn.LayerNorm(dim)
+        self.fn = fn
+
+    def forward(self, ctx, src_pos_emb, ts, tgt_pos_emb):
+        return self.fn(self.norm_src(ctx), src_pos_emb, self.norm_tgt(ts), tgt_pos_emb)
+
+
+class CrossTransformer(nn.Module):
+
+    def __init__(self, dim: 'int', depth: 'int', heads: 'int', dim_head: 'int', mlp_dim: 'int', image_size: 'Union[List[int], Tuple[int], int]', dropout: 'float'=0.0, use_rotary: 'bool'=True, use_glu: 'bool'=True):
+        """Computes the Cross-Attention between the source and target sequences.
+
+        :param dim: The embedding dimension. The authors generally use a dimension of 384 for training the large models.
+        :type dim: int
+
+        """
+        super().__init__()
+        self.image_size = image_size
+        self.cross_layers = nn.ModuleList([])
+        for _ in range(depth):
+            self.cross_layers.append(nn.ModuleList([CrossPreNorm(dim, CrossAttention(dim, heads=heads, dim_head=dim_head, dropout=dropout, use_rotary=use_rotary)), PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout, use_glu=use_glu))]))
+
+    def forward(self, src: 'torch.Tensor', tgt: 'torch.Tensor', src_pos_emb: 'torch.Tensor', tgt_pos_emb: 'torch.Tensor'):
+        """
+        :param src: Source sequence of shape [B, N, D]. In the case of CrossVIVIT. src is the encoded video_ctx. Where
+        B is the batch_size*forecast_history,  N is the number_of_patches after random masking is applied and D is the
+        dimension of the model. In other use cases this might differ.
+        :type src: torch.Tensor
+        :param tgt: Target sequence of shape [B, M, D]. In the case of CrossVIVIT. tgt is the encoded_timeseries. Where
+        B is the batch_size*forecast_history, M is usually one and D is the dimension of the model. In other use cases
+        this might differ.
+        :type tgt: torch.Tensor
+        :param src_pos_emb: Positional embedding of source sequence's tokens of shape [B, N, D]
+        :type src_pos_emb: torch.Tensor
+        :param tgt_pos_emb: Positional embedding of target sequence's tokens of shape [B, M, D]
+        :type tgt_pos_emb: torch.Tensor
+        :return: Tuple of (tgt, attention_scores)
+        :rtype: Tuple[torch.Tensor, Dict[str, torch.Tensor]]
+
+
+        Performs the following computation in each layer:
+        1. Self-Attention on the source sequence
+            2. FFN on the source sequence
+            3. Cross-Attention between target and source sequence
+            4. FFN on the target sequence
+        """
+        attention_scores = {}
+        for i in range(len(self.cross_layers)):
+            cattn, cff = self.cross_layers[i]
+            out, cattn_scores = cattn(src, src_pos_emb, tgt, tgt_pos_emb)
+            attention_scores['cross_attention'] = cattn_scores
+            tgt = out + tgt
+            tgt = cff(tgt) + tgt
+        return tgt, attention_scores
+
+
+class AxialRotaryEmbedding(nn.Module):
+
+    def __init__(self, dim: 'int', freq_type: 'str'='lucidrains', **kwargs: dict):
+        """
+        :param dim: The dimension of the input tensor.
+        :type dim: int
+        :param freq_type: The frequency type to use. Either 'lucidrains' or 'vaswani', defaults to 'lucidrains' For info
+        on the frequency types
+        :type freq_type: str, optional
+        :param **kwargs: The keyword arguments for the frequency type.
+        :type **kwargs: dict
+        """
+        super().__init__()
+        self.dim = dim
+        self.freq_type = freq_type
+        if freq_type == 'lucidrains':
+            scales = torch.linspace(1.0, kwargs['max_freq'] / 2, self.dim // 4)
+        elif freq_type == 'vaswani':
+            scales = 1 / kwargs['base'] ** (torch.arange(0, self.dim, 4).float() / self.dim)
+        else:
+            NotImplementedError(f"Only 'lucidrains' and 'vaswani' frequencies are implemented, but you chose {freq_type}.")
+        self.register_buffer('scales', scales)
+
+    def forward(self, coords: "Float[torch.Tensor, 'batch_size*time_series 2 1 1']") ->Tuple[Any, Any]:
+        """Assumes that coordinates do not change throughout the batches.
+        :param coords: The coordinates to embed. We assume these will be of shape batch_shape*time_series. The last two
+        dimensions are the x and y coordinates.
+        :type coords: torch.Tensor
+        """
+        seq_x = coords[:, 0, 0, :]
+        seq_x = seq_x.unsqueeze(-1)
+        seq_y = coords[:, 1, :, 0]
+        seq_y = seq_y.unsqueeze(-1)
+        scales = self.scales[*(None, None), Ellipsis]
+        scales = scales
+        if self.freq_type == 'lucidrains':
+            seq_x = seq_x * scales * pi
+            seq_y = seq_y * scales * pi
+        elif self.freq_type == 'vaswani':
+            seq_x = seq_x * scales
+            seq_y = seq_y * scales
+        x_sinu = repeat(seq_x, 'b i d -> b i j d', j=seq_y.shape[1])
+        y_sinu = repeat(seq_y, 'b j d -> b i j d', i=seq_x.shape[1])
+        sin = torch.cat((x_sinu.sin(), y_sinu.sin()), dim=-1)
+        cos = torch.cat((x_sinu.cos(), y_sinu.cos()), dim=-1)
+        sin, cos = map(lambda t: rearrange(t, 'b i j d -> b (i j) d'), (sin, cos))
+        sin, cos = map(lambda t: repeat(t, 'b n d -> b n (d j)', j=2), (sin, cos))
+        return sin, cos
+
+
+def get_emb(sin_inp: 'torch.Tensor') ->torch.Tensor:
+    """Gets a base embedding for one dimension with sin and cos intertwined."""
+    emb = torch.stack((sin_inp.sin(), sin_inp.cos()), dim=-1)
+    return torch.flatten(emb, -2, -1)
+
+
+class FlowAttention(nn.Module):
+
+    def __init__(self, attention_dropout=0.1):
+        super(FlowAttention, self).__init__()
+        self.dropout = nn.Dropout(attention_dropout)
+
+    def kernel_method(self, x):
+        return torch.sigmoid(x)
+
+    def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
+        queries = queries.transpose(1, 2)
+        keys = keys.transpose(1, 2)
+        values = values.transpose(1, 2)
+        queries = self.kernel_method(queries)
+        keys = self.kernel_method(keys)
+        normalizer_row = 1.0 / torch.einsum('nhld,nhd->nhl', queries + 1e-06, keys.sum(dim=2) + 1e-06)
+        normalizer_col = 1.0 / torch.einsum('nhsd,nhd->nhs', keys + 1e-06, queries.sum(dim=2) + 1e-06)
+        normalizer_row_refine = torch.einsum('nhld,nhd->nhl', queries + 1e-06, (keys * normalizer_col[:, :, :, None]).sum(dim=2) + 1e-06)
+        normalizer_col_refine = torch.einsum('nhsd,nhd->nhs', keys + 1e-06, (queries * normalizer_row[:, :, :, None]).sum(dim=2) + 1e-06)
+        normalizer_row_refine = torch.sigmoid(normalizer_row_refine * (float(queries.shape[2]) / float(keys.shape[2])))
+        normalizer_col_refine = torch.softmax(normalizer_col_refine, dim=-1) * keys.shape[2]
+        kv = keys.transpose(-2, -1) @ (values * normalizer_col_refine[:, :, :, None])
+        x = (queries @ kv * normalizer_row[:, :, :, None] * normalizer_row_refine[:, :, :, None]).transpose(1, 2).contiguous()
+        return x, None
+
+
+class FlashAttention(nn.Module):
+
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
+        super(FlashAttention, self).__init__()
+        self.scale = scale
+        self.mask_flag = mask_flag
+        self.output_attention = output_attention
+        self.dropout = nn.Dropout(attention_dropout)
+
+    def flash_attention_forward(self, Q, K, V, mask=None):
+        BLOCK_SIZE = 32
+        NEG_INF = -10000000000.0
+        EPSILON = 1e-10
+        O1 = torch.zeros_like(Q, requires_grad=True)
+        l3 = torch.zeros(Q.shape[:-1])[..., None]
+        m = torch.ones(Q.shape[:-1])[..., None] * NEG_INF
+        O1 = O1
+        l3 = l3
+        m = m
+        Q_BLOCK_SIZE = min(BLOCK_SIZE, Q.shape[-1])
+        KV_BLOCK_SIZE = BLOCK_SIZE
+        Q_BLOCKS = torch.split(Q, Q_BLOCK_SIZE, dim=2)
+        K_BLOCKS = torch.split(K, KV_BLOCK_SIZE, dim=2)
+        V_BLOCKS = torch.split(V, KV_BLOCK_SIZE, dim=2)
+        if mask is not None:
+            mask_BLOCKS = list(torch.split(mask, KV_BLOCK_SIZE, dim=1))
+        Tr = len(Q_BLOCKS)
+        Tc = len(K_BLOCKS)
+        O_BLOCKS = list(torch.split(O1, Q_BLOCK_SIZE, dim=2))
+        l_BLOCKS = list(torch.split(l3, Q_BLOCK_SIZE, dim=2))
+        m_BLOCKS = list(torch.split(m, Q_BLOCK_SIZE, dim=2))
+        for j in range(Tc):
+            Kj = K_BLOCKS[j]
+            Vj = V_BLOCKS[j]
+            if mask is not None:
+                maskj = mask_BLOCKS[j]
+            for i in range(Tr):
+                Qi = Q_BLOCKS[i]
+                Oi = O_BLOCKS[i]
+                li = l_BLOCKS[i]
+                mi = m_BLOCKS[i]
+                scale = 1 / np.sqrt(Q.shape[-1])
+                Qi_scaled = Qi * scale
+                S_ij = torch.einsum('... i d, ... j d -> ... i j', Qi_scaled, Kj)
+                if mask is not None:
+                    maskj_temp = rearrange(maskj, 'b j -> b 1 1 j')
+                    S_ij = torch.where(maskj_temp > 0, S_ij, NEG_INF)
+                m_block_ij, _ = torch.max(S_ij, dim=-1, keepdims=True)
+                P_ij = torch.exp(S_ij - m_block_ij)
+                if mask is not None:
+                    P_ij = torch.where(maskj_temp > 0, P_ij, 0.0)
+                l_block_ij = torch.sum(P_ij, dim=-1, keepdims=True) + EPSILON
+                P_ij_Vj = torch.einsum('... i j, ... j d -> ... i d', P_ij, Vj)
+                mi_new = torch.maximum(m_block_ij, mi)
+                li_new = torch.exp(mi - mi_new) * li + torch.exp(m_block_ij - mi_new) * l_block_ij
+                O_BLOCKS[i] = li / li_new * torch.exp(mi - mi_new) * Oi + torch.exp(m_block_ij - mi_new) / li_new * P_ij_Vj
+                l_BLOCKS[i] = li_new
+                m_BLOCKS[i] = mi_new
+        O = torch.cat(O_BLOCKS, dim=2)
+        l3 = torch.cat(l_BLOCKS, dim=2)
+        m = torch.cat(m_BLOCKS, dim=2)
+        return O, l3, m
+
+    def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
+        res = self.flash_attention_forward(queries.permute(0, 2, 1, 3), keys.permute(0, 2, 1, 3), values.permute(0, 2, 1, 3), attn_mask)[0]
+        return res.permute(0, 2, 1, 3).contiguous(), None
 
 
 class FullAttention(nn.Module):
+    """The Attention operation."""
 
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, scale=None, attention_dropout=0.1):
         super(FullAttention, self).__init__()
         self.scale = scale
-        self.mask_flag = mask_flag
         self.dropout = nn.Dropout(attention_dropout)
 
-    def forward(self, queries, keys, values, attn_mask):
-        """Computes full self attention
-
-        :param queries: The query for self-attention. Will have shape (batch_size, )
-        :type queries: torch.Tensor
-        :param keys: The (batch_size, ?)
-        :type keys: torch.Tensor
-        :param values: [description]
-        :type values: torch.Tensor
-        :param attn_mask: [description]
-        :type attn_mask: [type]
-        :return: Returns the computed attention vector
-        :rtype: torch.Tensor
-        """
+    def forward(self, queries, keys, values):
         B, L, H, E = queries.shape
         _, S, _, D = values.shape
         scale = self.scale or 1.0 / sqrt(E)
         scores = torch.einsum('blhe,bshe->bhls', queries, keys)
-        if self.mask_flag:
-            if attn_mask is None:
-                attn_mask = TriangularCausalMask(B, L, device=queries.device)
-            scores.masked_fill_(attn_mask.mask, -np.inf)
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum('bhls,bshd->blhd', A, values)
         return V.contiguous()
@@ -1506,8 +2103,8 @@ class FullAttention(nn.Module):
 
 class ProbMask(object):
 
-    def __init__(self, B: int, H, L, index, scores, device='cpu'):
-        """Creates a probablistic mask
+    def __init__(self, B: 'int', H, L, index, scores, device='cpu'):
+        """Creates a probablistic mask.
 
         :param B: batch_size
         :type B: int
@@ -1534,21 +2131,22 @@ class ProbMask(object):
 
 class ProbAttention(nn.Module):
 
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(ProbAttention, self).__init__()
         self.factor = factor
         self.scale = scale
         self.mask_flag = mask_flag
+        self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
 
     def _prob_QK(self, Q, K, sample_k, n_top):
-        B, H, L, E = K.shape
-        _, _, S, _ = Q.shape
-        K_expand = K.unsqueeze(-3).expand(B, H, S, L, E)
-        indx_sample = torch.randint(L, (S, sample_k))
-        K_sample = K_expand[:, :, torch.arange(S).unsqueeze(1), indx_sample, :]
+        B, H, L_K, E = K.shape
+        _, _, L_Q, _ = Q.shape
+        K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E)
+        index_sample = torch.randint(L_K, (L_Q, sample_k))
+        K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
         Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze()
-        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L)
+        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
         M_top = M.topk(n_top, sorted=False)[1]
         Q_reduce = Q[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], M_top, :]
         Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1))
@@ -1557,61 +2155,325 @@ class ProbAttention(nn.Module):
     def _get_initial_context(self, V, L_Q):
         B, H, L_V, D = V.shape
         if not self.mask_flag:
-            V_sum = V.sum(dim=-2)
+            V_sum = V.mean(dim=-2)
             contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1]).clone()
         else:
             assert L_Q == L_V
-            contex = V.cumsum(dim=-1)
+            contex = V.cumsum(dim=-2)
         return contex
 
-    def _update_context(self, context_in: torch.Tensor, V, scores, index, L_Q, attn_mask):
+    def _update_context(self, context_in, V, scores, index, L_Q, attn_mask):
         B, H, L_V, D = V.shape
         if self.mask_flag:
             attn_mask = ProbMask(B, H, L_Q, index, scores, device=V.device)
             scores.masked_fill_(attn_mask.mask, -np.inf)
         attn = torch.softmax(scores, dim=-1)
-        context_in[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = torch.matmul(attn, V)
-        return context_in
+        context_in[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = torch.matmul(attn, V).type_as(context_in)
+        if self.output_attention:
+            attns = (torch.ones([B, H, L_V, L_V]) / L_V).type_as(attn)
+            attns[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = attn
+            return context_in, attns
+        else:
+            return context_in, None
 
-    def forward(self, queries, keys, values, attn_mask):
-        B, L, H, D = queries.shape
-        _, S, _, _ = keys.shape
-        queries = queries.view(B, H, L, -1)
-        keys = keys.view(B, H, S, -1)
-        values = values.view(B, H, S, -1)
-        U = self.factor * np.ceil(np.log(S)).astype('int').item()
-        u = self.factor * np.ceil(np.log(L)).astype('int').item()
-        scores_top, index = self._prob_QK(queries, keys, u, U)
+    def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
+        B, L_Q, H, D = queries.shape
+        _, L_K, _, _ = keys.shape
+        queries = queries.transpose(2, 1)
+        keys = keys.transpose(2, 1)
+        values = values.transpose(2, 1)
+        U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item()
+        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item()
+        U_part = U_part if U_part < L_K else L_K
+        u = u if u < L_Q else L_Q
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
         scale = self.scale or 1.0 / sqrt(D)
         if scale is not None:
             scores_top = scores_top * scale
-        context = self._get_initial_context(values, L)
-        context = self._update_context(context, values, scores_top, index, L, attn_mask)
-        return context.contiguous()
+        context = self._get_initial_context(values, L_Q)
+        context, attn = self._update_context(context, values, scores_top, index, L_Q, attn_mask)
+        return context.contiguous(), attn
 
 
 class AttentionLayer(nn.Module):
+    """The Multi-head Self-Attention (MSA) Layer."""
 
-    def __init__(self, attention, d_model, n_heads, d_keys=None, d_values=None):
+    def __init__(self, d_model, n_heads, d_keys=None, d_values=None, mix=True, dropout=0.1):
         super(AttentionLayer, self).__init__()
         d_keys = d_keys or d_model // n_heads
         d_values = d_values or d_model // n_heads
-        self.inner_attention = attention
+        self.inner_attention = FullAttention(scale=None, attention_dropout=dropout)
         self.query_projection = nn.Linear(d_model, d_keys * n_heads)
         self.key_projection = nn.Linear(d_model, d_keys * n_heads)
         self.value_projection = nn.Linear(d_model, d_values * n_heads)
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
+        self.mix = mix
 
-    def forward(self, queries, keys, values, attn_mask):
+    def forward(self, queries, keys, values):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
         queries = self.query_projection(queries).view(B, L, H, -1)
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
-        out = self.inner_attention(queries, keys, values, attn_mask).view(B, L, -1)
+        out = self.inner_attention(queries, keys, values)
+        if self.mix:
+            out = out.transpose(2, 1).contiguous()
+        out = out.view(B, L, -1)
         return self.out_projection(out)
+
+
+class ReformerLayer(nn.Module):
+
+    def __init__(self, attention, d_model, n_heads, d_keys=None, d_values=None, causal=False, bucket_size=4, n_hashes=4):
+        super().__init__()
+        self.bucket_size = bucket_size
+        self.attn = LSHSelfAttention(dim=d_model, heads=n_heads, bucket_size=bucket_size, n_hashes=n_hashes, causal=causal)
+
+    def fit_length(self, queries):
+        B, N, C = queries.shape
+        if N % (self.bucket_size * 2) == 0:
+            return queries
+        else:
+            fill_len = self.bucket_size * 2 - N % (self.bucket_size * 2)
+            return torch.cat([queries, torch.zeros([B, fill_len, C])], dim=1)
+
+    def forward(self, queries, keys, values, attn_mask, tau, delta):
+        B, N, C = queries.shape
+        queries = self.attn(self.fit_length(queries))[:, :N, :]
+        return queries, None
+
+
+class DSW_embedding(nn.Module):
+
+    def __init__(self, seg_len, d_model):
+        """_summary_
+
+        :param seg_len: _description_
+        :type seg_len: _type_
+        :param d_model: _description_
+        :type d_model: _type_
+        """
+        super(DSW_embedding, self).__init__()
+        self.seg_len = seg_len
+        self.linear = nn.Linear(seg_len, d_model)
+
+    def forward(self, x):
+        batch, ts_len, ts_dim = x.shape
+        x_segment = rearrange(x, 'b (seg_num seg_len) d -> (b d seg_num) seg_len', seg_len=self.seg_len)
+        x_embed = self.linear(x_segment)
+        x_embed = rearrange(x_embed, '(b d seg_num) d_model -> b d seg_num d_model', b=batch, d=ts_dim)
+        return x_embed
+
+
+class Crossformer(nn.Module):
+
+    def __init__(self, n_time_series: 'int', forecast_history: 'int', forecast_length: 'int', seg_len: 'int', win_size=4, factor=10, d_model=512, d_ff=1024, n_heads=8, e_layers=3, dropout=0.0, baseline=False, n_targs=None, device=torch.device('cuda:0')):
+        """Crossformer: Transformer Utilizing Cross-Dimension Dependency for Multivariate Time Series Forecasting.
+        https://github.com/Thinklab-SJTU/Crossformer
+
+        :param n_time_series: The total number of time series
+        :type n_time_series: int
+        :param forecast_history: The length of the input sequence
+        :type forecast_history: int
+        :param forecast_length: The number of steps to forecast
+        :type forecast_length: int
+        :param seg_len: Parameter specific to Crossformer, forecast_history must be divisible by seg_len
+        :type seg_len: int
+        :param win_size: The window size for the segment merge mechanism, defaults to 4 (original paper used 2)
+        :type win_size: int, optional
+        :param factor: _description_, defaults to 10
+        :type factor: int, optional
+        :param d_model: _description_, defaults to 512
+        :type d_model: int, optional
+        :param d_ff: _description_, defaults to 1024
+        :type d_ff: int, optional
+        :param n_heads: The number of heads in the multi-head attention mechanism, defaults to 8
+        :type n_heads: int, optional
+        :param e_layers: The number of encoder layers, defaults to 3
+        :type e_layers: int, optional
+        :param dropout: The amount of dropout to use when training the model, defaults to 0.0
+        :type dropout: float, optional
+        :param baseline: A boolean of whether to use mean of the past time series , defaults to False
+        :type baseline: bool, optional
+        :param device: _description_, defaults to torch.device("cuda:0")
+        :type device: str, optional
+        """
+        super(Crossformer, self).__init__()
+        self.data_dim = n_time_series
+        self.in_len = forecast_history
+        self.out_len = forecast_length
+        self.seg_len = seg_len
+        self.merge_win = win_size
+        self.n_targs = n_time_series if n_targs is None else n_targs
+        self.baseline = baseline
+        self.device = device
+        self.pad_in_len = ceil(1.0 * forecast_history / seg_len) * seg_len
+        self.pad_out_len = ceil(1.0 * forecast_length / seg_len) * seg_len
+        self.in_len_add = self.pad_in_len - self.in_len
+        self.enc_value_embedding = DSW_embedding(seg_len, d_model)
+        self.enc_pos_embedding = nn.Parameter(torch.randn(1, n_time_series, self.pad_in_len // seg_len, d_model))
+        self.pre_norm = nn.LayerNorm(d_model)
+        self.encoder = Encoder(e_layers, win_size, d_model, n_heads, d_ff, block_depth=1, dropout=dropout, in_seg_num=self.pad_in_len // seg_len, factor=factor)
+        self.dec_pos_embedding = nn.Parameter(torch.randn(1, n_time_series, self.pad_out_len // seg_len, d_model))
+        self.decoder = Decoder(seg_len, e_layers + 1, d_model, n_heads, d_ff, dropout, out_seg_num=self.pad_out_len // seg_len, factor=factor)
+
+    def forward(self, x_seq: 'torch.Tensor'):
+        if self.baseline:
+            base = x_seq.mean(dim=1, keepdim=True)
+        else:
+            base = 0
+        batch_size = x_seq.shape[0]
+        if self.in_len_add != 0:
+            x_seq = torch.cat((x_seq[:, :1, :].expand(-1, self.in_len_add, -1), x_seq), dim=1)
+        x_seq = self.enc_value_embedding(x_seq)
+        x_seq += self.enc_pos_embedding
+        x_seq = self.pre_norm(x_seq)
+        enc_out = self.encoder(x_seq)
+        dec_in = repeat(self.dec_pos_embedding, 'b ts_d l d -> (repeat b) ts_d l d', repeat=batch_size)
+        predict_y = self.decoder(dec_in, enc_out)
+        result = base + predict_y[:, :self.out_len, :]
+        res = result[:, :, :self.n_targs]
+        return res
+
+
+class SegMerging(nn.Module):
+    """Segment Merging Layer.
+
+    The adjacent `win_size' segments in each dimension will be merged into one segment to
+    get representation of a coarser scale
+    we set win_size = 2 in our paper
+    """
+
+    def __init__(self, d_model, win_size, norm_layer=nn.LayerNorm):
+        super().__init__()
+        self.d_model = d_model
+        self.win_size = win_size
+        self.linear_trans = nn.Linear(win_size * d_model, d_model)
+        self.norm = norm_layer(win_size * d_model)
+
+    def forward(self, x):
+        """
+        x: B, ts_d, L, d_model
+        """
+        batch_size, ts_d, seg_num, d_model = x.shape
+        pad_num = seg_num % self.win_size
+        if pad_num != 0:
+            pad_num = self.win_size - pad_num
+            x = torch.cat((x, x[:, :, -pad_num:, :]), dim=-2)
+        seg_to_merge = []
+        for i in range(self.win_size):
+            seg_to_merge.append(x[:, :, i::self.win_size, :])
+        x = torch.cat(seg_to_merge, -1)
+        x = self.norm(x)
+        x = self.linear_trans(x)
+        return x
+
+
+class TwoStageAttentionLayer(nn.Module):
+    """The Two Stage Attention (TSA) Layer input/output shape: [batch_size, Data_dim(D), Seg_num(L), d_model]"""
+
+    def __init__(self, seg_num, factor, d_model, n_heads, d_ff=None, dropout=0.1):
+        super(TwoStageAttentionLayer, self).__init__()
+        d_ff = d_ff or 4 * d_model
+        self.time_attention = AttentionLayer(d_model, n_heads, dropout=dropout)
+        self.dim_sender = AttentionLayer(d_model, n_heads, dropout=dropout)
+        self.dim_receiver = AttentionLayer(d_model, n_heads, dropout=dropout)
+        self.router = nn.Parameter(torch.randn(seg_num, factor, d_model))
+        self.dropout = nn.Dropout(dropout)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.norm3 = nn.LayerNorm(d_model)
+        self.norm4 = nn.LayerNorm(d_model)
+        self.MLP1 = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
+        self.MLP2 = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
+
+    def forward(self, x: 'torch.Tensor'):
+        batch = x.shape[0]
+        time_in = rearrange(x, 'b ts_d seg_num d_model -> (b ts_d) seg_num d_model')
+        time_enc = self.time_attention(time_in, time_in, time_in)
+        dim_in = time_in + self.dropout(time_enc)
+        dim_in = self.norm1(dim_in)
+        dim_in = dim_in + self.dropout(self.MLP1(dim_in))
+        dim_in = self.norm2(dim_in)
+        dim_send = rearrange(dim_in, '(b ts_d) seg_num d_model -> (b seg_num) ts_d d_model', b=batch)
+        batch_router = repeat(self.router, 'seg_num factor d_model -> (repeat seg_num) factor d_model', repeat=batch)
+        dim_buffer = self.dim_sender(batch_router, dim_send, dim_send)
+        dim_receive = self.dim_receiver(dim_send, dim_buffer, dim_buffer)
+        dim_enc = dim_send + self.dropout(dim_receive)
+        dim_enc = self.norm3(dim_enc)
+        dim_enc = dim_enc + self.dropout(self.MLP2(dim_enc))
+        dim_enc = self.norm4(dim_enc)
+        final_out = rearrange(dim_enc, '(b seg_num) ts_d d_model -> b ts_d seg_num d_model', b=batch)
+        return final_out
+
+
+class scale_block(nn.Module):
+    """
+    We can use one segment merging layer followed by multiple TSA layers in each scale
+    the parameter `depth' determines the number of TSA layers used in each scale
+    We set depth = 1 in the paper .
+    """
+
+    def __init__(self, win_size, d_model, n_heads, d_ff, depth, dropout, seg_num=10, factor=10):
+        super(scale_block, self).__init__()
+        if win_size > 1:
+            self.merge_layer = SegMerging(d_model, win_size, nn.LayerNorm)
+        else:
+            self.merge_layer = None
+        self.encode_layers = nn.ModuleList()
+        for i in range(depth):
+            self.encode_layers.append(TwoStageAttentionLayer(seg_num, factor, d_model, n_heads, d_ff, dropout))
+
+    def forward(self, x):
+        _, ts_dim, _, _ = x.shape
+        if self.merge_layer is not None:
+            x = self.merge_layer(x)
+        for layer in self.encode_layers:
+            x = layer(x)
+        return x
+
+
+class DecoderLayer(nn.Module):
+
+    def __init__(self, self_attention, cross_attention, d_model, d_ff=None, dropout=0.1, activation='relu'):
+        super(DecoderLayer, self).__init__()
+        d_ff = d_ff or 4 * d_model
+        self.self_attention = self_attention
+        self.cross_attention = cross_attention
+        self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
+        self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model, kernel_size=1)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.norm3 = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.activation = F.relu if activation == 'relu' else F.gelu
+
+    def forward(self, x, cross, x_mask=None, cross_mask=None) ->torch.Tensor:
+        """_summary_
+
+        :param x: The input tensor
+        :type x: _type_
+        :param cross: _description_
+        :type cross: _type_
+        :param x_mask: _description_, defaults to None
+        :type x_mask: _type_, optional
+        :param cross_mask: _description_, defaults to None
+        :type cross_mask: _type_, optional
+        :return: _description_
+        :rtype: torch.Tensor
+        """
+        x, attn = self.self_attention(x, x, x, attn_mask=x_mask)
+        res = self.dropout(x)
+        x = x + res
+        x = self.norm1(x)
+        x, attn = self.cross_attention(x, cross, cross, attn_mask=cross_mask)
+        x = x + self.dropout(x)
+        y = x = self.norm2(x)
+        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
+        y = self.dropout(self.conv2(y).transpose(-1, 1))
+        return self.norm3(x + y)
 
 
 class PositionalEmbedding(nn.Module):
@@ -1622,7 +2484,7 @@ class PositionalEmbedding(nn.Module):
         inv_freq = 1 / 10000 ** (torch.arange(0.0, d, 2.0) / d)
         self.register_buffer('inv_freq', inv_freq)
 
-    def forward(self, positions: torch.LongTensor):
+    def forward(self, positions: 'torch.LongTensor'):
         sinusoid_inp = torch.einsum('i,j->ij', positions.float(), self.inv_freq)
         pos_emb = torch.cat([sinusoid_inp.sin(), sinusoid_inp.cos()], dim=-1)
         return pos_emb[:, None, :]
@@ -1630,8 +2492,8 @@ class PositionalEmbedding(nn.Module):
 
 class TokenEmbedding(nn.Module):
 
-    def __init__(self, c_in: int, d_model: int):
-        """Create the token embedding
+    def __init__(self, c_in: 'int', d_model: 'int'):
+        """Create the token embedding.
 
         :param c_in: [description]
         :type c_in: [type]
@@ -1645,8 +2507,8 @@ class TokenEmbedding(nn.Module):
             if isinstance(m, nn.Conv1d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        """Create the token embedding
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """Create the token embedding.
 
         :param x: The tensor passed to create the token embedding
         :type x: torch.Tensor
@@ -1659,7 +2521,7 @@ class TokenEmbedding(nn.Module):
 
 class FixedEmbedding(nn.Module):
 
-    def __init__(self, c_in: torch.Tensor, d_model):
+    def __init__(self, c_in: 'torch.Tensor', d_model):
         super(FixedEmbedding, self).__init__()
         w = torch.zeros(c_in, d_model).float()
         w.require_grad = False
@@ -1676,8 +2538,8 @@ class FixedEmbedding(nn.Module):
 
 class TemporalEmbedding(nn.Module):
 
-    def __init__(self, d_model, embed_type='fixed', lowest_level=4):
-        """A class to create
+    def __init__(self, d_model: 'int', embed_type='fixed', lowest_level=4):
+        """A class to create.
 
         :param d_model: The model embedding dimension
         :type d_model: int
@@ -1697,8 +2559,9 @@ class TemporalEmbedding(nn.Module):
         for i in range(0, lowest_level):
             setattr(self, list(lowest_level_map.keys())[i], list(lowest_level_map.values())[i])
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        """Creates the datetime embedding component
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """Creates the datetime embedding component.
+
         :param x: A PyTorch tensor of shape (batch_size, seq_len, n_feats).
         n_feats is formatted in the following manner.
         following way ()
@@ -1717,20 +2580,36 @@ class TemporalEmbedding(nn.Module):
 
 class DataEmbedding(nn.Module):
 
-    def __init__(self, c_in, d_model, embed_type='fixed', data=4, dropout=0.1):
+    def __init__(self, c_in: 'int', d_model, embed_type='fixed', data=4, dropout=0.1):
         super(DataEmbedding, self).__init__()
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(d_model=d_model)
         self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, lowest_level=data)
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
+    def forward(self, x, x_mark) ->torch.Tensor:
         x = self.value_embedding(x) + self.position_embedding(x) + self.temporal_embedding(x_mark)
         return self.dropout(x)
 
 
+class DataEmbedding_inverted(nn.Module):
+
+    def __init__(self, c_in, d_model: 'int', dropout=0.1):
+        super(DataEmbedding_inverted, self).__init__()
+        self.value_embedding = nn.Linear(c_in, d_model)
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, x_mark) ->torch.Tensor:
+        x = x.permute(0, 2, 1)
+        if x_mark is None:
+            x = self.value_embedding(x)
+        else:
+            x = self.value_embedding(torch.cat([x, x_mark.permute(0, 2, 1)], 1))
+        return self.dropout(x)
+
+
 class ScaledDotProductAttention(nn.Module):
-    """ Scaled Dot-Product Attention """
+    """Scaled Dot-Product Attention."""
 
     def __init__(self, temperature, attn_dropout=0.1):
         super().__init__()
@@ -1749,7 +2628,7 @@ class ScaledDotProductAttention(nn.Module):
 
 class MultiHeadAttention(nn.Module):
 
-    def __init__(self, d_input: int, d_inner: int, n_heads: int=4, dropout: float=0.1, dropouta: float=0.0):
+    def __init__(self, d_input: 'int', d_inner: 'int', n_heads: 'int'=4, dropout: 'float'=0.1, dropouta: 'float'=0.0):
         super().__init__()
         self.d_input = d_input
         self.d_inner = d_inner
@@ -1767,7 +2646,7 @@ class MultiHeadAttention(nn.Module):
         zero_pad = torch.zeros((x.size(0), 1, *x.size()[2:]), device=x.device, dtype=x.dtype)
         return torch.cat([zero_pad, x], dim=1).view(x.size(1) + 1, x.size(0), *x.size()[2:])[1:].view_as(x)
 
-    def forward(self, input_: torch.FloatTensor, pos_embs: torch.FloatTensor, memory: torch.FloatTensor, u: torch.FloatTensor, v: torch.FloatTensor, mask: Optional[torch.FloatTensor]=None):
+    def forward(self, input_: 'torch.FloatTensor', pos_embs: 'torch.FloatTensor', memory: 'torch.FloatTensor', u: 'torch.FloatTensor', v: 'torch.FloatTensor', mask: 'Optional[torch.FloatTensor]'=None):
         """
         pos_embs: we pass the positional embeddings in separately
             because we need to handle relative positions
@@ -1799,9 +2678,7 @@ class MultiHeadAttention(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ A two-feed-forward-layer module
-    Taken from DSANET repos
-     """
+    """A two-feed-forward-layer module Taken from DSANET repos."""
 
     def __init__(self, d_in, d_hid, dropout=0.1):
         super().__init__()
@@ -1823,19 +2700,6 @@ class PositionwiseFeedForward(nn.Module):
 class EncoderLayer(nn.Module):
 
     def __init__(self, attention, d_model, d_ff=None, dropout=0.1, activation='relu'):
-        """[summary]
-
-        :param attention: [description]
-        :type attention: [type]
-        :param d_model: [description]
-        :type d_model: [type]
-        :param d_ff: [description], defaults to None
-        :type d_ff: [type], optional
-        :param dropout: [description], defaults to 0.1
-        :type dropout: float, optional
-        :param activation: [description], defaults to "relu"
-        :type activation: str, optional
-        """
         super(EncoderLayer, self).__init__()
         d_ff = d_ff or 4 * d_model
         self.attention = attention
@@ -1846,37 +2710,13 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == 'relu' else F.gelu
 
-    def forward(self, x, attn_mask=None):
-        x = x + self.dropout(self.attention(x, x, x, attn_mask=attn_mask))
+    def forward(self, x, attn_mask=None, tau=None, delta=None):
+        new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
+        x = x + self.dropout(new_x)
         y = x = self.norm1(x)
         y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
         y = self.dropout(self.conv2(y).transpose(-1, 1))
-        return self.norm2(x + y)
-
-
-class DecoderLayer(nn.Module):
-
-    def __init__(self, self_attention, cross_attention, d_model, d_ff=None, dropout=0.1, activation='relu'):
-        super(DecoderLayer, self).__init__()
-        d_ff = d_ff or 4 * d_model
-        self.self_attention = self_attention
-        self.cross_attention = cross_attention
-        self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
-        self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model, kernel_size=1)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.norm3 = nn.LayerNorm(d_model)
-        self.dropout = nn.Dropout(dropout)
-        self.activation = F.relu if activation == 'relu' else F.gelu
-
-    def forward(self, x, cross, x_mask=None, cross_mask=None) ->torch.Tensor:
-        x = x + self.dropout(self.self_attention(x, x, x, attn_mask=x_mask))
-        x = self.norm1(x)
-        x = x + self.dropout(self.cross_attention(x, cross, cross, attn_mask=cross_mask))
-        y = x = self.norm2(x)
-        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
-        y = self.dropout(self.conv2(y).transpose(-1, 1))
-        return self.norm3(x + y)
+        return self.norm2(x + y), attn
 
 
 class Single_Global_SelfAttn_Module(nn.Module):
@@ -2010,9 +2850,7 @@ class DSANet(nn.Module):
         self.__build_model()
 
     def __build_model(self):
-        """
-        Layout model
-        """
+        """Layout model."""
         self.sgsf = Single_Global_SelfAttn_Module(window=self.window, n_multiv=self.n_multiv, n_kernels=self.n_kernels, w_kernel=self.w_kernel, d_k=self.d_k, d_v=self.d_v, d_model=self.d_model, d_inner=self.d_inner, n_layers=self.n_layers, n_head=self.n_head, drop_prob=self.drop_prob)
         self.slsf = Single_Local_SelfAttn_Module(window=self.window, local=self.local, n_multiv=self.n_multiv, n_kernels=self.n_kernels, w_kernel=self.w_kernel, d_k=self.d_k, d_v=self.d_v, d_model=self.d_model, d_inner=self.d_inner, n_layers=self.n_layers, n_head=self.n_head, drop_prob=self.drop_prob)
         self.ar = AR(window=self.window)
@@ -2021,9 +2859,7 @@ class DSANet(nn.Module):
         self.active_func = nn.Tanh()
 
     def forward(self, x):
-        """
-        No special modification required for lightning, define as you normally would
-        """
+        """No special modification required for lightning, define as you normally would."""
         sgsf_output, *_ = self.sgsf(x)
         slsf_output, *_ = self.slsf(x)
         sf_output = torch.cat((sgsf_output, slsf_output), 2)
@@ -2039,8 +2875,8 @@ class DSANet(nn.Module):
 
 class DummyTorchModel(nn.Module):
 
-    def __init__(self, forecast_length: int) ->None:
-        """A dummy model that will return a tensor of ones (batch_size, forecast_len)
+    def __init__(self, forecast_length: 'int') ->None:
+        """A dummy model that will return a tensor of ones (batch_size, forecast_len).
 
         :param forecast_length: The length to forecast
         :type forecast_length: int
@@ -2049,8 +2885,8 @@ class DummyTorchModel(nn.Module):
         self.out_len = forecast_length
         self.linear_test_layer = nn.Linear(3, 10)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        """The forward pass for the dummy model
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """The forward pass for the dummy model.
 
         :param x: Here the data is irrelvant. Only batch_size is grabbed
         :type x: torch.Tensor
@@ -2073,7 +2909,7 @@ class ConvLayer(nn.Module):
         self.activation = nn.ELU()
         self.maxPool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
 
-    def forward(self, x):
+    def forward(self, x: 'torch.Tensor'):
         x = self.downConv(x.permute(0, 2, 1))
         x = self.norm(x)
         x = self.activation(x)
@@ -2084,10 +2920,10 @@ class ConvLayer(nn.Module):
 
 class Informer(nn.Module):
 
-    def __init__(self, n_time_series: int, dec_in: int, c_out: int, seq_len, label_len, out_len, factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, dropout=0.0, attn='prob', embed='fixed', temp_depth=4, activation='gelu', device=torch.device('cuda:0')):
-        """ This is based on the implementation of the Informer available from the original authors
-            https://github.com/zhouhaoyi/Informer2020. We have done some minimal refactoring, but
-            the core code remains the same. Additionally, we have added a few more options to the code
+    def __init__(self, n_time_series: 'int', dec_in: 'int', c_out: 'int', seq_len, label_len, out_len, factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, dropout=0.0, attn='prob', embed='fixed', temp_depth=4, activation='gelu', device=torch.device('cuda:0')):
+        """This is based on the implementation of the Informer available from the original authors
+        https://github.com/zhouhaoyi/Informer2020. We have done some minimal refactoring, but the core code remains the
+        same. Additionally, we have added a few more options to the code.
 
         :param n_time_series: The number of time series present in the multivariate forecasting problem.
         :type n_time_series: int
@@ -2135,10 +2971,10 @@ class Informer(nn.Module):
         self.dec_embedding = DataEmbedding(dec_in, d_model, embed, temp_depth, dropout)
         Attn = ProbAttention if attn == 'prob' else FullAttention
         self.encoder = Encoder([EncoderLayer(AttentionLayer(Attn(False, factor, attention_dropout=dropout), d_model, n_heads), d_model, d_ff, dropout=dropout, activation=activation) for b in range(e_layers)], [ConvLayer(d_model) for b in range(e_layers - 1)], norm_layer=torch.nn.LayerNorm(d_model))
-        self.decoder = Decoder([DecoderLayer(AttentionLayer(FullAttention(True, factor, attention_dropout=dropout), d_model, n_heads), AttentionLayer(FullAttention(False, factor, attention_dropout=dropout), d_model, n_heads), d_model, d_ff, dropout=dropout, activation=activation) for c in range(d_layers)], norm_layer=torch.nn.LayerNorm(d_model))
+        self.decoder = Decoder([DecoderLayer(AttentionLayer(Attn(True, factor, attention_dropout=dropout), d_model, n_heads), AttentionLayer(FullAttention(False, factor, attention_dropout=dropout), d_model, n_heads), d_model, d_ff, dropout=dropout, activation=activation) for c in range(d_layers)], norm_layer=torch.nn.LayerNorm(d_model))
         self.projection = nn.Linear(d_model, c_out, bias=True)
 
-    def forward(self, x_enc: torch.Tensor, x_mark_enc, x_dec, x_mark_dec, enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+    def forward(self, x_enc: 'torch.Tensor', x_mark_enc, x_dec, x_mark_dec, enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
         """
 
         :param x_enc: The core tensor going into the model. Of dimension (batch_size, seq_len, n_time_series)
@@ -2159,10 +2995,103 @@ class Informer(nn.Module):
         :rtype: torch.Tensor
         """
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
-        enc_out = self.encoder(enc_out, attn_mask=enc_self_mask)
+        enc_out, _ = self.encoder(enc_out, attn_mask=enc_self_mask)
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
         dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
         dec_out = self.projection(dec_out)
+        return dec_out[:, -self.pred_len:, :]
+
+
+class ITransformer(nn.Module):
+    """Paper link: https://arxiv.org/abs/2310.06625."""
+
+    def __init__(self, forecast_history, forecast_length, d_model, embed, dropout, n_heads=8, use_norm=True, e_layers=3, d_ff=512, freq='h', activation='gelu', factor=1, output_attention=True, targs=1):
+        """The complete iTransformer model.
+
+        :param forecast_history: The number of historical steps to use for forecasting
+        :type forecast_history: int
+        :param forecast_length: The length of the forecast the model outputs.
+        :type forecast_length: int
+        :param d_model: The embedding dimension of the model. For the paper the authors used 512.
+        :type d_model: int
+        :param embed: THe embedding type to use. For the paper the authors used 'fixed'.
+        :type embed: str
+        :param dropout: The dropout for the model.
+        :type dropout: float
+        :param n_heads: Number of heads for the attention, defaults to 8
+        :type n_heads: int, optional
+        :param use_norm: Whether to use normalization, defaults to True
+        :type use_norm: bool, optional
+        :param e_layers: The number of embedding layers, defaults to 3
+        :type e_layers: int, optional
+        :param d_ff: _description_, defaults to 512
+        :type d_ff: int, optional
+        :param freq: The frequency of the time series data, defaults to 'h' for hourly
+        :type freq: str, optional
+        :param activation: The activation, defaults to 'gelu'
+        :type activation: str, optional
+        :param factor: =n_, defaults to 1
+        :type factor: int, optional
+        :param output_attention: Whether to output the scores, defaults to True
+        :type output_attention: bool, optional
+        """
+        class_strategy = 'projection'
+        super(ITransformer, self).__init__()
+        self.seq_len = forecast_history
+        self.pred_len = forecast_length
+        self.output_attention = output_attention
+        self.use_norm = use_norm
+        self.enc_embedding = DataEmbedding_inverted(self.seq_len, d_model, embed, freq, dropout)
+        self.class_strategy = class_strategy
+        self.encoder = Encoder([EncoderLayer(AttentionLayer(FullAttention(False, factor, attention_dropout=dropout), d_model, n_heads), d_model, d_ff, dropout=dropout, activation=activation) for el in range(e_layers)], norm_layer=torch.nn.LayerNorm(d_model))
+        self.projector = nn.Linear(d_model, self.pred_len, bias=True)
+        self.c_out = targs
+
+    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+        """_summary_
+
+        :param x_enc: _description_
+        :type x_enc: _type_
+        :param x_mark_enc: _description_
+        :type x_mark_enc: _type_
+        :param x_dec: _description_
+        :type x_dec: _type_
+        :param x_mark_dec: _description_
+        :type x_mark_dec: _type_
+        :return: _description_
+        :rtype: _type_
+        """
+        if self.use_norm:
+            means = x_enc.mean(1, keepdim=True).detach()
+            x_enc = x_enc - means
+            stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-05)
+            x_enc /= stdev
+        _, _, N = x_enc.shape
+        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out = self.encoder(enc_out, attn_mask=None)
+        dec_out = self.projector(enc_out[0]).permute(0, 2, 1)[:, :, :N]
+        if self.use_norm:
+            dec_out = dec_out * stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1)
+            dec_out = dec_out + means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1)
+        return dec_out
+
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
+        """_summary_
+
+        :param x_enc: _description_
+        :type x_enc: _type_
+        :param x_mark_enc: _description_
+        :type x_mark_enc: _type_
+        :param x_dec: _description_
+        :type x_dec: _type_
+        :param x_mark_dec: _description_
+        :type x_mark_dec: _type_
+        :param mask: _description_, defaults to None
+        :type mask: _type_, optional
+        :return: _description_
+        :rtype: _type_
+        """
+        dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
         return dec_out[:, -self.pred_len:, :]
 
 
@@ -2179,8 +3108,8 @@ class SimplePositionalEncoding(torch.nn.Module):
         pe = pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer('pe', pe)
 
-    def forward(self, x: torch.Tensor) ->torch.Tensor:
-        """Creates a basic positional encoding"""
+    def forward(self, x: 'torch.Tensor') ->torch.Tensor:
+        """Creates a basic positional encoding."""
         x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
 
@@ -2188,7 +3117,7 @@ class SimplePositionalEncoding(torch.nn.Module):
 class MultiAttnHeadSimple(torch.nn.Module):
     """A simple multi-head attention model inspired by Vaswani et al."""
 
-    def __init__(self, number_time_series: int, seq_len=10, output_seq_len=None, d_model=128, num_heads=8, dropout=0.1, output_dim=1, final_layer=False):
+    def __init__(self, number_time_series: 'int', seq_len=10, output_seq_len=None, d_model=128, num_heads=8, dropout=0.1, output_dim=1, final_layer=False):
         super().__init__()
         self.dense_shape = torch.nn.Linear(number_time_series, d_model)
         self.pe = SimplePositionalEncoding(d_model)
@@ -2203,7 +3132,7 @@ class MultiAttnHeadSimple(torch.nn.Module):
         if final_layer:
             self.sigmoid = activation_dict[final_layer]()
 
-    def forward(self, x: torch.Tensor, mask=None) ->torch.Tensor:
+    def forward(self, x: 'torch.Tensor', mask=None) ->torch.Tensor:
         """
         :param: x torch.Tensor: of shape (B, L, M)
         Where B is the batch size, L is the sequence length and M is the number of time
@@ -2227,9 +3156,10 @@ class MultiAttnHeadSimple(torch.nn.Module):
         return x.view(-1, self.length_data)
 
 
-def generate_square_subsequent_mask(sz: int) ->torch.Tensor:
-    """ Generates a square mask for the sequence. The masked positions are filled with float('-inf').
-        Unmasked positions are filled with float(0.0).
+def generate_square_subsequent_mask(sz: 'int') ->torch.Tensor:
+    """Generates a square mask for the sequence.
+
+    The masked positions are filled with float('-inf'). Unmasked positions are filled with float(0.0).
     """
     mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
     mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
@@ -2238,8 +3168,8 @@ def generate_square_subsequent_mask(sz: int) ->torch.Tensor:
 
 class SimpleTransformer(torch.nn.Module):
 
-    def __init__(self, number_time_series: int, seq_length: int=48, output_seq_len: int=None, d_model: int=128, n_heads: int=8, dropout=0.1, forward_dim=2048, sigmoid=False):
-        """A full transformer model
+    def __init__(self, number_time_series: 'int', seq_length: 'int'=48, output_seq_len: 'int'=None, d_model: 'int'=128, n_heads: 'int'=8, dropout=0.1, forward_dim=2048, sigmoid=False):
+        """A full transformer model.
 
         :param number_time_series: The total number of time series present
             (e.g. n_feature_time_series + n_targets)
@@ -2278,11 +3208,11 @@ class SimpleTransformer(torch.nn.Module):
         if sigmoid:
             self.sigmoid = torch.nn.Sigmoid()
 
-    def forward(self, x: torch.Tensor, t: torch.Tensor, tgt_mask=None, src_mask=None):
+    def forward(self, x: 'torch.Tensor', t: 'torch.Tensor', tgt_mask=None, src_mask=None):
         x = self.encode_sequence(x[:, :-1, :], src_mask)
         return self.decode_seq(x, t, tgt_mask)
 
-    def basic_feature(self, x: torch.Tensor):
+    def basic_feature(self, x: 'torch.Tensor'):
         x = self.dense_shape(x)
         x = self.pe(x)
         x = x.permute(1, 0, 2)
@@ -2308,7 +3238,7 @@ class SimpleTransformer(torch.nn.Module):
 
 class CustomTransformerDecoder(torch.nn.Module):
 
-    def __init__(self, seq_length: int, output_seq_length: int, n_time_series: int, d_model=128, output_dim=1, n_layers_encoder=6, forward_dim=2048, dropout=0.1, use_mask=False, meta_data=None, final_act=None, squashed_embedding=False, n_heads=8):
+    def __init__(self, seq_length: 'int', output_seq_length: 'int', n_time_series: 'int', d_model=128, output_dim=1, n_layers_encoder=6, forward_dim=2048, dropout=0.1, use_mask=False, meta_data=None, final_act=None, squashed_embedding=False, n_heads=8):
         """Uses a number of encoder layers with simple linear decoder layer.
 
         :param seq_length: The number of historical time-steps fed into the model in each forward pass.
@@ -2360,7 +3290,7 @@ class CustomTransformerDecoder(torch.nn.Module):
             self.squashed = torch.nn.Linear(seq_length, 1)
             self.unsquashed = torch.nn.Linear(1, seq_length)
 
-    def make_embedding(self, x: torch.Tensor):
+    def make_embedding(self, x: 'torch.Tensor'):
         x = self.dense_shape(x)
         x = self.pe(x)
         x = x.permute(1, 0, 2)
@@ -2373,7 +3303,7 @@ class CustomTransformerDecoder(torch.nn.Module):
             x = self.squashed(x)
         return x
 
-    def __squashed__embedding(self, x: torch.Tensor):
+    def __squashed__embedding(self, x: 'torch.Tensor'):
         x = x.permute(1, 2, 0)
         x = self.squashed(x)
         x = self.unsquashed(x)
@@ -2381,11 +3311,9 @@ class CustomTransformerDecoder(torch.nn.Module):
         x = x.permute(1, 0, 2)
         return x
 
-    def forward(self, x: torch.Tensor, meta_data=None) ->torch.Tensor:
-        """
-        Performs forward pass on tensor of (batch_size, sequence_length, n_time_series)
-        Return tensor of dim (batch_size, output_seq_length)
-        """
+    def forward(self, x: 'torch.Tensor', meta_data=None) ->torch.Tensor:
+        """Performs forward pass on tensor of (batch_size, sequence_length, n_time_series) Return tensor of dim
+        (batch_size, output_seq_length)"""
         x = self.dense_shape(x)
         if type(meta_data) == torch.Tensor:
             x = self.meta_merger(x, meta_data)
@@ -2405,124 +3333,6 @@ class CustomTransformerDecoder(torch.nn.Module):
         if self.out_dim > 1:
             return x.permute(0, 2, 1)
         return x.view(-1, self.output_seq_length)
-
-
-class Conv1D(nn.Module):
-
-    def __init__(self, out_dim, rf, in_dim):
-        super(Conv1D, self).__init__()
-        self.rf = rf
-        self.out_dim = out_dim
-        if rf == 1:
-            w = torch.empty(in_dim, out_dim)
-            nn.init.normal_(w, std=0.02)
-            self.w = Parameter(w)
-            self.b = Parameter(torch.zeros(out_dim))
-        else:
-            raise NotImplementedError
-
-    def forward(self, x):
-        if self.rf == 1:
-            size_out = x.size()[:-1] + (self.out_dim,)
-            x = torch.addmm(self.b, x.view(-1, x.size(-1)), self.w)
-            x = x.view(*size_out)
-        else:
-            raise NotImplementedError
-        return x
-
-
-class Attention(nn.Module):
-
-    def __init__(self, n_head, n_embd, win_len, scale, q_len, sub_len, sparse=None, attn_pdrop=0.1, resid_pdrop=0.1):
-        super(Attention, self).__init__()
-        if sparse:
-            None
-            mask = self.log_mask(win_len, sub_len)
-        else:
-            mask = torch.tril(torch.ones(win_len, win_len)).view(1, 1, win_len, win_len)
-        self.register_buffer('mask_tri', mask)
-        self.n_head = n_head
-        self.split_size = n_embd * self.n_head
-        self.scale = scale
-        self.q_len = q_len
-        self.query_key = nn.Conv1d(n_embd, n_embd * n_head * 2, self.q_len)
-        self.value = Conv1D(n_embd * n_head, 1, n_embd)
-        self.c_proj = Conv1D(n_embd, 1, n_embd * self.n_head)
-        self.attn_dropout = nn.Dropout(attn_pdrop)
-        self.resid_dropout = nn.Dropout(resid_pdrop)
-
-    def log_mask(self, win_len, sub_len):
-        mask = torch.zeros((win_len, win_len), dtype=torch.float)
-        for i in range(win_len):
-            mask[i] = self.row_mask(i, sub_len, win_len)
-        return mask.view(1, 1, mask.size(0), mask.size(1))
-
-    def row_mask(self, index, sub_len, win_len):
-        """
-        Remark:
-        1 . Currently, dense matrices with sparse multiplication are not supported by Pytorch. Efficient implementation
-            should deal with CUDA kernel, which we haven't implemented yet.
-
-        2 . Our default setting here use Local attention and Restart attention.
-
-        3 . For index-th row, if its past is smaller than the number of cells the last
-            cell can attend, we can allow current cell to attend all past cells to fully
-            utilize parallel computing in dense matrices with sparse multiplication."""
-        log_l = math.ceil(np.log2(sub_len))
-        mask = torch.zeros(win_len, dtype=torch.float)
-        if win_len // sub_len * 2 * log_l > index:
-            mask[:index + 1] = 1
-        else:
-            while index >= 0:
-                if index - log_l + 1 < 0:
-                    mask[:index] = 1
-                    break
-                mask[index - log_l + 1:index + 1] = 1
-                for i in range(0, log_l):
-                    new_index = index - log_l + 1 - 2 ** i
-                    if index - new_index <= sub_len and new_index >= 0:
-                        mask[new_index] = 1
-                index -= sub_len
-        return mask
-
-    def attn(self, query: torch.Tensor, key, value: torch.Tensor, activation='Softmax'):
-        activation = activation_dict[activation](dim=-1)
-        pre_att = torch.matmul(query, key)
-        if self.scale:
-            pre_att = pre_att / math.sqrt(value.size(-1))
-        mask = self.mask_tri[:, :, :pre_att.size(-2), :pre_att.size(-1)]
-        pre_att = pre_att * mask + -1000000000.0 * (1 - mask)
-        pre_att = activation(pre_att)
-        pre_att = self.attn_dropout(pre_att)
-        attn = torch.matmul(pre_att, value)
-        return attn
-
-    def merge_heads(self, x):
-        x = x.permute(0, 2, 1, 3).contiguous()
-        new_x_shape = x.size()[:-2] + (x.size(-2) * x.size(-1),)
-        return x.view(*new_x_shape)
-
-    def split_heads(self, x, k=False):
-        new_x_shape = x.size()[:-1] + (self.n_head, x.size(-1) // self.n_head)
-        x = x.view(*new_x_shape)
-        if k:
-            return x.permute(0, 2, 3, 1)
-        else:
-            return x.permute(0, 2, 1, 3)
-
-    def forward(self, x):
-        value = self.value(x)
-        qk_x = nn.functional.pad(x.permute(0, 2, 1), pad=(self.q_len - 1, 0))
-        query_key = self.query_key(qk_x).permute(0, 2, 1)
-        query, key = query_key.split(self.split_size, dim=2)
-        query = self.split_heads(query)
-        key = self.split_heads(key, k=True)
-        value = self.split_heads(value)
-        attn = self.attn(query, key, value)
-        attn = self.merge_heads(attn)
-        attn = self.c_proj(attn)
-        attn = self.resid_dropout(attn)
-        return attn
 
 
 class LayerNorm(nn.Module):
@@ -2566,7 +3376,7 @@ class MLP(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, n_head, win_len, n_embd, scale, q_len, sub_len, additional_params: Dict):
+    def __init__(self, n_head, win_len, n_embd, scale, q_len, sub_len, additional_params: 'Dict'):
         super(Block, self).__init__()
         n_embd = n_embd
         self.attn = Attention(n_head, n_embd, win_len, scale, q_len, sub_len, **additional_params)
@@ -2583,9 +3393,9 @@ class Block(nn.Module):
 
 
 class TransformerModel(nn.Module):
-    """ Transformer model """
+    """Transformer model."""
 
-    def __init__(self, n_time_series, n_head, sub_len, num_layer, n_embd, forecast_history: int, dropout: float, scale_att, q_len, additional_params: Dict, seq_num=None):
+    def __init__(self, n_time_series, n_head, sub_len, num_layer, n_embd, forecast_history: 'int', dropout: 'float', scale_att, q_len, additional_params: 'Dict', seq_num=None):
         super(TransformerModel, self).__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.input_dim = n_time_series
@@ -2609,7 +3419,7 @@ class TransformerModel(nn.Module):
         self.blocks = nn.ModuleList([copy.deepcopy(block) for _ in range(num_layer)])
         nn.init.normal_(self.po_embed.weight, std=0.02)
 
-    def forward(self, series_id: int, x: torch.Tensor):
+    def forward(self, series_id: 'int', x: 'torch.Tensor'):
         """Runs  forward pass of the DecoderTransformer model.
 
         :param series_id:   ID of the time series
@@ -2626,10 +3436,6 @@ class TransformerModel(nn.Module):
             embedding_sum = torch.zeros(batch_size, length)
             embedding_sum = embedding_sum.fill_(series_id).type(torch.LongTensor)
             embedding_sum = self.id_embed(embedding_sum)
-        None
-        None
-        None
-        None
         position = torch.tensor(torch.arange(length), dtype=torch.long)
         po_embedding = self.po_embed(position)
         embedding_sum[:] = po_embedding
@@ -2641,7 +3447,7 @@ class TransformerModel(nn.Module):
 
 class DecoderTransformer(nn.Module):
 
-    def __init__(self, n_time_series: int, n_head: int, num_layer: int, n_embd: int, forecast_history: int, dropout: float, q_len: int, additional_params: Dict, activation='Softmax', forecast_length: int=None, scale_att: bool=False, seq_num1=None, sub_len=1, mu=None):
+    def __init__(self, n_time_series: 'int', n_head: 'int', num_layer: 'int', n_embd: 'int', forecast_history: 'int', dropout: 'float', q_len: 'int', additional_params: 'Dict', activation='Softmax', forecast_length: 'int'=None, scale_att: 'bool'=False, seq_num1=None, sub_len=1, mu=None):
         """
         Args:
             n_time_series: Number of time series present in input
@@ -2675,7 +3481,7 @@ class DecoderTransformer(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x: torch.Tensor, series_id: int=None):
+    def forward(self, x: 'torch.Tensor', series_id: 'int'=None):
         """
         Args:
             x: Tensor of dimension (batch_size, seq_len, number_of_time_series)
@@ -2706,7 +3512,7 @@ class PositionwiseFF(nn.Module):
         self.ff = nn.Sequential(nn.Linear(d_input, d_inner), nn.ReLU(inplace=True), nn.Dropout(dropout), nn.Linear(d_inner, d_input), nn.Dropout(dropout))
         self.layer_norm = nn.LayerNorm(d_input)
 
-    def forward(self, input_: torch.FloatTensor) ->torch.FloatTensor:
+    def forward(self, input_: 'torch.FloatTensor') ->torch.FloatTensor:
         ff_out = self.ff(input_)
         output = self.layer_norm(input_ + ff_out)
         return output
@@ -2719,7 +3525,7 @@ class DecoderBlock(nn.Module):
         self.mha = MultiHeadAttention(d_input, d_head_inner, n_heads=n_heads, dropout=dropout, dropouta=dropouta)
         self.ff = PositionwiseFF(d_input, d_ff_inner, dropout)
 
-    def forward(self, input_: torch.FloatTensor, pos_embs: torch.FloatTensor, u: torch.FloatTensor, v: torch.FloatTensor, mask=None, mems=None):
+    def forward(self, input_: 'torch.FloatTensor', pos_embs: 'torch.FloatTensor', u: 'torch.FloatTensor', v: 'torch.FloatTensor', mask=None, mems=None):
         return self.ff(self.mha(input_, pos_embs, mems, u, v, mask=mask))
 
 
@@ -2732,13 +3538,13 @@ class StandardWordEmbedding(nn.Module):
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
         self.scale = embedding_dim ** 0.5
 
-    def forward(self, input_: torch.LongTensor):
+    def forward(self, input_: 'torch.LongTensor'):
         return self.embedding(input_) * self.scale
 
 
 class TransformerXL(torch.nn.Module):
 
-    def __init__(self, num_embeddings, n_layers, n_heads, d_model, d_head_inner, d_ff_inner, dropout=0.1, dropouta=0.0, seq_len: int=0, mem_len: int=0):
+    def __init__(self, num_embeddings, n_layers, n_heads, d_model, d_head_inner, d_ff_inner, dropout=0.1, dropouta=0.0, seq_len: 'int'=0, mem_len: 'int'=0):
         super().__init__()
         self.n_layers, self.n_heads, self.d_model, self.d_head_inner, self.d_ff_inner = n_layers, n_heads, d_model, d_head_inner, d_ff_inner
         self.word_embs = StandardWordEmbedding(num_embeddings, d_model)
@@ -2754,7 +3560,7 @@ class TransformerXL(torch.nn.Module):
     def init_memory(self, device=torch.device('cpu')) ->torch.FloatTensor:
         return [torch.empty(0, dtype=torch.float) for _ in range(self.n_layers + 1)]
 
-    def update_memory(self, previous_memory: List[torch.FloatTensor], hidden_states: List[torch.FloatTensor]):
+    def update_memory(self, previous_memory: 'List[torch.FloatTensor]', hidden_states: 'List[torch.FloatTensor]'):
         assert len(hidden_states) == len(previous_memory)
         mem_len, seq_len = previous_memory[0].size(0), hidden_states[0].size(0)
         with torch.no_grad():
@@ -2770,9 +3576,9 @@ class TransformerXL(torch.nn.Module):
         self.seq_len = seq_len
         self.mem_len = mem_len
 
-    def forward(self, idxs: torch.LongTensor, target: torch.LongTensor, memory: Optional[List[torch.FloatTensor]]=None) ->Dict[str, torch.Tensor]:
+    def forward(self, idxs: 'torch.LongTensor', target: 'torch.LongTensor', memory: 'Optional[List[torch.FloatTensor]]'=None) ->Dict[str, torch.Tensor]:
         if memory is None:
-            memory: List[torch.FloatTensor] = self.init_memory(idxs.device)
+            memory: 'List[torch.FloatTensor]' = self.init_memory(idxs.device)
         assert len(memory) == len(self.layers) + 1
         cur_seq, bs = idxs.size()
         prev_seq = memory[0].size(0)
@@ -2810,6 +3616,10 @@ TESTCASES = [
      lambda: ([], {'n_head': 4, 'n_embd': 4, 'win_len': 4, 'scale': 1.0, 'q_len': 4, 'sub_len': 4}),
      lambda: ([torch.rand([4, 4, 4])], {}),
      False),
+    (AttentionLayer,
+     lambda: ([], {'d_model': 4, 'n_heads': 4}),
+     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
+     False),
     (BinaryFocalLossWithLogits,
      lambda: ([], {'alpha': 4}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
@@ -2822,6 +3632,14 @@ TESTCASES = [
      lambda: ([], {'seq_length': 4, 'output_seq_length': 4, 'n_time_series': 4}),
      lambda: ([torch.rand([4, 4])], {}),
      False),
+    (DLinear,
+     lambda: ([], {'forecast_history': 4, 'forecast_length': 4, 'individual': 4, 'enc_in': 4}),
+     lambda: ([torch.rand([4, 4, 4])], {}),
+     False),
+    (DataEmbedding_inverted,
+     lambda: ([], {'c_in': 4, 'd_model': 4}),
+     lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
+     True),
     (DummyTorchModel,
      lambda: ([], {'forecast_length': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
@@ -2830,10 +3648,26 @@ TESTCASES = [
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
      False),
+    (FeedForward,
+     lambda: ([], {'dim': 4, 'hidden_dim': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (FlowAttention,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     True),
     (FocalLoss,
      lambda: ([], {'alpha': 4}),
      lambda: ([torch.rand([4, 4]), torch.rand([4, 4])], {}),
      False),
+    (FullAttention,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (GEGLU,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
     (LSTMForecast,
      lambda: ([], {'seq_length': 4, 'n_time_series': 4}),
      lambda: ([torch.rand([4, 4, 4])], {}),
@@ -2849,6 +3683,14 @@ TESTCASES = [
     (MLP,
      lambda: ([], {'n_state': 4, 'n_embd': 4}),
      lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (MovingAvg,
+     lambda: ([], {'kernel_size': 4, 'stride': 1}),
+     lambda: ([torch.rand([4, 4, 4])], {}),
+     True),
+    (NLinear,
+     lambda: ([], {'forecast_history': 4, 'forecast_length': 4}),
+     lambda: ([torch.rand([4, 4, 4])], {}),
      False),
     (NaiveBase,
      lambda: ([], {'seq_length': 4, 'n_time_series': 4}),
@@ -2866,6 +3708,14 @@ TESTCASES = [
      lambda: ([], {'d_in': 4, 'd_hid': 4}),
      lambda: ([torch.rand([4, 4, 4])], {}),
      True),
+    (PreNorm,
+     lambda: ([], {'dim': 4, 'fn': _mock_layer()}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     False),
+    (ProbAttention,
+     lambda: ([], {}),
+     lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
+     False),
     (RMSELoss,
      lambda: ([], {}),
      lambda: ([torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])], {}),
@@ -2873,6 +3723,14 @@ TESTCASES = [
     (ScaledDotProductAttention,
      lambda: ([], {'temperature': 4}),
      lambda: ([torch.rand([4, 4, 4]), torch.rand([4, 4, 4]), torch.rand([4, 4, 4])], {}),
+     True),
+    (SegMerging,
+     lambda: ([], {'d_model': 4, 'win_size': 4}),
+     lambda: ([torch.rand([4, 4, 4, 4])], {}),
+     True),
+    (SeriesDecomp,
+     lambda: ([], {'kernel_size': 4}),
+     lambda: ([torch.rand([4, 2, 4])], {}),
      True),
     (SimpleLinearModel,
      lambda: ([], {'seq_length': 4, 'n_time_series': 4}),
@@ -2975,4 +3833,43 @@ class Test_AIStream_Peelout_flow_forecast(_paritybench_base):
 
     def test_024(self):
         self._check(*TESTCASES[24])
+
+    def test_025(self):
+        self._check(*TESTCASES[25])
+
+    def test_026(self):
+        self._check(*TESTCASES[26])
+
+    def test_027(self):
+        self._check(*TESTCASES[27])
+
+    def test_028(self):
+        self._check(*TESTCASES[28])
+
+    def test_029(self):
+        self._check(*TESTCASES[29])
+
+    def test_030(self):
+        self._check(*TESTCASES[30])
+
+    def test_031(self):
+        self._check(*TESTCASES[31])
+
+    def test_032(self):
+        self._check(*TESTCASES[32])
+
+    def test_033(self):
+        self._check(*TESTCASES[33])
+
+    def test_034(self):
+        self._check(*TESTCASES[34])
+
+    def test_035(self):
+        self._check(*TESTCASES[35])
+
+    def test_036(self):
+        self._check(*TESTCASES[36])
+
+    def test_037(self):
+        self._check(*TESTCASES[37])
 

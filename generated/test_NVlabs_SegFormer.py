@@ -241,7 +241,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -1254,7 +1256,7 @@ class Attention(nn.Module):
         return x
 
 
-def drop_path(x, drop_prob: float=0.0, training: bool=False):
+def drop_path(x, drop_prob: 'float'=0.0, training: 'bool'=False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
     This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
     the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
@@ -3464,7 +3466,7 @@ def add_prefix(inputs, prefix):
     return outputs
 
 
-def drop_block_2d(x, drop_prob: float=0.1, block_size: int=7, gamma_scale: float=1.0, with_noise: bool=False, inplace: bool=False, batchwise: bool=False):
+def drop_block_2d(x, drop_prob: 'float'=0.1, block_size: 'int'=7, gamma_scale: 'float'=1.0, with_noise: 'bool'=False, inplace: 'bool'=False, batchwise: 'bool'=False):
     """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. This layer has been tested on a few training
     runs with success, but needs further validation and possibly optimization for lower runtime impact.
@@ -3497,7 +3499,7 @@ def drop_block_2d(x, drop_prob: float=0.1, block_size: int=7, gamma_scale: float
     return x
 
 
-def drop_block_fast_2d(x: torch.Tensor, drop_prob: float=0.1, block_size: int=7, gamma_scale: float=1.0, with_noise: bool=False, inplace: bool=False, batchwise: bool=False):
+def drop_block_fast_2d(x: 'torch.Tensor', drop_prob: 'float'=0.1, block_size: 'int'=7, gamma_scale: 'float'=1.0, with_noise: 'bool'=False, inplace: 'bool'=False, batchwise: 'bool'=False):
     """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. Simplied from above without concern for valid
     block mask at edges.

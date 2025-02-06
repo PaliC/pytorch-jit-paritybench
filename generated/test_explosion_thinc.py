@@ -2,6 +2,7 @@ import sys
 _module = sys.modules[__name__]
 del sys
 lstm_tagger = _module
+mappers = _module
 mnist = _module
 transformers_tagger = _module
 type_checking = _module
@@ -18,8 +19,6 @@ mps_ops = _module
 ops = _module
 compat = _module
 config = _module
-extra = _module
-tests = _module
 initializers = _module
 layers = _module
 add = _module
@@ -53,6 +52,7 @@ mxnetwrapper = _module
 noop = _module
 padded2list = _module
 parametricattention = _module
+parametricattention_v2 = _module
 pytorchwrapper = _module
 ragged2list = _module
 reduce_first = _module
@@ -80,6 +80,7 @@ with_array2d = _module
 with_cpu = _module
 with_debug = _module
 with_flatten = _module
+with_flatten_v2 = _module
 with_getitem = _module
 with_list = _module
 with_nvtx_range = _module
@@ -99,10 +100,15 @@ pytorch_grad_scaler = _module
 shim = _module
 tensorflow = _module
 torchscript = _module
+tests = _module
+_apple_blas = _module
+test_gemm = _module
 test_mem = _module
+test_mps_ops = _module
 test_ops = _module
 conftest = _module
-test_beam_search = _module
+enable_mxnet = _module
+enable_tensorflow = _module
 test_basic_tagger = _module
 test_combinators = _module
 test_feed_forward = _module
@@ -110,10 +116,13 @@ test_hash_embed = _module
 test_layers_api = _module
 test_linear = _module
 test_lstm = _module
+test_mappers = _module
 test_mnist = _module
 test_mxnet_wrapper = _module
+test_parametric_attention_v2 = _module
 test_pytorch_wrapper = _module
 test_reduce = _module
+test_resizable = _module
 test_shim = _module
 test_softmax = _module
 test_sparse_linear = _module
@@ -122,6 +131,7 @@ test_torchscriptwrapper = _module
 test_transforms = _module
 test_uniqued = _module
 test_with_debug = _module
+test_with_flatten = _module
 test_with_transforms = _module
 test_model = _module
 test_validation = _module
@@ -158,7 +168,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -195,13 +207,16 @@ import torch
 from typing import cast
 
 
+import warnings
+
+
 from functools import partial
 
 
-from typing import Dict
-
-
 from typing import Any
+
+
+from typing import Dict
 
 
 import itertools
@@ -213,29 +228,29 @@ from typing import Iterable
 from typing import Union
 
 
+import inspect
+
+
 import numpy
 
 
 from numpy.testing import assert_allclose
 
 
-import inspect
+import functools
+
+
+import random
+
+
+from typing import TYPE_CHECKING
+
+
+from typing import Mapping
 
 
 from typing import Sequence
 
 
 from typing import TypeVar
-
-
-from typing import Mapping
-
-
-import random
-
-
-import functools
-
-
-from typing import TYPE_CHECKING
 

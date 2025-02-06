@@ -2,6 +2,7 @@ import sys
 _module = sys.modules[__name__]
 del sys
 cifar10_resnet = _module
+mnist_with_amp = _module
 setup = _module
 conftest = _module
 dataset = _module
@@ -15,7 +16,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -37,13 +40,13 @@ import torch.nn as nn
 import random
 
 
+import time
+
+
 import numpy as np
 
 
 import torch
-
-
-from torch.utils.data import Dataset
 
 
 import torch.nn.functional as F
@@ -52,10 +55,19 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 
+from torch.utils.data import Subset
+
+
 from torch.utils.data import DataLoader
 
 
-from torch.utils.data import Subset
+from torchvision import datasets
+
+
+from torchvision import transforms
+
+
+from torch.utils.data import Dataset
 
 
 import matplotlib.pyplot as plt
@@ -147,6 +159,26 @@ class Cifar10ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
+
+
+class ConvNet(nn.Module):
+
+    def __init__(self):
+        super(ConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=5, stride=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1)
+        self.conv2_drop = nn.Dropout2d()
+        self.net = nn.Sequential(self.conv1, nn.MaxPool2d(2), nn.ReLU(True), self.conv2, self.conv2_drop, nn.MaxPool2d(2), nn.ReLU(True))
+        self.fc1 = nn.Linear(5 * 5 * 32, 64)
+        self.fc2 = nn.Linear(64, 16)
+
+    def forward(self, x):
+        x = self.net(x)
+        x = x.view(-1, 5 * 5 * 32)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
 
 
 class LinearMLP(nn.Module):

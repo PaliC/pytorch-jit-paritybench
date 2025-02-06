@@ -101,7 +101,9 @@ from _paritybench_helpers import _mock_config, patch_functional
 from unittest.mock import mock_open, MagicMock
 from torch.autograd import Function
 from torch.nn import Module
-import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchtext, torchvision, types, typing, uuid, warnings
+import abc, collections, copy, enum, functools, inspect, itertools, logging, math, matplotlib, numbers, numpy, pandas, queue, random, re, scipy, sklearn, string, tensorflow, time, torch, torchaudio, torchvision, types, typing, uuid, warnings
+import operator as op
+from dataclasses import dataclass
 import numpy as np
 from torch import Tensor
 patch_functional()
@@ -1119,7 +1121,7 @@ class HighResolutionNet(nn.Module):
         num_inchannels = [(num_channels[i] * BasicBlockV1b.expansion) for i in range(len(num_channels))]
         self.transition3 = self._make_transition_layer(pre_stage_channels, num_inchannels)
         self.stage4, pre_stage_channels = self._make_stage(BasicBlockV1b, num_inchannels=num_inchannels, num_modules=2 if small else 3, num_branches=self.stage4_num_branches, num_blocks=4 * [num_blocks], num_channels=num_channels)
-        last_inp_channels = np.int(np.sum(pre_stage_channels))
+        last_inp_channels = np.int32(np.sum(pre_stage_channels))
         ocr_mid_channels = 2 * ocr_width
         ocr_key_channels = ocr_width
         self.conv3x3_ocr = nn.Sequential(nn.Conv2d(last_inp_channels, ocr_mid_channels, kernel_size=3, stride=1, padding=1), norm_layer(ocr_mid_channels), nn.ReLU(inplace=relu_inplace))
@@ -2050,7 +2052,7 @@ def aggregate(prob, dim, return_logits=False):
         return prob
 
 
-def do_softmax(similarity, top_k: Optional[int]=None, inplace=False, return_usage=False):
+def do_softmax(similarity, top_k: 'Optional[int]'=None, inplace=False, return_usage=False):
     if top_k is not None:
         values, indices = torch.topk(similarity, k=top_k, dim=1)
         x_exp = values.exp_()
